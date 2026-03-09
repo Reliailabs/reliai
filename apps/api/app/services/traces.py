@@ -14,6 +14,7 @@ from app.models.project import Project
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 from app.schemas.trace import TraceIngestRequest, TraceListQuery
+from app.services.auth import OperatorContext
 from app.services.onboarding import mark_trace_ingested
 from app.workers.evaluations import run_trace_evaluations
 
@@ -113,8 +114,12 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
     return trace
 
 
-def list_traces(db: Session, filters: TraceListQuery) -> TraceListResult:
-    statement = select(Trace).order_by(desc(Trace.created_at), desc(Trace.id))
+def list_traces(db: Session, operator: OperatorContext, filters: TraceListQuery) -> TraceListResult:
+    statement = (
+        select(Trace)
+        .where(Trace.organization_id.in_(operator.organization_ids))
+        .order_by(desc(Trace.created_at), desc(Trace.id))
+    )
 
     if filters.project_id is not None:
         statement = statement.where(Trace.project_id == filters.project_id)
@@ -147,11 +152,11 @@ def list_traces(db: Session, filters: TraceListQuery) -> TraceListResult:
     return TraceListResult(items=items, next_cursor=next_cursor)
 
 
-def get_trace_detail(db: Session, trace_id: UUID) -> Trace:
+def get_trace_detail(db: Session, operator: OperatorContext, trace_id: UUID) -> Trace:
     statement = (
         select(Trace)
         .options(selectinload(Trace.retrieval_span), selectinload(Trace.evaluations))
-        .where(Trace.id == trace_id)
+        .where(Trace.id == trace_id, Trace.organization_id.in_(operator.organization_ids))
     )
     trace = db.scalar(statement)
     if trace is None:

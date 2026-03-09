@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     rq_queue_name: str = "default"
     log_level: str = "INFO"
     api_key_hash_secret: str = "change-me"
+    auth_session_hash_secret: str = "change-me-session-secret"
+    auth_session_days: int = 14
+    trace_input_text_max_chars: int = 20000
+    trace_output_text_max_chars: int = 20000
+    trace_metadata_max_bytes: int = 16384
 
     model_config = SettingsConfigDict(
         env_file=(ROOT_DIR / ".env",),

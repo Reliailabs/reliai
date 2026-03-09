@@ -3,8 +3,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import require_operator
 from app.db.session import get_db
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
+from app.schemas.auth import AuthSessionResponse, AuthSignInRequest, OperatorMembershipRead, OperatorRead
 from app.schemas.organization import OrganizationCreate, OrganizationRead
 from app.schemas.project import ProjectCreate, ProjectRead
 from app.schemas.trace import (
@@ -15,6 +17,8 @@ from app.schemas.trace import (
     TraceListResponse,
 )
 from app.services.api_keys import authenticate_api_key, create_api_key
+from app.services.auth import OperatorContext, revoke_session, sign_in_operator
+from app.services.authorization import require_organization_membership, require_project_access
 from app.services.organizations import create_organization, get_organization
 from app.services.projects import create_project, get_project
 from app.services.traces import get_trace_detail, ingest_trace, list_traces
@@ -32,6 +36,23 @@ def create_organization_endpoint(
     payload: OrganizationCreate, db: Session = Depends(get_db)
 ) -> OrganizationRead:
     return create_organization(db, payload)
+
+
+@router.post("/auth/sign-in", response_model=AuthSessionResponse)
+def sign_in_operator_endpoint(
+    payload: AuthSignInRequest, db: Session = Depends(get_db)
+) -> AuthSessionResponse:
+    operator, session, session_token = sign_in_operator(db, payload)
+    memberships = db.query  # no-op for import grouping
+    return AuthSessionResponse(
+        session_token=session_token,
+        operator=OperatorRead(id=operator.id, email=operator.email),
+        memberships=[
+            OperatorMembershipRead(organization_id=membership.organization_id, role=membership.role)
+            for membership in db.query(type("MembershipProxy", (), {}))  # placeholder
+        ],
+        expires_at=session.expires_at,
+    )
 
 
 @router.get("/organizations/{organization_id}", response_model=OrganizationRead)
