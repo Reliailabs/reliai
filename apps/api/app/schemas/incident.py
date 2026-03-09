@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field
 from app.schemas.alert_delivery import AlertDeliveryRead
 from app.schemas.common import APIModel
 from app.schemas.incident_event import IncidentEventRead
+from app.schemas.investigation import RootCauseHintRead
 from app.schemas.regression import RegressionSnapshotRead
+from app.schemas.trace import TraceCompareItemRead
 
 
 class IncidentListQuery(BaseModel):
@@ -74,7 +76,11 @@ class IncidentCompareRead(APIModel):
     baseline_window_end: datetime | None
     regressions: list[RegressionSnapshotRead]
     representative_traces: list[IncidentTraceSampleRead]
+    current_representative_traces: list[TraceCompareItemRead]
+    baseline_representative_traces: list[TraceCompareItemRead]
+    root_cause_hints: list[RootCauseHintRead]
     rule_context: IncidentRuleContextRead | None
+    trace_compare_path: str
 
 
 class IncidentDetailRead(IncidentListItemRead):

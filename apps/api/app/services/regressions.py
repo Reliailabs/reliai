@@ -7,14 +7,16 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import desc, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.evaluation_rollup import EvaluationRollup
 from app.models.incident import Incident
 from app.models.regression_snapshot import RegressionSnapshot
+from app.models.trace import Trace
 from app.schemas.regression import RegressionListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
+from app.services.incidents import derive_root_cause_hints
 from app.services.rollups import (
     ROLLUP_METRICS,
     ROLLUP_WINDOW_MINUTES,
@@ -32,6 +34,15 @@ INCIDENT_WINDOW_MINUTES = 60
 class RegressionComputationResult:
     scope: RollupScope
     snapshots: list[RegressionSnapshot]
+
+
+@dataclass(frozen=True)
+class RegressionDetailResult:
+    regression: RegressionSnapshot
+    related_incident: Incident | None
+    current_representative_traces: list[Trace]
+    baseline_representative_traces: list[Trace]
+    root_cause_hints: list[dict]
 
 
 def _baseline_rollup(
@@ -136,12 +147,67 @@ def list_project_regressions(
     return db.scalars(statement).all()
 
 
+def _window_datetime(metadata: dict, key: str) -> datetime | None:
+    value = metadata.get(key)
+    if value is None:
+        return None
+    return datetime.fromisoformat(value)
+
+
+def _load_regression_window_traces(
+    db: Session,
+    *,
+    regression: RegressionSnapshot,
+    metadata: dict,
+    window_start_key: str,
+    window_end_key: str,
+) -> list[Trace]:
+    window_start = _window_datetime(metadata, window_start_key)
+    window_end = _window_datetime(metadata, window_end_key)
+    if window_start is None or window_end is None:
+        return []
+    statement = (
+        select(Trace)
+        .options(selectinload(Trace.retrieval_span), selectinload(Trace.evaluations))
+        .where(
+            Trace.organization_id == regression.organization_id,
+            Trace.project_id == regression.project_id,
+            Trace.timestamp >= window_start,
+            Trace.timestamp < window_end,
+        )
+        .order_by(desc(Trace.timestamp), desc(Trace.id))
+    )
+    if regression.scope_type == "prompt_version":
+        statement = statement.where(Trace.prompt_version == regression.scope_id)
+    return db.scalars(statement).all()
+
+
+def _regression_sort_key(metric_name: str, trace: Trace, *, window_kind: str) -> tuple:
+    if metric_name == "success_rate":
+        return ((1 if not trace.success else 0) if window_kind == "current" else (1 if trace.success else 0), trace.timestamp)
+    if metric_name == "structured_output_validity_pass_rate":
+        structured_fail = any(
+            evaluation.eval_type == "structured_validity" and evaluation.label == "fail"
+            for evaluation in getattr(trace, "evaluations", [])
+        )
+        structured_pass = any(
+            evaluation.eval_type == "structured_validity" and evaluation.label == "pass"
+            for evaluation in getattr(trace, "evaluations", [])
+        )
+        primary = structured_fail if window_kind == "current" else structured_pass
+        secondary = 1 if not trace.success else 0
+        return (1 if primary else 0, secondary, trace.timestamp)
+    if metric_name == "average_cost_usd_per_trace":
+        return (trace.total_cost_usd or Decimal("0"), trace.timestamp)
+    return (trace.latency_ms or 0, trace.timestamp)
+
+
 def get_regression_detail(
     db: Session,
     operator: OperatorContext,
     *,
     regression_id: UUID,
-) -> tuple[RegressionSnapshot, Incident | None]:
+) -> RegressionDetailResult:
     regression = db.get(RegressionSnapshot, regression_id)
     if regression is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Regression not found")
@@ -165,4 +231,43 @@ def get_regression_detail(
             and candidate.summary_json.get("scope_id") == regression.scope_id
         ):
             related_incident = candidate
-    return regression, related_incident
+
+    metadata = regression.metadata_json or {}
+    current_traces = _load_regression_window_traces(
+        db,
+        regression=regression,
+        metadata=metadata,
+        window_start_key="current_window_start",
+        window_end_key="current_window_end",
+    )
+    baseline_traces = _load_regression_window_traces(
+        db,
+        regression=regression,
+        metadata=metadata,
+        window_start_key="baseline_window_start",
+        window_end_key="baseline_window_end",
+    )
+    current_sorted = sorted(
+        current_traces,
+        key=lambda trace: _regression_sort_key(regression.metric_name, trace, window_kind="current"),
+        reverse=True,
+    )
+    baseline_sorted = sorted(
+        baseline_traces,
+        key=lambda trace: _regression_sort_key(regression.metric_name, trace, window_kind="baseline"),
+        reverse=True,
+    )
+
+    return RegressionDetailResult(
+        regression=regression,
+        related_incident=related_incident,
+        current_representative_traces=current_sorted[:5],
+        baseline_representative_traces=baseline_sorted[:5],
+        root_cause_hints=derive_root_cause_hints(
+            incident=related_incident,
+            current_traces=current_sorted,
+            baseline_traces=baseline_sorted,
+        )
+        if current_sorted or baseline_sorted
+        else [],
+    )

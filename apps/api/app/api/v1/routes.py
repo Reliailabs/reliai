@@ -19,6 +19,7 @@ from app.schemas.incident import (
     IncidentRuleContextRead,
     IncidentTraceSampleRead,
 )
+from app.schemas.investigation import RootCauseHintRead
 from app.schemas.incident_event import IncidentEventListResponse, IncidentEventRead
 from app.schemas.organization import OrganizationCreate, OrganizationRead
 from app.schemas.organization_alert_target import (
@@ -35,6 +36,9 @@ from app.schemas.regression import (
     RegressionSnapshotRead,
 )
 from app.schemas.trace import (
+    TraceCompareItemRead,
+    TraceComparePairRead,
+    TraceComparisonRead,
     TraceAcceptedResponse,
     TraceDetailRead,
     TraceIngestRequest,
@@ -54,6 +58,7 @@ from app.services.incidents import (
     get_incident_alert_deliveries,
     get_incident_detail,
     get_incident_events,
+    get_incident_compare_traces,
     get_incident_regressions,
     get_incident_representative_traces,
     get_incident_rule,
@@ -61,6 +66,8 @@ from app.services.incidents import (
     list_incidents,
     reopen_incident,
     resolve_incident,
+    build_trace_compare_item,
+    derive_root_cause_hints,
 )
 from app.services.regressions import get_regression_detail, list_project_regressions
 from app.services.authorization import require_organization_membership, require_project_access
@@ -120,9 +127,51 @@ def _incident_event_item(event) -> IncidentEventRead:
     )
 
 
-def _incident_compare_item(incident, regressions, representative_traces) -> IncidentCompareRead:
+def _root_cause_hint_item(hint: dict) -> RootCauseHintRead:
+    return RootCauseHintRead.model_validate(hint)
+
+
+def _trace_compare_item(trace) -> TraceCompareItemRead:
+    return TraceCompareItemRead.model_validate(build_trace_compare_item(trace))
+
+
+def _trace_comparison_item(incident, current_traces, baseline_traces) -> TraceComparisonRead:
+    summary = incident.summary_json or {}
+    current_items = [_trace_compare_item(trace) for trace in current_traces]
+    baseline_items = [_trace_compare_item(trace) for trace in baseline_traces]
+    pair_count = max(len(current_items), len(baseline_items))
+    pairs = [
+        TraceComparePairRead(
+            pair_index=index,
+            current_trace=current_items[index] if index < len(current_items) else None,
+            baseline_trace=baseline_items[index] if index < len(baseline_items) else None,
+        )
+        for index in range(pair_count)
+    ]
+    return TraceComparisonRead(
+        incident_id=incident.id,
+        project_id=incident.project_id,
+        metric_name=summary.get("metric_name"),
+        scope_type=summary.get("scope_type"),
+        scope_id=summary.get("scope_id"),
+        current_window_start=summary.get("current_window_start"),
+        current_window_end=summary.get("current_window_end"),
+        baseline_window_start=summary.get("baseline_window_start"),
+        baseline_window_end=summary.get("baseline_window_end"),
+        current_traces=current_items,
+        baseline_traces=baseline_items,
+        pairs=pairs,
+    )
+
+
+def _incident_compare_item(incident, regressions, representative_traces, baseline_traces) -> IncidentCompareRead:
     summary = incident.summary_json or {}
     rule = get_incident_rule(incident.incident_type)
+    root_cause_hints = derive_root_cause_hints(
+        incident=incident,
+        current_traces=representative_traces,
+        baseline_traces=baseline_traces,
+    )
     return IncidentCompareRead(
         current_window_start=summary.get("current_window_start"),
         current_window_end=summary.get("current_window_end"),
@@ -132,6 +181,9 @@ def _incident_compare_item(incident, regressions, representative_traces) -> Inci
         representative_traces=[
             IncidentTraceSampleRead.model_validate(trace) for trace in representative_traces
         ],
+        current_representative_traces=[_trace_compare_item(trace) for trace in representative_traces],
+        baseline_representative_traces=[_trace_compare_item(trace) for trace in baseline_traces],
+        root_cause_hints=[_root_cause_hint_item(hint) for hint in root_cause_hints],
         rule_context=IncidentRuleContextRead(
             incident_type=rule.incident_type,
             metric_name=rule.metric_name,
@@ -142,6 +194,7 @@ def _incident_compare_item(incident, regressions, representative_traces) -> Inci
         )
         if rule is not None
         else None,
+        trace_compare_path=f"/incidents/{incident.id}/compare",
     )
 
 
@@ -340,7 +393,7 @@ def get_incident_detail_endpoint(
     incident = get_incident_detail(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
-    representative_traces = get_incident_representative_traces(db, incident)
+    representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
@@ -348,7 +401,7 @@ def get_incident_detail_endpoint(
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces),
+        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
     )
 
 
@@ -361,7 +414,7 @@ def acknowledge_incident_endpoint(
     incident = acknowledge_incident(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
-    representative_traces = get_incident_representative_traces(db, incident)
+    representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
@@ -369,7 +422,7 @@ def acknowledge_incident_endpoint(
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces),
+        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
     )
 
 
@@ -388,7 +441,7 @@ def assign_incident_owner_endpoint(
     )
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
-    representative_traces = get_incident_representative_traces(db, incident)
+    representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
@@ -396,7 +449,7 @@ def assign_incident_owner_endpoint(
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces),
+        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
     )
 
 
@@ -409,7 +462,7 @@ def resolve_incident_endpoint(
     incident = resolve_incident(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
-    representative_traces = get_incident_representative_traces(db, incident)
+    representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
@@ -417,7 +470,7 @@ def resolve_incident_endpoint(
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces),
+        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
     )
 
 
@@ -430,7 +483,7 @@ def reopen_incident_endpoint(
     incident = reopen_incident(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
-    representative_traces = get_incident_representative_traces(db, incident)
+    representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
@@ -438,7 +491,7 @@ def reopen_incident_endpoint(
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces),
+        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
     )
 
 
@@ -462,6 +515,17 @@ def list_incident_events_endpoint(
     return IncidentEventListResponse(items=[_incident_event_item(event) for event in events])
 
 
+@router.get("/incidents/{incident_id}/compare", response_model=TraceComparisonRead)
+def get_incident_trace_compare_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> TraceComparisonRead:
+    incident = get_incident_detail(db, operator, incident_id)
+    current_traces, baseline_traces = get_incident_compare_traces(db, incident)
+    return _trace_comparison_item(incident, current_traces, baseline_traces)
+
+
 @router.get("/projects/{project_id}/regressions", response_model=RegressionListResponse)
 def list_project_regressions_endpoint(
     project_id: UUID,
@@ -481,7 +545,9 @@ def get_regression_detail_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> RegressionDetailRead:
-    regression, related_incident = get_regression_detail(db, operator, regression_id=regression_id)
+    result = get_regression_detail(db, operator, regression_id=regression_id)
+    regression = result.regression
+    related_incident = result.related_incident
     return RegressionDetailRead(
         **RegressionSnapshotRead.model_validate(regression).model_dump(),
         related_incident=RegressionRelatedIncidentRead(
@@ -495,6 +561,14 @@ def get_regression_detail_endpoint(
         )
         if related_incident is not None
         else None,
+        root_cause_hints=[_root_cause_hint_item(hint) for hint in result.root_cause_hints],
+        current_representative_traces=[
+            _trace_compare_item(trace) for trace in result.current_representative_traces
+        ],
+        baseline_representative_traces=[
+            _trace_compare_item(trace) for trace in result.baseline_representative_traces
+        ],
+        trace_compare_path=f"/incidents/{related_incident.id}/compare" if related_incident is not None else None,
     )
 
 

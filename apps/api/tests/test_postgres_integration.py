@@ -615,6 +615,15 @@ def test_postgres_settings_and_filtered_incident_path(
     assert incident_detail.status_code == 200
     assert incident_detail.json()["compare"]["regressions"]
     assert incident_detail.json()["compare"]["representative_traces"]
+    assert incident_detail.json()["compare"]["current_representative_traces"]
+    assert incident_detail.json()["compare"]["baseline_representative_traces"]
+
+    compare_detail = postgres_client.get(
+        f"/api/v1/incidents/{incident_id}/compare",
+        headers=_auth_headers(session_payload),
+    )
+    assert compare_detail.status_code == 200
+    assert compare_detail.json()["pairs"]
 
     regression_id = incident_detail.json()["compare"]["regressions"][0]["id"]
     regression_detail = postgres_client.get(
@@ -623,3 +632,5 @@ def test_postgres_settings_and_filtered_incident_path(
     )
     assert regression_detail.status_code == 200
     assert regression_detail.json()["related_incident"] is not None
+    assert regression_detail.json()["current_representative_traces"]
+    assert regression_detail.json()["baseline_representative_traces"]

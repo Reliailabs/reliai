@@ -14,6 +14,7 @@ import type {
   ProjectRead,
   RegressionDetailRead,
   RegressionListResponse,
+  TraceComparisonRead,
   TraceDetailRead,
   TraceListResponse
 } from "@reliai/types";
@@ -129,6 +130,10 @@ export async function listIncidents(filters: {
 
 export async function getIncidentDetail(incidentId: string) {
   return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}`);
+}
+
+export async function getIncidentTraceCompare(incidentId: string) {
+  return request<TraceComparisonRead>(`/api/v1/incidents/${incidentId}/compare`);
 }
 
 export async function acknowledgeIncident(incidentId: string) {

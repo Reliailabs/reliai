@@ -242,6 +242,16 @@ export default async function IncidentDetailPage({
           ) : null}
         </div>
 
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-steel">
+          <span>
+            Full compare includes side-by-side representative current and baseline traces with metadata,
+            retrieval, and structured-output results.
+          </span>
+          <Link href={`/incidents/${incident.id}/compare`} className="font-medium text-ink underline-offset-4 hover:underline">
+            Open compare
+          </Link>
+        </div>
+
         <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="rounded-[24px] border border-zinc-200 p-4">
             <p className="text-sm font-medium text-ink">Affected regressions</p>
@@ -287,27 +297,85 @@ export default async function IncidentDetailPage({
               </div>
             </div>
             <div className="rounded-[24px] border border-zinc-200 p-4">
-              <p className="text-sm font-medium text-ink">Representative traces</p>
+              <p className="text-sm font-medium text-ink">Root-cause hints</p>
               <div className="mt-4 space-y-3">
-                {incident.compare.representative_traces.map((trace) => (
-                  <Link
-                    key={trace.id}
-                    href={`/traces/${trace.id}`}
-                    className="block rounded-2xl border border-zinc-200 px-4 py-3 transition hover:bg-zinc-50"
-                  >
-                    <p className="text-sm font-medium text-ink">{trace.request_id}</p>
-                    <p className="mt-1 text-sm text-steel">
-                      {trace.success ? "Success" : trace.error_type ?? "Failure"} ·{" "}
-                      {trace.latency_ms !== null ? `${trace.latency_ms} ms` : "latency n/a"}
-                    </p>
-                    <p className="mt-1 text-sm text-steel">{new Date(trace.timestamp).toLocaleString()}</p>
-                  </Link>
-                ))}
+                {incident.compare.root_cause_hints.length > 0 ? (
+                  incident.compare.root_cause_hints.map((hint, index) => (
+                    <div key={`${hint.hint_type}-${index}`} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                      <p className="text-sm font-medium text-ink">{hint.hint_type.replaceAll("_", " ")}</p>
+                      <p className="mt-1 text-sm text-steel">
+                        {hint.dimension}
+                        {hint.current_value ? ` · current ${hint.current_value}` : ""}
+                        {hint.baseline_value ? ` · baseline ${hint.baseline_value}` : ""}
+                      </p>
+                      <p className="mt-1 text-sm text-steel">
+                        {hint.current_share ? `current share ${hint.current_share}` : ""}
+                        {hint.current_metric_value ? ` · current metric ${hint.current_metric_value}` : ""}
+                        {hint.baseline_metric_value ? ` · baseline metric ${hint.baseline_metric_value}` : ""}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-steel">No concentrated dimension met the deterministic hint rules.</p>
+                )}
               </div>
             </div>
           </div>
         </div>
       </Card>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Current representative traces</p>
+            <Link href={`/incidents/${incident.id}/compare`} className="text-sm font-medium text-ink underline-offset-4 hover:underline">
+              Full compare
+            </Link>
+          </div>
+          <div className="mt-4 space-y-3">
+            {incident.compare.current_representative_traces.map((trace) => (
+              <Link
+                key={trace.id}
+                href={`/traces/${trace.id}`}
+                className="block rounded-2xl border border-zinc-200 px-4 py-3 transition hover:bg-zinc-50"
+              >
+                <p className="text-sm font-medium text-ink">{trace.request_id}</p>
+                <p className="mt-1 text-sm text-steel">
+                  {trace.model_name} · {trace.prompt_version ?? "prompt n/a"} ·{" "}
+                  {trace.success ? "success" : trace.error_type ?? "failure"}
+                </p>
+                <p className="mt-1 text-sm text-steel">
+                  {trace.latency_ms !== null ? `${trace.latency_ms} ms` : "latency n/a"} ·{" "}
+                  {trace.total_cost_usd ?? "cost n/a"}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Baseline representative traces</p>
+          <div className="mt-4 space-y-3">
+            {incident.compare.baseline_representative_traces.map((trace) => (
+              <Link
+                key={trace.id}
+                href={`/traces/${trace.id}`}
+                className="block rounded-2xl border border-zinc-200 px-4 py-3 transition hover:bg-zinc-50"
+              >
+                <p className="text-sm font-medium text-ink">{trace.request_id}</p>
+                <p className="mt-1 text-sm text-steel">
+                  {trace.model_name} · {trace.prompt_version ?? "prompt n/a"} ·{" "}
+                  {trace.success ? "success" : trace.error_type ?? "failure"}
+                </p>
+                <p className="mt-1 text-sm text-steel">
+                  {trace.latency_ms !== null ? `${trace.latency_ms} ms` : "latency n/a"} ·{" "}
+                  {trace.total_cost_usd ?? "cost n/a"}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </Card>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_420px]">
         <div className="space-y-6">

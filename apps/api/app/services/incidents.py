@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, time, timezone
 from decimal import Decimal
+from statistics import median
 from typing import Any, Iterable
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import desc, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.alert_delivery import AlertDelivery
 from app.models.incident import Incident
@@ -18,10 +20,11 @@ from app.models.operator_user import OperatorUser
 from app.models.project import Project
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
+from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
 from app.schemas.incident import IncidentListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
-from app.services.rollups import RollupScope
+from app.services.rollups import RollupScope, quantize_decimal
 
 INCIDENT_WINDOW_MINUTES = 60
 
@@ -496,43 +499,427 @@ def get_incident_rule(incident_type: str) -> IncidentRule | None:
 
 
 def get_incident_representative_traces(db: Session, incident: Incident) -> list[Trace]:
-    summary = incident.summary_json or {}
-    scope_type = summary.get("scope_type")
-    scope_id = summary.get("scope_id")
-    current_window_start = summary.get("current_window_start")
-    current_window_end = summary.get("current_window_end")
+    current_traces, _ = get_incident_compare_traces(db, incident)
+    return current_traces[:5]
 
-    statement = select(Trace).where(
+
+def _window_value(summary: dict[str, Any], key: str) -> datetime | None:
+    value = summary.get(key)
+    if value is None:
+        return None
+    return datetime.fromisoformat(value)
+
+
+def _scoped_trace_statement(
+    *,
+    incident: Incident,
+    window_start: datetime | None,
+    window_end: datetime | None,
+    with_details: bool,
+):
+    statement = select(Trace)
+    if with_details:
+        statement = statement.options(selectinload(Trace.retrieval_span), selectinload(Trace.evaluations))
+    statement = statement.where(
         Trace.organization_id == incident.organization_id,
         Trace.project_id == incident.project_id,
     )
-    if current_window_start is not None:
-        statement = statement.where(Trace.timestamp >= datetime.fromisoformat(current_window_start))
-    if current_window_end is not None:
-        statement = statement.where(Trace.timestamp <= datetime.fromisoformat(current_window_end))
-    if scope_type == "prompt_version" and scope_id:
-        statement = statement.where(Trace.prompt_version == scope_id)
+    if window_start is not None:
+        statement = statement.where(Trace.timestamp >= window_start)
+    if window_end is not None:
+        statement = statement.where(Trace.timestamp < window_end)
+    summary = incident.summary_json or {}
+    if summary.get("scope_type") == "prompt_version" and summary.get("scope_id"):
+        statement = statement.where(Trace.prompt_version == summary["scope_id"])
+    return statement
 
-    window_traces = db.scalars(statement.order_by(desc(Trace.timestamp)).limit(50)).all()
 
-    ranked: list[Trace] = []
-    failing_recent = [trace for trace in window_traces if not trace.success]
-    failing_recent.sort(key=lambda trace: trace.timestamp, reverse=True)
-    ranked.extend(failing_recent[:3])
+def _load_window_traces(
+    db: Session,
+    *,
+    incident: Incident,
+    window_start_key: str,
+    window_end_key: str,
+    with_details: bool = False,
+) -> list[Trace]:
+    summary = incident.summary_json or {}
+    window_start = _window_value(summary, window_start_key)
+    window_end = _window_value(summary, window_end_key)
+    if window_start is None or window_end is None:
+        return []
+    statement = _scoped_trace_statement(
+        incident=incident,
+        window_start=window_start,
+        window_end=window_end,
+        with_details=with_details,
+    ).order_by(desc(Trace.timestamp), desc(Trace.id))
+    return db.scalars(statement).unique().all()
 
-    near_start = sorted(
-        window_traces,
-        key=lambda trace: abs((trace.timestamp - incident.started_at).total_seconds()),
+
+def _structured_output_label(trace: Trace) -> str | None:
+    for evaluation in getattr(trace, "evaluations", []):
+        if evaluation.eval_type == STRUCTURED_VALIDITY_EVAL_TYPE:
+            return evaluation.label
+    return None
+
+
+def _structured_output_reason(trace: Trace) -> str | None:
+    for evaluation in getattr(trace, "evaluations", []):
+        if evaluation.eval_type == STRUCTURED_VALIDITY_EVAL_TYPE:
+            raw = evaluation.raw_result_json or {}
+            reason = raw.get("reason")
+            return str(reason) if reason is not None else None
+    return None
+
+
+def _selected_metadata(trace: Trace) -> dict[str, Any] | None:
+    metadata = trace.metadata_json or {}
+    excerpt: dict[str, Any] = {}
+    for key in sorted(metadata.keys()):
+        if key in {"structured_output_schema", "retrieved_chunks_json"}:
+            continue
+        value = metadata[key]
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            excerpt[key] = value
+        if len(excerpt) >= 6:
+            break
+    return excerpt or None
+
+
+def _trace_sort_key(trace: Trace, *, incident_type: str, window_kind: str) -> tuple:
+    structured_label = _structured_output_label(trace)
+    failure_priority = 1 if not trace.success else 0
+    structured_failure_priority = 1 if structured_label == "fail" else 0
+    success_priority = 1 if trace.success else 0
+    structured_pass_priority = 1 if structured_label == "pass" else 0
+    latency = trace.latency_ms or 0
+    cost = trace.total_cost_usd or Decimal("0")
+
+    if incident_type == "structured_output_validity_drop":
+        if window_kind == "current":
+            return (structured_failure_priority, failure_priority, trace.timestamp)
+        return (structured_pass_priority, success_priority, trace.timestamp)
+    if incident_type == "success_rate_drop":
+        if window_kind == "current":
+            return (failure_priority, trace.timestamp)
+        return (success_priority, trace.timestamp)
+    if incident_type == "p95_latency_spike":
+        return (latency, trace.timestamp)
+    if incident_type == "average_cost_spike":
+        return (cost, trace.timestamp)
+    return (trace.timestamp,)
+
+
+def _select_representative_traces(
+    traces: list[Trace],
+    *,
+    incident: Incident,
+    window_kind: str,
+    limit: int = 5,
+) -> list[Trace]:
+    if not traces:
+        return []
+    ranked = sorted(
+        traces,
+        key=lambda trace: _trace_sort_key(trace, incident_type=incident.incident_type, window_kind=window_kind),
+        reverse=True,
     )
-    for trace in near_start:
-        if trace.id not in {item.id for item in ranked}:
-            ranked.append(trace)
-        if len(ranked) >= 5:
+    selected: list[Trace] = []
+    seen: set[UUID] = set()
+    for trace in ranked:
+        if trace.id in seen:
+            continue
+        selected.append(trace)
+        seen.add(trace.id)
+        if len(selected) >= min(3, limit):
             break
 
-    if not ranked:
-        ranked = get_incident_traces(db, incident)[:5]
-    return ranked[:5]
+    near_anchor = sorted(
+        traces,
+        key=lambda trace: abs((trace.timestamp - incident.started_at).total_seconds()),
+    )
+    for trace in near_anchor:
+        if trace.id in seen:
+            continue
+        selected.append(trace)
+        seen.add(trace.id)
+        if len(selected) >= limit:
+            break
+    return selected[:limit]
+
+
+def get_incident_compare_traces(db: Session, incident: Incident) -> tuple[list[Trace], list[Trace]]:
+    current_window_traces = _load_window_traces(
+        db,
+        incident=incident,
+        window_start_key="current_window_start",
+        window_end_key="current_window_end",
+        with_details=True,
+    )
+    baseline_window_traces = _load_window_traces(
+        db,
+        incident=incident,
+        window_start_key="baseline_window_start",
+        window_end_key="baseline_window_end",
+        with_details=True,
+    )
+    return (
+        _select_representative_traces(current_window_traces, incident=incident, window_kind="current"),
+        _select_representative_traces(baseline_window_traces, incident=incident, window_kind="baseline"),
+    )
+
+
+def _share(counter: Counter[str], total: int, key: str) -> Decimal | None:
+    if total == 0:
+        return None
+    return quantize_decimal(Decimal(counter.get(key, 0)) / Decimal(total))
+
+
+def _dominant_value(traces: list[Trace], attribute: str) -> tuple[str | None, Counter[str]]:
+    values = [getattr(trace, attribute) or "unknown" for trace in traces]
+    counter = Counter(values)
+    if not counter:
+        return None, counter
+    return counter.most_common(1)[0][0], counter
+
+
+def _median_int(values: list[int]) -> Decimal | None:
+    if not values:
+        return None
+    return quantize_decimal(Decimal(str(median(values))))
+
+
+def _top_trace_ids(traces: list[Trace], *, limit: int = 3) -> list[UUID]:
+    return [trace.id for trace in traces[:limit]]
+
+
+def derive_root_cause_hints(
+    *,
+    incident: Incident | None,
+    current_traces: list[Trace],
+    baseline_traces: list[Trace],
+) -> list[dict[str, Any]]:
+    hints: list[dict[str, Any]] = []
+
+    current_model, current_model_counter = _dominant_value(current_traces, "model_name")
+    baseline_model, baseline_model_counter = _dominant_value(baseline_traces, "model_name")
+    if current_model is not None and len(current_traces) >= 3:
+        current_share = _share(current_model_counter, len(current_traces), current_model)
+        baseline_share = _share(baseline_model_counter, len(baseline_traces), current_model)
+        if current_share is not None and current_share >= Decimal("0.60") and (
+            baseline_share is None or current_share - baseline_share >= Decimal("0.25")
+        ):
+            supporting = [trace for trace in current_traces if trace.model_name == current_model]
+            hints.append(
+                {
+                    "hint_type": "model_concentration",
+                    "dimension": "model_name",
+                    "current_value": current_model,
+                    "baseline_value": baseline_model,
+                    "current_count": current_model_counter[current_model],
+                    "baseline_count": baseline_model_counter.get(current_model, 0),
+                    "current_share": current_share,
+                    "baseline_share": baseline_share,
+                    "current_metric_value": None,
+                    "baseline_metric_value": None,
+                    "cluster_started_at": None,
+                    "supporting_trace_ids": _top_trace_ids(supporting),
+                    "metadata_json": None,
+                }
+            )
+
+    current_prompt, current_prompt_counter = _dominant_value(current_traces, "prompt_version")
+    baseline_prompt, baseline_prompt_counter = _dominant_value(baseline_traces, "prompt_version")
+    if current_prompt is not None and current_prompt != "unknown" and len(current_traces) >= 3:
+        current_share = _share(current_prompt_counter, len(current_traces), current_prompt)
+        baseline_share = _share(baseline_prompt_counter, len(baseline_traces), current_prompt)
+        if current_share is not None and current_share >= Decimal("0.60") and (
+            baseline_share is None or current_share - baseline_share >= Decimal("0.25")
+        ):
+            supporting = [trace for trace in current_traces if trace.prompt_version == current_prompt]
+            hints.append(
+                {
+                    "hint_type": "prompt_version_concentration",
+                    "dimension": "prompt_version",
+                    "current_value": current_prompt,
+                    "baseline_value": baseline_prompt if baseline_prompt != "unknown" else None,
+                    "current_count": current_prompt_counter[current_prompt],
+                    "baseline_count": baseline_prompt_counter.get(current_prompt, 0),
+                    "current_share": current_share,
+                    "baseline_share": baseline_share,
+                    "current_metric_value": None,
+                    "baseline_metric_value": None,
+                    "cluster_started_at": None,
+                    "supporting_trace_ids": _top_trace_ids(supporting),
+                    "metadata_json": None,
+                }
+            )
+
+    current_retrieval_latencies = [
+        trace.retrieval_span.retrieval_latency_ms
+        for trace in current_traces
+        if trace.retrieval_span is not None and trace.retrieval_span.retrieval_latency_ms is not None
+    ]
+    baseline_retrieval_latencies = [
+        trace.retrieval_span.retrieval_latency_ms
+        for trace in baseline_traces
+        if trace.retrieval_span is not None and trace.retrieval_span.retrieval_latency_ms is not None
+    ]
+    current_latencies = [trace.latency_ms for trace in current_traces if trace.latency_ms is not None]
+    baseline_latencies = [trace.latency_ms for trace in baseline_traces if trace.latency_ms is not None]
+    current_retrieval_median = _median_int(current_retrieval_latencies)
+    baseline_retrieval_median = _median_int(baseline_retrieval_latencies)
+    current_latency_median = _median_int(current_latencies)
+    baseline_latency_median = _median_int(baseline_latencies)
+    if (
+        current_retrieval_median is not None
+        and baseline_retrieval_median is not None
+        and current_latency_median is not None
+        and baseline_latency_median is not None
+        and current_retrieval_median - baseline_retrieval_median >= Decimal("100")
+        and current_latency_median - baseline_latency_median >= Decimal("200")
+    ):
+        supporting = sorted(
+            [trace for trace in current_traces if trace.retrieval_span is not None],
+            key=lambda trace: (
+                trace.retrieval_span.retrieval_latency_ms or 0,
+                trace.latency_ms or 0,
+            ),
+            reverse=True,
+        )
+        hints.append(
+            {
+                "hint_type": "retrieval_latency_increase",
+                "dimension": "retrieval_latency_ms",
+                "current_value": None,
+                "baseline_value": None,
+                "current_count": len(current_retrieval_latencies),
+                "baseline_count": len(baseline_retrieval_latencies),
+                "current_share": None,
+                "baseline_share": None,
+                "current_metric_value": current_retrieval_median,
+                "baseline_metric_value": baseline_retrieval_median,
+                "cluster_started_at": None,
+                "supporting_trace_ids": _top_trace_ids(supporting),
+                "metadata_json": {
+                    "current_latency_median_ms": str(current_latency_median),
+                    "baseline_latency_median_ms": str(baseline_latency_median),
+                },
+            }
+        )
+
+    failing_current = [
+        trace
+        for trace in current_traces
+        if not trace.success or _structured_output_label(trace) == "fail"
+    ]
+    if len(failing_current) >= 3:
+        dimension_counters = {
+            "error_type": Counter(trace.error_type or "unknown" for trace in failing_current),
+            "model_name": Counter(trace.model_name or "unknown" for trace in failing_current),
+            "prompt_version": Counter(trace.prompt_version or "unknown" for trace in failing_current),
+        }
+        best_dimension = None
+        best_value = None
+        best_share = Decimal("0")
+        for dimension, counter in dimension_counters.items():
+            value, _ = (counter.most_common(1)[0] if counter else (None, 0))
+            if value is None:
+                continue
+            share = _share(counter, len(failing_current), value)
+            if share is not None and share > best_share:
+                best_dimension = dimension
+                best_value = value
+                best_share = share
+        if best_dimension is not None and best_value is not None and best_share >= Decimal("0.60"):
+            supporting = [trace for trace in failing_current if (getattr(trace, best_dimension) or "unknown") == best_value]
+            baseline_counter = Counter((getattr(trace, best_dimension) or "unknown") for trace in baseline_traces)
+            hints.append(
+                {
+                    "hint_type": "failure_cluster",
+                    "dimension": best_dimension,
+                    "current_value": best_value if best_value != "unknown" else None,
+                    "baseline_value": None,
+                    "current_count": len(supporting),
+                    "baseline_count": baseline_counter.get(best_value, 0),
+                    "current_share": best_share,
+                    "baseline_share": _share(baseline_counter, len(baseline_traces), best_value),
+                    "current_metric_value": None,
+                    "baseline_metric_value": None,
+                    "cluster_started_at": None,
+                    "supporting_trace_ids": _top_trace_ids(supporting),
+                    "metadata_json": {"failure_count": len(failing_current)},
+                }
+            )
+
+    failing_after_start = (
+        [trace for trace in failing_current if trace.timestamp >= incident.started_at]
+        if incident is not None
+        else []
+    )
+    if incident is not None and len(failing_current) >= 3 and len(failing_after_start) / len(failing_current) >= 0.70:
+        cluster_started_at = min(trace.timestamp for trace in failing_after_start)
+        hints.append(
+            {
+                "hint_type": "time_cluster",
+                "dimension": "timestamp",
+                "current_value": cluster_started_at.isoformat(),
+                "baseline_value": None,
+                "current_count": len(failing_after_start),
+                "baseline_count": 0,
+                "current_share": quantize_decimal(
+                    Decimal(len(failing_after_start)) / Decimal(len(failing_current))
+                ),
+                "baseline_share": None,
+                "current_metric_value": None,
+                "baseline_metric_value": None,
+                "cluster_started_at": cluster_started_at,
+                "supporting_trace_ids": _top_trace_ids(sorted(failing_after_start, key=lambda trace: trace.timestamp)),
+                "metadata_json": {"failure_count": len(failing_current)},
+            }
+        )
+
+    return hints
+
+
+def build_trace_compare_item(trace: Trace) -> dict[str, Any]:
+    structured_output_label = _structured_output_label(trace)
+    structured_output_reason = _structured_output_reason(trace)
+    return {
+        "id": trace.id,
+        "request_id": trace.request_id,
+        "timestamp": trace.timestamp,
+        "model_name": trace.model_name,
+        "prompt_version": trace.prompt_version,
+        "success": trace.success,
+        "error_type": trace.error_type,
+        "latency_ms": trace.latency_ms,
+        "prompt_tokens": trace.prompt_tokens,
+        "completion_tokens": trace.completion_tokens,
+        "total_cost_usd": trace.total_cost_usd,
+        "structured_output": {
+            "label": structured_output_label,
+            "score": next(
+                (
+                    evaluation.score
+                    for evaluation in getattr(trace, "evaluations", [])
+                    if evaluation.eval_type == STRUCTURED_VALIDITY_EVAL_TYPE
+                ),
+                None,
+            ),
+            "reason": structured_output_reason,
+        }
+        if structured_output_label is not None or structured_output_reason is not None
+        else None,
+        "retrieval": {
+            "retrieval_latency_ms": trace.retrieval_span.retrieval_latency_ms,
+            "source_count": trace.retrieval_span.source_count,
+            "top_k": trace.retrieval_span.top_k,
+        }
+        if trace.retrieval_span is not None
+        else None,
+        "metadata_excerpt_json": _selected_metadata(trace),
+    }
 
 
 def get_incident_events(

@@ -155,3 +155,53 @@ class TraceDetailRead(APIModel):
     created_at: datetime
     retrieval_span: RetrievalSpanRead | None
     evaluations: list[EvaluationRead]
+
+
+class TraceCompareEvaluationRead(APIModel):
+    label: str | None
+    score: Decimal | None
+    reason: str | None
+
+
+class TraceCompareRetrievalRead(APIModel):
+    retrieval_latency_ms: int | None
+    source_count: int | None
+    top_k: int | None
+
+
+class TraceCompareItemRead(APIModel):
+    id: UUID
+    request_id: str
+    timestamp: datetime
+    model_name: str
+    prompt_version: str | None
+    success: bool
+    error_type: str | None
+    latency_ms: int | None
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    total_cost_usd: Decimal | None
+    structured_output: TraceCompareEvaluationRead | None
+    retrieval: TraceCompareRetrievalRead | None
+    metadata_excerpt_json: dict[str, Any] | None
+
+
+class TraceComparePairRead(APIModel):
+    pair_index: int
+    current_trace: TraceCompareItemRead | None
+    baseline_trace: TraceCompareItemRead | None
+
+
+class TraceComparisonRead(APIModel):
+    incident_id: UUID
+    project_id: UUID
+    metric_name: str | None
+    scope_type: str | None
+    scope_id: str | None
+    current_window_start: datetime | None
+    current_window_end: datetime | None
+    baseline_window_start: datetime | None
+    baseline_window_end: datetime | None
+    current_traces: list[TraceCompareItemRead]
+    baseline_traces: list[TraceCompareItemRead]
+    pairs: list[TraceComparePairRead]

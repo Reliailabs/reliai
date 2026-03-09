@@ -6,6 +6,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.schemas.common import APIModel
+from app.schemas.investigation import RootCauseHintRead
+from app.schemas.trace import TraceCompareItemRead
 
 
 class RegressionListQuery(BaseModel):
@@ -46,3 +48,7 @@ class RegressionRelatedIncidentRead(APIModel):
 
 class RegressionDetailRead(RegressionSnapshotRead):
     related_incident: RegressionRelatedIncidentRead | None
+    root_cause_hints: list[RootCauseHintRead]
+    current_representative_traces: list[TraceCompareItemRead]
+    baseline_representative_traces: list[TraceCompareItemRead]
+    trace_compare_path: str | None

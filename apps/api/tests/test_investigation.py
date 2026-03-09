@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 
 from app.models.regression_snapshot import RegressionSnapshot
-from app.services.incidents import get_incident_representative_traces
+from app.services.incidents import derive_root_cause_hints, get_incident_compare_traces, get_incident_representative_traces
 from .test_api import auth_headers, create_operator, sign_in
 from .test_incidents import _incident_for_type, _seed_success_rate_regression
 
@@ -61,6 +61,32 @@ def test_incident_compare_data_shape(client, db_session, fake_queue):
     assert compare["rule_context"] is not None
     assert compare["current_window_start"] is not None
     assert compare["baseline_window_start"] is not None
+    assert compare["current_representative_traces"]
+    assert compare["baseline_representative_traces"]
+    assert compare["trace_compare_path"] == f"/incidents/{incident.id}/compare"
+
+
+def test_incident_trace_compare_endpoint_is_tenant_safe(client, db_session, fake_queue):
+    owner_session, _, project, _ = _seed_success_rate_regression(client, db_session)
+    incident = _incident_for_type(db_session, project["id"], "success_rate_drop")
+
+    response = client.get(
+        f"/api/v1/incidents/{incident.id}/compare",
+        headers=auth_headers(owner_session),
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["pairs"]
+    assert payload["current_traces"]
+    assert payload["baseline_traces"]
+
+    outsider = create_operator(db_session, email="compare-outsider@beta.test")
+    outsider_session = sign_in(client, email=outsider.email)
+    forbidden = client.get(
+        f"/api/v1/incidents/{incident.id}/compare",
+        headers=auth_headers(outsider_session),
+    )
+    assert forbidden.status_code == 404
 
 
 def test_representative_trace_selection_behavior(client, db_session, fake_queue):
@@ -71,3 +97,39 @@ def test_representative_trace_selection_behavior(client, db_session, fake_queue)
     assert representative_traces
     assert len(representative_traces) <= 5
     assert any(trace.success is False for trace in representative_traces)
+
+
+def test_deterministic_hint_generation(client, db_session, fake_queue):
+    _, _, project, _ = _seed_success_rate_regression(client, db_session)
+    incident = _incident_for_type(db_session, project["id"], "success_rate_drop")
+    current_traces, baseline_traces = get_incident_compare_traces(db_session, incident)
+
+    hints = derive_root_cause_hints(
+        incident=incident,
+        current_traces=current_traces,
+        baseline_traces=baseline_traces,
+    )
+
+    assert hints
+    hint_types = {hint["hint_type"] for hint in hints}
+    assert "failure_cluster" in hint_types or "time_cluster" in hint_types
+
+
+def test_regression_detail_enhanced_payload(client, db_session, fake_queue):
+    owner_session, _, project, _ = _seed_success_rate_regression(client, db_session)
+    incident = _incident_for_type(db_session, project["id"], "success_rate_drop")
+    response = client.get(
+        f"/api/v1/incidents/{incident.id}",
+        headers=auth_headers(owner_session),
+    )
+    regression_id = response.json()["compare"]["regressions"][0]["id"]
+
+    detail = client.get(
+        f"/api/v1/regressions/{regression_id}",
+        headers=auth_headers(owner_session),
+    )
+    assert detail.status_code == 200
+    payload = detail.json()
+    assert payload["current_representative_traces"]
+    assert payload["baseline_representative_traces"]
+    assert payload["trace_compare_path"] == f"/incidents/{incident.id}/compare"

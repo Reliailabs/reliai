@@ -145,8 +145,78 @@ export interface RegressionRelatedIncidentRead {
   updated_at: string;
 }
 
+export interface RootCauseHintRead {
+  hint_type: string;
+  dimension: string;
+  current_value: string | null;
+  baseline_value: string | null;
+  current_count: number | null;
+  baseline_count: number | null;
+  current_share: string | null;
+  baseline_share: string | null;
+  current_metric_value: string | null;
+  baseline_metric_value: string | null;
+  cluster_started_at: string | null;
+  supporting_trace_ids: string[];
+  metadata_json: Record<string, unknown> | null;
+}
+
+export interface TraceCompareEvaluationRead {
+  label: string | null;
+  score: string | null;
+  reason: string | null;
+}
+
+export interface TraceCompareRetrievalRead {
+  retrieval_latency_ms: number | null;
+  source_count: number | null;
+  top_k: number | null;
+}
+
+export interface TraceCompareItemRead {
+  id: string;
+  request_id: string;
+  timestamp: string;
+  model_name: string;
+  prompt_version: string | null;
+  success: boolean;
+  error_type: string | null;
+  latency_ms: number | null;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  total_cost_usd: string | null;
+  structured_output: TraceCompareEvaluationRead | null;
+  retrieval: TraceCompareRetrievalRead | null;
+  metadata_excerpt_json: Record<string, unknown> | null;
+}
+
+export interface TraceComparePairRead {
+  pair_index: number;
+  current_trace: TraceCompareItemRead | null;
+  baseline_trace: TraceCompareItemRead | null;
+}
+
+export interface TraceComparisonRead {
+  incident_id: string;
+  project_id: string;
+  metric_name: string | null;
+  scope_type: string | null;
+  scope_id: string | null;
+  current_window_start: string | null;
+  current_window_end: string | null;
+  baseline_window_start: string | null;
+  baseline_window_end: string | null;
+  current_traces: TraceCompareItemRead[];
+  baseline_traces: TraceCompareItemRead[];
+  pairs: TraceComparePairRead[];
+}
+
 export interface RegressionDetailRead extends RegressionSnapshotRead {
   related_incident: RegressionRelatedIncidentRead | null;
+  root_cause_hints: RootCauseHintRead[];
+  current_representative_traces: TraceCompareItemRead[];
+  baseline_representative_traces: TraceCompareItemRead[];
+  trace_compare_path: string | null;
 }
 
 export interface IncidentTraceSampleRead {
@@ -239,6 +309,9 @@ export interface IncidentDetailRead extends IncidentListItemRead {
     baseline_window_end: string | null;
     regressions: RegressionSnapshotRead[];
     representative_traces: IncidentTraceSampleRead[];
+    current_representative_traces: TraceCompareItemRead[];
+    baseline_representative_traces: TraceCompareItemRead[];
+    root_cause_hints: RootCauseHintRead[];
     rule_context: {
       incident_type: string;
       metric_name: string;
@@ -247,5 +320,6 @@ export interface IncidentDetailRead extends IncidentListItemRead {
       percent_threshold: string | null;
       minimum_sample_size: number;
     } | null;
+    trace_compare_path: string;
   };
 }
