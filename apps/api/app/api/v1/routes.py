@@ -7,8 +7,10 @@ from app.api.dependencies import require_operator
 from app.db.session import get_db
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.auth import AuthSessionResponse, AuthSignInRequest, OperatorMembershipRead, OperatorRead
+from app.schemas.incident import IncidentDetailRead, IncidentListQuery, IncidentListResponse, IncidentListItemRead, IncidentTraceSampleRead
 from app.schemas.organization import OrganizationCreate, OrganizationRead
 from app.schemas.project import ProjectCreate, ProjectRead
+from app.schemas.regression import RegressionListQuery, RegressionListResponse, RegressionSnapshotRead
 from app.schemas.trace import (
     TraceAcceptedResponse,
     TraceDetailRead,
@@ -23,12 +25,32 @@ from app.services.auth import (
     revoke_session,
     sign_in_operator,
 )
+from app.services.incidents import get_incident_detail, get_incident_regressions, get_incident_traces, list_incidents
+from app.services.regressions import list_project_regressions
 from app.services.authorization import require_organization_membership, require_project_access
 from app.services.organizations import create_organization, get_organization
 from app.services.projects import create_project
 from app.services.traces import get_trace_detail, ingest_trace, list_traces
 
 router = APIRouter()
+
+
+def _incident_list_item(incident) -> IncidentListItemRead:
+    return IncidentListItemRead(
+        id=incident.id,
+        organization_id=incident.organization_id,
+        project_id=incident.project_id,
+        project_name=incident.project.name,
+        incident_type=incident.incident_type,
+        severity=incident.severity,
+        title=incident.title,
+        status=incident.status,
+        fingerprint=incident.fingerprint,
+        summary_json=incident.summary_json,
+        started_at=incident.started_at,
+        updated_at=incident.updated_at,
+        resolved_at=incident.resolved_at,
+    )
 
 
 @router.get("/health")
@@ -120,6 +142,46 @@ def get_project_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> ProjectRead:
     return require_project_access(db, operator, project_id)
+
+
+@router.get("/incidents", response_model=IncidentListResponse)
+def list_incidents_endpoint(
+    query: IncidentListQuery = Depends(),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentListResponse:
+    incidents = list_incidents(db, operator, query)
+    return IncidentListResponse(items=[_incident_list_item(incident) for incident in incidents])
+
+
+@router.get("/incidents/{incident_id}", response_model=IncidentDetailRead)
+def get_incident_detail_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentDetailRead:
+    incident = get_incident_detail(db, operator, incident_id)
+    regressions = get_incident_regressions(db, incident)
+    traces = get_incident_traces(db, incident)
+    item = _incident_list_item(incident)
+    return IncidentDetailRead(
+        **item.model_dump(),
+        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
+        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+    )
+
+
+@router.get("/projects/{project_id}/regressions", response_model=RegressionListResponse)
+def list_project_regressions_endpoint(
+    project_id: UUID,
+    query: RegressionListQuery = Depends(),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> RegressionListResponse:
+    regressions = list_project_regressions(db, operator, project_id=project_id, query=query)
+    return RegressionListResponse(
+        items=[RegressionSnapshotRead.model_validate(regression) for regression in regressions]
+    )
 
 
 @router.get("/traces", response_model=TraceListResponse)

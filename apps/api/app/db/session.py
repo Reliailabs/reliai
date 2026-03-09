@@ -1,7 +1,6 @@
 from collections.abc import Generator
 
 from redis import Redis
-from rq import Queue
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -26,5 +25,7 @@ def get_redis() -> Redis:
     return Redis.from_url(settings.redis_url, decode_responses=True)
 
 
-def get_queue() -> Queue:
+def get_queue():
+    from rq import Queue
+
     return Queue(name=settings.rq_queue_name, connection=get_redis())

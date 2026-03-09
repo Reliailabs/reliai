@@ -92,3 +92,58 @@ export interface TraceDetailRead {
   retrieval_span: RetrievalSpanRead | null;
   evaluations: EvaluationRead[];
 }
+
+export interface RegressionSnapshotRead {
+  id: string;
+  organization_id: string;
+  project_id: string;
+  metric_name: string;
+  current_value: string;
+  baseline_value: string;
+  delta_absolute: string;
+  delta_percent: string | null;
+  scope_type: string;
+  scope_id: string;
+  window_minutes: number;
+  detected_at: string;
+  metadata_json: Record<string, unknown> | null;
+}
+
+export interface RegressionListResponse {
+  items: RegressionSnapshotRead[];
+}
+
+export interface IncidentTraceSampleRead {
+  id: string;
+  request_id: string;
+  timestamp: string;
+  success: boolean;
+  error_type: string | null;
+  latency_ms: number | null;
+  total_cost_usd: string | null;
+}
+
+export interface IncidentListItemRead {
+  id: string;
+  organization_id: string;
+  project_id: string;
+  project_name: string;
+  incident_type: string;
+  severity: "critical" | "high" | "medium" | "low";
+  title: string;
+  status: "open" | "resolved";
+  fingerprint: string;
+  summary_json: Record<string, unknown>;
+  started_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+}
+
+export interface IncidentListResponse {
+  items: IncidentListItemRead[];
+}
+
+export interface IncidentDetailRead extends IncidentListItemRead {
+  regressions: RegressionSnapshotRead[];
+  traces: IncidentTraceSampleRead[];
+}

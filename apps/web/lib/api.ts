@@ -3,8 +3,11 @@ import "server-only";
 import { cookies } from "next/headers";
 
 import type {
+  IncidentDetailRead,
+  IncidentListResponse,
   OrganizationRead,
   ProjectRead,
+  RegressionListResponse,
   TraceDetailRead,
   TraceListResponse
 } from "@reliai/types";
@@ -81,4 +84,27 @@ export async function listTraces(filters: TraceFilters = {}) {
 
 export async function getTraceDetail(traceId: string) {
   return request<TraceDetailRead>(`/api/v1/traces/${traceId}`);
+}
+
+export async function listIncidents(filters: {
+  projectId?: string;
+  status?: "open" | "resolved";
+  limit?: number;
+} = {}) {
+  const params = new URLSearchParams();
+  if (filters.projectId) params.set("project_id", filters.projectId);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.limit) params.set("limit", String(filters.limit));
+  const query = params.toString();
+  return request<IncidentListResponse>(`/api/v1/incidents${query ? `?${query}` : ""}`);
+}
+
+export async function getIncidentDetail(incidentId: string) {
+  return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}`);
+}
+
+export async function listProjectRegressions(projectId: string, limit = 25) {
+  return request<RegressionListResponse>(
+    `/api/v1/projects/${projectId}/regressions?limit=${encodeURIComponent(String(limit))}`
+  );
 }

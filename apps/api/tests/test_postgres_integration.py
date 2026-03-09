@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 from collections.abc import Generator
@@ -13,6 +14,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.settings import get_settings
 from app.db.session import get_db
 from app.main import app
+from app.models.project import Project
+from app.models.trace import Trace
+from app.services.evaluations import run_structured_output_validity_evaluation
+from app.services.incidents import sync_incidents_for_scope
+from app.services.regressions import compute_regressions_for_scope
+from app.services.rollups import build_scopes
 from app.services.auth import create_operator_user
 
 
@@ -140,6 +147,28 @@ def _create_api_key(client: TestClient, session_payload: dict, project_id: str) 
     return response.json()
 
 
+def _run_signal_pipeline(postgres_session: Session, trace_id: str) -> None:
+    trace_uuid = uuid.UUID(trace_id)
+    evaluation = run_structured_output_validity_evaluation(postgres_session, trace_uuid)
+    assert evaluation is not None
+    trace = postgres_session.get(Trace, trace_uuid)
+    assert trace is not None
+    project = postgres_session.get(Project, trace.project_id)
+    assert project is not None
+    for scope in build_scopes(trace):
+        result = compute_regressions_for_scope(
+            postgres_session, scope=scope, anchor_time=trace.timestamp
+        )
+        sync_incidents_for_scope(
+            postgres_session,
+            scope=scope,
+            project=project,
+            regressions=result.snapshots,
+            detected_at=trace.timestamp,
+        )
+    postgres_session.commit()
+
+
 def test_postgres_migrations_auth_and_trace_queries(
     postgres_client: TestClient,
     postgres_session: Session,
@@ -247,3 +276,88 @@ def test_postgres_migrations_auth_and_trace_queries(
         headers=_auth_headers(owner_two_session),
     )
     assert forbidden_detail.status_code == 404
+
+
+def test_postgres_incident_workflow_core_path(
+    postgres_client: TestClient,
+    postgres_session: Session,
+    fake_queue,
+):
+    owner = create_operator_user(
+        postgres_session,
+        email="incident-owner@acme.test",
+        password="reliai-test-password",
+    )
+    postgres_session.commit()
+    postgres_session.refresh(owner)
+
+    session_payload = _sign_in(postgres_client, email=owner.email)
+    organization = _create_organization(
+        postgres_client,
+        session_payload,
+        name="Incident Org",
+        slug="incident-org",
+    )
+    project = _create_project(postgres_client, session_payload, organization["id"])
+    api_key = _create_api_key(postgres_client, session_payload, project["id"])
+
+    baseline_start = datetime.datetime(2026, 3, 9, 9, 0, 30, tzinfo=datetime.timezone.utc)
+    current_start = datetime.datetime(2026, 3, 9, 10, 0, 30, tzinfo=datetime.timezone.utc)
+
+    for index in range(10):
+        response = postgres_client.post(
+            "/api/v1/ingest/traces",
+            headers={"x-api-key": api_key["api_key"]},
+            json={
+                "timestamp": (baseline_start + datetime.timedelta(minutes=index * 5)).isoformat(),
+                "request_id": f"pg_baseline_{index}",
+                "model_name": "gpt-4.1-mini",
+                "prompt_version": "v9",
+                "output_text": "{\"ok\":true}",
+                "success": True,
+                "latency_ms": 180,
+                "total_cost_usd": "0.010000",
+                "metadata_json": {"expected_output_format": "json"},
+            },
+        )
+        assert response.status_code == 202
+        _run_signal_pipeline(postgres_session, response.json()["trace_id"])
+
+    final_trace_id = None
+    for index in range(10):
+        response = postgres_client.post(
+            "/api/v1/ingest/traces",
+            headers={"x-api-key": api_key["api_key"]},
+            json={
+                "timestamp": (current_start + datetime.timedelta(minutes=index * 5)).isoformat(),
+                "request_id": f"pg_current_{index}",
+                "model_name": "gpt-4.1-mini",
+                "prompt_version": "v9",
+                "output_text": "{\"ok\":false}" if index == 0 else "not-json",
+                "success": index == 0,
+                "error_type": None if index == 0 else "provider_error",
+                "latency_ms": 220 if index == 0 else 1100,
+                "total_cost_usd": "0.014000" if index == 0 else "0.050000",
+                "metadata_json": {"expected_output_format": "json"},
+            },
+        )
+        assert response.status_code == 202
+        final_trace_id = response.json()["trace_id"]
+        _run_signal_pipeline(postgres_session, final_trace_id)
+
+    incidents_response = postgres_client.get(
+        "/api/v1/incidents?status=open",
+        headers=_auth_headers(session_payload),
+    )
+    assert incidents_response.status_code == 200
+    incidents = incidents_response.json()["items"]
+    assert any(item["incident_type"] == "success_rate_drop" for item in incidents)
+
+    incident_id = incidents[0]["id"]
+    detail_response = postgres_client.get(
+        f"/api/v1/incidents/{incident_id}",
+        headers=_auth_headers(session_payload),
+    )
+    assert detail_response.status_code == 200
+    assert detail_response.json()["regressions"]
+    assert detail_response.json()["traces"]

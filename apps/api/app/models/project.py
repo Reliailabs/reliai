@@ -32,3 +32,6 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     api_keys = relationship("APIKey", back_populates="project")
     traces = relationship("Trace", back_populates="project")
     evaluations = relationship("Evaluation", back_populates="project")
+    evaluation_rollups = relationship("EvaluationRollup", back_populates="project")
+    regression_snapshots = relationship("RegressionSnapshot", back_populates="project")
+    incidents = relationship("Incident", back_populates="project")

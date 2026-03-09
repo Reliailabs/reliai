@@ -11,7 +11,7 @@ const navItems = [
   { href: "/traces" as Route, label: "Traces", icon: ScanSearch },
   { href: "/onboarding" as Route, label: "Onboarding", icon: KeyRound },
   { href: "/dashboard" as Route, label: "Projects", icon: FolderKanban },
-  { href: "/dashboard" as Route, label: "Incidents", icon: ShieldAlert }
+  { href: "/incidents" as Route, label: "Incidents", icon: ShieldAlert }
 ];
 
 export async function AppShell({
