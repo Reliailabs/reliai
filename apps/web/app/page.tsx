@@ -11,8 +11,8 @@ export default function HomePage() {
           Detect, explain, and alert on AI production failures.
         </h1>
         <p className="mt-4 max-w-xl text-base leading-7 text-steel">
-          Milestone 1 provides the operator shell, project setup path, API key generation, and
-          trace ingestion foundation.
+          Reliai now includes tenant-scoped operator auth, a trace explorer, retrieval metadata,
+          and the first evaluation scaffold on top of the ingest foundation.
         </p>
         <div className="mt-8 flex gap-3">
           <Button asChild>

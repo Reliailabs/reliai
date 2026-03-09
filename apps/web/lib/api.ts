@@ -1,3 +1,7 @@
+import "server-only";
+
+import { cookies } from "next/headers";
+
 import type {
   OrganizationRead,
   ProjectRead,
@@ -6,12 +10,15 @@ import type {
 } from "@reliai/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const SESSION_COOKIE_NAME = "reliai_session";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
       ...(init?.headers ?? {})
     },
     cache: "no-store"

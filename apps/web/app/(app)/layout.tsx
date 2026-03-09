@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/app-shell";
+import { requireOperatorSession } from "@/lib/auth";
 
-export default function ProductLayout({ children }: { children: ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+export default async function ProductLayout({ children }: { children: ReactNode }) {
+  const session = await requireOperatorSession();
+  return <AppShell operatorEmail={session.operator.email}>{children}</AppShell>;
 }

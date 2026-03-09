@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Activity, FolderKanban, KeyRound, ScanSearch, ShieldAlert } from "lucide-react";
+
+import { signOut } from "@/lib/auth";
 
 const navItems = [
   { href: "/dashboard" as Route, label: "Overview", icon: Activity },
@@ -11,7 +14,19 @@ const navItems = [
   { href: "/dashboard" as Route, label: "Incidents", icon: ShieldAlert }
 ];
 
-export function AppShell({ children }: { children: ReactNode }) {
+export async function AppShell({
+  children,
+  operatorEmail
+}: {
+  children: ReactNode;
+  operatorEmail: string;
+}) {
+  async function signOutAction() {
+    "use server";
+    await signOut();
+    redirect("/sign-in");
+  }
+
   return (
     <div className="min-h-screen bg-[#f3f4f6] text-ink">
       <div className="mx-auto grid min-h-screen max-w-[1400px] grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -35,6 +50,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
+          <div className="mt-8 rounded-lg border border-line bg-surface px-3 py-3 text-sm text-steel">
+            <p className="font-medium text-ink">{operatorEmail}</p>
+            <form action={signOutAction} className="mt-3">
+              <button className="text-sm text-steel underline-offset-4 hover:text-ink hover:underline">
+                Sign out
+              </button>
+            </form>
+          </div>
         </aside>
         <main className="px-4 py-4 lg:px-8 lg:py-6">{children}</main>
       </div>

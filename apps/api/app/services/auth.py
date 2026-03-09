@@ -83,6 +83,12 @@ def sign_in_operator(db: Session, payload: AuthSignInRequest) -> tuple[OperatorU
     return operator, session, plaintext_token
 
 
+def get_operator_memberships(db: Session, operator_user_id: UUID) -> list[OrganizationMember]:
+    return db.scalars(
+        select(OrganizationMember).where(OrganizationMember.auth_user_id == str(operator_user_id))
+    ).all()
+
+
 def get_operator_context(db: Session, token: str) -> OperatorContext:
     token_hash = hash_session_token(token)
     session = db.scalar(
@@ -100,9 +106,7 @@ def get_operator_context(db: Session, token: str) -> OperatorContext:
     if operator is None or not operator.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
 
-    memberships = db.scalars(
-        select(OrganizationMember).where(OrganizationMember.auth_user_id == str(operator.id))
-    ).all()
+    memberships = get_operator_memberships(db, operator.id)
     session.last_used_at = datetime.now(timezone.utc)
     db.add(session)
     db.commit()

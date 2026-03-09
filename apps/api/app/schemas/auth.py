@@ -1,11 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
 class AuthSignInRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=255)
     password: str = Field(min_length=8, max_length=128)
 
 
@@ -16,7 +16,7 @@ class OperatorMembershipRead(BaseModel):
 
 class OperatorRead(BaseModel):
     id: UUID
-    email: EmailStr
+    email: str
 
 
 class AuthSessionResponse(BaseModel):
