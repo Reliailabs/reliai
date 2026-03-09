@@ -7,8 +7,9 @@ PNPM ?= pnpm
 export DATABASE_URL
 export REDIS_URL
 export API_KEY_HASH_SECRET
+export AUTH_SESSION_HASH_SECRET
 
-.PHONY: install dev worker test lint format db-up db-migrate seed
+.PHONY: install dev worker test test-integration lint format db-up db-migrate seed
 
 install:
 	test -d .venv || $(PYTHON_BOOTSTRAP) -m venv .venv
@@ -23,6 +24,9 @@ worker:
 
 test:
 	cd apps/api && $(PYTHON) -m pytest tests
+
+test-integration:
+	cd apps/api && $(PYTHON) -m pytest tests/test_postgres_integration.py
 
 lint:
 	cd apps/api && $(PYTHON) -m ruff check app tests

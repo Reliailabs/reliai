@@ -17,6 +17,12 @@ from app.models.organization_member import OrganizationMember
 from app.schemas.auth import AuthSignInRequest
 
 
+def _current_time_like(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(timezone.utc)
+
+
 def _hash_password(password: str, *, salt: bytes | None = None) -> str:
     salt = salt or secrets.token_bytes(16)
     derived = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 600_000)
@@ -27,7 +33,10 @@ def _hash_password(password: str, *, salt: bytes | None = None) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    algorithm, iterations, salt_b64, digest_b64 = password_hash.split("$", 3)
+    try:
+        algorithm, iterations, salt_b64, digest_b64 = password_hash.split("$", 3)
+    except ValueError:
+        return False
     if algorithm != "pbkdf2_sha256":
         return False
     salt = base64.urlsafe_b64decode(salt_b64.encode("utf-8"))
@@ -58,7 +67,7 @@ class OperatorContext:
 
 
 def create_operator_user(db: Session, *, email: str, password: str) -> OperatorUser:
-    operator = OperatorUser(email=email, password_hash=_hash_password(password))
+    operator = OperatorUser(email=email.strip().lower(), password_hash=_hash_password(password))
     db.add(operator)
     db.flush()
     return operator
@@ -99,7 +108,7 @@ def get_operator_context(db: Session, token: str) -> OperatorContext:
     )
     if session is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
-    if session.expires_at <= datetime.now(timezone.utc):
+    if session.expires_at <= _current_time_like(session.expires_at):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
 
     operator = db.get(OperatorUser, session.operator_user_id)

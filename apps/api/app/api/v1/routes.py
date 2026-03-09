@@ -25,7 +25,7 @@ from app.services.auth import (
 )
 from app.services.authorization import require_organization_membership, require_project_access
 from app.services.organizations import create_organization, get_organization
-from app.services.projects import create_project, get_project
+from app.services.projects import create_project
 from app.services.traces import get_trace_detail, ingest_trace, list_traces
 
 router = APIRouter()
@@ -38,8 +38,12 @@ def versioned_health() -> dict[str, str]:
 
 @router.post("/organizations", response_model=OrganizationRead, status_code=status.HTTP_201_CREATED)
 def create_organization_endpoint(
-    payload: OrganizationCreate, db: Session = Depends(get_db)
+    payload: OrganizationCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
 ) -> OrganizationRead:
+    if payload.owner_auth_user_id != str(operator.operator.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return create_organization(db, payload)
 
 

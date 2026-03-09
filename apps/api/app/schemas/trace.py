@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -86,7 +87,9 @@ class TraceIngestRequest(BaseModel):
         if self.metadata_json is not None and len(self.metadata_json) > 50:
             raise ValueError("metadata_json supports at most 50 top-level keys")
         if self.metadata_json is not None:
-            metadata_size = len(str(self.metadata_json).encode("utf-8"))
+            metadata_size = len(
+                json.dumps(self.metadata_json, separators=(",", ":"), sort_keys=True).encode("utf-8")
+            )
             if metadata_size > settings.trace_metadata_max_bytes:
                 raise ValueError("metadata_json exceeds maximum size")
         if self.success and self.error_type is not None:

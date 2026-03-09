@@ -53,7 +53,7 @@ export async function signIn(email: string, password: string) {
   const session = (await response.json()) as OperatorSession & { session_token: string };
   (await cookies()).set(SESSION_COOKIE_NAME, session.session_token, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/"
   });
