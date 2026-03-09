@@ -2,6 +2,7 @@ import datetime
 import os
 import uuid
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from alembic import command
@@ -15,18 +16,20 @@ from app.core.settings import get_settings
 from app.db.session import get_db
 from app.main import app
 from app.models.incident import Incident
+from app.models.incident_event import IncidentEvent
 from app.models.project import Project
 from app.models.trace import Trace
 from app.services.alerts import (
     ALERT_STATUS_PENDING,
     create_alert_deliveries_for_open_incidents,
+    deliver_alert_delivery,
 )
 from app.services.evaluations import run_structured_output_validity_evaluation
 from app.services.incidents import sync_incidents_for_scope
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
 from app.services.auth import create_operator_user
-from app.workers.alerts import run_alert_delivery
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 
 def _admin_database_url() -> str:
@@ -57,8 +60,9 @@ def postgres_database_url() -> Generator[str, None, None]:
     get_settings.cache_clear()
     os.environ["DATABASE_URL"] = database_url
 
-    alembic_config = Config("alembic.ini")
+    alembic_config = Config("apps/api/alembic.ini")
     alembic_config.set_main_option("sqlalchemy.url", database_url)
+    alembic_config.set_main_option("script_location", str(ROOT_DIR / "infra/db/migrations"))
     command.upgrade(alembic_config, "head")
 
     try:
@@ -367,6 +371,7 @@ def test_postgres_incident_workflow_core_path(
     assert detail_response.status_code == 200
     assert detail_response.json()["regressions"]
     assert detail_response.json()["traces"]
+    assert detail_response.json()["events"]
 
 
 def test_postgres_alert_workflow_core_path(
@@ -451,15 +456,14 @@ def test_postgres_alert_workflow_core_path(
             assert response.status_code == 202
             _run_signal_pipeline(postgres_session, response.json()["trace_id"])
 
-        incident = postgres_session.get(Incident, uuid.UUID(incident_id))
-        assert incident is not None
-
         incidents_response = postgres_client.get(
             "/api/v1/incidents?status=open",
             headers=_auth_headers(session_payload),
         )
         assert incidents_response.status_code == 200
         incident_id = incidents_response.json()["items"][0]["id"]
+        incident = postgres_session.get(Incident, uuid.UUID(incident_id))
+        assert incident is not None
 
         deliveries = create_alert_deliveries_for_open_incidents(
             postgres_session,
@@ -469,7 +473,7 @@ def test_postgres_alert_workflow_core_path(
 
         for delivery in deliveries:
             if delivery.delivery_status == ALERT_STATUS_PENDING:
-                run_alert_delivery(str(delivery.id))
+                deliver_alert_delivery(postgres_session, delivery.id)
 
         alerts_response = postgres_client.get(
             f"/api/v1/incidents/{incident_id}/alerts",
@@ -478,9 +482,144 @@ def test_postgres_alert_workflow_core_path(
         assert alerts_response.status_code == 200
         assert alerts_response.json()["items"]
         assert alerts_response.json()["items"][0]["delivery_status"] == "sent"
+
+        resolve_response = postgres_client.post(
+            f"/api/v1/incidents/{incident_id}/resolve",
+            headers=_auth_headers(session_payload),
+        )
+        assert resolve_response.status_code == 200
+        assert resolve_response.json()["status"] == "resolved"
+
+        reopen_response = postgres_client.post(
+            f"/api/v1/incidents/{incident_id}/reopen",
+            headers=_auth_headers(session_payload),
+        )
+        assert reopen_response.status_code == 200
+        assert reopen_response.json()["status"] == "open"
+
+        events_response = postgres_client.get(
+            f"/api/v1/incidents/{incident_id}/events",
+            headers=_auth_headers(session_payload),
+        )
+        assert events_response.status_code == 200
+        event_types = [item["event_type"] for item in events_response.json()["items"]]
+        assert "resolved" in event_types
+        assert "reopened" in event_types
+
+        persisted_events = postgres_session.query(IncidentEvent).filter(
+            IncidentEvent.incident_id == uuid.UUID(incident_id)
+        ).all()
+        assert persisted_events
     finally:
         if previous_webhook is None:
             os.environ.pop("SLACK_WEBHOOK_DEFAULT", None)
         else:
             os.environ["SLACK_WEBHOOK_DEFAULT"] = previous_webhook
         get_settings.cache_clear()
+
+
+def test_postgres_settings_and_filtered_incident_path(
+    postgres_client: TestClient,
+    postgres_session: Session,
+    fake_queue,
+):
+    owner = create_operator_user(
+        postgres_session,
+        email="settings-filter-owner@acme.test",
+        password="reliai-test-password",
+    )
+    postgres_session.commit()
+    postgres_session.refresh(owner)
+
+    session_payload = _sign_in(postgres_client, email=owner.email)
+    organization = _create_organization(
+        postgres_client,
+        session_payload,
+        name="Settings Filter Org",
+        slug="settings-filter-org",
+    )
+
+    target_response = postgres_client.put(
+        f"/api/v1/organizations/{organization['id']}/alert-target",
+        headers=_auth_headers(session_payload),
+        json={
+            "channel_target": "org:postgres-slack",
+            "slack_webhook_url": "https://hooks.slack.test/services/postgres",
+            "is_active": True,
+        },
+    )
+    assert target_response.status_code == 200
+    assert target_response.json()["has_secret"] is True
+    assert "slack_webhook_url" not in target_response.json()
+
+    project = _create_project(postgres_client, session_payload, organization["id"])
+    api_key = _create_api_key(postgres_client, session_payload, project["id"])
+
+    baseline_start = datetime.datetime(2026, 3, 9, 9, 0, 30, tzinfo=datetime.timezone.utc)
+    current_start = datetime.datetime(2026, 3, 9, 10, 0, 30, tzinfo=datetime.timezone.utc)
+
+    for index in range(10):
+        response = postgres_client.post(
+            "/api/v1/ingest/traces",
+            headers={"x-api-key": api_key["api_key"]},
+            json={
+                "timestamp": (baseline_start + datetime.timedelta(minutes=index * 5)).isoformat(),
+                "request_id": f"pg_settings_baseline_{index}",
+                "model_name": "gpt-4.1-mini",
+                "prompt_version": "v13",
+                "output_text": "{\"ok\":true}",
+                "success": True,
+                "latency_ms": 180,
+                "total_cost_usd": "0.010000",
+                "metadata_json": {"expected_output_format": "json"},
+            },
+        )
+        assert response.status_code == 202
+        _run_signal_pipeline(postgres_session, response.json()["trace_id"])
+
+    for index in range(10):
+        response = postgres_client.post(
+            "/api/v1/ingest/traces",
+            headers={"x-api-key": api_key["api_key"]},
+            json={
+                "timestamp": (current_start + datetime.timedelta(minutes=index * 5)).isoformat(),
+                "request_id": f"pg_settings_current_{index}",
+                "model_name": "gpt-4.1-mini",
+                "prompt_version": "v13",
+                "output_text": "{\"ok\":false}" if index == 0 else "not-json",
+                "success": index == 0,
+                "error_type": None if index == 0 else "provider_error",
+                "latency_ms": 200 if index == 0 else 1200,
+                "total_cost_usd": "0.014000" if index == 0 else "0.050000",
+                "metadata_json": {"expected_output_format": "json"},
+            },
+        )
+        assert response.status_code == 202
+        _run_signal_pipeline(postgres_session, response.json()["trace_id"])
+
+    incidents_response = postgres_client.get(
+        f"/api/v1/incidents?project_id={project['id']}&severity=critical&date_from=2026-03-09&date_to=2026-03-09",
+        headers=_auth_headers(session_payload),
+    )
+    assert incidents_response.status_code == 200
+    incidents = incidents_response.json()["items"]
+    assert incidents
+    assert all(item["project_id"] == project["id"] for item in incidents)
+    assert all(item["severity"] == "critical" for item in incidents)
+
+    incident_id = incidents[0]["id"]
+    incident_detail = postgres_client.get(
+        f"/api/v1/incidents/{incident_id}",
+        headers=_auth_headers(session_payload),
+    )
+    assert incident_detail.status_code == 200
+    assert incident_detail.json()["compare"]["regressions"]
+    assert incident_detail.json()["compare"]["representative_traces"]
+
+    regression_id = incident_detail.json()["compare"]["regressions"][0]["id"]
+    regression_detail = postgres_client.get(
+        f"/api/v1/regressions/{regression_id}",
+        headers=_auth_headers(session_payload),
+    )
+    assert regression_detail.status_code == 200
+    assert regression_detail.json()["related_incident"] is not None

@@ -1,10 +1,14 @@
+from sqlalchemy import select
+
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.organization import Organization
 from app.models.project import Project
-from app.schemas.project import ProjectCreate
+from app.schemas.project import ProjectCreate, ProjectListQuery
+from app.services.auth import OperatorContext
+from app.services.authorization import require_organization_membership
 from app.services.onboarding import mark_project_created
 from app.services.utils import slugify
 
@@ -44,3 +48,14 @@ def get_project(db: Session, project_id) -> Project:
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     return project
+
+
+def list_projects(db: Session, operator: OperatorContext, query: ProjectListQuery) -> list[Project]:
+    if query.organization_id is not None:
+        require_organization_membership(operator, query.organization_id)
+
+    statement = select(Project).where(Project.organization_id.in_(operator.organization_ids))
+    if query.organization_id is not None:
+        statement = statement.where(Project.organization_id == query.organization_id)
+    statement = statement.order_by(Project.name).limit(query.limit)
+    return db.scalars(statement).all()

@@ -30,3 +30,8 @@ class OperatorUser(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         foreign_keys="Incident.owner_operator_user_id",
         back_populates="owner_operator",
     )
+    incident_events = relationship(
+        "IncidentEvent",
+        foreign_keys="IncidentEvent.actor_operator_user_id",
+        back_populates="actor_operator_user",
+    )

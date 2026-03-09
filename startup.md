@@ -41,3 +41,39 @@ For API-level testing:
 - The seeded project id is `cb2dfd2d-69af-4545-a2e8-131bf6e491b8`
 
 If you want actual traces/regressions/incidents to appear, the seed only gives you the operator, org, project, and API key. You still need to ingest traces. I can give you a ready-to-run `curl` that creates a trace and lets you watch it flow into evaluations and incidents.
+
+pnpm --filter web dev
+
+From [/Users/robert/Documents/Reliai](/Users/robert/Documents/Reliai), run these in separate terminals:
+
+```bash
+cd /Users/robert/Documents/Reliai/apps/api
+PYTHONPATH=/Users/robert/Documents/Reliai/apps/api /Users/robert/Documents/Reliai/.venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+```bash
+cd /Users/robert/Documents/Reliai
+pnpm --filter web dev
+```
+
+```bash
+cd /Users/robert/Documents/Reliai
+PYTHONPATH=/Users/robert/Documents/Reliai/apps/api /Users/robert/Documents/Reliai/.venv/bin/rq worker default
+```
+
+Then open:
+
+- [http://localhost:3000](http://localhost:3000)
+- [http://localhost:8000/docs](http://localhost:8000/docs)
+
+If you have not already migrated and seeded the DB, run these first:
+
+```bash
+cd /Users/robert/Documents/Reliai/apps/api
+PYTHONPATH=/Users/robert/Documents/Reliai/apps/api /Users/robert/Documents/Reliai/.venv/bin/alembic -c alembic.ini upgrade head
+```
+
+```bash
+cd /Users/robert/Documents/Reliai/apps/api
+PYTHONPATH=/Users/robert/Documents/Reliai/apps/api /Users/robert/Documents/Reliai/.venv/bin/python -m app.scripts.seed
+```

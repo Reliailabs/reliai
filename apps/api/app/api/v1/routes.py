@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
@@ -9,16 +10,30 @@ from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.auth import AuthSessionResponse, AuthSignInRequest, OperatorMembershipRead, OperatorRead
 from app.schemas.incident import (
+    IncidentCompareRead,
     IncidentDetailRead,
     IncidentListItemRead,
     IncidentListQuery,
     IncidentListResponse,
     IncidentOwnerAssignRequest,
+    IncidentRuleContextRead,
     IncidentTraceSampleRead,
 )
+from app.schemas.incident_event import IncidentEventListResponse, IncidentEventRead
 from app.schemas.organization import OrganizationCreate, OrganizationRead
-from app.schemas.project import ProjectCreate, ProjectRead
-from app.schemas.regression import RegressionListQuery, RegressionListResponse, RegressionSnapshotRead
+from app.schemas.organization_alert_target import (
+    OrganizationAlertTargetRead,
+    OrganizationAlertTargetTestResponse,
+    OrganizationAlertTargetUpsertRequest,
+)
+from app.schemas.project import ProjectCreate, ProjectListQuery, ProjectListResponse, ProjectRead
+from app.schemas.regression import (
+    RegressionDetailRead,
+    RegressionListQuery,
+    RegressionListResponse,
+    RegressionRelatedIncidentRead,
+    RegressionSnapshotRead,
+)
 from app.schemas.trace import (
     TraceAcceptedResponse,
     TraceDetailRead,
@@ -38,14 +53,26 @@ from app.services.incidents import (
     assign_incident_owner,
     get_incident_alert_deliveries,
     get_incident_detail,
+    get_incident_events,
     get_incident_regressions,
+    get_incident_representative_traces,
+    get_incident_rule,
     get_incident_traces,
     list_incidents,
+    reopen_incident,
+    resolve_incident,
 )
-from app.services.regressions import list_project_regressions
+from app.services.regressions import get_regression_detail, list_project_regressions
 from app.services.authorization import require_organization_membership, require_project_access
 from app.services.organizations import create_organization, get_organization
-from app.services.projects import create_project
+from app.services.organization_alert_targets import (
+    get_org_alert_target,
+    org_alert_target_read_model,
+    set_org_alert_target_enabled,
+    test_org_alert_target,
+    upsert_org_alert_target,
+)
+from app.services.projects import create_project, list_projects
 from app.services.traces import get_trace_detail, ingest_trace, list_traces
 
 router = APIRouter()
@@ -75,6 +102,45 @@ def _incident_list_item(incident) -> IncidentListItemRead:
         owner_operator_email=incident.owner_operator.email if incident.owner_operator is not None else None,
         latest_alert_delivery=AlertDeliveryRead.model_validate(incident.latest_alert_delivery)
         if getattr(incident, "latest_alert_delivery", None) is not None
+        else None,
+    )
+
+
+def _incident_event_item(event) -> IncidentEventRead:
+    return IncidentEventRead(
+        id=event.id,
+        incident_id=event.incident_id,
+        event_type=event.event_type,
+        actor_operator_user_id=event.actor_operator_user_id,
+        actor_operator_user_email=event.actor_operator_user.email
+        if event.actor_operator_user is not None
+        else None,
+        metadata_json=event.metadata_json,
+        created_at=event.created_at,
+    )
+
+
+def _incident_compare_item(incident, regressions, representative_traces) -> IncidentCompareRead:
+    summary = incident.summary_json or {}
+    rule = get_incident_rule(incident.incident_type)
+    return IncidentCompareRead(
+        current_window_start=summary.get("current_window_start"),
+        current_window_end=summary.get("current_window_end"),
+        baseline_window_start=summary.get("baseline_window_start"),
+        baseline_window_end=summary.get("baseline_window_end"),
+        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
+        representative_traces=[
+            IncidentTraceSampleRead.model_validate(trace) for trace in representative_traces
+        ],
+        rule_context=IncidentRuleContextRead(
+            incident_type=rule.incident_type,
+            metric_name=rule.metric_name,
+            comparator=rule.comparator,
+            absolute_threshold=rule.absolute_threshold,
+            percent_threshold=rule.percent_threshold,
+            minimum_sample_size=rule.minimum_sample_size,
+        )
+        if rule is not None
         else None,
     )
 
@@ -146,6 +212,81 @@ def get_organization_endpoint(
     return get_organization(db, organization_id)
 
 
+@router.get(
+    "/organizations/{organization_id}/alert-target",
+    response_model=OrganizationAlertTargetRead,
+)
+def get_org_alert_target_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationAlertTargetRead:
+    require_organization_membership(operator, organization_id)
+    target = get_org_alert_target(db, organization_id)
+    return OrganizationAlertTargetRead(**org_alert_target_read_model(target))
+
+
+@router.put(
+    "/organizations/{organization_id}/alert-target",
+    response_model=OrganizationAlertTargetRead,
+)
+def upsert_org_alert_target_endpoint(
+    organization_id: UUID,
+    payload: OrganizationAlertTargetUpsertRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationAlertTargetRead:
+    require_organization_membership(operator, organization_id)
+    target = upsert_org_alert_target(db, organization_id=organization_id, payload=payload)
+    return OrganizationAlertTargetRead(**org_alert_target_read_model(target))
+
+
+@router.post(
+    "/organizations/{organization_id}/alert-target/enable",
+    response_model=OrganizationAlertTargetRead,
+)
+def enable_org_alert_target_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationAlertTargetRead:
+    require_organization_membership(operator, organization_id)
+    target = set_org_alert_target_enabled(db, organization_id=organization_id, enabled=True)
+    return OrganizationAlertTargetRead(**org_alert_target_read_model(target))
+
+
+@router.post(
+    "/organizations/{organization_id}/alert-target/disable",
+    response_model=OrganizationAlertTargetRead,
+)
+def disable_org_alert_target_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationAlertTargetRead:
+    require_organization_membership(operator, organization_id)
+    target = set_org_alert_target_enabled(db, organization_id=organization_id, enabled=False)
+    return OrganizationAlertTargetRead(**org_alert_target_read_model(target))
+
+
+@router.post(
+    "/organizations/{organization_id}/alert-target/test",
+    response_model=OrganizationAlertTargetTestResponse,
+)
+def test_org_alert_target_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationAlertTargetTestResponse:
+    require_organization_membership(operator, organization_id)
+    success, detail = test_org_alert_target(db, organization_id)
+    return OrganizationAlertTargetTestResponse(
+        success=success,
+        detail=detail,
+        tested_at=datetime.now(timezone.utc),
+    )
+
+
 @router.post(
     "/organizations/{organization_id}/projects",
     response_model=ProjectRead,
@@ -159,6 +300,16 @@ def create_project_endpoint(
 ) -> ProjectRead:
     require_organization_membership(operator, organization_id)
     return create_project(db, organization_id, payload)
+
+
+@router.get("/projects", response_model=ProjectListResponse)
+def list_projects_endpoint(
+    query: ProjectListQuery = Depends(),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectListResponse:
+    projects = list_projects(db, operator, query)
+    return ProjectListResponse(items=[ProjectRead.model_validate(project) for project in projects])
 
 
 @router.get("/projects/{project_id}", response_model=ProjectRead)
@@ -189,11 +340,15 @@ def get_incident_detail_endpoint(
     incident = get_incident_detail(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
+    representative_traces = get_incident_representative_traces(db, incident)
+    events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
         **item.model_dump(),
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+        events=[_incident_event_item(event) for event in events],
+        compare=_incident_compare_item(incident, regressions, representative_traces),
     )
 
 
@@ -206,11 +361,15 @@ def acknowledge_incident_endpoint(
     incident = acknowledge_incident(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
+    representative_traces = get_incident_representative_traces(db, incident)
+    events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
         **item.model_dump(),
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+        events=[_incident_event_item(event) for event in events],
+        compare=_incident_compare_item(incident, regressions, representative_traces),
     )
 
 
@@ -229,11 +388,57 @@ def assign_incident_owner_endpoint(
     )
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
+    representative_traces = get_incident_representative_traces(db, incident)
+    events = get_incident_events(db, operator, incident_id)
     item = _incident_list_item(incident)
     return IncidentDetailRead(
         **item.model_dump(),
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+        events=[_incident_event_item(event) for event in events],
+        compare=_incident_compare_item(incident, regressions, representative_traces),
+    )
+
+
+@router.post("/incidents/{incident_id}/resolve", response_model=IncidentDetailRead)
+def resolve_incident_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentDetailRead:
+    incident = resolve_incident(db, operator, incident_id)
+    regressions = get_incident_regressions(db, incident)
+    traces = get_incident_traces(db, incident)
+    representative_traces = get_incident_representative_traces(db, incident)
+    events = get_incident_events(db, operator, incident_id)
+    item = _incident_list_item(incident)
+    return IncidentDetailRead(
+        **item.model_dump(),
+        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
+        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+        events=[_incident_event_item(event) for event in events],
+        compare=_incident_compare_item(incident, regressions, representative_traces),
+    )
+
+
+@router.post("/incidents/{incident_id}/reopen", response_model=IncidentDetailRead)
+def reopen_incident_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentDetailRead:
+    incident = reopen_incident(db, operator, incident_id)
+    regressions = get_incident_regressions(db, incident)
+    traces = get_incident_traces(db, incident)
+    representative_traces = get_incident_representative_traces(db, incident)
+    events = get_incident_events(db, operator, incident_id)
+    item = _incident_list_item(incident)
+    return IncidentDetailRead(
+        **item.model_dump(),
+        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
+        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+        events=[_incident_event_item(event) for event in events],
+        compare=_incident_compare_item(incident, regressions, representative_traces),
     )
 
 
@@ -247,6 +452,16 @@ def list_incident_alerts_endpoint(
     return AlertDeliveryListResponse(items=[AlertDeliveryRead.model_validate(item) for item in deliveries])
 
 
+@router.get("/incidents/{incident_id}/events", response_model=IncidentEventListResponse)
+def list_incident_events_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentEventListResponse:
+    events = get_incident_events(db, operator, incident_id)
+    return IncidentEventListResponse(items=[_incident_event_item(event) for event in events])
+
+
 @router.get("/projects/{project_id}/regressions", response_model=RegressionListResponse)
 def list_project_regressions_endpoint(
     project_id: UUID,
@@ -257,6 +472,29 @@ def list_project_regressions_endpoint(
     regressions = list_project_regressions(db, operator, project_id=project_id, query=query)
     return RegressionListResponse(
         items=[RegressionSnapshotRead.model_validate(regression) for regression in regressions]
+    )
+
+
+@router.get("/regressions/{regression_id}", response_model=RegressionDetailRead)
+def get_regression_detail_endpoint(
+    regression_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> RegressionDetailRead:
+    regression, related_incident = get_regression_detail(db, operator, regression_id=regression_id)
+    return RegressionDetailRead(
+        **RegressionSnapshotRead.model_validate(regression).model_dump(),
+        related_incident=RegressionRelatedIncidentRead(
+            id=related_incident.id,
+            incident_type=related_incident.incident_type,
+            severity=related_incident.severity,
+            status=related_incident.status,
+            title=related_incident.title,
+            started_at=related_incident.started_at,
+            updated_at=related_incident.updated_at,
+        )
+        if related_incident is not None
+        else None,
     )
 
 

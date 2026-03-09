@@ -3,8 +3,10 @@ from app.models.api_key import APIKey
 from app.models.evaluation import Evaluation
 from app.models.evaluation_rollup import EvaluationRollup
 from app.models.incident import Incident
+from app.models.incident_event import IncidentEvent
 from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
+from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser
@@ -19,8 +21,10 @@ __all__ = [
     "Evaluation",
     "EvaluationRollup",
     "Incident",
+    "IncidentEvent",
     "OnboardingChecklist",
     "Organization",
+    "OrganizationAlertTarget",
     "OrganizationMember",
     "OperatorSession",
     "OperatorUser",

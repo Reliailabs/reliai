@@ -2,15 +2,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
+  AlertTriangle,
   ArrowLeft,
   BellRing,
   CheckCheck,
   Clock3,
   FolderKanban,
   GitCompareArrows,
+  RotateCcw,
   ScanSearch,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
+
+import type { IncidentEventRead } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +24,8 @@ import {
   assignIncidentOwner,
   getIncidentAlerts,
   getIncidentDetail,
+  reopenIncident,
+  resolveIncident,
 } from "@/lib/api";
 import { requireOperatorSession } from "@/lib/auth";
 
@@ -33,6 +40,72 @@ function deliveryTone(status: string) {
   if (status === "failed") return "bg-rose-100 text-rose-700 ring-1 ring-rose-200";
   if (status === "suppressed") return "bg-amber-100 text-amber-800 ring-1 ring-amber-200";
   return "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200";
+}
+
+function eventLabel(eventType: IncidentEventRead["event_type"]) {
+  switch (eventType) {
+    case "opened":
+      return "Incident opened";
+    case "updated":
+      return "Incident updated";
+    case "acknowledged":
+      return "Incident acknowledged";
+    case "owner_assigned":
+      return "Owner assigned";
+    case "owner_cleared":
+      return "Owner cleared";
+    case "resolved":
+      return "Incident resolved";
+    case "reopened":
+      return "Incident reopened";
+    case "alert_attempted":
+      return "Alert attempted";
+    case "alert_sent":
+      return "Alert sent";
+    case "alert_failed":
+      return "Alert failed";
+  }
+}
+
+function eventTone(eventType: IncidentEventRead["event_type"]) {
+  if (eventType === "resolved") return "border-emerald-200 bg-emerald-50";
+  if (eventType === "reopened" || eventType === "alert_failed") return "border-rose-200 bg-rose-50";
+  if (eventType === "acknowledged" || eventType === "owner_assigned") return "border-sky-200 bg-sky-50";
+  return "border-zinc-200 bg-white";
+}
+
+function renderEventSummary(event: IncidentEventRead) {
+  const metadata = event.metadata_json ?? {};
+
+  if (event.event_type === "owner_assigned") {
+    return String(metadata.owner_operator_email ?? metadata.owner_operator_user_id ?? "Owner updated");
+  }
+  if (event.event_type === "owner_cleared") {
+    return "Incident owner cleared";
+  }
+  if (event.event_type === "alert_failed") {
+    const retry = metadata.will_retry === true ? " · retry scheduled" : "";
+    return `${String(metadata.error_message ?? "Slack delivery failed")}${retry}`;
+  }
+  if (event.event_type === "alert_attempted") {
+    return `Slack delivery to ${String(metadata.channel_target ?? "slack")} · attempt ${String(
+      metadata.attempt_count ?? 0
+    )}`;
+  }
+  if (event.event_type === "alert_sent") {
+    return `Slack sent to ${String(metadata.channel_target ?? "slack")} · attempt ${String(
+      metadata.attempt_count ?? 0
+    )}`;
+  }
+  if (event.event_type === "resolved" || event.event_type === "reopened") {
+    return String(metadata.reason ?? "Manual lifecycle action");
+  }
+  if (event.event_type === "updated" || event.event_type === "opened") {
+    return `${String(metadata.metric_name ?? "metric")} · ${String(metadata.current_value ?? "n/a")} vs ${String(
+      metadata.baseline_value ?? "n/a"
+    )}`;
+  }
+  return event.actor_operator_user_email ?? "Operator action";
 }
 
 export default async function IncidentDetailPage({
@@ -70,6 +143,22 @@ export default async function IncidentDetailPage({
   async function clearOwnerAction() {
     "use server";
     await assignIncidentOwner(incidentId, null);
+    revalidatePath("/dashboard");
+    revalidatePath("/incidents");
+    revalidatePath(`/incidents/${incidentId}`);
+  }
+
+  async function resolveAction() {
+    "use server";
+    await resolveIncident(incidentId);
+    revalidatePath("/dashboard");
+    revalidatePath("/incidents");
+    revalidatePath(`/incidents/${incidentId}`);
+  }
+
+  async function reopenAction() {
+    "use server";
+    await reopenIncident(incidentId);
     revalidatePath("/dashboard");
     revalidatePath("/incidents");
     revalidatePath(`/incidents/${incidentId}`);
@@ -133,6 +222,93 @@ export default async function IncidentDetailPage({
         </Card>
       </section>
 
+      <Card className="rounded-[28px] border-zinc-300 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Compare</p>
+            <h2 className="mt-2 text-2xl font-semibold text-ink">Current window versus baseline</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
+              This section summarizes the rule context, regression deltas, and representative traces chosen
+              with deterministic selection rules.
+            </p>
+          </div>
+          {incident.compare.rule_context ? (
+            <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
+              Threshold · {incident.compare.rule_context.comparator} {incident.compare.rule_context.absolute_threshold}
+              {incident.compare.rule_context.percent_threshold
+                ? ` and ${incident.compare.rule_context.percent_threshold}`
+                : ""}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-[24px] border border-zinc-200 p-4">
+            <p className="text-sm font-medium text-ink">Affected regressions</p>
+            <div className="mt-4 space-y-3">
+              {incident.compare.regressions.map((regression) => (
+                <Link
+                  key={regression.id}
+                  href={`/regressions/${regression.id}`}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3 transition hover:bg-zinc-50"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-ink">{regression.metric_name}</p>
+                    <p className="mt-1 text-sm text-steel">
+                      {regression.scope_type}:{regression.scope_id}
+                    </p>
+                  </div>
+                  <div className="text-right text-sm text-steel">
+                    <p>{regression.current_value} vs {regression.baseline_value}</p>
+                    <p className="mt-1">
+                      {regression.delta_absolute}
+                      {regression.delta_percent ? ` (${regression.delta_percent})` : ""}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-[24px] border border-zinc-200 p-4">
+              <p className="text-sm font-medium text-ink">Windows</p>
+              <div className="mt-4 space-y-3 text-sm text-steel">
+                <div>
+                  <p className="font-medium text-ink">Current</p>
+                  <p>{incident.compare.current_window_start ?? "n/a"}</p>
+                  <p>{incident.compare.current_window_end ?? "n/a"}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-ink">Baseline</p>
+                  <p>{incident.compare.baseline_window_start ?? "n/a"}</p>
+                  <p>{incident.compare.baseline_window_end ?? "n/a"}</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-[24px] border border-zinc-200 p-4">
+              <p className="text-sm font-medium text-ink">Representative traces</p>
+              <div className="mt-4 space-y-3">
+                {incident.compare.representative_traces.map((trace) => (
+                  <Link
+                    key={trace.id}
+                    href={`/traces/${trace.id}`}
+                    className="block rounded-2xl border border-zinc-200 px-4 py-3 transition hover:bg-zinc-50"
+                  >
+                    <p className="text-sm font-medium text-ink">{trace.request_id}</p>
+                    <p className="mt-1 text-sm text-steel">
+                      {trace.success ? "Success" : trace.error_type ?? "Failure"} ·{" "}
+                      {trace.latency_ms !== null ? `${trace.latency_ms} ms` : "latency n/a"}
+                    </p>
+                    <p className="mt-1 text-sm text-steel">{new Date(trace.timestamp).toLocaleString()}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_420px]">
         <div className="space-y-6">
           <Card className="rounded-[28px] border-zinc-300 p-6">
@@ -152,7 +328,14 @@ export default async function IncidentDetailPage({
                   <tbody>
                     {incident.regressions.map((regression) => (
                       <tr key={regression.id} className="border-t border-zinc-200">
-                        <td className="px-4 py-3 text-sm font-medium text-ink">{regression.metric_name}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-ink">
+                          <Link
+                            href={`/regressions/${regression.id}`}
+                            className="underline-offset-4 hover:underline"
+                          >
+                            {regression.metric_name}
+                          </Link>
+                        </td>
                         <td className="px-4 py-3 text-sm text-steel">{regression.current_value}</td>
                         <td className="px-4 py-3 text-sm text-steel">{regression.baseline_value}</td>
                         <td className="px-4 py-3 text-sm text-steel">
@@ -170,6 +353,53 @@ export default async function IncidentDetailPage({
             ) : (
               <p className="mt-4 text-sm leading-6 text-steel">
                 No regression snapshots are attached to this incident.
+              </p>
+            )}
+            <div className="mt-4">
+              <Link
+                href={`/projects/${incident.project_id}/regressions?metric_name=${encodeURIComponent(
+                  String(incident.summary_json.metric_name ?? "")
+                )}&scope_id=${encodeURIComponent(String(incident.summary_json.scope_id ?? ""))}`}
+                className="text-sm text-ink underline-offset-4 hover:underline"
+              >
+                Open project regressions for this incident
+              </Link>
+            </div>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Timeline</p>
+                <p className="mt-2 text-sm text-steel">
+                  Every lifecycle and alert event on this incident, newest first.
+                </p>
+              </div>
+              <BellRing className="h-5 w-5 text-steel" />
+            </div>
+            {incident.events.length > 0 ? (
+              <div className="mt-5 space-y-3">
+                {incident.events.map((event) => (
+                  <div
+                    key={event.id}
+                    className={`rounded-2xl border px-4 py-3 ${eventTone(event.event_type)}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-ink">{eventLabel(event.event_type)}</p>
+                        <p className="mt-1 text-sm text-steel">{renderEventSummary(event)}</p>
+                      </div>
+                      <p className="text-xs text-steel">{new Date(event.created_at).toLocaleString()}</p>
+                    </div>
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-steel">
+                      Actor · {event.actor_operator_user_email ?? "system"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm leading-6 text-steel">
+                No incident events have been recorded yet.
               </p>
             )}
           </Card>
@@ -220,7 +450,7 @@ export default async function IncidentDetailPage({
                       ).toLocaleString()}`
                     : "Not acknowledged yet"}
                 </p>
-                {!incident.acknowledged_at ? (
+                {!incident.acknowledged_at && incident.status === "open" ? (
                   <form action={acknowledgeAction} className="mt-3">
                     <Button size="sm">
                       <CheckCheck className="mr-2 h-4 w-4" />
@@ -232,11 +462,9 @@ export default async function IncidentDetailPage({
 
               <div className="rounded-2xl border border-zinc-200 px-4 py-3">
                 <p className="text-sm font-medium text-ink">Owner</p>
-                <p className="mt-2 text-sm text-steel">
-                  {incident.owner_operator_email ?? "Unassigned"}
-                </p>
+                <p className="mt-2 text-sm text-steel">{incident.owner_operator_email ?? "Unassigned"}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {incident.owner_operator_user_id !== session.operator.id ? (
+                  {incident.status === "open" && incident.owner_operator_user_id !== session.operator.id ? (
                     <form action={assignToMeAction}>
                       <Button size="sm" variant="outline">
                         <UserRound className="mr-2 h-4 w-4" />
@@ -251,6 +479,32 @@ export default async function IncidentDetailPage({
                       </Button>
                     </form>
                   ) : null}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">Lifecycle</p>
+                <p className="mt-2 text-sm text-steel">
+                  {incident.status === "open"
+                    ? "Resolve this incident when the issue is understood or mitigated."
+                    : `Resolved ${incident.resolved_at ? new Date(incident.resolved_at).toLocaleString() : "recently"}`}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {incident.status === "open" ? (
+                    <form action={resolveAction}>
+                      <Button size="sm" variant="outline">
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Resolve
+                      </Button>
+                    </form>
+                  ) : (
+                    <form action={reopenAction}>
+                      <Button size="sm">
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Reopen
+                      </Button>
+                    </form>
+                  )}
                 </div>
               </div>
             </div>
@@ -272,10 +526,16 @@ export default async function IncidentDetailPage({
                       </span>
                     </div>
                     <p className="mt-3 text-sm text-steel">
+                      Attempts {alert.attempt_count}
                       {alert.sent_at
-                        ? `Sent ${new Date(alert.sent_at).toLocaleString()}`
-                        : `Created ${new Date(alert.created_at).toLocaleString()}`}
+                        ? ` · sent ${new Date(alert.sent_at).toLocaleString()}`
+                        : ` · created ${new Date(alert.created_at).toLocaleString()}`}
                     </p>
+                    {alert.next_attempt_at ? (
+                      <p className="mt-2 text-sm text-steel">
+                        Next retry {new Date(alert.next_attempt_at).toLocaleString()}
+                      </p>
+                    ) : null}
                     {alert.error_message ? (
                       <p className="mt-2 text-sm text-rose-700">{alert.error_message}</p>
                     ) : null}
@@ -283,18 +543,16 @@ export default async function IncidentDetailPage({
                 ))}
               </div>
             ) : (
-              <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-sm leading-6 text-steel">
-                <BellRing className="mb-3 h-5 w-5" />
-                No alert deliveries have been recorded for this incident yet.
+              <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-5 text-sm leading-6 text-steel">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4" />
+                  <p>
+                    No alert deliveries have been recorded for this incident yet. A delivery row will
+                    appear when the incident opens or reopens and enters the alert path.
+                  </p>
+                </div>
               </div>
             )}
-          </Card>
-
-          <Card className="rounded-[28px] border-zinc-300 p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Incident summary</p>
-            <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-50 p-4 text-sm leading-6 text-ink">
-              {JSON.stringify(incident.summary_json, null, 2)}
-            </pre>
           </Card>
         </div>
       </div>

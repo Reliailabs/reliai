@@ -58,6 +58,7 @@ def run_trace_evaluations(trace_id: str) -> None:
                 detected_at=trace.timestamp,
             )
             opened_incidents.extend(sync_result.opened_incidents)
+            opened_incidents.extend(sync_result.reopened_incidents)
 
         deliveries = create_alert_deliveries_for_open_incidents(db, incidents=opened_incidents)
         delivery_ids = [

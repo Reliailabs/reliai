@@ -20,6 +20,9 @@ class AlertDelivery(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     delivery_status: Mapped[str] = mapped_column(String(32), nullable=False)
     provider_message_id: Mapped[str | None] = mapped_column(String(255))
     error_message: Mapped[str | None] = mapped_column(String(2000))
+    attempt_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    last_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     incident = relationship("Incident", back_populates="alert_deliveries")

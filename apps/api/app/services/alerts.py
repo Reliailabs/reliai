@@ -10,13 +10,20 @@ from sqlalchemy.orm import Session
 from app.core.settings import get_settings
 from app.models.alert_delivery import AlertDelivery
 from app.models.incident import Incident
+from app.models.organization_alert_target import OrganizationAlertTarget
+from app.services.incidents import append_incident_event
 
 ALERT_CHANNEL_SLACK_WEBHOOK = "slack_webhook"
 ALERT_TARGET_DEFAULT = "slack_webhook_default"
+ALERT_TARGET_ORG = "organization_slack_webhook"
 ALERT_STATUS_PENDING = "pending"
 ALERT_STATUS_SENT = "sent"
 ALERT_STATUS_FAILED = "failed"
 ALERT_STATUS_SUPPRESSED = "suppressed"
+
+ALERT_EVENT_ATTEMPTED = "alert_attempted"
+ALERT_EVENT_SENT = "alert_sent"
+ALERT_EVENT_FAILED = "alert_failed"
 
 
 def _current_time() -> datetime:
@@ -25,6 +32,12 @@ def _current_time() -> datetime:
 
 def _as_utc(value: datetime) -> datetime:
     return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+
+
+def _retry_backoffs() -> list[int]:
+    raw = get_settings().slack_alert_retry_backoff_seconds
+    values = [int(value.strip()) for value in raw.split(",") if value.strip()]
+    return values
 
 
 def _slack_payload(incident: Incident) -> dict:
@@ -63,18 +76,21 @@ def _slack_payload(incident: Incident) -> dict:
     }
 
 
-def _latest_channel_delivery(
-    db: Session, *, incident_id: UUID, channel_type: str, channel_target: str
-) -> AlertDelivery | None:
+def _active_org_alert_target(db: Session, organization_id: UUID) -> OrganizationAlertTarget | None:
     return db.scalar(
-        select(AlertDelivery)
-        .where(
-            AlertDelivery.incident_id == incident_id,
-            AlertDelivery.channel_type == channel_type,
-            AlertDelivery.channel_target == channel_target,
+        select(OrganizationAlertTarget).where(
+            OrganizationAlertTarget.organization_id == organization_id,
+            OrganizationAlertTarget.channel_type == ALERT_CHANNEL_SLACK_WEBHOOK,
+            OrganizationAlertTarget.is_active.is_(True),
         )
-        .order_by(desc(AlertDelivery.created_at), desc(AlertDelivery.id))
     )
+
+
+def _slack_destination(db: Session, incident: Incident) -> tuple[str, str | None]:
+    org_target = _active_org_alert_target(db, incident.organization_id)
+    if org_target is not None:
+        return org_target.channel_target, org_target.slack_webhook_url
+    return ALERT_TARGET_DEFAULT, get_settings().slack_webhook_default
 
 
 def _has_recent_pending_or_sent_delivery(
@@ -104,36 +120,48 @@ def _has_recent_pending_or_sent_delivery(
 def create_alert_deliveries_for_open_incidents(
     db: Session, *, incidents: list[Incident]
 ) -> list[AlertDelivery]:
-    settings = get_settings()
     deliveries: list[AlertDelivery] = []
 
     for incident in incidents:
-        if settings.slack_webhook_default is None:
+        channel_target, webhook = _slack_destination(db, incident)
+        if webhook is None:
             delivery = AlertDelivery(
                 incident_id=incident.id,
                 channel_type=ALERT_CHANNEL_SLACK_WEBHOOK,
-                channel_target=ALERT_TARGET_DEFAULT,
+                channel_target=channel_target,
                 delivery_status=ALERT_STATUS_FAILED,
                 error_message="Slack webhook is not configured",
             )
             db.add(delivery)
             db.flush()
+            append_incident_event(
+                db,
+                incident=incident,
+                event_type=ALERT_EVENT_FAILED,
+                metadata_json={
+                    "channel_type": ALERT_CHANNEL_SLACK_WEBHOOK,
+                    "channel_target": channel_target,
+                    "error_message": "Slack webhook is not configured",
+                    "attempt_count": 0,
+                    "will_retry": False,
+                },
+            )
             deliveries.append(delivery)
             continue
 
         now = _current_time()
-        cooldown_cutoff = now - timedelta(minutes=settings.alert_delivery_cooldown_minutes)
+        cooldown_cutoff = now - timedelta(minutes=get_settings().alert_delivery_cooldown_minutes)
         if _has_recent_pending_or_sent_delivery(
             db,
             incident_id=incident.id,
             channel_type=ALERT_CHANNEL_SLACK_WEBHOOK,
-            channel_target=ALERT_TARGET_DEFAULT,
+            channel_target=channel_target,
             cutoff=cooldown_cutoff,
         ):
             suppressed = AlertDelivery(
                 incident_id=incident.id,
                 channel_type=ALERT_CHANNEL_SLACK_WEBHOOK,
-                channel_target=ALERT_TARGET_DEFAULT,
+                channel_target=channel_target,
                 delivery_status=ALERT_STATUS_SUPPRESSED,
                 error_message="Suppressed by alert cooldown",
             )
@@ -145,8 +173,9 @@ def create_alert_deliveries_for_open_incidents(
         delivery = AlertDelivery(
             incident_id=incident.id,
             channel_type=ALERT_CHANNEL_SLACK_WEBHOOK,
-            channel_target=ALERT_TARGET_DEFAULT,
+            channel_target=channel_target,
             delivery_status=ALERT_STATUS_PENDING,
+            attempt_count=0,
         )
         db.add(delivery)
         db.flush()
@@ -161,6 +190,8 @@ def deliver_alert_delivery(db: Session, delivery_id: UUID) -> AlertDelivery | No
         return None
     if delivery.delivery_status != ALERT_STATUS_PENDING:
         return delivery
+    if delivery.next_attempt_at is not None and _as_utc(delivery.next_attempt_at) > _current_time():
+        return delivery
 
     incident = db.get(Incident, delivery.incident_id)
     if incident is None:
@@ -170,29 +201,101 @@ def deliver_alert_delivery(db: Session, delivery_id: UUID) -> AlertDelivery | No
         db.commit()
         return delivery
 
-    webhook = get_settings().slack_webhook_default
+    _, webhook = _slack_destination(db, incident)
     if webhook is None:
         delivery.delivery_status = ALERT_STATUS_FAILED
         delivery.error_message = "Slack webhook is not configured"
         db.add(delivery)
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=ALERT_EVENT_FAILED,
+            metadata_json={
+                "channel_type": delivery.channel_type,
+                "channel_target": delivery.channel_target,
+                "error_message": delivery.error_message,
+                "attempt_count": delivery.attempt_count,
+                "will_retry": False,
+            },
+        )
         db.commit()
         return delivery
+
+    attempted_at = _current_time()
+    delivery.attempt_count += 1
+    delivery.last_attempted_at = attempted_at
+    delivery.next_attempt_at = None
+    db.add(delivery)
+    append_incident_event(
+        db,
+        incident=incident,
+        event_type=ALERT_EVENT_ATTEMPTED,
+        metadata_json={
+            "delivery_id": str(delivery.id),
+            "channel_type": delivery.channel_type,
+            "channel_target": delivery.channel_target,
+            "attempt_count": delivery.attempt_count,
+        },
+        created_at=attempted_at,
+    )
 
     try:
         response = httpx.post(webhook, json=_slack_payload(incident), timeout=10.0)
         response.raise_for_status()
     except httpx.HTTPError as exc:
-        delivery.delivery_status = ALERT_STATUS_FAILED
+        max_attempts = get_settings().slack_alert_max_attempts
+        retry_backoffs = _retry_backoffs()
+        should_retry = delivery.attempt_count < max_attempts
         delivery.error_message = str(exc)
+        delivery.provider_message_id = None
+        if should_retry:
+            backoff_index = min(delivery.attempt_count - 1, len(retry_backoffs) - 1)
+            delivery.delivery_status = ALERT_STATUS_PENDING
+            delivery.next_attempt_at = attempted_at + timedelta(seconds=retry_backoffs[backoff_index])
+        else:
+            delivery.delivery_status = ALERT_STATUS_FAILED
+            delivery.next_attempt_at = None
         db.add(delivery)
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=ALERT_EVENT_FAILED,
+            metadata_json={
+                "delivery_id": str(delivery.id),
+                "channel_type": delivery.channel_type,
+                "channel_target": delivery.channel_target,
+                "error_message": delivery.error_message,
+                "attempt_count": delivery.attempt_count,
+                "will_retry": should_retry,
+                "next_attempt_at": delivery.next_attempt_at.isoformat()
+                if delivery.next_attempt_at is not None
+                else None,
+            },
+            created_at=attempted_at,
+        )
         db.commit()
+        db.refresh(delivery)
         return delivery
 
     delivery.delivery_status = ALERT_STATUS_SENT
     delivery.provider_message_id = response.headers.get("x-slack-req-id")
     delivery.sent_at = _current_time()
     delivery.error_message = None
+    delivery.next_attempt_at = None
     db.add(delivery)
+    append_incident_event(
+        db,
+        incident=incident,
+        event_type=ALERT_EVENT_SENT,
+        metadata_json={
+            "delivery_id": str(delivery.id),
+            "channel_type": delivery.channel_type,
+            "channel_target": delivery.channel_target,
+            "attempt_count": delivery.attempt_count,
+            "provider_message_id": delivery.provider_message_id,
+        },
+        created_at=delivery.sent_at,
+    )
     db.commit()
     db.refresh(delivery)
     return delivery
@@ -204,5 +307,22 @@ def mark_delivery_enqueue_failed(db: Session, delivery_id: UUID, error_message: 
         return
     delivery.delivery_status = ALERT_STATUS_FAILED
     delivery.error_message = error_message
+    delivery.next_attempt_at = None
     db.add(delivery)
+    incident = db.get(Incident, delivery.incident_id)
+    if incident is not None:
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=ALERT_EVENT_FAILED,
+            metadata_json={
+                "delivery_id": str(delivery.id),
+                "channel_type": delivery.channel_type,
+                "channel_target": delivery.channel_target,
+                "error_message": error_message,
+                "attempt_count": delivery.attempt_count,
+                "will_retry": False,
+                "failure_stage": "enqueue",
+            },
+        )
     db.commit()

@@ -9,6 +9,8 @@ from app.schemas.common import APIModel
 
 
 class RegressionListQuery(BaseModel):
+    metric_name: str | None = None
+    scope_id: str | None = None
     limit: int = Field(default=25, ge=1, le=100)
 
 
@@ -30,3 +32,17 @@ class RegressionSnapshotRead(APIModel):
 
 class RegressionListResponse(BaseModel):
     items: list[RegressionSnapshotRead]
+
+
+class RegressionRelatedIncidentRead(APIModel):
+    id: UUID
+    incident_type: str
+    severity: str
+    status: str
+    title: str
+    started_at: datetime
+    updated_at: datetime
+
+
+class RegressionDetailRead(RegressionSnapshotRead):
+    related_incident: RegressionRelatedIncidentRead | None

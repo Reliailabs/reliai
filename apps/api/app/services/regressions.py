@@ -10,8 +10,8 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.models.evaluation_rollup import EvaluationRollup
+from app.models.incident import Incident
 from app.models.regression_snapshot import RegressionSnapshot
-from app.models.trace import Trace
 from app.schemas.regression import RegressionListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
@@ -127,6 +127,42 @@ def list_project_regressions(
             RegressionSnapshot.organization_id.in_(operator.organization_ids),
         )
         .order_by(desc(RegressionSnapshot.detected_at), RegressionSnapshot.metric_name)
-        .limit(query.limit)
     )
+    if query.metric_name is not None:
+        statement = statement.where(RegressionSnapshot.metric_name == query.metric_name)
+    if query.scope_id is not None:
+        statement = statement.where(RegressionSnapshot.scope_id == query.scope_id)
+    statement = statement.limit(query.limit)
     return db.scalars(statement).all()
+
+
+def get_regression_detail(
+    db: Session,
+    operator: OperatorContext,
+    *,
+    regression_id: UUID,
+) -> tuple[RegressionSnapshot, Incident | None]:
+    regression = db.get(RegressionSnapshot, regression_id)
+    if regression is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Regression not found")
+    require_project_access(db, operator, regression.project_id)
+
+    candidate_incidents = db.scalars(
+        select(Incident).where(
+            Incident.project_id == regression.project_id,
+            Incident.organization_id.in_(operator.organization_ids),
+        )
+    ).all()
+    related_incident = None
+    for candidate in candidate_incidents:
+        snapshot_ids = set(candidate.summary_json.get("regression_snapshot_ids", []))
+        if str(regression.id) in snapshot_ids:
+            related_incident = candidate
+            break
+        if (
+            candidate.summary_json.get("metric_name") == regression.metric_name
+            and candidate.summary_json.get("scope_type") == regression.scope_type
+            and candidate.summary_json.get("scope_id") == regression.scope_id
+        ):
+            related_incident = candidate
+    return regression, related_incident

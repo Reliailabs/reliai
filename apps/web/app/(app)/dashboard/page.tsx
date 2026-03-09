@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BellRing, CheckCheck, ShieldAlert, ShieldCheck } from "lucide-react";
+import { BellRing, CheckCheck, ShieldAlert, ShieldCheck, ShieldEllipsis } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { getApiHealth, listIncidents } from "@/lib/api";
@@ -14,8 +14,10 @@ function deliveryTone(status: string | null | undefined) {
 export default async function DashboardPage() {
   const health = await getApiHealth().catch(() => ({ status: "degraded" }));
   const incidents = await listIncidents({ limit: 50 }).catch(() => ({ items: [] }));
-  const activeIncidents = incidents.items.filter((incident) => incident.status === "open");
-  const unacknowledgedIncidents = activeIncidents.filter((incident) => incident.acknowledged_at === null);
+  const openIncidents = incidents.items.filter((incident) => incident.status === "open");
+  const acknowledgedOpenIncidents = openIncidents.filter((incident) => incident.acknowledged_at !== null);
+  const unacknowledgedOpenIncidents = openIncidents.filter((incident) => incident.acknowledged_at === null);
+  const resolvedRecentIncidents = incidents.items.filter((incident) => incident.status === "resolved");
   const recentAlerts = incidents.items
     .map((incident) => incident.latest_alert_delivery)
     .filter((delivery): delivery is NonNullable<typeof delivery> => delivery !== null)
@@ -30,22 +32,22 @@ export default async function DashboardPage() {
       icon: ShieldCheck
     },
     {
-      label: "Active incidents",
-      value: String(activeIncidents.length),
-      note: "Currently open incidents waiting on operator review",
+      label: "Unresolved",
+      value: String(openIncidents.length),
+      note: "Incidents currently open in the operator queue",
       icon: ShieldAlert
     },
     {
-      label: "Unacknowledged",
-      value: String(unacknowledgedIncidents.length),
-      note: "Open incidents without an operator acknowledgment",
+      label: "Acknowledged",
+      value: String(acknowledgedOpenIncidents.length),
+      note: "Open incidents with an operator acknowledgment",
       icon: CheckCheck
     },
     {
-      label: "Recent alerts",
-      value: String(recentAlerts.length),
-      note: "Latest alert delivery attempts across recent incidents",
-      icon: BellRing
+      label: "Resolved recent",
+      value: String(resolvedRecentIncidents.length),
+      note: "Recent resolved incidents in the current incident list window",
+      icon: ShieldEllipsis
     }
   ];
 
@@ -55,10 +57,10 @@ export default async function DashboardPage() {
         <p className="text-xs uppercase tracking-[0.24em] text-steel">Overview</p>
         <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold">Incident and alert operations</h1>
+            <h1 className="text-3xl font-semibold">Incident lifecycle operations</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
-              Monitor open incidents, confirm operator acknowledgment, and inspect the latest Slack
-              alert delivery attempts without leaving the dashboard.
+              Watch unresolved incidents, confirm acknowledgment coverage, and inspect recent alert
+              outcomes from the same deterministic incident queue.
             </p>
           </div>
           <div className="rounded-lg border border-line bg-surface px-4 py-3 text-sm">
@@ -85,6 +87,24 @@ export default async function DashboardPage() {
         })}
       </section>
 
+      <section className="grid gap-4 md:grid-cols-3">
+        <Card className="rounded-[24px] border-zinc-300 p-5">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Queue state</p>
+          <p className="mt-3 text-2xl font-semibold text-ink">{openIncidents.length}</p>
+          <p className="mt-2 text-sm text-steel">Open incidents waiting on investigation or resolution.</p>
+        </Card>
+        <Card className="rounded-[24px] border-zinc-300 p-5">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Awaiting acknowledgment</p>
+          <p className="mt-3 text-2xl font-semibold text-ink">{unacknowledgedOpenIncidents.length}</p>
+          <p className="mt-2 text-sm text-steel">Open incidents that still need explicit operator acknowledgment.</p>
+        </Card>
+        <Card className="rounded-[24px] border-zinc-300 p-5">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent alerts</p>
+          <p className="mt-3 text-2xl font-semibold text-ink">{recentAlerts.length}</p>
+          <p className="mt-2 text-sm text-steel">Latest delivery rows across incidents, including retries and failures.</p>
+        </Card>
+      </section>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_380px]">
         <Card className="overflow-hidden rounded-[28px] border-zinc-300">
           <div className="border-b border-zinc-200 px-6 py-5">
@@ -92,23 +112,23 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-steel">Active incidents</p>
                 <h2 className="mt-2 text-2xl font-semibold text-ink">
-                  {activeIncidents.length} open incident{activeIncidents.length === 1 ? "" : "s"}
+                  {openIncidents.length} open incident{openIncidents.length === 1 ? "" : "s"}
                 </h2>
               </div>
               <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
-                {unacknowledgedIncidents.length} unacknowledged
+                {unacknowledgedOpenIncidents.length} unacknowledged
               </div>
             </div>
           </div>
 
-          {activeIncidents.length === 0 ? (
+          {openIncidents.length === 0 ? (
             <div className="px-6 py-10 text-sm leading-6 text-steel">
-              No active incidents are open. New incidents will appear here when deterministic
+              No active incidents are open. New or reopened incidents will appear here when deterministic
               regression rules breach and enter the operator queue.
             </div>
           ) : (
             <div className="divide-y divide-zinc-200">
-              {activeIncidents.slice(0, 8).map((incident) => (
+              {openIncidents.slice(0, 8).map((incident) => (
                 <Link
                   key={incident.id}
                   href={`/incidents/${incident.id}`}
@@ -163,17 +183,23 @@ export default async function DashboardPage() {
                     </span>
                   </div>
                   <p className="mt-3 text-sm text-steel">
+                    Attempts {alert.attempt_count}
                     {alert.sent_at
-                      ? `Sent ${new Date(alert.sent_at).toLocaleString()}`
-                      : `Created ${new Date(alert.created_at).toLocaleString()}`}
+                      ? ` · sent ${new Date(alert.sent_at).toLocaleString()}`
+                      : ` · created ${new Date(alert.created_at).toLocaleString()}`}
                   </p>
+                  {alert.next_attempt_at ? (
+                    <p className="mt-2 text-sm text-steel">
+                      Next retry {new Date(alert.next_attempt_at).toLocaleString()}
+                    </p>
+                  ) : null}
                 </div>
               ))}
             </div>
           ) : (
             <div className="mt-4 text-sm leading-6 text-steel">
-              No alert deliveries have been recorded yet. When a new incident opens, the first Slack
-              delivery attempt will appear here.
+              No alert deliveries have been recorded yet. When a new or reopened incident opens,
+              its first Slack delivery attempt will appear here.
             </div>
           )}
         </Card>

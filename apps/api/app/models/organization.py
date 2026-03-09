@@ -24,3 +24,8 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     onboarding_checklist = relationship(
         "OnboardingChecklist", back_populates="organization", uselist=False
     )
+    alert_target = relationship(
+        "OrganizationAlertTarget",
+        back_populates="organization",
+        uselist=False,
+    )

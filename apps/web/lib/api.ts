@@ -5,9 +5,14 @@ import { cookies } from "next/headers";
 import type {
   AlertDeliveryListResponse,
   IncidentDetailRead,
+  IncidentEventListResponse,
   IncidentListResponse,
+  OrganizationAlertTargetRead,
+  OrganizationAlertTargetTestResponse,
   OrganizationRead,
+  ProjectListResponse,
   ProjectRead,
+  RegressionDetailRead,
   RegressionListResponse,
   TraceDetailRead,
   TraceListResponse
@@ -52,8 +57,20 @@ export async function createOrganization(payload: {
   });
 }
 
+export async function getOrganization(organizationId: string) {
+  return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`);
+}
+
 export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
+}
+
+export async function listProjects(filters: { organizationId?: string; limit?: number } = {}) {
+  const params = new URLSearchParams();
+  if (filters.organizationId) params.set("organization_id", filters.organizationId);
+  if (filters.limit) params.set("limit", String(filters.limit));
+  const query = params.toString();
+  return request<ProjectListResponse>(`/api/v1/projects${query ? `?${query}` : ""}`);
 }
 
 export interface TraceFilters {
@@ -90,11 +107,21 @@ export async function getTraceDetail(traceId: string) {
 export async function listIncidents(filters: {
   projectId?: string;
   status?: "open" | "resolved";
+  severity?: "critical" | "high" | "medium" | "low";
+  ownerOperatorUserId?: string;
+  ownerState?: "assigned" | "unassigned";
+  dateFrom?: string;
+  dateTo?: string;
   limit?: number;
 } = {}) {
   const params = new URLSearchParams();
   if (filters.projectId) params.set("project_id", filters.projectId);
   if (filters.status) params.set("status", filters.status);
+  if (filters.severity) params.set("severity", filters.severity);
+  if (filters.ownerOperatorUserId) params.set("owner_operator_user_id", filters.ownerOperatorUserId);
+  if (filters.ownerState) params.set("owner_state", filters.ownerState);
+  if (filters.dateFrom) params.set("date_from", filters.dateFrom);
+  if (filters.dateTo) params.set("date_to", filters.dateTo);
   if (filters.limit) params.set("limit", String(filters.limit));
   const query = params.toString();
   return request<IncidentListResponse>(`/api/v1/incidents${query ? `?${query}` : ""}`);
@@ -124,8 +151,77 @@ export async function getIncidentAlerts(incidentId: string) {
   return request<AlertDeliveryListResponse>(`/api/v1/incidents/${incidentId}/alerts`);
 }
 
+export async function getIncidentEvents(incidentId: string) {
+  return request<IncidentEventListResponse>(`/api/v1/incidents/${incidentId}/events`);
+}
+
+export async function resolveIncident(incidentId: string) {
+  return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}/resolve`, {
+    method: "POST"
+  });
+}
+
+export async function reopenIncident(incidentId: string) {
+  return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}/reopen`, {
+    method: "POST"
+  });
+}
+
 export async function listProjectRegressions(projectId: string, limit = 25) {
-  return request<RegressionListResponse>(
-    `/api/v1/projects/${projectId}/regressions?limit=${encodeURIComponent(String(limit))}`
-  );
+  return request<RegressionListResponse>(`/api/v1/projects/${projectId}/regressions?limit=${encodeURIComponent(String(limit))}`);
+}
+
+export async function listProjectRegressionsFiltered(
+  projectId: string,
+  filters: {
+    metricName?: string;
+    scopeId?: string;
+    limit?: number;
+  } = {}
+) {
+  const params = new URLSearchParams();
+  params.set("limit", String(filters.limit ?? 25));
+  if (filters.metricName) params.set("metric_name", filters.metricName);
+  if (filters.scopeId) params.set("scope_id", filters.scopeId);
+  return request<RegressionListResponse>(`/api/v1/projects/${projectId}/regressions?${params.toString()}`);
+}
+
+export async function getRegressionDetail(regressionId: string) {
+  return request<RegressionDetailRead>(`/api/v1/regressions/${regressionId}`);
+}
+
+export async function getOrgAlertTarget(organizationId: string) {
+  return request<OrganizationAlertTargetRead>(`/api/v1/organizations/${organizationId}/alert-target`);
+}
+
+export async function upsertOrgAlertTarget(
+  organizationId: string,
+  payload: {
+    channel_target: string;
+    slack_webhook_url?: string;
+    is_active: boolean;
+  }
+) {
+  return request<OrganizationAlertTargetRead>(`/api/v1/organizations/${organizationId}/alert-target`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function enableOrgAlertTarget(organizationId: string) {
+  return request<OrganizationAlertTargetRead>(`/api/v1/organizations/${organizationId}/alert-target/enable`, {
+    method: "POST"
+  });
+}
+
+export async function disableOrgAlertTarget(organizationId: string) {
+  return request<OrganizationAlertTargetRead>(`/api/v1/organizations/${organizationId}/alert-target/disable`, {
+    method: "POST"
+  });
+}
+
+export async function testOrgAlertTarget(organizationId: string) {
+  return request<OrganizationAlertTargetTestResponse>(`/api/v1/organizations/${organizationId}/alert-target/test`, {
+    method: "POST"
+  });
 }

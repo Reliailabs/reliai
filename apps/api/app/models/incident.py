@@ -47,3 +47,4 @@ class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         foreign_keys=[owner_operator_user_id],
         back_populates="owned_incidents",
     )
+    events = relationship("IncidentEvent", back_populates="incident")

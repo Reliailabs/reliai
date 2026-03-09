@@ -26,3 +26,12 @@ class ProjectRead(APIModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class ProjectListQuery(BaseModel):
+    organization_id: UUID | None = None
+    limit: int = Field(default=100, ge=1, le=200)
+
+
+class ProjectListResponse(BaseModel):
+    items: list[ProjectRead]

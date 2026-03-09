@@ -15,15 +15,20 @@ from app.db.session import get_db
 from app.main import app
 from app.models.base import Base
 from app.services import traces as trace_services
+from app.workers import alerts as alert_worker
 from app.workers import evaluations as evaluation_worker
 
 
 class FakeQueue:
     def __init__(self) -> None:
-        self.jobs: list[tuple[object, tuple[object, ...]]] = []
+        self.jobs: list[tuple[object, tuple[object, ...], dict[str, object]]] = []
 
     def enqueue(self, func, *args, **kwargs):
-        self.jobs.append((func, args))
+        self.jobs.append((func, args, kwargs))
+        return {"func": func, "args": args, "kwargs": kwargs}
+
+    def enqueue_in(self, delay, func, *args, **kwargs):
+        self.jobs.append((func, args, {"delay": delay, **kwargs}))
         return {"func": func, "args": args, "kwargs": kwargs}
 
 
@@ -61,4 +66,5 @@ def fake_queue(monkeypatch: pytest.MonkeyPatch) -> FakeQueue:
     queue = FakeQueue()
     monkeypatch.setattr(trace_services, "get_queue", lambda: queue)
     monkeypatch.setattr(evaluation_worker, "get_queue", lambda: queue)
+    monkeypatch.setattr(alert_worker, "get_queue", lambda: queue)
     return queue

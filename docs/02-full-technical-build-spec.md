@@ -334,9 +334,15 @@ Timeline/history for incident status changes and alert actions.
 |---|---|---|
 | id | uuid pk | |
 | incident_id | uuid fk | |
-| event_type | text | created, alerted, acknowledged, resolved, reopened |
-| payload_json | jsonb | |
+| event_type | text | opened, updated, acknowledged, owner_assigned, owner_cleared, resolved, reopened, alert_attempted, alert_sent, alert_failed |
+| actor_operator_user_id | uuid fk null | |
+| payload_json | jsonb | operator action or alert metadata |
 | created_at | timestamptz | |
+
+Reopen rule for v1:
+- keep one incident row per deterministic fingerprint
+- if a resolved incident sees the same fingerprint breach again, reopen that incident instead of creating a duplicate
+- clear acknowledgment on reopen so the renewed breach requires fresh operator acknowledgment
 
 ### 5.13 alert_channels
 | column | type | notes |

@@ -14,6 +14,9 @@ class AlertDeliveryRead(APIModel):
     delivery_status: str
     provider_message_id: str | None
     error_message: str | None
+    attempt_count: int
+    last_attempted_at: datetime | None
+    next_attempt_at: datetime | None
     sent_at: datetime | None
     created_at: datetime
 

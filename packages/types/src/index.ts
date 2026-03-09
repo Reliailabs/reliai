@@ -9,6 +9,24 @@ export interface OrganizationRead {
   updated_at: string;
 }
 
+export interface OrganizationAlertTargetRead {
+  id: string;
+  organization_id: string;
+  channel_type: string;
+  channel_target: string;
+  is_active: boolean;
+  has_secret: boolean;
+  webhook_masked: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationAlertTargetTestResponse {
+  success: boolean;
+  detail: string;
+  tested_at: string;
+}
+
 export interface ProjectRead {
   id: string;
   organization_id: string;
@@ -19,6 +37,10 @@ export interface ProjectRead {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProjectListResponse {
+  items: ProjectRead[];
 }
 
 export interface RetrievalSpanRead {
@@ -113,6 +135,20 @@ export interface RegressionListResponse {
   items: RegressionSnapshotRead[];
 }
 
+export interface RegressionRelatedIncidentRead {
+  id: string;
+  incident_type: string;
+  severity: string;
+  status: string;
+  title: string;
+  started_at: string;
+  updated_at: string;
+}
+
+export interface RegressionDetailRead extends RegressionSnapshotRead {
+  related_incident: RegressionRelatedIncidentRead | null;
+}
+
 export interface IncidentTraceSampleRead {
   id: string;
   request_id: string;
@@ -131,6 +167,9 @@ export interface AlertDeliveryRead {
   delivery_status: string;
   provider_message_id: string | null;
   error_message: string | null;
+  attempt_count: number;
+  last_attempted_at: string | null;
+  next_attempt_at: string | null;
   sent_at: string | null;
   created_at: string;
 }
@@ -165,7 +204,48 @@ export interface IncidentListResponse {
   items: IncidentListItemRead[];
 }
 
+export interface IncidentEventRead {
+  id: string;
+  incident_id: string;
+  event_type:
+    | "opened"
+    | "updated"
+    | "acknowledged"
+    | "owner_assigned"
+    | "owner_cleared"
+    | "resolved"
+    | "reopened"
+    | "alert_attempted"
+    | "alert_sent"
+    | "alert_failed";
+  actor_operator_user_id: string | null;
+  actor_operator_user_email: string | null;
+  metadata_json: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface IncidentEventListResponse {
+  items: IncidentEventRead[];
+}
+
 export interface IncidentDetailRead extends IncidentListItemRead {
   regressions: RegressionSnapshotRead[];
   traces: IncidentTraceSampleRead[];
+  events: IncidentEventRead[];
+  compare: {
+    current_window_start: string | null;
+    current_window_end: string | null;
+    baseline_window_start: string | null;
+    baseline_window_end: string | null;
+    regressions: RegressionSnapshotRead[];
+    representative_traces: IncidentTraceSampleRead[];
+    rule_context: {
+      incident_type: string;
+      metric_name: string;
+      comparator: string;
+      absolute_threshold: string;
+      percent_threshold: string | null;
+      minimum_sample_size: number;
+    } | null;
+  };
 }
