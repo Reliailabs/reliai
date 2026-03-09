@@ -123,6 +123,22 @@ export interface IncidentTraceSampleRead {
   total_cost_usd: string | null;
 }
 
+export interface AlertDeliveryRead {
+  id: string;
+  incident_id: string;
+  channel_type: string;
+  channel_target: string;
+  delivery_status: string;
+  provider_message_id: string | null;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export interface AlertDeliveryListResponse {
+  items: AlertDeliveryRead[];
+}
+
 export interface IncidentListItemRead {
   id: string;
   organization_id: string;
@@ -137,6 +153,12 @@ export interface IncidentListItemRead {
   started_at: string;
   updated_at: string;
   resolved_at: string | null;
+  acknowledged_at: string | null;
+  acknowledged_by_operator_user_id: string | null;
+  acknowledged_by_operator_email: string | null;
+  owner_operator_user_id: string | null;
+  owner_operator_email: string | null;
+  latest_alert_delivery: AlertDeliveryRead | null;
 }
 
 export interface IncidentListResponse {

@@ -15,6 +15,7 @@ from app.db.session import get_db
 from app.main import app
 from app.models.base import Base
 from app.services import traces as trace_services
+from app.workers import evaluations as evaluation_worker
 
 
 class FakeQueue:
@@ -59,4 +60,5 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 def fake_queue(monkeypatch: pytest.MonkeyPatch) -> FakeQueue:
     queue = FakeQueue()
     monkeypatch.setattr(trace_services, "get_queue", lambda: queue)
+    monkeypatch.setattr(evaluation_worker, "get_queue", lambda: queue)
     return queue

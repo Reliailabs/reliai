@@ -1,18 +1,28 @@
+import os
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import desc, select
 
+from app.core.settings import get_settings
 from app.models.evaluation_rollup import EvaluationRollup
 from app.models.incident import Incident
 from app.models.project import Project
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
+from app.services.alerts import (
+    ALERT_STATUS_PENDING,
+    ALERT_STATUS_SENT,
+    ALERT_STATUS_SUPPRESSED,
+    create_alert_deliveries_for_open_incidents,
+    deliver_alert_delivery,
+)
 from app.services.evaluations import run_structured_output_validity_evaluation
 from app.services.incidents import sync_incidents_for_scope
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
+from app.workers.evaluations import enqueue_alert_delivery_job
 from .test_api import (
     auth_headers,
     create_api_key,
@@ -22,6 +32,14 @@ from .test_api import (
     ingest_trace,
     sign_in,
 )
+
+
+def _set_slack_webhook(url: str | None) -> None:
+    if url is None:
+        os.environ.pop("SLACK_WEBHOOK_DEFAULT", None)
+    else:
+        os.environ["SLACK_WEBHOOK_DEFAULT"] = url
+    get_settings.cache_clear()
 
 
 def _run_signal_pipeline(db_session, trace_id: UUID) -> None:
@@ -97,6 +115,15 @@ def _seed_success_rate_regression(client, db_session):
         _run_signal_pipeline(db_session, UUID(response["trace_id"]))
 
     return session_payload, organization, project
+
+
+def _list_open_incidents(db_session, project_id: str) -> list[Incident]:
+    return db_session.scalars(
+        select(Incident).where(
+            Incident.project_id == UUID(project_id),
+            Incident.status == "open",
+        )
+    ).all()
 
 
 def test_rollups_persist_for_project_and_prompt_version_scopes(client, db_session, fake_queue):
@@ -202,3 +229,98 @@ def test_incident_and_regression_endpoints_are_tenant_safe(client, db_session, f
     owner_incidents = client.get("/api/v1/incidents", headers=auth_headers(owner_session))
     assert owner_incidents.status_code == 200
     assert len(owner_incidents.json()["items"]) >= 1
+
+
+def test_alert_enqueue_on_incident_open(client, db_session, fake_queue):
+    _set_slack_webhook("https://hooks.slack.test/services/default")
+    _, _, project = _seed_success_rate_regression(client, db_session)
+    opened_incidents = _list_open_incidents(db_session, project["id"])
+
+    deliveries = create_alert_deliveries_for_open_incidents(db_session, incidents=opened_incidents)
+    db_session.commit()
+    pending = [delivery for delivery in deliveries if delivery.delivery_status == ALERT_STATUS_PENDING]
+
+    for delivery in pending:
+        enqueue_alert_delivery_job(delivery.id)
+
+    assert pending
+    assert any(job[0].__name__ == "run_alert_delivery" for job in fake_queue.jobs)
+
+
+def test_alert_cooldown_suppresses_duplicate_delivery(client, db_session, fake_queue):
+    _set_slack_webhook("https://hooks.slack.test/services/default")
+    _, _, project = _seed_success_rate_regression(client, db_session)
+    opened_incidents = _list_open_incidents(db_session, project["id"])
+    deliveries = create_alert_deliveries_for_open_incidents(db_session, incidents=opened_incidents)
+    db_session.commit()
+
+    pending = next(delivery for delivery in deliveries if delivery.delivery_status == ALERT_STATUS_PENDING)
+    pending.delivery_status = ALERT_STATUS_SENT
+    pending.sent_at = datetime.now(timezone.utc)
+    db_session.add(pending)
+    db_session.commit()
+
+    duplicate = create_alert_deliveries_for_open_incidents(
+        db_session, incidents=[db_session.get(Incident, pending.incident_id)]
+    )
+    db_session.commit()
+
+    assert duplicate[0].delivery_status == ALERT_STATUS_SUPPRESSED
+    assert duplicate[0].error_message == "Suppressed by alert cooldown"
+
+
+def test_acknowledge_and_owner_assignment_actions(client, db_session, fake_queue):
+    _set_slack_webhook(None)
+    owner_session, _, project = _seed_success_rate_regression(client, db_session)
+    incident = db_session.scalar(select(Incident).where(Incident.project_id == UUID(project["id"])))
+    assert incident is not None
+
+    acknowledge_response = client.post(
+        f"/api/v1/incidents/{incident.id}/acknowledge",
+        headers=auth_headers(owner_session),
+    )
+    assert acknowledge_response.status_code == 200
+    assert acknowledge_response.json()["acknowledged_by_operator_user_id"] == owner_session["operator"]["id"]
+    assert acknowledge_response.json()["acknowledged_at"] is not None
+
+    owner_response = client.post(
+        f"/api/v1/incidents/{incident.id}/owner",
+        headers=auth_headers(owner_session),
+        json={"owner_operator_user_id": owner_session["operator"]["id"]},
+    )
+    assert owner_response.status_code == 200
+    assert owner_response.json()["owner_operator_user_id"] == owner_session["operator"]["id"]
+    assert owner_response.json()["owner_operator_email"] == "acme-incidents@acme.test"
+
+
+def test_tenant_safe_alert_history_reads(client, db_session, fake_queue, monkeypatch):
+    _set_slack_webhook("https://hooks.slack.test/services/default")
+    monkeypatch.setattr("app.services.alerts.httpx.post", lambda *args, **kwargs: type("Resp", (), {
+        "headers": {"x-slack-req-id": "req-1"},
+        "raise_for_status": staticmethod(lambda: None),
+    })())
+    owner_session, _, project = _seed_success_rate_regression(client, db_session)
+    opened_incidents = _list_open_incidents(db_session, project["id"])
+    deliveries = create_alert_deliveries_for_open_incidents(db_session, incidents=opened_incidents)
+    db_session.commit()
+    for delivery in deliveries:
+        if delivery.delivery_status == ALERT_STATUS_PENDING:
+            deliver_alert_delivery(db_session, delivery.id)
+
+    incident = db_session.scalar(select(Incident).where(Incident.project_id == UUID(project["id"])))
+    assert incident is not None
+
+    owner_alerts = client.get(
+        f"/api/v1/incidents/{incident.id}/alerts",
+        headers=auth_headers(owner_session),
+    )
+    assert owner_alerts.status_code == 200
+    assert owner_alerts.json()["items"]
+
+    outsider = create_operator(db_session, email="alerts-outsider@beta.test")
+    outsider_session = sign_in(client, email=outsider.email)
+    outsider_alerts = client.get(
+        f"/api/v1/incidents/{incident.id}/alerts",
+        headers=auth_headers(outsider_session),
+    )
+    assert outsider_alerts.status_code == 404

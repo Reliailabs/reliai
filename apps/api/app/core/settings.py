@@ -10,11 +10,14 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_name: str = "Reliai API"
     app_version: str = "0.1.0"
+    app_url: str = "http://localhost:3000"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "sqlite+pysqlite:///./reliai.db"
     redis_url: str = "redis://localhost:6379/0"
     rq_queue_name: str = "default"
     log_level: str = "INFO"
+    slack_webhook_default: str | None = None
+    alert_delivery_cooldown_minutes: int = 60
     api_key_hash_secret: str = "change-me"
     auth_session_hash_secret: str = "change-me-session-secret"
     auth_session_days: int = 14

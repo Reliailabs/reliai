@@ -1,13 +1,37 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock3, FolderKanban, GitCompareArrows, ScanSearch } from "lucide-react";
+import { revalidatePath } from "next/cache";
+import {
+  ArrowLeft,
+  BellRing,
+  CheckCheck,
+  Clock3,
+  FolderKanban,
+  GitCompareArrows,
+  ScanSearch,
+  UserRound,
+} from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getIncidentDetail } from "@/lib/api";
+import {
+  acknowledgeIncident,
+  assignIncidentOwner,
+  getIncidentAlerts,
+  getIncidentDetail,
+} from "@/lib/api";
+import { requireOperatorSession } from "@/lib/auth";
 
 function severityTone(severity: string) {
   if (severity === "critical") return "bg-rose-100 text-rose-700 ring-1 ring-rose-200";
   if (severity === "high") return "bg-amber-100 text-amber-800 ring-1 ring-amber-200";
+  return "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200";
+}
+
+function deliveryTone(status: string) {
+  if (status === "sent") return "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200";
+  if (status === "failed") return "bg-rose-100 text-rose-700 ring-1 ring-rose-200";
+  if (status === "suppressed") return "bg-amber-100 text-amber-800 ring-1 ring-amber-200";
   return "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200";
 }
 
@@ -16,11 +40,39 @@ export default async function IncidentDetailPage({
 }: {
   params: Promise<{ incidentId: string }>;
 }) {
+  const session = await requireOperatorSession();
   const { incidentId } = await params;
-  const incident = await getIncidentDetail(incidentId).catch(() => null);
+  const [incident, alerts] = await Promise.all([
+    getIncidentDetail(incidentId).catch(() => null),
+    getIncidentAlerts(incidentId).catch(() => ({ items: [] }))
+  ]);
 
   if (!incident) {
     notFound();
+  }
+
+  async function acknowledgeAction() {
+    "use server";
+    await acknowledgeIncident(incidentId);
+    revalidatePath("/dashboard");
+    revalidatePath("/incidents");
+    revalidatePath(`/incidents/${incidentId}`);
+  }
+
+  async function assignToMeAction() {
+    "use server";
+    await assignIncidentOwner(incidentId, session.operator.id);
+    revalidatePath("/dashboard");
+    revalidatePath("/incidents");
+    revalidatePath(`/incidents/${incidentId}`);
+  }
+
+  async function clearOwnerAction() {
+    "use server";
+    await assignIncidentOwner(incidentId, null);
+    revalidatePath("/dashboard");
+    revalidatePath("/incidents");
+    revalidatePath(`/incidents/${incidentId}`);
   }
 
   return (
@@ -156,6 +208,88 @@ export default async function IncidentDetailPage({
         </div>
 
         <div className="space-y-6">
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Operator actions</p>
+            <div className="mt-4 space-y-4">
+              <div className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">Acknowledgment</p>
+                <p className="mt-2 text-sm text-steel">
+                  {incident.acknowledged_at
+                    ? `Acknowledged by ${incident.acknowledged_by_operator_email ?? "operator"} at ${new Date(
+                        incident.acknowledged_at
+                      ).toLocaleString()}`
+                    : "Not acknowledged yet"}
+                </p>
+                {!incident.acknowledged_at ? (
+                  <form action={acknowledgeAction} className="mt-3">
+                    <Button size="sm">
+                      <CheckCheck className="mr-2 h-4 w-4" />
+                      Acknowledge
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">Owner</p>
+                <p className="mt-2 text-sm text-steel">
+                  {incident.owner_operator_email ?? "Unassigned"}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {incident.owner_operator_user_id !== session.operator.id ? (
+                    <form action={assignToMeAction}>
+                      <Button size="sm" variant="outline">
+                        <UserRound className="mr-2 h-4 w-4" />
+                        Assign to me
+                      </Button>
+                    </form>
+                  ) : null}
+                  {incident.owner_operator_user_id ? (
+                    <form action={clearOwnerAction}>
+                      <Button size="sm" variant="subtle">
+                        Clear owner
+                      </Button>
+                    </form>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Alert deliveries</p>
+            {alerts.items.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {alerts.items.map((alert) => (
+                  <div key={alert.id} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-ink">{alert.channel_type}</p>
+                        <p className="mt-1 text-sm text-steel">{alert.channel_target}</p>
+                      </div>
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${deliveryTone(alert.delivery_status)}`}>
+                        {alert.delivery_status}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm text-steel">
+                      {alert.sent_at
+                        ? `Sent ${new Date(alert.sent_at).toLocaleString()}`
+                        : `Created ${new Date(alert.created_at).toLocaleString()}`}
+                    </p>
+                    {alert.error_message ? (
+                      <p className="mt-2 text-sm text-rose-700">{alert.error_message}</p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-sm leading-6 text-steel">
+                <BellRing className="mb-3 h-5 w-5" />
+                No alert deliveries have been recorded for this incident yet.
+              </div>
+            )}
+          </Card>
+
           <Card className="rounded-[28px] border-zinc-300 p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Incident summary</p>
             <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-50 p-4 text-sm leading-6 text-ink">

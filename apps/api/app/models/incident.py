@@ -29,5 +29,21 @@ class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    acknowledged_by_operator_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("operator_users.id")
+    )
+    owner_operator_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("operator_users.id"))
 
     project = relationship("Project", back_populates="incidents")
+    alert_deliveries = relationship("AlertDelivery", back_populates="incident")
+    acknowledged_by_operator = relationship(
+        "OperatorUser",
+        foreign_keys=[acknowledged_by_operator_user_id],
+        back_populates="acknowledged_incidents",
+    )
+    owner_operator = relationship(
+        "OperatorUser",
+        foreign_keys=[owner_operator_user_id],
+        back_populates="owned_incidents",
+    )

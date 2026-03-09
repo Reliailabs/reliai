@@ -6,8 +6,16 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import require_operator
 from app.db.session import get_db
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
+from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.auth import AuthSessionResponse, AuthSignInRequest, OperatorMembershipRead, OperatorRead
-from app.schemas.incident import IncidentDetailRead, IncidentListQuery, IncidentListResponse, IncidentListItemRead, IncidentTraceSampleRead
+from app.schemas.incident import (
+    IncidentDetailRead,
+    IncidentListItemRead,
+    IncidentListQuery,
+    IncidentListResponse,
+    IncidentOwnerAssignRequest,
+    IncidentTraceSampleRead,
+)
 from app.schemas.organization import OrganizationCreate, OrganizationRead
 from app.schemas.project import ProjectCreate, ProjectRead
 from app.schemas.regression import RegressionListQuery, RegressionListResponse, RegressionSnapshotRead
@@ -25,7 +33,15 @@ from app.services.auth import (
     revoke_session,
     sign_in_operator,
 )
-from app.services.incidents import get_incident_detail, get_incident_regressions, get_incident_traces, list_incidents
+from app.services.incidents import (
+    acknowledge_incident,
+    assign_incident_owner,
+    get_incident_alert_deliveries,
+    get_incident_detail,
+    get_incident_regressions,
+    get_incident_traces,
+    list_incidents,
+)
 from app.services.regressions import list_project_regressions
 from app.services.authorization import require_organization_membership, require_project_access
 from app.services.organizations import create_organization, get_organization
@@ -50,6 +66,16 @@ def _incident_list_item(incident) -> IncidentListItemRead:
         started_at=incident.started_at,
         updated_at=incident.updated_at,
         resolved_at=incident.resolved_at,
+        acknowledged_at=incident.acknowledged_at,
+        acknowledged_by_operator_user_id=incident.acknowledged_by_operator_user_id,
+        acknowledged_by_operator_email=incident.acknowledged_by_operator.email
+        if incident.acknowledged_by_operator is not None
+        else None,
+        owner_operator_user_id=incident.owner_operator_user_id,
+        owner_operator_email=incident.owner_operator.email if incident.owner_operator is not None else None,
+        latest_alert_delivery=AlertDeliveryRead.model_validate(incident.latest_alert_delivery)
+        if getattr(incident, "latest_alert_delivery", None) is not None
+        else None,
     )
 
 
@@ -169,6 +195,56 @@ def get_incident_detail_endpoint(
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
     )
+
+
+@router.post("/incidents/{incident_id}/acknowledge", response_model=IncidentDetailRead)
+def acknowledge_incident_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentDetailRead:
+    incident = acknowledge_incident(db, operator, incident_id)
+    regressions = get_incident_regressions(db, incident)
+    traces = get_incident_traces(db, incident)
+    item = _incident_list_item(incident)
+    return IncidentDetailRead(
+        **item.model_dump(),
+        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
+        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+    )
+
+
+@router.post("/incidents/{incident_id}/owner", response_model=IncidentDetailRead)
+def assign_incident_owner_endpoint(
+    incident_id: UUID,
+    payload: IncidentOwnerAssignRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentDetailRead:
+    incident = assign_incident_owner(
+        db,
+        operator,
+        incident_id=incident_id,
+        owner_operator_user_id=payload.owner_operator_user_id,
+    )
+    regressions = get_incident_regressions(db, incident)
+    traces = get_incident_traces(db, incident)
+    item = _incident_list_item(incident)
+    return IncidentDetailRead(
+        **item.model_dump(),
+        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
+        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+    )
+
+
+@router.get("/incidents/{incident_id}/alerts", response_model=AlertDeliveryListResponse)
+def list_incident_alerts_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AlertDeliveryListResponse:
+    deliveries = get_incident_alert_deliveries(db, operator, incident_id)
+    return AlertDeliveryListResponse(items=[AlertDeliveryRead.model_validate(item) for item in deliveries])
 
 
 @router.get("/projects/{project_id}/regressions", response_model=RegressionListResponse)

@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.alert_delivery import AlertDeliveryRead
 from app.schemas.common import APIModel
 from app.schemas.regression import RegressionSnapshotRead
 
@@ -39,6 +40,12 @@ class IncidentListItemRead(APIModel):
     started_at: datetime
     updated_at: datetime
     resolved_at: datetime | None
+    acknowledged_at: datetime | None
+    acknowledged_by_operator_user_id: UUID | None
+    acknowledged_by_operator_email: str | None
+    owner_operator_user_id: UUID | None
+    owner_operator_email: str | None
+    latest_alert_delivery: AlertDeliveryRead | None
 
 
 class IncidentListResponse(BaseModel):
@@ -48,3 +55,7 @@ class IncidentListResponse(BaseModel):
 class IncidentDetailRead(IncidentListItemRead):
     regressions: list[RegressionSnapshotRead]
     traces: list[IncidentTraceSampleRead]
+
+
+class IncidentOwnerAssignRequest(BaseModel):
+    owner_operator_user_id: UUID | None = None

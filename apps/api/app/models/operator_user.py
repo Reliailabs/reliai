@@ -20,3 +20,13 @@ class OperatorUser(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     sessions = relationship("OperatorSession", back_populates="operator_user")
+    acknowledged_incidents = relationship(
+        "Incident",
+        foreign_keys="Incident.acknowledged_by_operator_user_id",
+        back_populates="acknowledged_by_operator",
+    )
+    owned_incidents = relationship(
+        "Incident",
+        foreign_keys="Incident.owner_operator_user_id",
+        back_populates="owner_operator",
+    )

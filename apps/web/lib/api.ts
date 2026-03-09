@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 
 import type {
+  AlertDeliveryListResponse,
   IncidentDetailRead,
   IncidentListResponse,
   OrganizationRead,
@@ -101,6 +102,26 @@ export async function listIncidents(filters: {
 
 export async function getIncidentDetail(incidentId: string) {
   return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}`);
+}
+
+export async function acknowledgeIncident(incidentId: string) {
+  return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}/acknowledge`, {
+    method: "POST"
+  });
+}
+
+export async function assignIncidentOwner(
+  incidentId: string,
+  ownerOperatorUserId: string | null
+) {
+  return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}/owner`, {
+    method: "POST",
+    body: JSON.stringify({ owner_operator_user_id: ownerOperatorUserId })
+  });
+}
+
+export async function getIncidentAlerts(incidentId: string) {
+  return request<AlertDeliveryListResponse>(`/api/v1/incidents/${incidentId}/alerts`);
 }
 
 export async function listProjectRegressions(projectId: string, limit = 25) {
