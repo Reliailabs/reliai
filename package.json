@@ -1,0 +1,10 @@
+{
+  "name": "reliai",
+  "private": true,
+  "packageManager": "pnpm@10.26.0",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "lint:web": "pnpm --filter web lint",
+    "format:web": "pnpm --filter web format"
+  }
+}
