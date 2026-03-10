@@ -20,6 +20,7 @@ from app.models.trace import Trace
 from app.models.trace_evaluation import TraceEvaluation
 from app.models.trace_retrieval_span import TraceRetrievalSpan
 from app.services.auth import OperatorContext
+from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 
 
 def sync_trace_evaluation(db: Session, *, evaluation: Evaluation) -> TraceEvaluation:
@@ -81,25 +82,18 @@ def _incident_window_traces(db: Session, *, incident: Incident) -> list[Trace]:
     if isinstance(window_end, str):
         window_end = datetime.fromisoformat(window_end)
 
-    statement = (
-        select(Trace)
-        .options(
-            selectinload(Trace.prompt_version_record),
-            selectinload(Trace.model_version_record),
-            selectinload(Trace.graph_evaluations),
-            selectinload(Trace.graph_retrieval_span),
-        )
-        .where(
-            Trace.organization_id == incident.organization_id,
-            Trace.project_id == incident.project_id,
-            Trace.timestamp >= window_start,
-            Trace.timestamp < window_end,
-        )
-        .order_by(desc(Trace.timestamp), desc(Trace.id))
+    return query_trace_window(
+        db,
+        TraceWindowQuery(
+            organization_id=incident.organization_id,
+            project_id=incident.project_id,
+            window_start=window_start,
+            window_end=window_end,
+            prompt_version=summary.get("scope_id") if summary.get("scope_type") == "prompt_version" else None,
+            with_details=True,
+            limit=25,
+        ),
     )
-    if summary.get("scope_type") == "prompt_version":
-        statement = statement.where(Trace.prompt_version == summary.get("scope_id"))
-    return db.scalars(statement.limit(25)).unique().all()
 
 
 def sync_incident_root_causes(db: Session, *, incident: Incident) -> list[IncidentRootCause]:
@@ -206,15 +200,23 @@ def get_incident_graph(db: Session, operator: OperatorContext, incident_id: UUID
 
     graph_traces = graph_traces[:10]
     trace_ids = [trace.id for trace in graph_traces]
-    evaluations = (
-        db.scalars(
+    evaluations = []
+    if trace_ids:
+        evaluations = db.scalars(
             select(TraceEvaluation)
             .where(TraceEvaluation.trace_id.in_(trace_ids))
             .order_by(desc(TraceEvaluation.created_at))
         ).all()
-        if trace_ids
-        else []
-    )
+    if not evaluations:
+        seen_ids = set()
+        synthesized = []
+        for trace in graph_traces:
+            for evaluation in getattr(trace, "graph_evaluations", []):
+                if evaluation.id in seen_ids:
+                    continue
+                synthesized.append(evaluation)
+                seen_ids.add(evaluation.id)
+        evaluations = synthesized
 
     prompt_version = None
     model_version = None

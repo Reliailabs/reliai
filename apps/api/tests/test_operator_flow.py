@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import select
@@ -9,6 +10,8 @@ from app.services.evaluations import run_structured_output_validity_evaluation
 from app.services.incidents import sync_incidents_for_scope
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
+from app.workers.reliability_sweep import run_reliability_sweep_for_session
+from app.workers.trace_warehouse_ingest import run_trace_warehouse_ingest
 from .test_api import auth_headers, create_api_key, create_organization, create_project, ingest_trace, sign_in
 
 
@@ -31,7 +34,7 @@ def _run_signal_pipeline(db_session, trace_id: UUID) -> None:
     db_session.commit()
 
 
-def test_operator_flow_smoke(client, db_session, fake_queue):
+def test_operator_flow_smoke(client, db_session, fake_queue, fake_trace_warehouse):
     operator = create_operator_user(
         db_session,
         email="smoke-owner@acme.test",
@@ -50,7 +53,7 @@ def test_operator_flow_smoke(client, db_session, fake_queue):
             client,
             api_key["api_key"],
             {
-                "timestamp": f"2026-03-09T09:{index:02d}:00Z",
+                "timestamp": f"2026-02-25T09:{index:02d}:00Z",
                 "request_id": f"baseline_{index}",
                 "model_name": "gpt-4.1-mini",
                 "model_provider": "openai",
@@ -63,7 +66,9 @@ def test_operator_flow_smoke(client, db_session, fake_queue):
                 "metadata_json": {"expected_output_format": "json", "model_version": "2026-03"},
             },
         )
-        _run_signal_pipeline(db_session, UUID(baseline["trace_id"]))
+        baseline_trace_id = UUID(baseline["trace_id"])
+        _run_signal_pipeline(db_session, baseline_trace_id)
+        run_trace_warehouse_ingest(str(baseline_trace_id))
 
     latest_trace_id = None
     for index in range(12):
@@ -71,7 +76,7 @@ def test_operator_flow_smoke(client, db_session, fake_queue):
             client,
             api_key["api_key"],
             {
-                "timestamp": f"2026-03-09T10:{index:02d}:00Z",
+                "timestamp": f"2026-02-25T10:{index:02d}:00Z",
                 "request_id": f"current_{index}",
                 "model_name": "gpt-4.1-mini",
                 "model_provider": "openai",
@@ -87,6 +92,7 @@ def test_operator_flow_smoke(client, db_session, fake_queue):
         )
         latest_trace_id = UUID(current["trace_id"])
         _run_signal_pipeline(db_session, latest_trace_id)
+        run_trace_warehouse_ingest(str(latest_trace_id))
 
     assert latest_trace_id is not None
 
@@ -112,6 +118,7 @@ def test_operator_flow_smoke(client, db_session, fake_queue):
     )
     assert incident_compare.status_code == 200
     assert incident_compare.json()["pairs"]
+    assert incident_compare.json()["current_window_end"].startswith("2026-02-25")
 
     trace_compare = client.get(
         f"/api/v1/traces/{latest_trace_id}/compare",
@@ -124,3 +131,25 @@ def test_operator_flow_smoke(client, db_session, fake_queue):
     assert linked_trace is not None
     assert linked_trace.prompt_version_record_id is not None
     assert linked_trace.model_version_record_id is not None
+
+    project_record = linked_trace.project
+    assert project_record is not None
+    project_record.last_trace_received_at = linked_trace.created_at.replace(tzinfo=timezone.utc) - timedelta(minutes=45)
+    db_session.add(project_record)
+    db_session.commit()
+
+    sweep_result = run_reliability_sweep_for_session(
+        db_session,
+        anchor_time=linked_trace.created_at.replace(tzinfo=timezone.utc).isoformat(),
+    )
+    assert sweep_result["stale_incidents_opened"] >= 1
+
+    stale_incident = db_session.scalar(
+        select(Incident)
+        .where(
+            Incident.project_id == UUID(project["id"]),
+            Incident.incident_type == "telemetry_freshness_stale",
+        )
+        .order_by(Incident.started_at.desc())
+    )
+    assert stale_incident is not None

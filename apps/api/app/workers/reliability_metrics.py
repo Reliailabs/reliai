@@ -8,6 +8,7 @@ from app.services.alerts import ALERT_STATUS_PENDING, create_alert_deliveries_fo
 from app.services.incidents import sync_telemetry_freshness_incident
 from app.services.reliability_metrics import compute_project_reliability_metrics
 from app.workers.alerts import run_alert_delivery
+from app.workers.global_metrics_aggregator import enqueue_global_metrics_aggregation
 
 logger = logging.getLogger(__name__)
 
@@ -89,5 +90,6 @@ def run_project_reliability_metrics(
         db.commit()
         if delivery_ids:
             enqueue_alert_delivery_jobs(delivery_ids)
+        enqueue_global_metrics_aggregation(anchor_time=computed_at)
     finally:
         db.close()

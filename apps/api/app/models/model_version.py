@@ -31,3 +31,4 @@ class ModelVersion(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     project = relationship("Project", back_populates="model_versions")
     traces = relationship("Trace", back_populates="model_version_record")
+    deployments = relationship("Deployment", back_populates="model_version")

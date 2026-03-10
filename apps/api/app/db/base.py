@@ -1,7 +1,13 @@
 from app.models.alert_delivery import AlertDelivery
 from app.models.api_key import APIKey
+from app.models.deployment import Deployment
+from app.models.deployment_event import DeploymentEvent
+from app.models.deployment_rollback import DeploymentRollback
 from app.models.evaluation import Evaluation
 from app.models.evaluation_rollup import EvaluationRollup
+from app.models.guardrail_event import GuardrailEvent
+from app.models.guardrail_policy import GuardrailPolicy
+from app.models.global_model_reliability import GlobalModelReliability
 from app.models.incident import Incident
 from app.models.incident_root_cause import IncidentRootCause
 from app.models.incident_event import IncidentEvent
@@ -24,8 +30,14 @@ from app.models.model_version import ModelVersion
 __all__ = [
     "AlertDelivery",
     "APIKey",
+    "Deployment",
+    "DeploymentEvent",
+    "DeploymentRollback",
     "Evaluation",
     "EvaluationRollup",
+    "GuardrailEvent",
+    "GuardrailPolicy",
+    "GlobalModelReliability",
     "Incident",
     "IncidentRootCause",
     "IncidentEvent",

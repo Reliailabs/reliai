@@ -17,11 +17,14 @@ from app.models.trace import Trace
 from app.schemas.trace import TraceIngestRequest, TraceListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_trace_access
+from app.services.guardrails import evaluate_trace_guardrails
 from app.services.incidents import _structured_output_label
 from app.services.onboarding import mark_trace_ingested
 from app.services.reliability_graph import sync_trace_retrieval_span
 from app.services.registry import link_trace_registry_records
+from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 from app.workers.evaluations import run_trace_evaluations
+from app.workers.trace_warehouse_ingest import run_trace_warehouse_ingest
 
 logger = logging.getLogger(__name__)
 PREVIEW_LENGTH = 240
@@ -68,6 +71,13 @@ def enqueue_trace_evaluations(trace_id: UUID) -> None:
         get_queue().enqueue(run_trace_evaluations, str(trace_id))
     except Exception:
         logger.exception("failed to enqueue trace evaluations", extra={"trace_id": str(trace_id)})
+
+
+def enqueue_trace_warehouse_ingest(trace_id: UUID) -> None:
+    try:
+        get_queue().enqueue(run_trace_warehouse_ingest, str(trace_id))
+    except Exception:
+        logger.exception("failed to enqueue trace warehouse ingest", extra={"trace_id": str(trace_id)})
 
 
 def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> Trace:
@@ -128,6 +138,7 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
             )
 
         link_trace_registry_records(db, trace=trace, project=project)
+        evaluate_trace_guardrails(db, project=project, trace=trace)
         project.last_trace_received_at = trace.created_at
         db.add(project)
 
@@ -147,6 +158,7 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     trace = create_trace(db, project, payload)
     enqueue_trace_evaluations(trace.id)
+    enqueue_trace_warehouse_ingest(trace.id)
     return trace
 
 
@@ -210,35 +222,6 @@ def get_trace_detail(db: Session, operator: OperatorContext, trace_id: UUID) -> 
     return trace
 
 
-def _trace_compare_statement(trace: Trace):
-    statement = (
-        select(Trace)
-        .options(
-            selectinload(Trace.retrieval_span),
-            selectinload(Trace.evaluations),
-            selectinload(Trace.prompt_version_record),
-            selectinload(Trace.model_version_record),
-        )
-        .where(
-            Trace.organization_id == trace.organization_id,
-            Trace.project_id == trace.project_id,
-            Trace.id != trace.id,
-            Trace.timestamp < trace.timestamp,
-        )
-    )
-    if trace.prompt_version_record_id is not None:
-        statement = statement.where(Trace.prompt_version_record_id == trace.prompt_version_record_id)
-    elif trace.prompt_version is not None:
-        statement = statement.where(Trace.prompt_version == trace.prompt_version)
-    if trace.model_version_record_id is not None:
-        statement = statement.where(Trace.model_version_record_id == trace.model_version_record_id)
-    else:
-        statement = statement.where(Trace.model_name == trace.model_name)
-        if trace.model_provider is not None:
-            statement = statement.where(Trace.model_provider == trace.model_provider)
-    return statement
-
-
 def _numeric_distance(left: int | Decimal | None, right: int | Decimal | None) -> float:
     if left is None or right is None:
         return float("inf")
@@ -298,55 +281,70 @@ def get_trace_compare(db: Session, operator: OperatorContext, trace_id: UUID) ->
 
     for window in search_windows:
         baseline_window_start = baseline_window_end - window
-        candidates = (
-            db.scalars(
-                _trace_compare_statement(trace)
-                .where(Trace.timestamp >= baseline_window_start)
-                .order_by(desc(Trace.timestamp), desc(Trace.id))
-                .limit(100)
+        candidates = [
+            candidate
+            for candidate in query_trace_window(
+                db,
+                TraceWindowQuery(
+                    organization_id=trace.organization_id,
+                    project_id=trace.project_id,
+                    window_start=baseline_window_start,
+                    window_end=baseline_window_end,
+                    prompt_version=trace.prompt_version if trace.prompt_version_record_id is None else None,
+                    prompt_version_record_id=trace.prompt_version_record_id,
+                    model_version_record_id=trace.model_version_record_id,
+                    with_details=True,
+                    limit=100,
+                ),
             )
-            .unique()
-            .all()
-        )
+            if candidate.id != trace.id
+            and (
+                candidate.model_version_record_id == trace.model_version_record_id
+                if trace.model_version_record_id is not None
+                else candidate.model_name == trace.model_name
+            )
+            and (
+                trace.model_provider is None
+                or getattr(candidate, "model_provider", None) == trace.model_provider
+                or trace.model_version_record_id is not None
+            )
+            and candidate.timestamp < trace.timestamp
+        ]
         ranked = _rank_trace_baseline_candidates(trace, candidates)
         if ranked:
             break
 
     if not ranked:
         baseline_window_start = baseline_window_end - timedelta(days=7)
-        fallback_candidates = (
-            db.scalars(
-                select(Trace)
-                .options(
-                    selectinload(Trace.retrieval_span),
-                    selectinload(Trace.evaluations),
-                    selectinload(Trace.prompt_version_record),
-                    selectinload(Trace.model_version_record),
-                )
-                .where(
-                    Trace.organization_id == trace.organization_id,
-                    Trace.project_id == trace.project_id,
-                    Trace.id != trace.id,
-                    Trace.timestamp < trace.timestamp,
-                    Trace.timestamp >= baseline_window_start,
-                    Trace.success.is_(True),
-                    or_(
-                        and_(
-                            Trace.prompt_version == trace.prompt_version,
-                            Trace.model_name == trace.model_name,
-                        ),
-                        and_(
-                            Trace.prompt_version_record_id == trace.prompt_version_record_id,
-                            Trace.model_version_record_id == trace.model_version_record_id,
-                        ),
-                    ),
-                )
-                .order_by(desc(Trace.timestamp), desc(Trace.id))
-                .limit(100)
+        fallback_candidates = [
+            candidate
+            for candidate in query_trace_window(
+                db,
+                TraceWindowQuery(
+                    organization_id=trace.organization_id,
+                    project_id=trace.project_id,
+                    window_start=baseline_window_start,
+                    window_end=baseline_window_end,
+                    with_details=True,
+                    limit=100,
+                ),
             )
-            .unique()
-            .all()
-        )
+            if candidate.id != trace.id
+            and candidate.timestamp < trace.timestamp
+            and candidate.success
+            and (
+                (
+                    trace.prompt_version_record_id is not None
+                    and trace.model_version_record_id is not None
+                    and candidate.prompt_version_record_id == trace.prompt_version_record_id
+                    and candidate.model_version_record_id == trace.model_version_record_id
+                )
+                or (
+                    candidate.prompt_version == trace.prompt_version
+                    and candidate.model_name == trace.model_name
+                )
+            )
+        ]
         ranked = _rank_trace_baseline_candidates(trace, fallback_candidates)
 
     baseline_trace = ranked[0] if ranked else None

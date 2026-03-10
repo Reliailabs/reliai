@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ChartColumn, FolderKanban, ShieldCheck, ShieldX } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChartColumn, FolderKanban, History, ShieldCheck, ShieldX } from "lucide-react";
 
 import type { ProjectReliabilityRead, ReliabilityMetricSeriesRead } from "@reliai/types";
 
@@ -162,6 +162,13 @@ export default async function ProjectReliabilityPage({
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href={`/projects/${projectId}/timeline`}
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+            >
+              <History className="h-4 w-4" />
+              Timeline
+            </Link>
             <ScorePill score={reliability.reliability_score} />
             <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
               {project.environment}

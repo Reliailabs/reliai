@@ -11,6 +11,7 @@ from app.models.trace import Trace
 from app.services.auth import create_operator_user
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
 from app.workers.evaluations import run_trace_evaluations
+from app.workers.trace_warehouse_ingest import run_trace_warehouse_ingest
 
 
 def create_operator(db_session, *, email: str, password: str = "reliai-test-password"):
@@ -264,8 +265,10 @@ def test_ingest_trace_happy_path(client, db_session, fake_queue, monkeypatch):
     assert project_record is not None
     assert project_record.last_trace_received_at is not None
     assert model_record.model_name == "gpt-4.1-mini"
-    assert len(fake_queue.jobs) == 1
+    assert len(fake_queue.jobs) == 2
+    assert [job[0] for job in fake_queue.jobs] == [run_trace_evaluations, run_trace_warehouse_ingest]
     assert fake_queue.jobs[0][1] == (str(stored_trace.id),)
+    assert fake_queue.jobs[1][1] == (str(stored_trace.id),)
 
 
 def test_project_registry_listing_is_tenant_safe(client, db_session, fake_queue):

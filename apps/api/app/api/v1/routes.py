@@ -9,6 +9,21 @@ from app.db.session import get_db
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.auth import AuthSessionResponse, AuthSignInRequest, OperatorMembershipRead, OperatorRead
+from app.schemas.deployment import (
+    DeploymentCreate,
+    DeploymentDetailRead,
+    DeploymentEventRead,
+    DeploymentListResponse,
+    DeploymentRead,
+    DeploymentRollbackRead,
+    IncidentDeploymentContextRead,
+)
+from app.schemas.global_metrics import (
+    GlobalModelReliabilityListResponse,
+    GlobalModelReliabilityMetricRead,
+    GlobalModelReliabilityRead,
+)
+from app.schemas.guardrail import GuardrailPolicyCreate, GuardrailPolicyListResponse, GuardrailPolicyRead
 from app.schemas.incident import (
     IncidentCompareRead,
     IncidentDetailRead,
@@ -69,6 +84,12 @@ from app.schemas.regression import (
     RegressionRelatedIncidentRead,
     RegressionSnapshotRead,
 )
+from app.schemas.root_cause_analysis import (
+    IncidentAnalysisRead,
+    IncidentAnalysisResponse,
+    RootCauseProbabilityRead,
+    RootCauseRecommendedFixRead,
+)
 from app.schemas.trace import (
     TraceCompareItemRead,
     TraceComparePairRead,
@@ -79,7 +100,15 @@ from app.schemas.trace import (
     TraceListQuery,
     TraceListResponse,
 )
+from app.schemas.timeline import TimelineEventRead, TimelineResponse
 from app.services.api_keys import authenticate_api_key, create_api_key
+from app.services.deployments import (
+    create_deployment,
+    get_deployment_detail,
+    list_project_deployments,
+)
+from app.services.global_metrics import list_global_model_reliability
+from app.services.guardrails import create_guardrail_policy, list_guardrail_policies
 from app.services.auth import (
     OperatorContext,
     get_operator_memberships,
@@ -107,6 +136,7 @@ from app.services.incidents import (
     resolve_incident,
 )
 from app.services.regressions import get_regression_compare, get_regression_detail, list_project_regressions
+from app.services.root_cause_engine import get_incident_analysis
 from app.services.authorization import require_organization_membership, require_project_access
 from app.services.organizations import create_organization, get_organization
 from app.services.organization_alert_targets import (
@@ -144,6 +174,7 @@ from app.services.registry import (
 )
 from app.services.model_versions import get_model_version_detail
 from app.services.traces import get_trace_compare, get_trace_detail, ingest_trace, list_traces
+from app.services.timeline import get_project_timeline
 
 router = APIRouter()
 
@@ -179,6 +210,62 @@ def _incident_list_item(incident) -> IncidentListItemRead:
         latest_alert_delivery=AlertDeliveryRead.model_validate(incident.latest_alert_delivery)
         if getattr(incident, "latest_alert_delivery", None) is not None
         else None,
+    )
+
+
+def _global_model_reliability_item(item: dict) -> GlobalModelReliabilityRead:
+    return GlobalModelReliabilityRead(
+        provider=item["provider"],
+        model_name=item["model_name"],
+        metrics=[
+            GlobalModelReliabilityMetricRead.model_validate(metric)
+            for metric in item["metrics"]
+        ],
+    )
+
+
+def _deployment_item(deployment) -> DeploymentRead:
+    return DeploymentRead.model_validate(deployment)
+
+
+def _deployment_event_item(event) -> DeploymentEventRead:
+    return DeploymentEventRead.model_validate(event)
+
+
+def _deployment_rollback_item(rollback) -> DeploymentRollbackRead:
+    return DeploymentRollbackRead.model_validate(rollback)
+
+
+def _incident_deployment_context_item(incident) -> IncidentDeploymentContextRead | None:
+    deployment = getattr(incident, "deployment", None)
+    if deployment is None:
+        return None
+    time_since_minutes = max(
+        0.0,
+        round((incident.started_at - deployment.deployed_at).total_seconds() / 60.0, 2),
+    )
+    return IncidentDeploymentContextRead(
+        deployment=_deployment_item(deployment),
+        prompt_version=PromptVersionRead.model_validate(deployment.prompt_version)
+        if deployment.prompt_version is not None
+        else None,
+        model_version=ModelVersionRead.model_validate(deployment.model_version)
+        if deployment.model_version is not None
+        else None,
+        time_since_deployment_minutes=time_since_minutes,
+    )
+
+
+def _incident_analysis_item(report) -> IncidentAnalysisRead:
+    return IncidentAnalysisRead(
+        incident_id=report.incident.id,
+        generated_at=report.generated_at,
+        root_cause_probabilities=[
+            RootCauseProbabilityRead.model_validate(item)
+            for item in report.root_cause_probabilities
+        ],
+        evidence=report.evidence,
+        recommended_fix=RootCauseRecommendedFixRead.model_validate(report.recommended_fix),
     )
 
 
@@ -469,6 +556,16 @@ def versioned_health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@router.get("/models/reliability", response_model=GlobalModelReliabilityListResponse)
+def list_global_model_reliability_endpoint(
+    db: Session = Depends(get_db),
+) -> GlobalModelReliabilityListResponse:
+    items = list_global_model_reliability(db)
+    return GlobalModelReliabilityListResponse(
+        items=[_global_model_reliability_item(item) for item in items]
+    )
+
+
 @router.post("/organizations", response_model=OrganizationRead, status_code=status.HTTP_201_CREATED)
 def create_organization_endpoint(
     payload: OrganizationCreate,
@@ -640,6 +737,81 @@ def get_project_endpoint(
     return require_project_access(db, operator, project_id)
 
 
+@router.get("/projects/{project_id}/guardrails", response_model=GuardrailPolicyListResponse)
+def list_project_guardrails_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> GuardrailPolicyListResponse:
+    require_project_access(db, operator, project_id)
+    items = list_guardrail_policies(db, project_id=project_id)
+    return GuardrailPolicyListResponse(items=[GuardrailPolicyRead.model_validate(item) for item in items])
+
+
+@router.post(
+    "/projects/{project_id}/guardrails",
+    response_model=GuardrailPolicyRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_project_guardrail_endpoint(
+    project_id: UUID,
+    payload: GuardrailPolicyCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> GuardrailPolicyRead:
+    project = require_project_access(db, operator, project_id)
+    policy = create_guardrail_policy(db, project=project, payload=payload)
+    return GuardrailPolicyRead.model_validate(policy)
+
+
+@router.post(
+    "/projects/{project_id}/deployments",
+    response_model=DeploymentRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_deployment_endpoint(
+    project_id: UUID,
+    payload: DeploymentCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DeploymentRead:
+    require_project_access(db, operator, project_id)
+    deployment = create_deployment(db, project_id=project_id, payload=payload)
+    return _deployment_item(deployment)
+
+
+@router.get("/projects/{project_id}/deployments", response_model=DeploymentListResponse)
+def list_project_deployments_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DeploymentListResponse:
+    require_project_access(db, operator, project_id)
+    deployments = list_project_deployments(db, project_id=project_id)
+    return DeploymentListResponse(items=[_deployment_item(item) for item in deployments])
+
+
+@router.get("/deployments/{deployment_id}", response_model=DeploymentDetailRead)
+def get_deployment_detail_endpoint(
+    deployment_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DeploymentDetailRead:
+    deployment = get_deployment_detail(db, operator=operator, deployment_id=deployment_id)
+    return DeploymentDetailRead(
+        **_deployment_item(deployment).model_dump(),
+        prompt_version=PromptVersionRead.model_validate(deployment.prompt_version)
+        if deployment.prompt_version is not None
+        else None,
+        model_version=ModelVersionRead.model_validate(deployment.model_version)
+        if deployment.model_version is not None
+        else None,
+        events=[_deployment_event_item(event) for event in deployment.events],
+        rollbacks=[_deployment_rollback_item(item) for item in deployment.rollbacks],
+        incident_ids=[incident.id for incident in deployment.incidents],
+    )
+
+
 @router.get("/projects/{project_id}/reliability", response_model=ProjectReliabilityRead)
 def get_project_reliability_endpoint(
     project_id: UUID,
@@ -730,6 +902,18 @@ def get_project_reliability_endpoint(
             for metric_name, metrics in trend_rows.items()
         ],
     )
+
+
+@router.get("/projects/{project_id}/timeline", response_model=TimelineResponse)
+def get_project_timeline_endpoint(
+    project_id: UUID,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> TimelineResponse:
+    require_project_access(db, operator, project_id)
+    items = get_project_timeline(db, project_id=project_id, limit=max(1, min(limit, 200)))
+    return TimelineResponse(items=[TimelineEventRead.model_validate(item) for item in items])
 
 
 @router.get("/projects/{project_id}/prompt-versions", response_model=PromptVersionListResponse)
@@ -852,6 +1036,7 @@ def get_incident_detail_endpoint(
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
         compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+        deployment_context=_incident_deployment_context_item(incident),
     )
 
 
@@ -896,6 +1081,7 @@ def acknowledge_incident_endpoint(
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
         compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+        deployment_context=_incident_deployment_context_item(incident),
     )
 
 
@@ -923,6 +1109,7 @@ def assign_incident_owner_endpoint(
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
         compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+        deployment_context=_incident_deployment_context_item(incident),
     )
 
 
@@ -944,6 +1131,7 @@ def resolve_incident_endpoint(
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
         compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+        deployment_context=_incident_deployment_context_item(incident),
     )
 
 
@@ -965,6 +1153,7 @@ def reopen_incident_endpoint(
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
         compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+        deployment_context=_incident_deployment_context_item(incident),
     )
 
 
@@ -1034,6 +1223,16 @@ def get_incident_trace_compare_endpoint(
         ),
         related_incident_id=incident.id,
     )
+
+
+@router.get("/incidents/{incident_id}/analysis", response_model=IncidentAnalysisResponse)
+def get_incident_analysis_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentAnalysisResponse:
+    report = get_incident_analysis(db, operator, incident_id=incident_id)
+    return IncidentAnalysisResponse(incident=_incident_analysis_item(report))
 
 
 @router.get("/projects/{project_id}/regressions", response_model=RegressionListResponse)

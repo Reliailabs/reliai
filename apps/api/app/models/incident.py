@@ -21,6 +21,7 @@ class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ForeignKey("organizations.id"), nullable=False, index=True
     )
     project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
+    deployment_id: Mapped[UUID | None] = mapped_column(ForeignKey("deployments.id"), index=True)
     incident_type: Mapped[str] = mapped_column(String(64), nullable=False)
     severity: Mapped[str] = mapped_column(String(16), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -37,6 +38,7 @@ class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     owner_operator_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("operator_users.id"))
 
     project = relationship("Project", back_populates="incidents")
+    deployment = relationship("Deployment", back_populates="incidents")
     alert_deliveries = relationship("AlertDelivery", back_populates="incident")
     acknowledged_by_operator = relationship(
         "OperatorUser",

@@ -279,7 +279,7 @@ def test_reliability_worker_opens_stale_telemetry_incident(client, db_session, f
     sync_telemetry_freshness_incident(
         db_session,
         project=project,
-        freshness_minutes=20.0,
+        freshness_minutes=45.0,
         detected_at=anchor,
     )
     db_session.commit()

@@ -92,6 +92,19 @@ export interface ProjectReliabilityRead {
   trend_series: ReliabilityMetricSeriesRead[];
 }
 
+export interface TimelineEventRead {
+  timestamp: string;
+  event_type: string;
+  title: string;
+  summary: string;
+  severity: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface TimelineResponse {
+  items: TimelineEventRead[];
+}
+
 export interface PromptVersionRead {
   id: string;
   project_id: string;
@@ -194,6 +207,46 @@ export interface ModelVersionDetailRead {
   traces_path: string;
   regressions_path: string;
   incidents_path: string;
+}
+
+export interface DeploymentEventRead {
+  id: string;
+  deployment_id: string;
+  event_type: string;
+  metadata_json: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface DeploymentRollbackRead {
+  id: string;
+  deployment_id: string;
+  rollback_reason: string;
+  rolled_back_at: string;
+  created_at: string;
+}
+
+export interface DeploymentRead {
+  id: string;
+  project_id: string;
+  prompt_version_id: string | null;
+  model_version_id: string | null;
+  environment: string;
+  deployed_by: string | null;
+  deployed_at: string;
+  metadata_json: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface DeploymentDetailRead extends DeploymentRead {
+  prompt_version: PromptVersionRead | null;
+  model_version: ModelVersionRead | null;
+  events: DeploymentEventRead[];
+  rollbacks: DeploymentRollbackRead[];
+  incident_ids: string[];
+}
+
+export interface DeploymentListResponse {
+  items: DeploymentRead[];
 }
 
 export interface RetrievalSpanRead {

@@ -26,3 +26,4 @@ class PromptVersion(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     project = relationship("Project", back_populates="prompt_versions")
     traces = relationship("Trace", back_populates="prompt_version_record")
+    deployments = relationship("Deployment", back_populates="prompt_version")

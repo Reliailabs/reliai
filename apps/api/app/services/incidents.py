@@ -11,8 +11,9 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import desc, select
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm import Session, joinedload
 
+from app.core.settings import get_settings
 from app.models.alert_delivery import AlertDelivery
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
@@ -24,7 +25,9 @@ from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
+from app.services.deployments import most_recent_project_deployment
 from app.services.reliability_graph import sync_incident_root_causes
+from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 from app.schemas.incident import IncidentListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
@@ -41,7 +44,6 @@ INCIDENT_EVENT_OWNER_CLEARED = "owner_cleared"
 INCIDENT_EVENT_RESOLVED = "resolved"
 INCIDENT_EVENT_REOPENED = "reopened"
 TELEMETRY_FRESHNESS_INCIDENT_TYPE = "telemetry_freshness_stale"
-TELEMETRY_FRESHNESS_THRESHOLD_MINUTES = 15
 
 
 @dataclass(frozen=True)
@@ -105,6 +107,10 @@ INCIDENT_RULES = (
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def telemetry_freshness_threshold_minutes() -> int:
+    return get_settings().reliability_stale_telemetry_minutes
 
 
 def _fingerprint(scope: RollupScope, rule: IncidentRule) -> str:
@@ -353,9 +359,15 @@ def sync_incidents_for_scope(
         event_metadata = _incident_event_metadata(scope=scope, snapshot=snapshot, severity=severity)
 
         if incident is None:
+            deployment = most_recent_project_deployment(
+                db,
+                project_id=scope.project_id,
+                detected_at=detected_at,
+            )
             incident = Incident(
                 organization_id=scope.organization_id,
                 project_id=scope.project_id,
+                deployment_id=deployment.id if deployment is not None else None,
                 incident_type=rule.incident_type,
                 fingerprint=fingerprint,
                 started_at=detected_at,
@@ -388,6 +400,12 @@ def sync_incidents_for_scope(
                 reason="threshold_breached_again",
             )
             result.reopened_incidents.append(incident)
+            deployment = most_recent_project_deployment(
+                db,
+                project_id=scope.project_id,
+                detected_at=detected_at,
+            )
+            incident.deployment_id = deployment.id if deployment is not None else None
         else:
             incident.updated_at = detected_at
             db.add(incident)
@@ -444,10 +462,11 @@ def sync_telemetry_freshness_incident(
     detected_at: datetime,
 ) -> IncidentSyncResult:
     result = IncidentSyncResult()
+    threshold_minutes = telemetry_freshness_threshold_minutes()
     incident = db.scalar(
         select(Incident).where(Incident.fingerprint == _telemetry_freshness_fingerprint(project))
     )
-    is_stale = freshness_minutes is not None and freshness_minutes > TELEMETRY_FRESHNESS_THRESHOLD_MINUTES
+    is_stale = freshness_minutes is not None and freshness_minutes > threshold_minutes
 
     if not is_stale:
         if incident is not None and incident.status == "open":
@@ -465,12 +484,12 @@ def sync_telemetry_freshness_incident(
     summary_json = {
         "metric_name": "telemetry_freshness_minutes",
         "current_value": freshness_minutes,
-        "baseline_value": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
-        "delta_absolute": freshness_minutes - TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "baseline_value": threshold_minutes,
+        "delta_absolute": freshness_minutes - threshold_minutes,
         "delta_percent": None,
         "scope_type": "project",
         "scope_id": str(project.id),
-        "window_minutes": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "window_minutes": threshold_minutes,
         "sample_trace_ids": [],
     }
     event_metadata = {
@@ -479,15 +498,21 @@ def sync_telemetry_freshness_incident(
         "scope_type": "project",
         "scope_id": str(project.id),
         "current_value": freshness_minutes,
-        "baseline_value": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "baseline_value": threshold_minutes,
         "severity": severity,
-        "window_minutes": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "window_minutes": threshold_minutes,
     }
 
     if incident is None:
+        deployment = most_recent_project_deployment(
+            db,
+            project_id=project.id,
+            detected_at=detected_at,
+        )
         incident = Incident(
             organization_id=project.organization_id,
             project_id=project.id,
+            deployment_id=deployment.id if deployment is not None else None,
             incident_type=TELEMETRY_FRESHNESS_INCIDENT_TYPE,
             fingerprint=_telemetry_freshness_fingerprint(project),
             started_at=detected_at,
@@ -516,6 +541,12 @@ def sync_telemetry_freshness_incident(
             reason="telemetry_stale_again",
         )
         result.reopened_incidents.append(incident)
+        deployment = most_recent_project_deployment(
+            db,
+            project_id=project.id,
+            detected_at=detected_at,
+        )
+        incident.deployment_id = deployment.id if deployment is not None else None
     else:
         append_incident_event(
             db,
@@ -658,35 +689,6 @@ def _window_value(summary: dict[str, Any], key: str) -> datetime | None:
     return datetime.fromisoformat(value)
 
 
-def _scoped_trace_statement(
-    *,
-    incident: Incident,
-    window_start: datetime | None,
-    window_end: datetime | None,
-    with_details: bool,
-):
-    statement = select(Trace)
-    if with_details:
-        statement = statement.options(
-            selectinload(Trace.retrieval_span),
-            selectinload(Trace.evaluations),
-            selectinload(Trace.prompt_version_record),
-            selectinload(Trace.model_version_record),
-        )
-    statement = statement.where(
-        Trace.organization_id == incident.organization_id,
-        Trace.project_id == incident.project_id,
-    )
-    if window_start is not None:
-        statement = statement.where(Trace.timestamp >= window_start)
-    if window_end is not None:
-        statement = statement.where(Trace.timestamp < window_end)
-    summary = incident.summary_json or {}
-    if summary.get("scope_type") == "prompt_version" and summary.get("scope_id"):
-        statement = statement.where(Trace.prompt_version == summary["scope_id"])
-    return statement
-
-
 def _load_window_traces(
     db: Session,
     *,
@@ -700,13 +702,17 @@ def _load_window_traces(
     window_end = _window_value(summary, window_end_key)
     if window_start is None or window_end is None:
         return []
-    statement = _scoped_trace_statement(
-        incident=incident,
-        window_start=window_start,
-        window_end=window_end,
-        with_details=with_details,
-    ).order_by(desc(Trace.timestamp), desc(Trace.id))
-    return db.scalars(statement).unique().all()
+    return query_trace_window(
+        db,
+        TraceWindowQuery(
+            organization_id=incident.organization_id,
+            project_id=incident.project_id,
+            window_start=window_start,
+            window_end=window_end,
+            prompt_version=summary.get("scope_id") if summary.get("scope_type") == "prompt_version" else None,
+            with_details=with_details,
+        ),
+    )
 
 
 def _structured_output_label(trace: Trace) -> str | None:

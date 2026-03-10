@@ -14,6 +14,7 @@ from app.services.incidents import sync_incidents_for_scope
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
 from app.workers.alerts import run_alert_delivery
+from app.workers.global_metrics_aggregator import enqueue_global_metrics_aggregation
 from app.workers.reliability_metrics import enqueue_reliability_metrics_job
 
 logger = logging.getLogger(__name__)
@@ -75,5 +76,6 @@ def run_trace_evaluations(trace_id: str) -> None:
                 model_version_record_id=trace.model_version_record_id,
                 anchor_time=trace.created_at,
             )
+            enqueue_global_metrics_aggregation(anchor_time=trace.created_at)
     finally:
         db.close()

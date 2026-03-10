@@ -56,3 +56,4 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     evaluations = relationship("Evaluation", back_populates="trace")
     graph_evaluations = relationship("TraceEvaluation", back_populates="trace")
     graph_retrieval_span = relationship("TraceRetrievalSpan", back_populates="trace", uselist=False)
+    guardrail_events = relationship("GuardrailEvent", back_populates="trace")

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 
 import type {
   AlertDeliveryListResponse,
+  DeploymentDetailRead,
   IncidentDetailRead,
   IncidentEventListResponse,
   IncidentListResponse,
@@ -19,6 +20,7 @@ import type {
   PromptVersionListResponse,
   RegressionDetailRead,
   RegressionListResponse,
+  TimelineResponse,
   TraceComparisonRead,
   TraceDetailRead,
   TraceListResponse
@@ -73,6 +75,10 @@ export async function getProject(projectId: string) {
 
 export async function getProjectReliability(projectId: string) {
   return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
+}
+
+export async function getProjectTimeline(projectId: string, limit = 100) {
+  return request<TimelineResponse>(`/api/v1/projects/${projectId}/timeline?limit=${encodeURIComponent(String(limit))}`);
 }
 
 export async function listProjects(filters: { organizationId?: string; limit?: number } = {}) {
@@ -214,6 +220,10 @@ export async function getRegressionDetail(regressionId: string) {
 
 export async function getRegressionCompare(regressionId: string) {
   return request<TraceComparisonRead>(`/api/v1/regressions/${regressionId}/compare`);
+}
+
+export async function getDeploymentDetail(deploymentId: string) {
+  return request<DeploymentDetailRead>(`/api/v1/deployments/${deploymentId}`);
 }
 
 export async function listProjectPromptVersions(projectId: string) {

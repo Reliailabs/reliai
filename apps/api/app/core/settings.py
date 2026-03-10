@@ -16,10 +16,13 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     rq_queue_name: str = "default"
     log_level: str = "INFO"
+    trace_warehouse_url: str | None = None
+    clickhouse_database: str = "reliai"
     slack_webhook_default: str | None = None
     alert_delivery_cooldown_minutes: int = 60
     slack_alert_max_attempts: int = 3
     slack_alert_retry_backoff_seconds: str = "60,300"
+    reliability_stale_telemetry_minutes: int = 30
     api_key_hash_secret: str = "change-me"
     auth_session_hash_secret: str = "change-me-session-secret"
     auth_session_days: int = 14

@@ -31,6 +31,8 @@ from app.services.reliability_metrics import compute_project_reliability_metrics
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
 from app.services.auth import create_operator_user
+from app.workers.evaluations import run_trace_evaluations
+from app.workers.trace_warehouse_ingest import run_trace_warehouse_ingest
 ROOT_DIR = Path(__file__).resolve().parents[3]
 
 
@@ -242,7 +244,15 @@ def test_postgres_migrations_auth_and_trace_queries(
             json=payload,
         )
         assert ingest_response.status_code == 202
-    assert len(fake_queue.jobs) == 3
+    assert len(fake_queue.jobs) == 6
+    assert [job[0] for job in fake_queue.jobs] == [
+        run_trace_evaluations,
+        run_trace_warehouse_ingest,
+        run_trace_evaluations,
+        run_trace_warehouse_ingest,
+        run_trace_evaluations,
+        run_trace_warehouse_ingest,
+    ]
 
     filtered = postgres_client.get(
         "/api/v1/traces",

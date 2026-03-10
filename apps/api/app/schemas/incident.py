@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.schemas.alert_delivery import AlertDeliveryRead
 from app.schemas.common import APIModel
+from app.schemas.deployment import IncidentDeploymentContextRead
 from app.schemas.incident_event import IncidentEventRead
 from app.schemas.investigation import (
     CohortPivotRead,
@@ -100,6 +101,7 @@ class IncidentDetailRead(IncidentListItemRead):
     traces: list[IncidentTraceSampleRead]
     events: list[IncidentEventRead] = []
     compare: IncidentCompareRead
+    deployment_context: IncidentDeploymentContextRead | None = None
 
 
 class IncidentOwnerAssignRequest(BaseModel):

@@ -39,3 +39,5 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     reliability_metrics = relationship("ReliabilityMetric", back_populates="project")
     regression_snapshots = relationship("RegressionSnapshot", back_populates="project")
     incidents = relationship("Incident", back_populates="project")
+    deployments = relationship("Deployment", back_populates="project")
+    guardrail_policies = relationship("GuardrailPolicy", back_populates="project")
