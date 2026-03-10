@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal
 from statistics import median
 from typing import Any, Iterable
+from urllib.parse import urlencode
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -15,15 +16,18 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from app.models.alert_delivery import AlertDelivery
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
+from app.models.model_version import ModelVersion
 from app.models.organization_member import OrganizationMember
 from app.models.operator_user import OperatorUser
 from app.models.project import Project
+from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
 from app.schemas.incident import IncidentListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
+from app.services.registry import build_model_version_path, build_prompt_version_path
 from app.services.rollups import RollupScope, quantize_decimal
 
 INCIDENT_WINDOW_MINUTES = 60
@@ -35,6 +39,8 @@ INCIDENT_EVENT_OWNER_ASSIGNED = "owner_assigned"
 INCIDENT_EVENT_OWNER_CLEARED = "owner_cleared"
 INCIDENT_EVENT_RESOLVED = "resolved"
 INCIDENT_EVENT_REOPENED = "reopened"
+TELEMETRY_FRESHNESS_INCIDENT_TYPE = "telemetry_freshness_stale"
+TELEMETRY_FRESHNESS_THRESHOLD_MINUTES = 15
 
 
 @dataclass(frozen=True)
@@ -144,6 +150,13 @@ def _snapshot_breaches(rule: IncidentRule, snapshot: RegressionSnapshot) -> bool
     if rule.percent_threshold is not None and abs(snapshot.delta_percent or Decimal("0")) < rule.percent_threshold:
         return False
     return True
+
+
+def snapshot_breaches_any_rule(snapshot: RegressionSnapshot) -> bool:
+    for rule in INCIDENT_RULES:
+        if rule.metric_name == snapshot.metric_name and _snapshot_breaches(rule, snapshot):
+            return True
+    return False
 
 
 def _sample_traces(
@@ -401,6 +414,126 @@ def sync_incidents_for_scope(
     return result
 
 
+def _telemetry_freshness_fingerprint(project: Project) -> str:
+    return ":".join(
+        [
+            str(project.organization_id),
+            str(project.id),
+            "project",
+            str(project.id),
+            TELEMETRY_FRESHNESS_INCIDENT_TYPE,
+        ]
+    )
+
+
+def _telemetry_freshness_severity(freshness_minutes: float) -> str:
+    if freshness_minutes >= 240:
+        return "critical"
+    if freshness_minutes >= 60:
+        return "high"
+    return "medium"
+
+
+def sync_telemetry_freshness_incident(
+    db: Session,
+    *,
+    project: Project,
+    freshness_minutes: float | None,
+    detected_at: datetime,
+) -> IncidentSyncResult:
+    result = IncidentSyncResult()
+    incident = db.scalar(
+        select(Incident).where(Incident.fingerprint == _telemetry_freshness_fingerprint(project))
+    )
+    is_stale = freshness_minutes is not None and freshness_minutes > TELEMETRY_FRESHNESS_THRESHOLD_MINUTES
+
+    if not is_stale:
+        if incident is not None and incident.status == "open":
+            _mark_resolved(
+                db,
+                incident=incident,
+                resolved_at=detected_at,
+                actor_operator_user_id=None,
+                reason="telemetry_restored",
+            )
+            result.resolved_incidents.append(incident)
+        return result
+
+    severity = _telemetry_freshness_severity(freshness_minutes)
+    summary_json = {
+        "metric_name": "telemetry_freshness_minutes",
+        "current_value": freshness_minutes,
+        "baseline_value": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "delta_absolute": freshness_minutes - TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "delta_percent": None,
+        "scope_type": "project",
+        "scope_id": str(project.id),
+        "window_minutes": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "sample_trace_ids": [],
+    }
+    event_metadata = {
+        "incident_type": TELEMETRY_FRESHNESS_INCIDENT_TYPE,
+        "metric_name": "telemetry_freshness_minutes",
+        "scope_type": "project",
+        "scope_id": str(project.id),
+        "current_value": freshness_minutes,
+        "baseline_value": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+        "severity": severity,
+        "window_minutes": TELEMETRY_FRESHNESS_THRESHOLD_MINUTES,
+    }
+
+    if incident is None:
+        incident = Incident(
+            organization_id=project.organization_id,
+            project_id=project.id,
+            incident_type=TELEMETRY_FRESHNESS_INCIDENT_TYPE,
+            fingerprint=_telemetry_freshness_fingerprint(project),
+            started_at=detected_at,
+            updated_at=detected_at,
+            status="open",
+            severity=severity,
+            title="",
+            summary_json=summary_json,
+        )
+        db.add(incident)
+        db.flush()
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=INCIDENT_EVENT_OPENED,
+            metadata_json={**event_metadata, "reason": "telemetry_stale"},
+            created_at=detected_at,
+        )
+        result.opened_incidents.append(incident)
+    elif incident.status != "open":
+        _mark_reopened(
+            db,
+            incident=incident,
+            reopened_at=detected_at,
+            actor_operator_user_id=None,
+            reason="telemetry_stale_again",
+        )
+        result.reopened_incidents.append(incident)
+    else:
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=INCIDENT_EVENT_UPDATED,
+            metadata_json=event_metadata,
+            created_at=detected_at,
+        )
+        result.updated_incidents.append(incident)
+
+    incident.severity = severity
+    incident.title = f"Telemetry is stale on {project.name}"
+    incident.summary_json = summary_json
+    incident.updated_at = detected_at
+    incident.resolved_at = None
+    db.add(incident)
+    db.flush()
+    return result
+
+
 def _latest_alert_delivery(db: Session, incident_id: UUID) -> AlertDelivery | None:
     return db.scalar(
         select(AlertDelivery)
@@ -444,7 +577,20 @@ def list_incidents(db: Session, operator: OperatorContext, query: IncidentListQu
             Incident.started_at <= datetime.combine(query.date_to, time.max, tzinfo=timezone.utc)
         )
 
-    incidents = db.scalars(statement.limit(query.limit)).unique().all()
+    incidents = db.scalars(statement).unique().all()
+    if query.scope_type is not None:
+        incidents = [
+            incident
+            for incident in incidents
+            if incident.summary_json.get("scope_type") == query.scope_type
+        ]
+    if query.scope_id is not None:
+        incidents = [
+            incident
+            for incident in incidents
+            if incident.summary_json.get("scope_id") == query.scope_id
+        ]
+    incidents = incidents[: query.limit]
     for incident in incidents:
         incident.latest_alert_delivery = _latest_alert_delivery(db, incident.id)
     return incidents
@@ -519,7 +665,12 @@ def _scoped_trace_statement(
 ):
     statement = select(Trace)
     if with_details:
-        statement = statement.options(selectinload(Trace.retrieval_span), selectinload(Trace.evaluations))
+        statement = statement.options(
+            selectinload(Trace.retrieval_span),
+            selectinload(Trace.evaluations),
+            selectinload(Trace.prompt_version_record),
+            selectinload(Trace.model_version_record),
+        )
     statement = statement.where(
         Trace.organization_id == incident.organization_id,
         Trace.project_id == incident.project_id,
@@ -691,6 +842,428 @@ def _median_int(values: list[int]) -> Decimal | None:
 
 def _top_trace_ids(traces: list[Trace], *, limit: int = 3) -> list[UUID]:
     return [trace.id for trace in traces[:limit]]
+
+
+def _decimal_string(value: Decimal | None) -> str | None:
+    if value is None:
+        return None
+    return format(value, "f")
+
+
+def _stringify_scalar(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        return _decimal_string(value)
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
+def _metadata_diff(current_value: dict[str, Any] | None, baseline_value: dict[str, Any] | None) -> dict[str, Any] | None:
+    current = current_value or {}
+    baseline = baseline_value or {}
+    keys = sorted(set(current.keys()) | set(baseline.keys()))
+    changes: dict[str, Any] = {}
+    for key in keys:
+        if current.get(key) == baseline.get(key):
+            continue
+        changes[key] = {
+            "current": _stringify_scalar(current.get(key)),
+            "baseline": _stringify_scalar(baseline.get(key)),
+        }
+        if len(changes) >= 6:
+            break
+    return changes or None
+
+
+def _trace_cost_string(trace: Trace | None) -> str:
+    if trace is None or trace.total_cost_usd is None:
+        return "n/a"
+    return _decimal_string(trace.total_cost_usd) or "n/a"
+
+
+def _trace_outcome_string(trace: Trace | None) -> str | None:
+    if trace is None:
+        return None
+    if trace.success:
+        return "success"
+    return trace.error_type or "failure"
+
+
+def _structured_output_summary(trace: Trace | None) -> str | None:
+    if trace is None:
+        return None
+    label = _structured_output_label(trace)
+    reason = _structured_output_reason(trace)
+    if label is None and reason is None:
+        return None
+    if reason is None:
+        return label
+    return f"{label or 'n/a'} · {reason}"
+
+
+def build_trace_diff_blocks(current_trace: Trace | None, baseline_trace: Trace | None) -> list[dict[str, Any]]:
+    current_metadata = _selected_metadata(current_trace) if current_trace is not None else None
+    baseline_metadata = _selected_metadata(baseline_trace) if baseline_trace is not None else None
+    current_retrieval = current_trace.retrieval_span if current_trace is not None else None
+    baseline_retrieval = baseline_trace.retrieval_span if baseline_trace is not None else None
+    blocks = [
+        {
+            "block_type": "model_prompt",
+            "title": "Model and prompt",
+            "changed": (
+                (current_trace.model_name if current_trace else None) != (baseline_trace.model_name if baseline_trace else None)
+                or (current_trace.prompt_version if current_trace else None) != (baseline_trace.prompt_version if baseline_trace else None)
+            ),
+            "current_value": (
+                f"{current_trace.model_name} · {current_trace.prompt_version or 'prompt n/a'}"
+                if current_trace is not None
+                else None
+            ),
+            "baseline_value": (
+                f"{baseline_trace.model_name} · {baseline_trace.prompt_version or 'prompt n/a'}"
+                if baseline_trace is not None
+                else None
+            ),
+            "metadata_json": None,
+        },
+        {
+            "block_type": "outcome",
+            "title": "Success and error type",
+            "changed": (
+                (current_trace.success if current_trace else None) != (baseline_trace.success if baseline_trace else None)
+                or (current_trace.error_type if current_trace else None) != (baseline_trace.error_type if baseline_trace else None)
+            ),
+            "current_value": (
+                _trace_outcome_string(current_trace)
+            ),
+            "baseline_value": (
+                _trace_outcome_string(baseline_trace)
+            ),
+            "metadata_json": None,
+        },
+        {
+            "block_type": "performance",
+            "title": "Latency, tokens, cost",
+            "changed": any(
+                [
+                    (current_trace.latency_ms if current_trace else None) != (baseline_trace.latency_ms if baseline_trace else None),
+                    (current_trace.prompt_tokens if current_trace else None) != (baseline_trace.prompt_tokens if baseline_trace else None),
+                    (current_trace.completion_tokens if current_trace else None) != (baseline_trace.completion_tokens if baseline_trace else None),
+                    (current_trace.total_cost_usd if current_trace else None) != (baseline_trace.total_cost_usd if baseline_trace else None),
+                ]
+            ),
+            "current_value": (
+                f"{current_trace.latency_ms if current_trace and current_trace.latency_ms is not None else 'n/a'} ms · "
+                f"p {current_trace.prompt_tokens if current_trace and current_trace.prompt_tokens is not None else 'n/a'} · "
+                f"c {current_trace.completion_tokens if current_trace and current_trace.completion_tokens is not None else 'n/a'} · "
+                f"{_trace_cost_string(current_trace)}"
+                if current_trace is not None
+                else None
+            ),
+            "baseline_value": (
+                f"{baseline_trace.latency_ms if baseline_trace and baseline_trace.latency_ms is not None else 'n/a'} ms · "
+                f"p {baseline_trace.prompt_tokens if baseline_trace and baseline_trace.prompt_tokens is not None else 'n/a'} · "
+                f"c {baseline_trace.completion_tokens if baseline_trace and baseline_trace.completion_tokens is not None else 'n/a'} · "
+                f"{_trace_cost_string(baseline_trace)}"
+                if baseline_trace is not None
+                else None
+            ),
+            "metadata_json": None,
+        },
+        {
+            "block_type": "structured_output",
+            "title": "Structured-output evaluation",
+            "changed": _structured_output_summary(current_trace) != _structured_output_summary(baseline_trace),
+            "current_value": _structured_output_summary(current_trace),
+            "baseline_value": _structured_output_summary(baseline_trace),
+            "metadata_json": None,
+        },
+        {
+            "block_type": "retrieval",
+            "title": "Retrieval summary",
+            "changed": any(
+                [
+                    (current_retrieval.retrieval_latency_ms if current_retrieval else None)
+                    != (baseline_retrieval.retrieval_latency_ms if baseline_retrieval else None),
+                    (current_retrieval.source_count if current_retrieval else None)
+                    != (baseline_retrieval.source_count if baseline_retrieval else None),
+                    (current_retrieval.top_k if current_retrieval else None)
+                    != (baseline_retrieval.top_k if baseline_retrieval else None),
+                ]
+            ),
+            "current_value": (
+                f"{current_retrieval.retrieval_latency_ms if current_retrieval and current_retrieval.retrieval_latency_ms is not None else 'n/a'} ms · "
+                f"{current_retrieval.source_count if current_retrieval and current_retrieval.source_count is not None else 'n/a'} sources · "
+                f"top_k {current_retrieval.top_k if current_retrieval and current_retrieval.top_k is not None else 'n/a'}"
+                if current_retrieval is not None
+                else None
+            ),
+            "baseline_value": (
+                f"{baseline_retrieval.retrieval_latency_ms if baseline_retrieval and baseline_retrieval.retrieval_latency_ms is not None else 'n/a'} ms · "
+                f"{baseline_retrieval.source_count if baseline_retrieval and baseline_retrieval.source_count is not None else 'n/a'} sources · "
+                f"top_k {baseline_retrieval.top_k if baseline_retrieval and baseline_retrieval.top_k is not None else 'n/a'}"
+                if baseline_retrieval is not None
+                else None
+            ),
+            "metadata_json": None,
+        },
+        {
+            "block_type": "metadata_scalar",
+            "title": "Metadata excerpt",
+            "changed": current_metadata != baseline_metadata,
+            "current_value": None,
+            "baseline_value": None,
+            "metadata_json": _metadata_diff(current_metadata, baseline_metadata),
+        },
+    ]
+    return blocks
+
+
+def derive_dimension_summaries(
+    *,
+    current_traces: list[Trace],
+    baseline_traces: list[Trace],
+) -> list[dict[str, Any]]:
+    summaries: list[dict[str, Any]] = []
+
+    for dimension in ("prompt_version", "model_name"):
+        current_value, current_counter = _dominant_value(current_traces, dimension)
+        baseline_value, baseline_counter = _dominant_value(baseline_traces, dimension)
+        if current_value is None:
+            continue
+        current_share = _share(current_counter, len(current_traces), current_value)
+        baseline_share = _share(baseline_counter, len(baseline_traces), current_value)
+        summaries.append(
+            {
+                "summary_type": f"top_{dimension}",
+                "dimension": dimension,
+                "current_value": None if current_value == "unknown" else current_value,
+                "baseline_value": None if baseline_value == "unknown" else baseline_value,
+                "current_count": current_counter.get(current_value, 0),
+                "baseline_count": baseline_counter.get(current_value, 0),
+                "current_share": current_share,
+                "baseline_share": baseline_share,
+                "delta_value": (
+                    quantize_decimal(current_share - baseline_share)
+                    if current_share is not None and baseline_share is not None
+                    else None
+                ),
+                "metadata_json": None,
+            }
+        )
+
+    current_retrieval = [
+        trace.retrieval_span.retrieval_latency_ms
+        for trace in current_traces
+        if trace.retrieval_span is not None and trace.retrieval_span.retrieval_latency_ms is not None
+    ]
+    baseline_retrieval = [
+        trace.retrieval_span.retrieval_latency_ms
+        for trace in baseline_traces
+        if trace.retrieval_span is not None and trace.retrieval_span.retrieval_latency_ms is not None
+    ]
+    current_retrieval_median = _median_int(current_retrieval)
+    baseline_retrieval_median = _median_int(baseline_retrieval)
+    if current_retrieval_median is not None or baseline_retrieval_median is not None:
+        summaries.append(
+            {
+                "summary_type": "retrieval_latency_delta",
+                "dimension": "retrieval_latency_ms",
+                "current_value": None,
+                "baseline_value": None,
+                "current_count": len(current_retrieval),
+                "baseline_count": len(baseline_retrieval),
+                "current_share": None,
+                "baseline_share": None,
+                "delta_value": (
+                    quantize_decimal(current_retrieval_median - baseline_retrieval_median)
+                    if current_retrieval_median is not None and baseline_retrieval_median is not None
+                    else None
+                ),
+                "metadata_json": {
+                    "current_median_ms": _decimal_string(current_retrieval_median),
+                    "baseline_median_ms": _decimal_string(baseline_retrieval_median),
+                },
+            }
+        )
+
+    current_structured_failures = [
+        trace for trace in current_traces if _structured_output_label(trace) == "fail"
+    ]
+    baseline_structured_failures = [
+        trace for trace in baseline_traces if _structured_output_label(trace) == "fail"
+    ]
+    summaries.append(
+        {
+            "summary_type": "structured_output_failure_concentration",
+            "dimension": "structured_output",
+            "current_value": "fail",
+            "baseline_value": "fail",
+            "current_count": len(current_structured_failures),
+            "baseline_count": len(baseline_structured_failures),
+            "current_share": _share(Counter({"fail": len(current_structured_failures)}), len(current_traces), "fail"),
+            "baseline_share": _share(Counter({"fail": len(baseline_structured_failures)}), len(baseline_traces), "fail"),
+            "delta_value": None,
+            "metadata_json": None,
+        }
+    )
+    return summaries
+
+
+def _query_path(query_params: dict[str, str]) -> str:
+    return f"/traces?{urlencode(query_params)}"
+
+
+def build_cohort_pivots(
+    *,
+    project_id: UUID,
+    scope_type: str | None,
+    scope_id: str | None,
+    current_window_start: datetime | None,
+    current_window_end: datetime | None,
+    anchor_time: datetime | None,
+    current_traces: list[Trace],
+) -> list[dict[str, Any]]:
+    pivots: list[dict[str, Any]] = []
+    base_query = {"project_id": str(project_id)}
+    if current_window_start is not None:
+        base_query["date_from"] = current_window_start.isoformat()
+    if current_window_end is not None:
+        base_query["date_to"] = current_window_end.isoformat()
+
+    if scope_type == "prompt_version" and scope_id:
+        query_params = {**base_query, "prompt_version": scope_id}
+        pivots.append(
+            {
+                "pivot_type": "prompt_version_scope",
+                "label": f"Trace cohort for prompt {scope_id}",
+                "path": _query_path(query_params),
+                "query_params": query_params,
+            }
+        )
+
+    current_prompt, _ = _dominant_value(current_traces, "prompt_version")
+    if current_prompt is not None and current_prompt != "unknown":
+        query_params = {**base_query, "prompt_version": current_prompt}
+        pivots.append(
+            {
+                "pivot_type": "top_prompt_version",
+                "label": f"Traces for prompt {current_prompt}",
+                "path": _query_path(query_params),
+                "query_params": query_params,
+            }
+        )
+
+    current_model, _ = _dominant_value(current_traces, "model_name")
+    if current_model is not None and current_model != "unknown":
+        query_params = {**base_query, "model_name": current_model}
+        pivots.append(
+            {
+                "pivot_type": "top_model_name",
+                "label": f"Traces for model {current_model}",
+                "path": _query_path(query_params),
+                "query_params": query_params,
+            }
+        )
+
+    failing_query = {**base_query, "success": "false"}
+    pivots.append(
+        {
+            "pivot_type": "failing_current_window",
+            "label": "Failing traces in current window",
+            "path": _query_path(failing_query),
+            "query_params": failing_query,
+        }
+    )
+
+    if anchor_time is not None:
+        around_query = {"project_id": str(project_id)}
+        around_query["date_from"] = (anchor_time - timedelta(minutes=10)).isoformat()
+        around_query["date_to"] = (anchor_time + timedelta(minutes=10)).isoformat()
+        pivots.append(
+            {
+                "pivot_type": "around_start_time",
+                "label": "Traces around start time",
+                "path": _query_path(around_query),
+                "query_params": around_query,
+            }
+        )
+
+    return pivots
+
+
+def derive_registry_contexts(
+    *,
+    project_id: UUID,
+    current_traces: list[Trace],
+    baseline_traces: list[Trace],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    prompt_records: dict[UUID, PromptVersion] = {}
+    prompt_current: Counter[UUID] = Counter()
+    prompt_baseline: Counter[UUID] = Counter()
+    model_records: dict[UUID, ModelVersion] = {}
+    model_current: Counter[UUID] = Counter()
+    model_baseline: Counter[UUID] = Counter()
+
+    for trace in current_traces:
+        if trace.prompt_version_record is not None:
+            prompt_records[trace.prompt_version_record.id] = trace.prompt_version_record
+            prompt_current[trace.prompt_version_record.id] += 1
+        if trace.model_version_record is not None:
+            model_records[trace.model_version_record.id] = trace.model_version_record
+            model_current[trace.model_version_record.id] += 1
+
+    for trace in baseline_traces:
+        if trace.prompt_version_record is not None:
+            prompt_records[trace.prompt_version_record.id] = trace.prompt_version_record
+            prompt_baseline[trace.prompt_version_record.id] += 1
+        if trace.model_version_record is not None:
+            model_records[trace.model_version_record.id] = trace.model_version_record
+            model_baseline[trace.model_version_record.id] += 1
+
+    prompt_contexts: list[dict[str, Any]] = []
+    for prompt_id, count in prompt_current.most_common(3):
+        record = prompt_records[prompt_id]
+        traces_path, regressions_path, incidents_path = build_prompt_version_path(
+            project_id=project_id,
+            prompt_version_id=record.id,
+            version=record.version,
+        )
+        prompt_contexts.append(
+            {
+                "id": record.id,
+                "project_id": project_id,
+                "version": record.version,
+                "label": record.label,
+                "current_count": count,
+                "baseline_count": prompt_baseline.get(prompt_id, 0),
+                "traces_path": traces_path,
+                "regressions_path": regressions_path,
+                "incidents_path": incidents_path,
+            }
+        )
+
+    model_contexts: list[dict[str, Any]] = []
+    for model_id, count in model_current.most_common(3):
+        record = model_records[model_id]
+        model_contexts.append(
+            {
+                "id": record.id,
+                "project_id": project_id,
+                "provider": record.provider,
+                "model_name": record.model_name,
+                "model_version": record.model_version,
+                "route_key": record.route_key,
+                "label": record.label,
+                "current_count": count,
+                "baseline_count": model_baseline.get(model_id, 0),
+                "traces_path": build_model_version_path(project_id=project_id, model_version_id=record.id),
+            }
+        )
+
+    return prompt_contexts, model_contexts
 
 
 def derive_root_cause_hints(
@@ -897,6 +1470,8 @@ def build_trace_compare_item(trace: Trace) -> dict[str, Any]:
         "prompt_tokens": trace.prompt_tokens,
         "completion_tokens": trace.completion_tokens,
         "total_cost_usd": trace.total_cost_usd,
+        "prompt_version_record": trace.prompt_version_record,
+        "model_version_record": trace.model_version_record,
         "structured_output": {
             "label": structured_output_label,
             "score": next(

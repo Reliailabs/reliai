@@ -26,6 +26,8 @@ from app.services.alerts import (
 )
 from app.services.evaluations import run_structured_output_validity_evaluation
 from app.services.incidents import sync_incidents_for_scope
+from app.services.reliability_metrics import METRIC_TELEMETRY_FRESHNESS_MINUTES
+from app.services.reliability_metrics import compute_project_reliability_metrics
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
 from app.services.auth import create_operator_user
@@ -281,6 +283,51 @@ def test_postgres_migrations_auth_and_trace_queries(
     assert forbidden_list.status_code == 403
 
     trace_id = first_page_payload["items"][0]["id"]
+    trace_detail = postgres_client.get(
+        f"/api/v1/traces/{trace_id}",
+        headers=_auth_headers(owner_one_session),
+    )
+    assert trace_detail.status_code == 200
+    assert trace_detail.json()["prompt_version_record"] is not None
+    assert trace_detail.json()["model_version_record"] is not None
+
+    trace_compare = postgres_client.get(
+        f"/api/v1/traces/{trace_id}/compare",
+        headers=_auth_headers(owner_one_session),
+    )
+    assert trace_compare.status_code == 200
+    assert trace_compare.json()["pairs"]
+
+    prompt_versions = postgres_client.get(
+        f"/api/v1/projects/{project['id']}/prompt-versions",
+        headers=_auth_headers(owner_one_session),
+    )
+    assert prompt_versions.status_code == 200
+    assert prompt_versions.json()["items"]
+    prompt_version_id = prompt_versions.json()["items"][0]["id"]
+
+    prompt_detail = postgres_client.get(
+        f"/api/v1/projects/{project['id']}/prompt-versions/{prompt_version_id}",
+        headers=_auth_headers(owner_one_session),
+    )
+    assert prompt_detail.status_code == 200
+    assert prompt_detail.json()["usage_summary"]["trace_count"] >= 1
+
+    model_versions = postgres_client.get(
+        f"/api/v1/projects/{project['id']}/model-versions",
+        headers=_auth_headers(owner_one_session),
+    )
+    assert model_versions.status_code == 200
+    assert model_versions.json()["items"]
+    model_version_id = model_versions.json()["items"][0]["id"]
+
+    model_detail = postgres_client.get(
+        f"/api/v1/projects/{project['id']}/model-versions/{model_version_id}",
+        headers=_auth_headers(owner_one_session),
+    )
+    assert model_detail.status_code == 200
+    assert model_detail.json()["model_version"]["model_family"] is not None
+
     forbidden_detail = postgres_client.get(
         f"/api/v1/traces/{trace_id}",
         headers=_auth_headers(owner_two_session),
@@ -624,6 +671,8 @@ def test_postgres_settings_and_filtered_incident_path(
     )
     assert compare_detail.status_code == 200
     assert compare_detail.json()["pairs"]
+    assert compare_detail.json()["dimension_summaries"]
+    assert compare_detail.json()["cohort_pivots"]
 
     regression_id = incident_detail.json()["compare"]["regressions"][0]["id"]
     regression_detail = postgres_client.get(
@@ -634,3 +683,78 @@ def test_postgres_settings_and_filtered_incident_path(
     assert regression_detail.json()["related_incident"] is not None
     assert regression_detail.json()["current_representative_traces"]
     assert regression_detail.json()["baseline_representative_traces"]
+    assert regression_detail.json()["dimension_summaries"]
+
+    regression_compare = postgres_client.get(
+        f"/api/v1/regressions/{regression_id}/compare",
+        headers=_auth_headers(session_payload),
+    )
+    assert regression_compare.status_code == 200
+    assert regression_compare.json()["pairs"]
+
+
+def test_postgres_reliability_scorecard_path(
+    postgres_client: TestClient,
+    postgres_session: Session,
+    fake_queue,
+):
+    owner = create_operator_user(
+        postgres_session,
+        email="reliability-owner@acme.test",
+        password="reliai-test-password",
+    )
+    postgres_session.commit()
+    postgres_session.refresh(owner)
+
+    session_payload = _sign_in(postgres_client, email=owner.email)
+    organization = _create_organization(
+        postgres_client,
+        session_payload,
+        name="Reliability Org",
+        slug="reliability-org",
+    )
+    project = _create_project(postgres_client, session_payload, organization["id"])
+    api_key = _create_api_key(postgres_client, session_payload, project["id"])
+
+    ingest_response = postgres_client.post(
+        "/api/v1/ingest/traces",
+        headers={"x-api-key": api_key["api_key"]},
+        json={
+            "timestamp": "2026-03-09T12:00:00Z",
+            "request_id": "pg_reliability_trace",
+            "model_name": "gpt-4.1-mini",
+            "model_provider": "openai",
+            "prompt_version": "v1",
+            "output_text": "{\"ok\":true}",
+            "success": True,
+            "latency_ms": 180,
+            "prompt_tokens": 40,
+            "completion_tokens": 12,
+            "total_cost_usd": "0.010000",
+            "metadata_json": {"expected_output_format": "json"},
+        },
+    )
+    assert ingest_response.status_code == 202
+    _run_signal_pipeline(postgres_session, ingest_response.json()["trace_id"])
+    project_record = postgres_session.get(Project, uuid.UUID(project["id"]))
+    assert project_record is not None
+    latest_trace = postgres_session.get(Trace, uuid.UUID(ingest_response.json()["trace_id"]))
+    assert latest_trace is not None
+    compute_project_reliability_metrics(
+        postgres_session,
+        project=project_record,
+        anchor_time=latest_trace.created_at,
+    )
+    postgres_session.commit()
+
+    reliability_response = postgres_client.get(
+        f"/api/v1/projects/{project['id']}/reliability",
+        headers=_auth_headers(session_payload),
+    )
+    assert reliability_response.status_code == 200
+    payload = reliability_response.json()
+    assert payload["telemetry_freshness_minutes"] is not None
+    assert payload["explainability_score"] is not None
+    assert payload["trend_series"]
+    trend_names = {series["metric_name"] for series in payload["trend_series"]}
+    assert METRIC_TELEMETRY_FRESHNESS_MINUTES not in trend_names

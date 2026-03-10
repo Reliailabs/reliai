@@ -19,7 +19,7 @@ class RegressionSnapshot(UUIDPrimaryKeyMixin, Base):
             "window_minutes",
             name="uq_regression_snapshots_scope_metric_window",
         ),
-        Index("ix_regression_snapshots_project_detected_at", "project_id", "detected_at"),
+        Index("ix_regression_snapshots_project_detected_at_desc", "project_id", "detected_at"),
         Index("ix_regression_snapshots_organization_detected_at", "organization_id", "detected_at"),
     )
 

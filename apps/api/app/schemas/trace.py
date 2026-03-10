@@ -7,6 +7,14 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.common import APIModel
+from app.schemas.investigation import (
+    CohortPivotRead,
+    DimensionSummaryRead,
+    ModelVersionContextRead,
+    PromptVersionContextRead,
+    TraceDiffBlockRead,
+)
+from app.schemas.project import ModelVersionRead, PromptVersionRead
 from app.core.settings import get_settings
 
 
@@ -47,6 +55,8 @@ class EvaluationRead(APIModel):
 
 class TraceListQuery(BaseModel):
     project_id: UUID | None = None
+    prompt_version_id: UUID | None = None
+    model_version_id: UUID | None = None
     model_name: str | None = Field(default=None, max_length=255)
     prompt_version: str | None = Field(default=None, max_length=120)
     success: bool | None = None
@@ -153,6 +163,10 @@ class TraceDetailRead(APIModel):
     error_type: str | None
     metadata_json: dict[str, Any] | None
     created_at: datetime
+    prompt_version_record: PromptVersionRead | None
+    model_version_record: ModelVersionRead | None
+    registry_pivots: list[CohortPivotRead]
+    compare_path: str | None
     retrieval_span: RetrievalSpanRead | None
     evaluations: list[EvaluationRead]
 
@@ -181,6 +195,8 @@ class TraceCompareItemRead(APIModel):
     prompt_tokens: int | None
     completion_tokens: int | None
     total_cost_usd: Decimal | None
+    prompt_version_record: PromptVersionRead | None
+    model_version_record: ModelVersionRead | None
     structured_output: TraceCompareEvaluationRead | None
     retrieval: TraceCompareRetrievalRead | None
     metadata_excerpt_json: dict[str, Any] | None
@@ -190,10 +206,14 @@ class TraceComparePairRead(APIModel):
     pair_index: int
     current_trace: TraceCompareItemRead | None
     baseline_trace: TraceCompareItemRead | None
+    diff_blocks: list[TraceDiffBlockRead]
 
 
 class TraceComparisonRead(APIModel):
-    incident_id: UUID
+    comparison_scope: str
+    source_id: UUID
+    incident_id: UUID | None
+    regression_id: UUID | None
     project_id: UUID
     metric_name: str | None
     scope_type: str | None
@@ -205,3 +225,8 @@ class TraceComparisonRead(APIModel):
     current_traces: list[TraceCompareItemRead]
     baseline_traces: list[TraceCompareItemRead]
     pairs: list[TraceComparePairRead]
+    dimension_summaries: list[DimensionSummaryRead]
+    prompt_version_contexts: list[PromptVersionContextRead]
+    model_version_contexts: list[ModelVersionContextRead]
+    cohort_pivots: list[CohortPivotRead]
+    related_incident_id: UUID | None

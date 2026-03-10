@@ -4,12 +4,23 @@ PYTHON ?= $(ROOT_DIR)/.venv/bin/python
 PIP ?= $(ROOT_DIR)/.venv/bin/pip
 PNPM ?= pnpm
 
+ifneq ($(strip $(DATABASE_URL)),)
 export DATABASE_URL
-export REDIS_URL
-export API_KEY_HASH_SECRET
-export AUTH_SESSION_HASH_SECRET
+endif
 
-.PHONY: install dev worker test test-integration lint format db-up db-migrate seed
+ifneq ($(strip $(REDIS_URL)),)
+export REDIS_URL
+endif
+
+ifneq ($(strip $(API_KEY_HASH_SECRET)),)
+export API_KEY_HASH_SECRET
+endif
+
+ifneq ($(strip $(AUTH_SESSION_HASH_SECRET)),)
+export AUTH_SESSION_HASH_SECRET
+endif
+
+.PHONY: install dev worker test test-integration lint format db-up db-migrate seed qa
 
 install:
 	test -d .venv || $(PYTHON_BOOTSTRAP) -m venv .venv
@@ -44,3 +55,10 @@ db-migrate:
 
 seed:
 	cd apps/api && $(PYTHON) -m app.scripts.seed
+
+qa:
+	$(PYTHON) -m pytest apps/api/tests
+	cd apps/api && PYTHONPATH=$(ROOT_DIR)/apps/api $(ROOT_DIR)/.venv/bin/ruff check app tests
+	cd apps/api && PYTHONPATH=$(ROOT_DIR)/apps/api $(ROOT_DIR)/.venv/bin/alembic -c alembic.ini upgrade head
+	$(PNPM) --filter web build
+	$(PNPM) --filter web lint

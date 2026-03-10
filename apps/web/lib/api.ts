@@ -7,11 +7,16 @@ import type {
   IncidentDetailRead,
   IncidentEventListResponse,
   IncidentListResponse,
+  ModelVersionDetailRead,
+  ModelVersionListResponse,
   OrganizationAlertTargetRead,
   OrganizationAlertTargetTestResponse,
   OrganizationRead,
   ProjectListResponse,
+  ProjectReliabilityRead,
   ProjectRead,
+  PromptVersionDetailRead,
+  PromptVersionListResponse,
   RegressionDetailRead,
   RegressionListResponse,
   TraceComparisonRead,
@@ -66,6 +71,10 @@ export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
 }
 
+export async function getProjectReliability(projectId: string) {
+  return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
+}
+
 export async function listProjects(filters: { organizationId?: string; limit?: number } = {}) {
   const params = new URLSearchParams();
   if (filters.organizationId) params.set("organization_id", filters.organizationId);
@@ -76,6 +85,8 @@ export async function listProjects(filters: { organizationId?: string; limit?: n
 
 export interface TraceFilters {
   projectId?: string;
+  promptVersionId?: string;
+  modelVersionId?: string;
   modelName?: string;
   promptVersion?: string;
   success?: "true" | "false";
@@ -89,6 +100,8 @@ export async function listTraces(filters: TraceFilters = {}) {
   const params = new URLSearchParams();
 
   if (filters.projectId) params.set("project_id", filters.projectId);
+  if (filters.promptVersionId) params.set("prompt_version_id", filters.promptVersionId);
+  if (filters.modelVersionId) params.set("model_version_id", filters.modelVersionId);
   if (filters.modelName) params.set("model_name", filters.modelName);
   if (filters.promptVersion) params.set("prompt_version", filters.promptVersion);
   if (filters.success) params.set("success", filters.success);
@@ -103,6 +116,10 @@ export async function listTraces(filters: TraceFilters = {}) {
 
 export async function getTraceDetail(traceId: string) {
   return request<TraceDetailRead>(`/api/v1/traces/${traceId}`);
+}
+
+export async function getTraceCompare(traceId: string) {
+  return request<TraceComparisonRead>(`/api/v1/traces/${traceId}/compare`);
 }
 
 export async function listIncidents(filters: {
@@ -193,6 +210,30 @@ export async function listProjectRegressionsFiltered(
 
 export async function getRegressionDetail(regressionId: string) {
   return request<RegressionDetailRead>(`/api/v1/regressions/${regressionId}`);
+}
+
+export async function getRegressionCompare(regressionId: string) {
+  return request<TraceComparisonRead>(`/api/v1/regressions/${regressionId}/compare`);
+}
+
+export async function listProjectPromptVersions(projectId: string) {
+  return request<PromptVersionListResponse>(`/api/v1/projects/${projectId}/prompt-versions`);
+}
+
+export async function getPromptVersionDetail(projectId: string, promptVersionId: string) {
+  return request<PromptVersionDetailRead>(
+    `/api/v1/projects/${projectId}/prompt-versions/${promptVersionId}`
+  );
+}
+
+export async function listProjectModelVersions(projectId: string) {
+  return request<ModelVersionListResponse>(`/api/v1/projects/${projectId}/model-versions`);
+}
+
+export async function getModelVersionDetail(projectId: string, modelVersionId: string) {
+  return request<ModelVersionDetailRead>(
+    `/api/v1/projects/${projectId}/model-versions/${modelVersionId}`
+  );
 }
 
 export async function getOrgAlertTarget(organizationId: string) {

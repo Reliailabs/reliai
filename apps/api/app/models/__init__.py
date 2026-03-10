@@ -4,6 +4,7 @@ from app.models.evaluation import Evaluation
 from app.models.evaluation_rollup import EvaluationRollup
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
+from app.models.model_version import ModelVersion
 from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
 from app.models.organization_alert_target import OrganizationAlertTarget
@@ -11,7 +12,9 @@ from app.models.organization_member import OrganizationMember
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser
 from app.models.project import Project
+from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
+from app.models.reliability_metric import ReliabilityMetric
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 
@@ -22,6 +25,7 @@ __all__ = [
     "EvaluationRollup",
     "Incident",
     "IncidentEvent",
+    "ModelVersion",
     "OnboardingChecklist",
     "Organization",
     "OrganizationAlertTarget",
@@ -29,7 +33,9 @@ __all__ = [
     "OperatorSession",
     "OperatorUser",
     "Project",
+    "PromptVersion",
     "RegressionSnapshot",
+    "ReliabilityMetric",
     "RetrievalSpan",
     "Trace",
 ]

@@ -43,6 +43,159 @@ export interface ProjectListResponse {
   items: ProjectRead[];
 }
 
+export interface ReliabilityMetricPointRead {
+  metric_name: string;
+  window_minutes: number;
+  window_start: string;
+  window_end: string;
+  value_number: number;
+  numerator: number | null;
+  denominator: number | null;
+  unit: string;
+  computed_at: string;
+  metadata_json: Record<string, unknown> | null;
+}
+
+export interface ReliabilityMetricSeriesRead {
+  metric_name: string;
+  unit: string;
+  points: ReliabilityMetricPointRead[];
+}
+
+export interface ReliabilityRecentIncidentRead {
+  id: string;
+  incident_type: string;
+  severity: string;
+  status: string;
+  title: string;
+  started_at: string;
+  updated_at: string;
+}
+
+export interface ProjectReliabilityRead {
+  project_id: string;
+  organization_id: string;
+  reliability_score: number | null;
+  detection_latency_p90: number | null;
+  MTTA_p90: number | null;
+  MTTR_p90: number | null;
+  false_positive_rate: number | null;
+  detection_coverage: number | null;
+  alert_delivery_success_rate: number | null;
+  explainability_score: number | null;
+  incident_density: number | null;
+  telemetry_freshness_minutes: number | null;
+  quality_pass_rate: number | null;
+  structured_output_validity_rate: number | null;
+  root_cause_localization_score: number | null;
+  recent_incidents: ReliabilityRecentIncidentRead[];
+  trend_series: ReliabilityMetricSeriesRead[];
+}
+
+export interface PromptVersionRead {
+  id: string;
+  project_id: string;
+  version: string;
+  label: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PromptVersionListResponse {
+  items: PromptVersionRead[];
+}
+
+export interface ModelVersionRead {
+  id: string;
+  project_id: string;
+  provider: string | null;
+  model_name: string;
+  model_version: string | null;
+  model_family: string | null;
+  model_revision: string | null;
+  route_key: string | null;
+  label: string | null;
+  identity_key: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModelVersionListResponse {
+  items: ModelVersionRead[];
+}
+
+export interface VersionTraceRead {
+  id: string;
+  request_id: string;
+  timestamp: string;
+  model_name: string;
+  prompt_version: string | null;
+  latency_ms: number | null;
+  success: boolean;
+  error_type: string | null;
+  created_at: string;
+}
+
+export interface VersionRegressionRead {
+  id: string;
+  metric_name: string;
+  scope_type: string;
+  scope_id: string;
+  current_value: number;
+  baseline_value: number;
+  delta_percent: number | null;
+  detected_at: string;
+}
+
+export interface VersionIncidentRead {
+  id: string;
+  incident_type: string;
+  severity: string;
+  status: string;
+  title: string;
+  started_at: string;
+  updated_at: string;
+}
+
+export interface PromptVersionUsageSummaryRead {
+  trace_count: number;
+  recent_trace_count: number;
+  incident_count: number;
+  regression_count: number;
+}
+
+export interface PromptVersionDetailRead {
+  prompt_version: PromptVersionRead;
+  usage_summary: PromptVersionUsageSummaryRead;
+  recent_traces: VersionTraceRead[];
+  recent_regressions: VersionRegressionRead[];
+  related_incidents: VersionIncidentRead[];
+  recent_reliability_metrics: ReliabilityMetricPointRead[];
+  traces_path: string;
+  regressions_path: string;
+  incidents_path: string;
+}
+
+export interface ModelVersionUsageSummaryRead {
+  trace_count: number;
+  recent_trace_count: number;
+  incident_count: number;
+  regression_count: number;
+}
+
+export interface ModelVersionDetailRead {
+  model_version: ModelVersionRead;
+  usage_summary: ModelVersionUsageSummaryRead;
+  recent_traces: VersionTraceRead[];
+  recent_regressions: VersionRegressionRead[];
+  related_incidents: VersionIncidentRead[];
+  recent_reliability_metrics: ReliabilityMetricPointRead[];
+  traces_path: string;
+  regressions_path: string;
+  incidents_path: string;
+}
+
 export interface RetrievalSpanRead {
   retrieval_latency_ms: number | null;
   source_count: number | null;
@@ -111,6 +264,10 @@ export interface TraceDetailRead {
   error_type: string | null;
   metadata_json: Record<string, unknown> | null;
   created_at: string;
+  prompt_version_record: PromptVersionRead | null;
+  model_version_record: ModelVersionRead | null;
+  registry_pivots: CohortPivotRead[];
+  compare_path: string | null;
   retrieval_span: RetrievalSpanRead | null;
   evaluations: EvaluationRead[];
 }
@@ -161,6 +318,60 @@ export interface RootCauseHintRead {
   metadata_json: Record<string, unknown> | null;
 }
 
+export interface DimensionSummaryRead {
+  summary_type: string;
+  dimension: string;
+  current_value: string | null;
+  baseline_value: string | null;
+  current_count: number | null;
+  baseline_count: number | null;
+  current_share: string | null;
+  baseline_share: string | null;
+  delta_value: string | null;
+  metadata_json: Record<string, unknown> | null;
+}
+
+export interface CohortPivotRead {
+  pivot_type: string;
+  label: string;
+  path: string;
+  query_params: Record<string, string>;
+}
+
+export interface PromptVersionContextRead {
+  id: string;
+  project_id: string;
+  version: string;
+  label: string | null;
+  current_count: number | null;
+  baseline_count: number | null;
+  traces_path: string;
+  regressions_path: string;
+  incidents_path: string;
+}
+
+export interface ModelVersionContextRead {
+  id: string;
+  project_id: string;
+  provider: string | null;
+  model_name: string;
+  model_version: string | null;
+  route_key: string | null;
+  label: string | null;
+  current_count: number | null;
+  baseline_count: number | null;
+  traces_path: string;
+}
+
+export interface TraceDiffBlockRead {
+  block_type: string;
+  title: string;
+  changed: boolean;
+  current_value: string | null;
+  baseline_value: string | null;
+  metadata_json: Record<string, unknown> | null;
+}
+
 export interface TraceCompareEvaluationRead {
   label: string | null;
   score: string | null;
@@ -185,6 +396,8 @@ export interface TraceCompareItemRead {
   prompt_tokens: number | null;
   completion_tokens: number | null;
   total_cost_usd: string | null;
+  prompt_version_record: PromptVersionRead | null;
+  model_version_record: ModelVersionRead | null;
   structured_output: TraceCompareEvaluationRead | null;
   retrieval: TraceCompareRetrievalRead | null;
   metadata_excerpt_json: Record<string, unknown> | null;
@@ -194,10 +407,14 @@ export interface TraceComparePairRead {
   pair_index: number;
   current_trace: TraceCompareItemRead | null;
   baseline_trace: TraceCompareItemRead | null;
+  diff_blocks: TraceDiffBlockRead[];
 }
 
 export interface TraceComparisonRead {
-  incident_id: string;
+  comparison_scope: string;
+  source_id: string;
+  incident_id: string | null;
+  regression_id: string | null;
   project_id: string;
   metric_name: string | null;
   scope_type: string | null;
@@ -209,11 +426,20 @@ export interface TraceComparisonRead {
   current_traces: TraceCompareItemRead[];
   baseline_traces: TraceCompareItemRead[];
   pairs: TraceComparePairRead[];
+  dimension_summaries: DimensionSummaryRead[];
+  prompt_version_contexts: PromptVersionContextRead[];
+  model_version_contexts: ModelVersionContextRead[];
+  cohort_pivots: CohortPivotRead[];
+  related_incident_id: string | null;
 }
 
 export interface RegressionDetailRead extends RegressionSnapshotRead {
   related_incident: RegressionRelatedIncidentRead | null;
   root_cause_hints: RootCauseHintRead[];
+  dimension_summaries: DimensionSummaryRead[];
+  prompt_version_contexts: PromptVersionContextRead[];
+  model_version_contexts: ModelVersionContextRead[];
+  cohort_pivots: CohortPivotRead[];
   current_representative_traces: TraceCompareItemRead[];
   baseline_representative_traces: TraceCompareItemRead[];
   trace_compare_path: string | null;
@@ -312,6 +538,10 @@ export interface IncidentDetailRead extends IncidentListItemRead {
     current_representative_traces: TraceCompareItemRead[];
     baseline_representative_traces: TraceCompareItemRead[];
     root_cause_hints: RootCauseHintRead[];
+    dimension_summaries: DimensionSummaryRead[];
+    prompt_version_contexts: PromptVersionContextRead[];
+    model_version_contexts: ModelVersionContextRead[];
+    cohort_pivots: CohortPivotRead[];
     rule_context: {
       incident_type: string;
       metric_name: string;

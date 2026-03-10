@@ -14,6 +14,7 @@ from app.services.incidents import sync_incidents_for_scope
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
 from app.workers.alerts import run_alert_delivery
+from app.workers.reliability_metrics import enqueue_reliability_metrics_job
 
 logger = logging.getLogger(__name__)
 
@@ -67,5 +68,12 @@ def run_trace_evaluations(trace_id: str) -> None:
         db.commit()
         for delivery_id in delivery_ids:
             enqueue_alert_delivery_job(delivery_id)
+        if trace is not None:
+            enqueue_reliability_metrics_job(
+                project_id=trace.project_id,
+                prompt_version_record_id=trace.prompt_version_record_id,
+                model_version_record_id=trace.model_version_record_id,
+                anchor_time=trace.created_at,
+            )
     finally:
         db.close()

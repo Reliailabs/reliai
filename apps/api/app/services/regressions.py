@@ -16,10 +16,14 @@ from app.models.trace import Trace
 from app.schemas.regression import RegressionListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
-from app.services.incidents import derive_root_cause_hints
+from app.services.incidents import (
+    build_cohort_pivots,
+    derive_dimension_summaries,
+    derive_registry_contexts,
+    derive_root_cause_hints,
+)
 from app.services.rollups import (
     ROLLUP_METRICS,
-    ROLLUP_WINDOW_MINUTES,
     RollupScope,
     build_baseline_window,
     build_current_window,
@@ -43,6 +47,22 @@ class RegressionDetailResult:
     current_representative_traces: list[Trace]
     baseline_representative_traces: list[Trace]
     root_cause_hints: list[dict]
+    dimension_summaries: list[dict]
+    prompt_version_contexts: list[dict]
+    model_version_contexts: list[dict]
+    cohort_pivots: list[dict]
+
+
+@dataclass(frozen=True)
+class RegressionCompareResult:
+    regression: RegressionSnapshot
+    related_incident: Incident | None
+    current_representative_traces: list[Trace]
+    baseline_representative_traces: list[Trace]
+    dimension_summaries: list[dict]
+    prompt_version_contexts: list[dict]
+    model_version_contexts: list[dict]
+    cohort_pivots: list[dict]
 
 
 def _baseline_rollup(
@@ -168,7 +188,12 @@ def _load_regression_window_traces(
         return []
     statement = (
         select(Trace)
-        .options(selectinload(Trace.retrieval_span), selectinload(Trace.evaluations))
+        .options(
+            selectinload(Trace.retrieval_span),
+            selectinload(Trace.evaluations),
+            selectinload(Trace.prompt_version_record),
+            selectinload(Trace.model_version_record),
+        )
         .where(
             Trace.organization_id == regression.organization_id,
             Trace.project_id == regression.project_id,
@@ -258,6 +283,27 @@ def get_regression_detail(
         reverse=True,
     )
 
+    current_window_start = _window_datetime(metadata, "current_window_start")
+    current_window_end = _window_datetime(metadata, "current_window_end")
+    dimension_summaries = derive_dimension_summaries(
+        current_traces=current_sorted,
+        baseline_traces=baseline_sorted,
+    )
+    cohort_pivots = build_cohort_pivots(
+        project_id=regression.project_id,
+        scope_type=regression.scope_type,
+        scope_id=regression.scope_id,
+        current_window_start=current_window_start,
+        current_window_end=current_window_end,
+        anchor_time=related_incident.started_at if related_incident is not None else regression.detected_at,
+        current_traces=current_sorted,
+    )
+    prompt_version_contexts, model_version_contexts = derive_registry_contexts(
+        project_id=regression.project_id,
+        current_traces=current_sorted,
+        baseline_traces=baseline_sorted,
+    )
+
     return RegressionDetailResult(
         regression=regression,
         related_incident=related_incident,
@@ -270,4 +316,27 @@ def get_regression_detail(
         )
         if current_sorted or baseline_sorted
         else [],
+        dimension_summaries=dimension_summaries,
+        prompt_version_contexts=prompt_version_contexts,
+        model_version_contexts=model_version_contexts,
+        cohort_pivots=cohort_pivots,
+    )
+
+
+def get_regression_compare(
+    db: Session,
+    operator: OperatorContext,
+    *,
+    regression_id: UUID,
+) -> RegressionCompareResult:
+    result = get_regression_detail(db, operator, regression_id=regression_id)
+    return RegressionCompareResult(
+        regression=result.regression,
+        related_incident=result.related_incident,
+        current_representative_traces=result.current_representative_traces,
+        baseline_representative_traces=result.baseline_representative_traces,
+        dimension_summaries=result.dimension_summaries,
+        prompt_version_contexts=result.prompt_version_contexts,
+        model_version_contexts=result.model_version_contexts,
+        cohort_pivots=result.cohort_pivots,
     )

@@ -40,8 +40,16 @@ export default async function ProjectRegressionsPage({
               that triggered an incident.
             </p>
           </div>
-          <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
-            {metricName || "all metrics"} · {scopeId || "all scopes"}
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/projects/${projectId}/reliability`}
+              className="rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-ink transition hover:bg-zinc-50"
+            >
+              Reliability scorecard
+            </Link>
+            <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
+              {metricName || "all metrics"} · {scopeId || "all scopes"}
+            </div>
           </div>
         </div>
       </header>

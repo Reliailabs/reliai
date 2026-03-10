@@ -104,6 +104,21 @@ For every task:
   - any tradeoffs
   - next recommended step
 
+## QA Gate
+- Before starting each milestone, run `docs/QA-CHECKLIST.md`.
+- Treat investigation flows as release-critical:
+  - incident page
+  - regression page
+  - compare page
+  - trace pivots
+- Periodically run the repo QA audit prompt in `QA-Prompt-Codex.md`, especially every 2 to 3 milestones.
+
+## QA gate
+Before starting each new milestone or major structural change:
+- read `docs/QA-CHECKLIST.md`
+- run the milestone QA gate appropriate to the current state of the repo
+- do not begin the next milestone until critical QA failures are understood or fixed
+
 ## Output style
 When presenting work:
 - be concrete

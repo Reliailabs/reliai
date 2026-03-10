@@ -2,7 +2,8 @@ import base64
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -15,7 +16,10 @@ from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 from app.schemas.trace import TraceIngestRequest, TraceListQuery
 from app.services.auth import OperatorContext
+from app.services.authorization import require_trace_access
+from app.services.incidents import _structured_output_label
 from app.services.onboarding import mark_trace_ingested
+from app.services.registry import link_trace_registry_records
 from app.workers.evaluations import run_trace_evaluations
 
 logger = logging.getLogger(__name__)
@@ -26,6 +30,16 @@ PREVIEW_LENGTH = 240
 class TraceListResult:
     items: list[Trace]
     next_cursor: str | None
+
+
+@dataclass(frozen=True)
+class TraceCompareResult:
+    trace: Trace
+    baseline_trace: Trace | None
+    current_window_start: datetime
+    current_window_end: datetime
+    baseline_window_start: datetime
+    baseline_window_end: datetime
 
 
 def _build_preview(value: str | None) -> str | None:
@@ -57,6 +71,13 @@ def enqueue_trace_evaluations(trace_id: UUID) -> None:
 
 def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> Trace:
     try:
+        is_explainable = bool(
+            payload.model_name
+            and payload.prompt_version
+            and payload.latency_ms is not None
+            and payload.prompt_tokens is not None
+            and payload.completion_tokens is not None
+        )
         trace = Trace(
             organization_id=project.organization_id,
             project_id=project.id,
@@ -76,6 +97,7 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
             prompt_tokens=payload.prompt_tokens,
             completion_tokens=payload.completion_tokens,
             total_cost_usd=payload.total_cost_usd,
+            is_explainable=is_explainable,
             success=payload.success,
             error_type=payload.error_type,
             metadata_json=payload.metadata_json,
@@ -94,6 +116,10 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
                     retrieved_chunks_json=payload.retrieval.retrieved_chunks_json,
                 )
             )
+
+        link_trace_registry_records(db, trace=trace, project=project)
+        project.last_trace_received_at = trace.created_at
+        db.add(project)
 
         mark_trace_ingested(db, project.organization_id)
         db.commit()
@@ -127,6 +153,10 @@ def list_traces(db: Session, operator: OperatorContext, filters: TraceListQuery)
         statement = statement.where(Trace.model_name == filters.model_name)
     if filters.prompt_version is not None:
         statement = statement.where(Trace.prompt_version == filters.prompt_version)
+    if getattr(filters, "prompt_version_id", None) is not None:
+        statement = statement.where(Trace.prompt_version_record_id == filters.prompt_version_id)
+    if getattr(filters, "model_version_id", None) is not None:
+        statement = statement.where(Trace.model_version_record_id == filters.model_version_id)
     if filters.success is not None:
         statement = statement.where(Trace.success == filters.success)
     if filters.date_from is not None:
@@ -155,7 +185,12 @@ def list_traces(db: Session, operator: OperatorContext, filters: TraceListQuery)
 def get_trace_detail(db: Session, operator: OperatorContext, trace_id: UUID) -> Trace:
     statement = (
         select(Trace)
-        .options(selectinload(Trace.retrieval_span), selectinload(Trace.evaluations))
+        .options(
+            selectinload(Trace.retrieval_span),
+            selectinload(Trace.evaluations),
+            selectinload(Trace.prompt_version_record),
+            selectinload(Trace.model_version_record),
+        )
         .where(Trace.id == trace_id, Trace.organization_id.in_(operator.organization_ids))
     )
     trace = db.scalar(statement)
@@ -163,3 +198,153 @@ def get_trace_detail(db: Session, operator: OperatorContext, trace_id: UUID) -> 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
     trace.evaluations.sort(key=lambda item: (item.eval_type, item.created_at))
     return trace
+
+
+def _trace_compare_statement(trace: Trace):
+    statement = (
+        select(Trace)
+        .options(
+            selectinload(Trace.retrieval_span),
+            selectinload(Trace.evaluations),
+            selectinload(Trace.prompt_version_record),
+            selectinload(Trace.model_version_record),
+        )
+        .where(
+            Trace.organization_id == trace.organization_id,
+            Trace.project_id == trace.project_id,
+            Trace.id != trace.id,
+            Trace.timestamp < trace.timestamp,
+        )
+    )
+    if trace.prompt_version_record_id is not None:
+        statement = statement.where(Trace.prompt_version_record_id == trace.prompt_version_record_id)
+    elif trace.prompt_version is not None:
+        statement = statement.where(Trace.prompt_version == trace.prompt_version)
+    if trace.model_version_record_id is not None:
+        statement = statement.where(Trace.model_version_record_id == trace.model_version_record_id)
+    else:
+        statement = statement.where(Trace.model_name == trace.model_name)
+        if trace.model_provider is not None:
+            statement = statement.where(Trace.model_provider == trace.model_provider)
+    return statement
+
+
+def _numeric_distance(left: int | Decimal | None, right: int | Decimal | None) -> float:
+    if left is None or right is None:
+        return float("inf")
+    return abs(float(left) - float(right))
+
+
+def _trace_baseline_sort_key(trace: Trace, candidate: Trace):
+    structured_pass = _structured_output_label(candidate) == "pass"
+    record_prompt_match = (
+        trace.prompt_version_record_id is not None
+        and candidate.prompt_version_record_id == trace.prompt_version_record_id
+    )
+    record_model_match = (
+        trace.model_version_record_id is not None
+        and candidate.model_version_record_id == trace.model_version_record_id
+    )
+    string_prompt_match = trace.prompt_version is not None and candidate.prompt_version == trace.prompt_version
+    model_name_match = candidate.model_name == trace.model_name
+    return (
+        1 if record_prompt_match else 0,
+        1 if record_model_match else 0,
+        1 if candidate.success else 0,
+        1 if structured_pass else 0,
+        1 if string_prompt_match else 0,
+        1 if model_name_match else 0,
+        -_numeric_distance(candidate.latency_ms, trace.latency_ms),
+        -(
+            _numeric_distance(candidate.prompt_tokens, trace.prompt_tokens)
+            + _numeric_distance(candidate.completion_tokens, trace.completion_tokens)
+        ),
+        candidate.timestamp,
+        str(candidate.id),
+    )
+
+
+def _rank_trace_baseline_candidates(trace: Trace, candidates: list[Trace]) -> list[Trace]:
+    return sorted(
+        candidates,
+        key=lambda candidate: _trace_baseline_sort_key(trace, candidate),
+        reverse=True,
+    )
+
+
+def get_trace_compare(db: Session, operator: OperatorContext, trace_id: UUID) -> TraceCompareResult:
+    require_trace_access(db, operator, trace_id)
+    trace = get_trace_detail(db, operator, trace_id)
+    baseline_window_end = trace.timestamp
+    current_window_start = trace.timestamp
+    current_window_end = trace.timestamp
+
+    search_windows = [
+        timedelta(hours=24),
+        timedelta(days=7),
+    ]
+    ranked: list[Trace] = []
+    baseline_window_start = baseline_window_end - search_windows[-1]
+
+    for window in search_windows:
+        baseline_window_start = baseline_window_end - window
+        candidates = (
+            db.scalars(
+                _trace_compare_statement(trace)
+                .where(Trace.timestamp >= baseline_window_start)
+                .order_by(desc(Trace.timestamp), desc(Trace.id))
+                .limit(100)
+            )
+            .unique()
+            .all()
+        )
+        ranked = _rank_trace_baseline_candidates(trace, candidates)
+        if ranked:
+            break
+
+    if not ranked:
+        baseline_window_start = baseline_window_end - timedelta(days=7)
+        fallback_candidates = (
+            db.scalars(
+                select(Trace)
+                .options(
+                    selectinload(Trace.retrieval_span),
+                    selectinload(Trace.evaluations),
+                    selectinload(Trace.prompt_version_record),
+                    selectinload(Trace.model_version_record),
+                )
+                .where(
+                    Trace.organization_id == trace.organization_id,
+                    Trace.project_id == trace.project_id,
+                    Trace.id != trace.id,
+                    Trace.timestamp < trace.timestamp,
+                    Trace.timestamp >= baseline_window_start,
+                    Trace.success.is_(True),
+                    or_(
+                        and_(
+                            Trace.prompt_version == trace.prompt_version,
+                            Trace.model_name == trace.model_name,
+                        ),
+                        and_(
+                            Trace.prompt_version_record_id == trace.prompt_version_record_id,
+                            Trace.model_version_record_id == trace.model_version_record_id,
+                        ),
+                    ),
+                )
+                .order_by(desc(Trace.timestamp), desc(Trace.id))
+                .limit(100)
+            )
+            .unique()
+            .all()
+        )
+        ranked = _rank_trace_baseline_candidates(trace, fallback_candidates)
+
+    baseline_trace = ranked[0] if ranked else None
+    return TraceCompareResult(
+        trace=trace,
+        baseline_trace=baseline_trace,
+        current_window_start=current_window_start,
+        current_window_end=current_window_end,
+        baseline_window_start=baseline_window_start,
+        baseline_window_end=baseline_window_end,
+    )

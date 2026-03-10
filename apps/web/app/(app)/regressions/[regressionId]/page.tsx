@@ -111,11 +111,9 @@ export default async function RegressionDetailPage({
         <Card className="rounded-[28px] border-zinc-300 p-6">
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Likely contributing dimensions</p>
-            {regression.related_incident ? (
-              <Link href={`/incidents/${regression.related_incident.id}/compare`} className="text-sm font-medium text-ink underline-offset-4 hover:underline">
-                Open trace compare
-              </Link>
-            ) : null}
+            <Link href={`/regressions/${regression.id}/compare`} className="text-sm font-medium text-ink underline-offset-4 hover:underline">
+              Open regression compare
+            </Link>
           </div>
           <div className="mt-4 space-y-3">
             {regression.root_cause_hints.length > 0 ? (
@@ -144,13 +142,80 @@ export default async function RegressionDetailPage({
                 Open related incident
               </Link>
             ) : null}
-            {regression.related_incident ? (
-              <Link href={`/incidents/${regression.related_incident.id}/compare`} className="block rounded-2xl border border-zinc-200 px-4 py-3 font-medium text-ink underline-offset-4 hover:underline">
-                Open representative trace compare
-              </Link>
-            ) : (
-              <p className="rounded-2xl border border-zinc-200 px-4 py-3">Trace compare is available when a related incident exists.</p>
-            )}
+            <Link href={`/regressions/${regression.id}/compare`} className="block rounded-2xl border border-zinc-200 px-4 py-3 font-medium text-ink underline-offset-4 hover:underline">
+              Open regression compare
+            </Link>
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Dimension summaries</p>
+          <div className="mt-4 space-y-3">
+            {regression.dimension_summaries.map((summary, index) => (
+              <div key={`${summary.summary_type}-${index}`} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">{summary.summary_type.replaceAll("_", " ")}</p>
+                <p className="mt-1 text-sm text-steel">
+                  {summary.dimension}
+                  {summary.current_value ? ` · current ${summary.current_value}` : ""}
+                  {summary.baseline_value ? ` · baseline ${summary.baseline_value}` : ""}
+                </p>
+                <p className="mt-1 text-sm text-steel">
+                  {summary.current_share ? `current share ${summary.current_share}` : ""}
+                  {summary.baseline_share ? ` · baseline share ${summary.baseline_share}` : ""}
+                  {summary.delta_value ? ` · delta ${summary.delta_value}` : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Trace pivots</p>
+          <div className="mt-4 space-y-3">
+            {regression.cohort_pivots.map((pivot) => (
+              <a
+                key={pivot.pivot_type}
+                href={pivot.path}
+                className="block rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-ink transition hover:bg-zinc-50"
+              >
+                {pivot.label}
+              </a>
+            ))}
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Prompt version context</p>
+          <div className="mt-4 space-y-3">
+            {regression.prompt_version_contexts.map((context) => (
+              <div key={context.id} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">{context.version}</p>
+                <p className="mt-1 text-sm text-steel">
+                  current {context.current_count ?? 0} · baseline {context.baseline_count ?? 0}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Model version context</p>
+          <div className="mt-4 space-y-3">
+            {regression.model_version_contexts.map((context) => (
+              <div key={context.id} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">
+                  {context.provider ?? "provider n/a"} / {context.model_name}
+                  {context.model_version ? ` / ${context.model_version}` : ""}
+                </p>
+                <p className="mt-1 text-sm text-steel">
+                  current {context.current_count ?? 0} · baseline {context.baseline_count ?? 0}
+                </p>
+              </div>
+            ))}
           </div>
         </Card>
       </section>

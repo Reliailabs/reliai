@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Braces, DatabaseZap, Gauge, MessagesSquare } from "lucide-react";
+import { ArrowLeft, Braces, DatabaseZap, Gauge, GitCompareArrows, MessagesSquare } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { getTraceDetail } from "@/lib/api";
@@ -45,14 +45,22 @@ export default async function TraceDetailPage({
             {trace.model_name} · {trace.environment} · {new Date(trace.timestamp).toLocaleString()}
           </p>
         </div>
-        <div
-          className={`rounded-full px-4 py-2 text-sm font-medium ${
-            trace.success
-              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-              : "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
-          }`}
-        >
-          {trace.success ? "Success" : trace.error_type ?? "Failure"}
+        <div className="flex items-center gap-3">
+          {trace.compare_path ? (
+            <Link href={`/traces/${trace.id}/compare`} className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50">
+              <GitCompareArrows className="h-4 w-4" />
+              Compare to baseline
+            </Link>
+          ) : null}
+          <div
+            className={`rounded-full px-4 py-2 text-sm font-medium ${
+              trace.success
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                : "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
+            }`}
+          >
+            {trace.success ? "Success" : trace.error_type ?? "Failure"}
+          </div>
         </div>
       </div>
 
@@ -67,7 +75,7 @@ export default async function TraceDetailPage({
         <Card className="rounded-[24px] border-zinc-300 p-5">
           <Braces className="h-5 w-5 text-steel" />
           <p className="mt-3 text-sm text-steel">Prompt version</p>
-          <p className="mt-2 text-2xl font-semibold text-ink">{trace.prompt_version ?? "Unversioned"}</p>
+          <p className="mt-2 text-2xl font-semibold text-ink">{trace.prompt_version_record?.version ?? trace.prompt_version ?? "Unversioned"}</p>
         </Card>
         <Card className="rounded-[24px] border-zinc-300 p-5">
           <MessagesSquare className="h-5 w-5 text-steel" />
@@ -129,7 +137,54 @@ export default async function TraceDetailPage({
                 <dt className="text-steel">Session</dt>
                 <dd className="text-right text-ink">{trace.session_id ?? "n/a"}</dd>
               </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-steel">Prompt record</dt>
+                <dd className="text-right text-ink">{trace.prompt_version_record?.id ?? "n/a"}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-steel">Model record</dt>
+                <dd className="text-right text-ink">{trace.model_version_record?.id ?? "n/a"}</dd>
+              </div>
             </dl>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Version context</p>
+            <div className="mt-4 space-y-3 text-sm text-steel">
+              <div className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="font-medium text-ink">Prompt version</p>
+                <p className="mt-1">{trace.prompt_version_record?.version ?? trace.prompt_version ?? "n/a"}</p>
+                {trace.prompt_version_record ? (
+                  <Link
+                    href={`/prompt-versions/${trace.prompt_version_record.id}?projectId=${trace.project_id}`}
+                    className="mt-2 inline-flex text-sm font-medium text-ink underline-offset-4 hover:underline"
+                  >
+                    Open prompt detail
+                  </Link>
+                ) : null}
+              </div>
+              <div className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="font-medium text-ink">Model route</p>
+                <p className="mt-1">
+                  {trace.model_version_record
+                    ? `${trace.model_version_record.provider ?? "provider n/a"} / ${trace.model_version_record.model_name}${trace.model_version_record.model_version ? ` / ${trace.model_version_record.model_version}` : ""}`
+                    : trace.model_name}
+                </p>
+                {trace.model_version_record ? (
+                  <Link
+                    href={`/model-versions/${trace.model_version_record.id}?projectId=${trace.project_id}`}
+                    className="mt-2 inline-flex text-sm font-medium text-ink underline-offset-4 hover:underline"
+                  >
+                    Open model detail
+                  </Link>
+                ) : null}
+              </div>
+              {trace.registry_pivots.map((pivot) => (
+                <a key={pivot.pivot_type} href={pivot.path} className="block rounded-2xl border border-zinc-200 px-4 py-3 font-medium text-ink underline-offset-4 hover:underline">
+                  {pivot.label}
+                </a>
+              ))}
+            </div>
           </Card>
 
           <Card className="rounded-[28px] border-zinc-300 p-6">

@@ -2,7 +2,10 @@ from uuid import UUID
 
 from app.models.api_key import APIKey
 from app.models.evaluation import Evaluation
+from app.models.model_version import ModelVersion
 from app.models.organization_member import OrganizationMember
+from app.models.project import Project
+from app.models.prompt_version import PromptVersion
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 from app.services.auth import create_operator_user
@@ -246,11 +249,66 @@ def test_ingest_trace_happy_path(client, db_session, fake_queue, monkeypatch):
     assert stored_trace.organization_id == UUID(organization["id"])
     assert stored_trace.environment == "prod"
     assert stored_trace.output_preview == "Hi"
+    assert stored_trace.is_explainable is True
 
     retrieval_span = db_session.query(RetrievalSpan).filter(RetrievalSpan.trace_id == stored_trace.id).one()
     assert retrieval_span.source_count == 3
+    assert stored_trace.prompt_version_record_id is not None
+    assert stored_trace.model_version_record_id is not None
+    prompt_record = db_session.get(PromptVersion, stored_trace.prompt_version_record_id)
+    model_record = db_session.get(ModelVersion, stored_trace.model_version_record_id)
+    assert prompt_record is not None
+    assert prompt_record.version == "v1"
+    assert model_record is not None
+    project_record = db_session.get(Project, UUID(project["id"]))
+    assert project_record is not None
+    assert project_record.last_trace_received_at is not None
+    assert model_record.model_name == "gpt-4.1-mini"
     assert len(fake_queue.jobs) == 1
     assert fake_queue.jobs[0][1] == (str(stored_trace.id),)
+
+
+def test_project_registry_listing_is_tenant_safe(client, db_session, fake_queue):
+    owner = create_operator(db_session, email="owner@acme.test")
+    outsider = create_operator(db_session, email="outsider@beta.test")
+    owner_session = sign_in(client, email=owner.email)
+    outsider_session = sign_in(client, email=outsider.email)
+    organization = create_organization(client, owner_session, name="Acme AI", slug="acme-ai")
+    project = create_project(client, owner_session, organization["id"])
+    api_key_response = create_api_key(client, owner_session, project["id"])
+
+    ingest_trace(
+        client,
+        api_key_response["api_key"],
+        {
+            "timestamp": "2026-03-09T12:00:00Z",
+            "request_id": "req_registry",
+            "model_name": "gpt-4.1-mini",
+            "model_provider": "openai",
+            "prompt_version": "v9",
+            "success": True,
+        },
+    )
+
+    prompt_versions = client.get(
+        f"/api/v1/projects/{project['id']}/prompt-versions",
+        headers=auth_headers(owner_session),
+    )
+    assert prompt_versions.status_code == 200
+    assert prompt_versions.json()["items"][0]["version"] == "v9"
+
+    model_versions = client.get(
+        f"/api/v1/projects/{project['id']}/model-versions",
+        headers=auth_headers(owner_session),
+    )
+    assert model_versions.status_code == 200
+    assert model_versions.json()["items"][0]["model_name"] == "gpt-4.1-mini"
+
+    forbidden = client.get(
+        f"/api/v1/projects/{project['id']}/prompt-versions",
+        headers=auth_headers(outsider_session),
+    )
+    assert forbidden.status_code == 403
 
 
 def test_ingest_trace_requires_valid_api_key(client):

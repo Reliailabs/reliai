@@ -32,6 +32,8 @@ export default async function TracesPage({
   const params = (await searchParams) ?? {};
   const filters: TraceFilters = {
     projectId: readSearchParam(params.project_id),
+    promptVersionId: readSearchParam(params.prompt_version_id),
+    modelVersionId: readSearchParam(params.model_version_id),
     modelName: readSearchParam(params.model_name),
     promptVersion: readSearchParam(params.prompt_version),
     success: readSearchParam(params.success) as "true" | "false" | undefined,
@@ -44,6 +46,8 @@ export default async function TracesPage({
   const traces = await listTraces(filters).catch(() => ({ items: [], next_cursor: null }));
   const hasFilters =
     Boolean(filters.projectId) ||
+    Boolean(filters.promptVersionId) ||
+    Boolean(filters.modelVersionId) ||
     Boolean(filters.modelName) ||
     Boolean(filters.promptVersion) ||
     Boolean(filters.success) ||
@@ -217,6 +221,8 @@ export default async function TracesPage({
               href={
                 (`/traces?${new URLSearchParams({
                   ...(filters.projectId ? { project_id: filters.projectId } : {}),
+                  ...(filters.promptVersionId ? { prompt_version_id: filters.promptVersionId } : {}),
+                  ...(filters.modelVersionId ? { model_version_id: filters.modelVersionId } : {}),
                   ...(filters.modelName ? { model_name: filters.modelName } : {}),
                   ...(filters.promptVersion ? { prompt_version: filters.promptVersion } : {}),
                   ...(filters.success ? { success: filters.success } : {}),

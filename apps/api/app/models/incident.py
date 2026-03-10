@@ -14,6 +14,7 @@ class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         UniqueConstraint("fingerprint", name="uq_incidents_fingerprint"),
         Index("ix_incidents_org_status_started_at", "organization_id", "status", "started_at"),
         Index("ix_incidents_project_status_started_at", "project_id", "status", "started_at"),
+        Index("ix_incidents_project_started_at_desc", "project_id", "started_at"),
     )
 
     organization_id: Mapped[UUID] = mapped_column(

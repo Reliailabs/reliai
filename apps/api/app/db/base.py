@@ -11,9 +11,12 @@ from app.models.organization_member import OrganizationMember
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser
 from app.models.project import Project
+from app.models.prompt_version import PromptVersion
+from app.models.reliability_metric import ReliabilityMetric
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
+from app.models.model_version import ModelVersion
 
 __all__ = [
     "AlertDelivery",
@@ -29,6 +32,9 @@ __all__ = [
     "OperatorSession",
     "OperatorUser",
     "Project",
+    "PromptVersion",
+    "ModelVersion",
+    "ReliabilityMetric",
     "RegressionSnapshot",
     "RetrievalSpan",
     "Trace",

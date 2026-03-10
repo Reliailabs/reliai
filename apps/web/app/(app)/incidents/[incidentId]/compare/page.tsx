@@ -14,6 +14,18 @@ function renderMetadata(value: Record<string, unknown> | null) {
     .join(" · ");
 }
 
+function renderDiffMetadata(value: Record<string, unknown> | null) {
+  if (!value || Object.keys(value).length === 0) {
+    return "No scalar metadata differences";
+  }
+  return Object.entries(value)
+    .map(([key, item]) => {
+      const diff = item as { current?: string | null; baseline?: string | null };
+      return `${key}: ${diff.current ?? "n/a"} vs ${diff.baseline ?? "n/a"}`;
+    })
+    .join(" · ");
+}
+
 function renderStructured(trace: {
   structured_output: { label: string | null; reason: string | null } | null;
 }) {
@@ -126,11 +138,113 @@ export default async function IncidentComparePage({
         </Card>
       </section>
 
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Dimension summaries</p>
+          <div className="mt-4 space-y-3">
+            {compare.dimension_summaries.map((summary, index) => (
+              <div key={`${summary.summary_type}-${index}`} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">{summary.summary_type.replaceAll("_", " ")}</p>
+                <p className="mt-1 text-sm text-steel">
+                  {summary.dimension}
+                  {summary.current_value ? ` · current ${summary.current_value}` : ""}
+                  {summary.baseline_value ? ` · baseline ${summary.baseline_value}` : ""}
+                </p>
+                <p className="mt-1 text-sm text-steel">
+                  {summary.current_share ? `current share ${summary.current_share}` : ""}
+                  {summary.baseline_share ? ` · baseline share ${summary.baseline_share}` : ""}
+                  {summary.delta_value ? ` · delta ${summary.delta_value}` : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Trace pivots</p>
+          <div className="mt-4 space-y-3">
+            {compare.cohort_pivots.map((pivot) => (
+              <a
+                key={pivot.pivot_type}
+                href={pivot.path}
+                className="block rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-ink transition hover:bg-zinc-50"
+              >
+                {pivot.label}
+              </a>
+            ))}
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Prompt version context</p>
+          <div className="mt-4 space-y-3">
+            {compare.prompt_version_contexts.map((context) => (
+              <div key={context.id} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">{context.version}</p>
+                <p className="mt-1 text-sm text-steel">
+                  current {context.current_count ?? 0} · baseline {context.baseline_count ?? 0}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                  <a href={context.traces_path} className="text-ink underline-offset-4 hover:underline">Traces</a>
+                  <a href={context.regressions_path} className="text-ink underline-offset-4 hover:underline">Regressions</a>
+                  <a href={context.incidents_path} className="text-ink underline-offset-4 hover:underline">Incidents</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Model version context</p>
+          <div className="mt-4 space-y-3">
+            {compare.model_version_contexts.map((context) => (
+              <div key={context.id} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-ink">
+                  {context.provider ?? "provider n/a"} / {context.model_name}
+                  {context.model_version ? ` / ${context.model_version}` : ""}
+                </p>
+                <p className="mt-1 text-sm text-steel">
+                  current {context.current_count ?? 0} · baseline {context.baseline_count ?? 0}
+                </p>
+                <a href={context.traces_path} className="mt-2 inline-block text-sm text-ink underline-offset-4 hover:underline">
+                  Traces
+                </a>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
+
       <section className="space-y-4">
         {compare.pairs.map((pair) => (
-          <div key={pair.pair_index} className="grid gap-4 xl:grid-cols-2">
-            <TraceCompareCard trace={pair.current_trace} label={`Current #${pair.pair_index + 1}`} />
-            <TraceCompareCard trace={pair.baseline_trace} label={`Baseline #${pair.pair_index + 1}`} />
+          <div key={pair.pair_index} className="space-y-4">
+            <div className="grid gap-4 xl:grid-cols-2">
+              <TraceCompareCard trace={pair.current_trace} label={`Current #${pair.pair_index + 1}`} />
+              <TraceCompareCard trace={pair.baseline_trace} label={`Baseline #${pair.pair_index + 1}`} />
+            </div>
+            <Card className="rounded-[24px] border-zinc-300 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-steel">Focused differences</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {pair.diff_blocks.map((block) => (
+                  <div key={block.block_type} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                    <p className="text-sm font-medium text-ink">{block.title}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-steel">
+                      {block.changed ? "Changed" : "No change"}
+                    </p>
+                    {block.metadata_json ? (
+                      <p className="mt-2 text-sm text-steel">{renderDiffMetadata(block.metadata_json)}</p>
+                    ) : (
+                      <div className="mt-2 space-y-1 text-sm text-steel">
+                        <p>Current · {block.current_value ?? "n/a"}</p>
+                        <p>Baseline · {block.baseline_value ?? "n/a"}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
           </div>
         ))}
       </section>

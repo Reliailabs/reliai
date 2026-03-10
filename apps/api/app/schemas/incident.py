@@ -8,13 +8,21 @@ from pydantic import BaseModel, Field
 from app.schemas.alert_delivery import AlertDeliveryRead
 from app.schemas.common import APIModel
 from app.schemas.incident_event import IncidentEventRead
-from app.schemas.investigation import RootCauseHintRead
+from app.schemas.investigation import (
+    CohortPivotRead,
+    DimensionSummaryRead,
+    ModelVersionContextRead,
+    PromptVersionContextRead,
+    RootCauseHintRead,
+)
 from app.schemas.regression import RegressionSnapshotRead
 from app.schemas.trace import TraceCompareItemRead
 
 
 class IncidentListQuery(BaseModel):
     project_id: UUID | None = None
+    scope_type: str | None = Field(default=None, pattern=r"^(project|prompt_version)$")
+    scope_id: str | None = None
     status: str | None = Field(default=None, pattern=r"^(open|resolved)$")
     severity: str | None = Field(default=None, pattern=r"^(critical|high|medium|low)$")
     owner_operator_user_id: UUID | None = None
@@ -79,6 +87,10 @@ class IncidentCompareRead(APIModel):
     current_representative_traces: list[TraceCompareItemRead]
     baseline_representative_traces: list[TraceCompareItemRead]
     root_cause_hints: list[RootCauseHintRead]
+    dimension_summaries: list[DimensionSummaryRead]
+    prompt_version_contexts: list[PromptVersionContextRead]
+    model_version_contexts: list[ModelVersionContextRead]
+    cohort_pivots: list[CohortPivotRead]
     rule_context: IncidentRuleContextRead | None
     trace_compare_path: str
 

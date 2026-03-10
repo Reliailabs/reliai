@@ -17,6 +17,7 @@ from app.models.base import Base
 from app.services import traces as trace_services
 from app.workers import alerts as alert_worker
 from app.workers import evaluations as evaluation_worker
+from app.workers import reliability_metrics as reliability_metrics_worker
 
 
 class FakeQueue:
@@ -67,4 +68,5 @@ def fake_queue(monkeypatch: pytest.MonkeyPatch) -> FakeQueue:
     monkeypatch.setattr(trace_services, "get_queue", lambda: queue)
     monkeypatch.setattr(evaluation_worker, "get_queue", lambda: queue)
     monkeypatch.setattr(alert_worker, "get_queue", lambda: queue)
+    monkeypatch.setattr(reliability_metrics_worker, "get_queue", lambda: queue)
     return queue
