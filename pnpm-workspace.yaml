@@ -2,4 +2,5 @@ packages:
   - apps/web
   - packages/config
   - packages/runtime-guardrail
+  - packages/runtime-proxy
   - packages/types

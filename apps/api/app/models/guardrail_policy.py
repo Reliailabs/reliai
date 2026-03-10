@@ -20,3 +20,4 @@ class GuardrailPolicy(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     project = relationship("Project", back_populates="guardrail_policies")
     events = relationship("GuardrailEvent", back_populates="policy")
+    runtime_events = relationship("GuardrailRuntimeEvent", back_populates="policy")

@@ -28,3 +28,4 @@ class Deployment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     events = relationship("DeploymentEvent", back_populates="deployment")
     rollbacks = relationship("DeploymentRollback", back_populates="deployment")
     incidents = relationship("Incident", back_populates="deployment")
+    risk_score = relationship("DeploymentRiskScore", back_populates="deployment", uselist=False)

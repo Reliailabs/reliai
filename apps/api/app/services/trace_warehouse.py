@@ -52,6 +52,10 @@ class TraceWarehouseQuery:
     model_version_id: UUID | None = None
     prompt_version: str | None = None
     model_name: str | None = None
+    latency_min_ms: int | None = None
+    latency_max_ms: int | None = None
+    success: bool | None = None
+    structured_output_valid: bool | None = None
     limit: int | None = None
 
 
@@ -61,6 +65,14 @@ class TraceWarehouseAggregateQuery:
     project_id: UUID
     window_start: datetime
     window_end: datetime
+    prompt_version_id: UUID | None = None
+    model_version_id: UUID | None = None
+    prompt_version: str | None = None
+    model_name: str | None = None
+    latency_min_ms: int | None = None
+    latency_max_ms: int | None = None
+    success: bool | None = None
+    structured_output_valid: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -93,6 +105,15 @@ class TraceWarehouseClient:
     def query_trace_events(self, query: TraceWarehouseQuery) -> list[TraceWarehouseEventRow]:  # pragma: no cover
         raise NotImplementedError
 
+    def query_all_trace_events(
+        self,
+        *,
+        window_start: datetime,
+        window_end: datetime,
+        limit: int | None = None,
+    ) -> list[TraceWarehouseEventRow]:  # pragma: no cover
+        raise NotImplementedError
+
     def aggregate_trace_metrics(self, query: TraceWarehouseAggregateQuery) -> dict[str, Any]:  # pragma: no cover
         raise NotImplementedError
 
@@ -107,12 +128,23 @@ class NullTraceWarehouseClient(TraceWarehouseClient):
     def query_trace_events(self, query: TraceWarehouseQuery) -> list[TraceWarehouseEventRow]:
         return []
 
+    def query_all_trace_events(
+        self,
+        *,
+        window_start: datetime,
+        window_end: datetime,
+        limit: int | None = None,
+    ) -> list[TraceWarehouseEventRow]:
+        return []
+
     def aggregate_trace_metrics(self, query: TraceWarehouseAggregateQuery) -> dict[str, Any]:
         return {
             "trace_count": 0,
             "success_rate": None,
+            "error_rate": None,
             "average_latency_ms": None,
             "structured_output_validity_rate": None,
+            "average_cost_usd": None,
         }
 
 
@@ -224,6 +256,18 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         if query.model_name is not None:
             clauses.append("JSONExtractString(metadata_json, '__model_name') = {model_name:String}")
             params["model_name"] = query.model_name
+        if query.latency_min_ms is not None:
+            clauses.append("latency_ms >= {latency_min_ms:Int32}")
+            params["latency_min_ms"] = query.latency_min_ms
+        if query.latency_max_ms is not None:
+            clauses.append("latency_ms <= {latency_max_ms:Int32}")
+            params["latency_max_ms"] = query.latency_max_ms
+        if query.success is not None:
+            clauses.append("success = {success:Bool}")
+            params["success"] = query.success
+        if query.structured_output_valid is not None:
+            clauses.append("structured_output_valid = {structured_output_valid:Bool}")
+            params["structured_output_valid"] = query.structured_output_valid
 
         limit_clause = f" LIMIT {query.limit}" if query.limit is not None else ""
         sql = f"""
@@ -280,43 +324,140 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
 
     def aggregate_trace_metrics(self, query: TraceWarehouseAggregateQuery) -> dict[str, Any]:
         self.ensure_schema()
+        clauses = [
+            "organization_id = toUUID({organization_id:String})",
+            "project_id = toUUID({project_id:String})",
+            "timestamp >= parseDateTime64BestEffort({window_start:String})",
+            "timestamp < parseDateTime64BestEffort({window_end:String})",
+        ]
+        params: dict[str, Any] = {
+            "organization_id": str(query.organization_id),
+            "project_id": str(query.project_id),
+            "window_start": _ensure_utc(query.window_start).isoformat(),
+            "window_end": _ensure_utc(query.window_end).isoformat(),
+        }
+        if query.prompt_version_id is not None:
+            clauses.append("prompt_version_id = toUUID({prompt_version_id:String})")
+            params["prompt_version_id"] = str(query.prompt_version_id)
+        if query.model_version_id is not None:
+            clauses.append("model_version_id = toUUID({model_version_id:String})")
+            params["model_version_id"] = str(query.model_version_id)
+        if query.prompt_version is not None:
+            clauses.append("JSONExtractString(metadata_json, '__prompt_version') = {prompt_version:String}")
+            params["prompt_version"] = query.prompt_version
+        if query.model_name is not None:
+            clauses.append("JSONExtractString(metadata_json, '__model_name') = {model_name:String}")
+            params["model_name"] = query.model_name
+        if query.latency_min_ms is not None:
+            clauses.append("latency_ms >= {latency_min_ms:Int32}")
+            params["latency_min_ms"] = query.latency_min_ms
+        if query.latency_max_ms is not None:
+            clauses.append("latency_ms <= {latency_max_ms:Int32}")
+            params["latency_max_ms"] = query.latency_max_ms
+        if query.success is not None:
+            clauses.append("success = {success:Bool}")
+            params["success"] = query.success
+        if query.structured_output_valid is not None:
+            clauses.append("structured_output_valid = {structured_output_valid:Bool}")
+            params["structured_output_valid"] = query.structured_output_valid
         sql = f"""
         SELECT
             count() AS trace_count,
             avg(toFloat64(success)) AS success_rate,
+            1 - avg(toFloat64(success)) AS error_rate,
             avg(latency_ms) AS average_latency_ms,
-            avg(toFloat64(structured_output_valid)) AS structured_output_validity_rate
+            avg(toFloat64(structured_output_valid)) AS structured_output_validity_rate,
+            avg(cost) AS average_cost_usd
         FROM {TRACE_WAREHOUSE_TABLE}
-        WHERE organization_id = toUUID({{organization_id:String}})
-          AND project_id = toUUID({{project_id:String}})
-          AND timestamp >= parseDateTime64BestEffort({{window_start:String}})
-          AND timestamp < parseDateTime64BestEffort({{window_end:String}})
+        WHERE {' AND '.join(clauses)}
         FORMAT JSONEachRow
         """
-        response = self._post(
-            sql,
-            params={
-                "organization_id": str(query.organization_id),
-                "project_id": str(query.project_id),
-                "window_start": _ensure_utc(query.window_start).isoformat(),
-                "window_end": _ensure_utc(query.window_end).isoformat(),
-            },
-        )
+        response = self._post(sql, params=params)
         line = next((item for item in response.text.splitlines() if item.strip()), "")
         if not line:
             return {
                 "trace_count": 0,
                 "success_rate": None,
+                "error_rate": None,
                 "average_latency_ms": None,
                 "structured_output_validity_rate": None,
+                "average_cost_usd": None,
             }
         payload = json.loads(line)
         return {
             "trace_count": int(payload.get("trace_count", 0)),
             "success_rate": payload.get("success_rate"),
+            "error_rate": payload.get("error_rate"),
             "average_latency_ms": payload.get("average_latency_ms"),
             "structured_output_validity_rate": payload.get("structured_output_validity_rate"),
+            "average_cost_usd": payload.get("average_cost_usd"),
         }
+
+    def query_all_trace_events(
+        self,
+        *,
+        window_start: datetime,
+        window_end: datetime,
+        limit: int | None = None,
+    ) -> list[TraceWarehouseEventRow]:
+        self.ensure_schema()
+        params: dict[str, Any] = {
+            "window_start": _ensure_utc(window_start).isoformat(),
+            "window_end": _ensure_utc(window_end).isoformat(),
+        }
+        limit_clause = f" LIMIT {limit}" if limit is not None else ""
+        sql = f"""
+        SELECT
+            timestamp,
+            organization_id,
+            project_id,
+            trace_id,
+            prompt_version_id,
+            model_version_id,
+            latency_ms,
+            success,
+            error_type,
+            input_tokens,
+            output_tokens,
+            cost,
+            structured_output_valid,
+            retrieval_latency_ms,
+            retrieval_chunks,
+            metadata_json
+        FROM {TRACE_WAREHOUSE_TABLE}
+        WHERE timestamp >= parseDateTime64BestEffort({{window_start:String}})
+          AND timestamp < parseDateTime64BestEffort({{window_end:String}})
+        ORDER BY timestamp DESC, trace_id DESC
+        {limit_clause}
+        FORMAT JSONEachRow
+        """
+        response = self._post(sql, params=params)
+        rows: list[TraceWarehouseEventRow] = []
+        for line in response.text.splitlines():
+            if not line:
+                continue
+            payload = json.loads(line)
+            rows.append(
+                TraceWarehouseEventRow(
+                    timestamp=_ensure_utc(datetime.fromisoformat(payload["timestamp"])),
+                    organization_id=UUID(payload["organization_id"]),
+                    project_id=UUID(payload["project_id"]),
+                    trace_id=UUID(payload["trace_id"]),
+                    prompt_version_id=UUID(payload["prompt_version_id"]) if payload.get("prompt_version_id") else None,
+                    model_version_id=UUID(payload["model_version_id"]) if payload.get("model_version_id") else None,
+                    latency_ms=payload.get("latency_ms"),
+                    success=bool(payload.get("success")),
+                    error_type=payload.get("error_type"),
+                    input_tokens=payload.get("input_tokens"),
+                    output_tokens=payload.get("output_tokens"),
+                    cost=Decimal(str(payload["cost"])) if payload.get("cost") is not None else None,
+                    structured_output_valid=payload.get("structured_output_valid"),
+                    retrieval_latency_ms=payload.get("retrieval_latency_ms"),
+                    retrieval_chunks=payload.get("retrieval_chunks"),
+                    metadata_json=json.loads(payload.get("metadata_json") or "{}"),
+                )
+            )
+        return rows
 
 
 def get_trace_warehouse_client() -> TraceWarehouseClient:
@@ -370,6 +511,19 @@ def ingest_trace_event(trace: Trace) -> None:
 
 def query_traces(filters: TraceWarehouseQuery) -> list[TraceWarehouseEventRow]:
     return get_trace_warehouse_client().query_trace_events(filters)
+
+
+def query_all_traces(
+    *,
+    window_start: datetime,
+    window_end: datetime,
+    limit: int | None = None,
+) -> list[TraceWarehouseEventRow]:
+    return get_trace_warehouse_client().query_all_trace_events(
+        window_start=window_start,
+        window_end=window_end,
+        limit=limit,
+    )
 
 
 def aggregate_trace_metrics(query: TraceWarehouseAggregateQuery) -> dict[str, Any]:

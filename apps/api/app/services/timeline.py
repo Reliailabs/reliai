@@ -9,8 +9,12 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.deployment import Deployment
+from app.models.deployment_simulation import DeploymentSimulation
+from app.models.deployment_risk_score import DeploymentRiskScore
 from app.models.guardrail_event import GuardrailEvent
+from app.models.guardrail_policy import GuardrailPolicy
 from app.models.incident import Incident
+from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 
@@ -95,6 +99,83 @@ def _deployment_event(deployment: Deployment) -> TimelineEvent:
     )
 
 
+def _deployment_risk_event(item: DeploymentRiskScore) -> TimelineEvent:
+    deployment = item.deployment
+    signals = (item.analysis_json or {}).get("signals", [])
+    active_signals = [
+        signal["signal_name"].replace("_", " ")
+        for signal in signals
+        if signal.get("weighted_value", 0) > 0
+    ][:2]
+    title = _deployment_title(deployment)
+    summary = f"Risk {item.risk_level.upper()}"
+    if active_signals:
+        summary = f"{summary} · " + " · ".join(active_signals)
+    return TimelineEvent(
+        timestamp=item.created_at,
+        event_type="deployment_risk_evaluated",
+        title=f"Deployment Risk: {title.removeprefix('Deployment: ')}",
+        summary=summary,
+        severity=item.risk_level,
+        metadata={
+            "deployment_risk_score_id": str(item.id),
+            "deployment_id": str(deployment.id),
+            "project_id": str(deployment.project_id),
+            "path": f"/deployments/{deployment.id}",
+            "risk_score": float(item.risk_score),
+            "risk_level": item.risk_level,
+        },
+    )
+
+
+def _simulation_link_path(item: DeploymentSimulation) -> str:
+    if item.prompt_version_id is not None:
+        return f"/prompt-versions/{item.prompt_version_id}?projectId={item.project_id}"
+    if item.model_version_id is not None:
+        return f"/model-versions/{item.model_version_id}?projectId={item.project_id}"
+    return f"/projects/{item.project_id}/deployments"
+
+
+def _deployment_simulation_title(item: DeploymentSimulation) -> str:
+    prompt = item.prompt_version.version if item.prompt_version is not None else None
+    model = item.model_version.model_name if item.model_version is not None else None
+    if prompt and model:
+        return f"Deployment Simulation: {prompt} on {model}"
+    if prompt:
+        return f"Deployment Simulation: prompt {prompt}"
+    if model:
+        return f"Deployment Simulation: {model}"
+    return "Deployment Simulation"
+
+
+def _deployment_simulation_event(item: DeploymentSimulation) -> TimelineEvent:
+    analysis = item.analysis_json or {}
+    signals = analysis.get("signals", [])
+    top_signals = [
+        signal["signal_name"].replace("_", " ")
+        for signal in signals
+        if signal.get("value") not in (None, 0, 0.0)
+    ][:2]
+    summary = f"Risk {item.risk_level.upper()}" if item.risk_level is not None else "Simulation queued"
+    if top_signals:
+        summary = f"{summary} · " + " · ".join(top_signals)
+    return TimelineEvent(
+        timestamp=item.created_at,
+        event_type="deployment_simulation_completed",
+        title=_deployment_simulation_title(item),
+        summary=summary,
+        severity=item.risk_level,
+        metadata={
+            "deployment_simulation_id": str(item.id),
+            "project_id": str(item.project_id),
+            "prompt_version_id": str(item.prompt_version_id) if item.prompt_version_id is not None else None,
+            "model_version_id": str(item.model_version_id) if item.model_version_id is not None else None,
+            "path": _simulation_link_path(item),
+            "trace_sample_size": item.trace_sample_size,
+        },
+    )
+
+
 def _guardrail_severity(action_taken: str) -> str:
     if action_taken == "block":
         return "high"
@@ -126,6 +207,34 @@ def _guardrail_event(event: GuardrailEvent) -> TimelineEvent:
             "policy_type": policy.policy_type,
             "action_taken": event.action_taken,
             "path": f"/traces/{trace.id}",
+        },
+    )
+
+
+def _guardrail_runtime_event(event: GuardrailRuntimeEvent) -> TimelineEvent:
+    policy = event.policy
+    summary_parts = [f"{policy.policy_type} · {event.action_taken}"]
+    if event.provider_model:
+        summary_parts.append(event.provider_model)
+    if event.latency_ms is not None:
+        summary_parts.append(f"{event.latency_ms}ms")
+    reason = (event.metadata_json or {}).get("reason")
+    if reason:
+        summary_parts.append(str(reason))
+    return TimelineEvent(
+        timestamp=event.created_at,
+        event_type="guardrail_runtime_enforced",
+        title=f"Runtime guardrail {event.action_taken}",
+        summary=" · ".join(summary_parts),
+        severity=_guardrail_severity(event.action_taken),
+        metadata={
+            "guardrail_runtime_event_id": str(event.id),
+            "policy_id": str(policy.id),
+            "policy_type": policy.policy_type,
+            "action_taken": event.action_taken,
+            "provider_model": event.provider_model,
+            "trace_id": str(event.trace_id),
+            "path": None,
         },
     )
 
@@ -197,11 +306,46 @@ def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100) -> 
         .order_by(desc(GuardrailEvent.created_at), desc(GuardrailEvent.id))
         .limit(limit)
     ).all()
+    guardrail_runtime_events = db.scalars(
+        select(GuardrailRuntimeEvent)
+        .join(GuardrailRuntimeEvent.policy)
+        .options(selectinload(GuardrailRuntimeEvent.policy))
+        .where(GuardrailPolicy.project_id == project_id)
+        .order_by(desc(GuardrailRuntimeEvent.created_at), desc(GuardrailRuntimeEvent.id))
+        .limit(limit)
+    ).all()
+    deployment_risk_scores = db.scalars(
+        select(DeploymentRiskScore)
+        .join(DeploymentRiskScore.deployment)
+        .options(
+            selectinload(DeploymentRiskScore.deployment).selectinload(Deployment.prompt_version),
+            selectinload(DeploymentRiskScore.deployment).selectinload(Deployment.model_version),
+        )
+        .where(Deployment.project_id == project_id)
+        .order_by(desc(DeploymentRiskScore.created_at), desc(DeploymentRiskScore.id))
+        .limit(limit)
+    ).all()
+    deployment_simulations = db.scalars(
+        select(DeploymentSimulation)
+        .options(
+            selectinload(DeploymentSimulation.prompt_version),
+            selectinload(DeploymentSimulation.model_version),
+        )
+        .where(
+            DeploymentSimulation.project_id == project_id,
+            DeploymentSimulation.risk_level.is_not(None),
+        )
+        .order_by(desc(DeploymentSimulation.created_at), desc(DeploymentSimulation.id))
+        .limit(limit)
+    ).all()
 
     merged = [
         *[_incident_event(item) for item in incidents],
         *[_deployment_event(item) for item in deployments],
+        *[_deployment_risk_event(item) for item in deployment_risk_scores],
+        *[_deployment_simulation_event(item) for item in deployment_simulations],
         *[_guardrail_event(item) for item in guardrail_events],
+        *[_guardrail_runtime_event(item) for item in guardrail_runtime_events],
         *[_regression_event(item) for item in regressions],
     ]
     merged.sort(
@@ -210,7 +354,10 @@ def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100) -> 
             item.event_type,
             (item.metadata or {}).get("incident_id")
             or (item.metadata or {}).get("deployment_id")
+            or (item.metadata or {}).get("deployment_risk_score_id")
+            or (item.metadata or {}).get("deployment_simulation_id")
             or (item.metadata or {}).get("guardrail_event_id")
+            or (item.metadata or {}).get("guardrail_runtime_event_id")
             or (item.metadata or {}).get("regression_id")
             or "",
         ),

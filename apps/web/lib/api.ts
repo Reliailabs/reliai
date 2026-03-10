@@ -5,6 +5,9 @@ import { cookies } from "next/headers";
 import type {
   AlertDeliveryListResponse,
   DeploymentDetailRead,
+  EventPipelineRead,
+  GuardrailMetrics,
+  IncidentCommandCenterRead,
   IncidentDetailRead,
   IncidentEventListResponse,
   IncidentListResponse,
@@ -14,8 +17,10 @@ import type {
   OrganizationAlertTargetTestResponse,
   OrganizationRead,
   ProjectListResponse,
+  ProjectReliabilityControlPanel,
   ProjectReliabilityRead,
   ProjectRead,
+  ReliabilityRecommendation,
   PromptVersionDetailRead,
   PromptVersionListResponse,
   RegressionDetailRead,
@@ -75,6 +80,22 @@ export async function getProject(projectId: string) {
 
 export async function getProjectReliability(projectId: string) {
   return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
+}
+
+export async function getProjectGuardrailMetrics(projectId: string) {
+  return request<GuardrailMetrics>(`/api/v1/projects/${projectId}/guardrail-metrics`);
+}
+
+export async function getProjectReliabilityControlPanel(projectId: string) {
+  return request<ProjectReliabilityControlPanel>(`/api/v1/projects/${projectId}/control-panel`);
+}
+
+export async function getProjectRecommendations(projectId: string) {
+  return request<ReliabilityRecommendation[]>(`/api/v1/projects/${projectId}/recommendations`);
+}
+
+export async function getSystemEventPipeline() {
+  return request<{ pipeline: EventPipelineRead }>(`/api/v1/system/event-pipeline`);
 }
 
 export async function getProjectTimeline(projectId: string, limit = 100) {
@@ -153,6 +174,10 @@ export async function listIncidents(filters: {
 
 export async function getIncidentDetail(incidentId: string) {
   return request<IncidentDetailRead>(`/api/v1/incidents/${incidentId}`);
+}
+
+export async function getIncidentCommandCenter(incidentId: string) {
+  return request<IncidentCommandCenterRead>(`/api/v1/incidents/${incidentId}/command`);
 }
 
 export async function getIncidentTraceCompare(incidentId: string) {

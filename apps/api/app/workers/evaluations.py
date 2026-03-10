@@ -2,20 +2,11 @@ import logging
 from uuid import UUID
 
 from app.db.session import SessionLocal, get_queue
-from app.models.project import Project
-from app.models.trace import Trace
+from app.processors.evaluation_processor import process_trace_evaluation
 from app.services.alerts import (
-    ALERT_STATUS_PENDING,
-    create_alert_deliveries_for_open_incidents,
     mark_delivery_enqueue_failed,
 )
-from app.services.evaluations import run_structured_output_validity_evaluation
-from app.services.incidents import sync_incidents_for_scope
-from app.services.regressions import compute_regressions_for_scope
-from app.services.rollups import build_scopes
 from app.workers.alerts import run_alert_delivery
-from app.workers.global_metrics_aggregator import enqueue_global_metrics_aggregation
-from app.workers.reliability_metrics import enqueue_reliability_metrics_job
 
 logger = logging.getLogger(__name__)
 
@@ -33,49 +24,4 @@ def enqueue_alert_delivery_job(delivery_id: UUID) -> None:
 
 
 def run_trace_evaluations(trace_id: str) -> None:
-    db = SessionLocal()
-    try:
-        evaluation = run_structured_output_validity_evaluation(db, UUID(trace_id))
-        if evaluation is None:
-            logger.warning("trace evaluation skipped because trace was not found", extra={"trace_id": trace_id})
-            return
-
-        trace = db.get(Trace, UUID(trace_id))
-        if trace is None:
-            logger.warning("signal computation skipped because trace was not found", extra={"trace_id": trace_id})
-            return
-        project = db.get(Project, trace.project_id)
-        if project is None:
-            logger.warning("signal computation skipped because project was not found", extra={"trace_id": trace_id})
-            return
-
-        opened_incidents = []
-        for scope in build_scopes(trace):
-            result = compute_regressions_for_scope(db, scope=scope, anchor_time=trace.timestamp)
-            sync_result = sync_incidents_for_scope(
-                db,
-                scope=scope,
-                project=project,
-                regressions=result.snapshots,
-                detected_at=trace.timestamp,
-            )
-            opened_incidents.extend(sync_result.opened_incidents)
-            opened_incidents.extend(sync_result.reopened_incidents)
-
-        deliveries = create_alert_deliveries_for_open_incidents(db, incidents=opened_incidents)
-        delivery_ids = [
-            delivery.id for delivery in deliveries if delivery.delivery_status == ALERT_STATUS_PENDING
-        ]
-        db.commit()
-        for delivery_id in delivery_ids:
-            enqueue_alert_delivery_job(delivery_id)
-        if trace is not None:
-            enqueue_reliability_metrics_job(
-                project_id=trace.project_id,
-                prompt_version_record_id=trace.prompt_version_record_id,
-                model_version_record_id=trace.model_version_record_id,
-                anchor_time=trace.created_at,
-            )
-            enqueue_global_metrics_aggregation(anchor_time=trace.created_at)
-    finally:
-        db.close()
+    process_trace_evaluation(trace_id)

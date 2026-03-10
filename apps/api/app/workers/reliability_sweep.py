@@ -8,6 +8,8 @@ from app.models.project import Project
 from app.services.alerts import ALERT_STATUS_PENDING, create_alert_deliveries_for_open_incidents
 from app.services.incidents import sync_telemetry_freshness_incident
 from app.services.reliability_metrics import compute_project_reliability_metrics
+from app.workers.reliability_intelligence import enqueue_reliability_intelligence_aggregation
+from app.workers.reliability_recommendations import enqueue_project_reliability_recommendations
 from app.workers.reliability_metrics import enqueue_alert_delivery_jobs
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,7 @@ def run_reliability_sweep_for_session(db, *, anchor_time: str | None = None) -> 
     stale_opened = 0
     stale_reopened = 0
     delivery_ids = []
+    recommendation_project_ids = []
 
     for project in projects:
         if project.last_trace_received_at is None:
@@ -55,10 +58,14 @@ def run_reliability_sweep_for_session(db, *, anchor_time: str | None = None) -> 
         processed += 1
         stale_opened += len(incident_result.opened_incidents)
         stale_reopened += len(incident_result.reopened_incidents)
+        recommendation_project_ids.append(project.id)
 
     db.commit()
     if delivery_ids:
         enqueue_alert_delivery_jobs(delivery_ids)
+    for project_id in recommendation_project_ids:
+        enqueue_project_reliability_recommendations(project_id=project_id)
+    enqueue_reliability_intelligence_aggregation(anchor_time=computed_at)
     result = {
         "processed_projects": processed,
         "stale_incidents_opened": stale_opened,

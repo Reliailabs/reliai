@@ -8,10 +8,10 @@ from app.models.project import Project
 from app.models.prompt_version import PromptVersion
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
+from app.services.event_stream import TRACE_INGESTED_EVENT
 from app.services.auth import create_operator_user
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
 from app.workers.evaluations import run_trace_evaluations
-from app.workers.trace_warehouse_ingest import run_trace_warehouse_ingest
 
 
 def create_operator(db_session, *, email: str, password: str = "reliai-test-password"):
@@ -210,7 +210,7 @@ def test_tenant_authorization_blocks_cross_org_access(client, db_session):
     assert api_key_response.status_code == 403
 
 
-def test_ingest_trace_happy_path(client, db_session, fake_queue, monkeypatch):
+def test_ingest_trace_happy_path(client, db_session, fake_event_stream):
     operator = create_operator(db_session, email="owner@acme.test")
     session_payload = sign_in(client, email=operator.email)
     organization = create_organization(client, session_payload, name="Acme AI", slug="acme-ai")
@@ -265,10 +265,11 @@ def test_ingest_trace_happy_path(client, db_session, fake_queue, monkeypatch):
     assert project_record is not None
     assert project_record.last_trace_received_at is not None
     assert model_record.model_name == "gpt-4.1-mini"
-    assert len(fake_queue.jobs) == 2
-    assert [job[0] for job in fake_queue.jobs] == [run_trace_evaluations, run_trace_warehouse_ingest]
-    assert fake_queue.jobs[0][1] == (str(stored_trace.id),)
-    assert fake_queue.jobs[1][1] == (str(stored_trace.id),)
+    assert len(list(fake_event_stream.consume("trace_events"))) == 1
+    message = next(fake_event_stream.consume("trace_events"))
+    assert message.event_type == TRACE_INGESTED_EVENT
+    assert message.key == project["id"]
+    assert message.payload["trace_id"] == str(stored_trace.id)
 
 
 def test_project_registry_listing_is_tenant_safe(client, db_session, fake_queue):

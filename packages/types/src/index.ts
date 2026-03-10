@@ -92,6 +92,112 @@ export interface ProjectReliabilityRead {
   trend_series: ReliabilityMetricSeriesRead[];
 }
 
+export interface GuardrailPolicyMetrics {
+  policy_id: string;
+  policy_type: string;
+  action: string;
+  trigger_count: number;
+  last_triggered_at: string | null;
+}
+
+export interface GuardrailRuntimeEventSummary {
+  policy_type: string;
+  action_taken: string;
+  provider_model: string | null;
+  latency_ms: number | null;
+  created_at: string;
+  trace_id: string;
+  trace_available: boolean;
+}
+
+export interface GuardrailMetrics {
+  policies: GuardrailPolicyMetrics[];
+  recent_events: GuardrailRuntimeEventSummary[];
+}
+
+export interface ControlPanelDeploymentRisk {
+  latest_deployment_id: string | null;
+  deployed_at: string | null;
+  risk_score: number | null;
+  risk_level: string | null;
+}
+
+export interface ControlPanelSimulation {
+  latest_simulation_id: string | null;
+  predicted_failure_rate: number | null;
+  predicted_latency: number | null;
+  risk_level: string | null;
+  created_at: string | null;
+}
+
+export interface ControlPanelRecentIncident {
+  incident_id: string;
+  title: string;
+  severity: string;
+  status: string;
+  started_at: string;
+}
+
+export interface ControlPanelIncidents {
+  recent_incidents: ControlPanelRecentIncident[];
+  incident_rate_last_24h: number;
+}
+
+export interface ControlPanelGuardrails {
+  trigger_rate_last_24h: number;
+  top_triggered_policy: string | null;
+}
+
+export interface ControlPanelModelReliability {
+  current_model: string | null;
+  success_rate: number | null;
+  average_latency: number | null;
+  structured_output_validity: number | null;
+}
+
+export interface ProjectReliabilityControlPanel {
+  deployment_risk: ControlPanelDeploymentRisk;
+  simulation: ControlPanelSimulation;
+  incidents: ControlPanelIncidents;
+  guardrails: ControlPanelGuardrails;
+  model_reliability: ControlPanelModelReliability;
+}
+
+export interface EventPipelineConsumerRead {
+  consumer_name: string;
+  topic: string;
+  health: string;
+  processing_rate_per_minute: number;
+  lag: number;
+  processed_events_total: number;
+  processed_events_recent: number;
+  error_count_total: number;
+  error_count_recent: number;
+  average_processing_latency_ms: number | null;
+  last_processed_at: string | null;
+  last_error_at: string | null;
+}
+
+export interface EventPipelineRead {
+  topic: string;
+  dead_letter_topic: string | null;
+  total_events_published: number;
+  recent_events_published: number;
+  window_minutes: number;
+  consumers: EventPipelineConsumerRead[];
+}
+
+export interface ReliabilityRecommendation {
+  id: string;
+  project_id: string;
+  type: string;
+  severity: "info" | "warning" | "critical";
+  title: string;
+  description: string;
+  evidence_json: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface TimelineEventRead {
   timestamp: string;
   event_type: string;
@@ -237,12 +343,34 @@ export interface DeploymentRead {
   created_at: string;
 }
 
+export interface DeploymentRiskRecommendationRead {
+  action: string;
+  summary: string;
+}
+
+export interface DeploymentRiskRead {
+  deployment_id: string;
+  risk_score: number;
+  risk_level: "low" | "medium" | "high";
+  analysis_json: Record<string, unknown>;
+  recommendations: DeploymentRiskRecommendationRead[];
+  created_at: string;
+}
+
 export interface DeploymentDetailRead extends DeploymentRead {
   prompt_version: PromptVersionRead | null;
   model_version: ModelVersionRead | null;
   events: DeploymentEventRead[];
   rollbacks: DeploymentRollbackRead[];
   incident_ids: string[];
+  latest_risk_score: DeploymentRiskRead | null;
+}
+
+export interface IncidentDeploymentContextRead {
+  deployment: DeploymentRead;
+  prompt_version: PromptVersionRead | null;
+  model_version: ModelVersionRead | null;
+  time_since_deployment_minutes: number;
 }
 
 export interface DeploymentListResponse {
@@ -486,6 +614,19 @@ export interface TraceComparisonRead {
   related_incident_id: string | null;
 }
 
+export interface RootCauseProbabilityRead {
+  cause_type: string;
+  label: string;
+  probability: number;
+  evidence_json: Record<string, unknown> | null;
+}
+
+export interface RootCauseRecommendedFixRead {
+  fix_type: string;
+  summary: string;
+  metadata_json: Record<string, unknown> | null;
+}
+
 export interface RegressionDetailRead extends RegressionSnapshotRead {
   related_incident: RegressionRelatedIncidentRead | null;
   root_cause_hints: RootCauseHintRead[];
@@ -581,6 +722,7 @@ export interface IncidentDetailRead extends IncidentListItemRead {
   regressions: RegressionSnapshotRead[];
   traces: IncidentTraceSampleRead[];
   events: IncidentEventRead[];
+  deployment_context: IncidentDeploymentContextRead | null;
   compare: {
     current_window_start: string | null;
     current_window_end: string | null;
@@ -605,4 +747,30 @@ export interface IncidentDetailRead extends IncidentListItemRead {
     } | null;
     trace_compare_path: string;
   };
+}
+
+export interface GuardrailActivityRead {
+  policy_type: string;
+  trigger_count: number;
+  last_trigger_time: string | null;
+}
+
+export interface IncidentCommandCenterRead {
+  incident: IncidentDetailRead;
+  root_cause: {
+    incident_id: string;
+    generated_at: string;
+    root_cause_probabilities: RootCauseProbabilityRead[];
+    evidence: Record<string, unknown>;
+    recommended_fix: RootCauseRecommendedFixRead;
+  };
+  trace_compare: {
+    failing_trace_summary: TraceCompareItemRead | null;
+    baseline_trace_summary: TraceCompareItemRead | null;
+    compare_link: string;
+  };
+  deployment_context: IncidentDeploymentContextRead | null;
+  guardrail_activity: GuardrailActivityRead[];
+  related_regressions: RegressionSnapshotRead[];
+  recent_signals: TimelineEventRead[];
 }

@@ -33,6 +33,11 @@ class TraceWindowQuery:
     prompt_version: str | None = None
     prompt_version_record_id: UUID | None = None
     model_version_record_id: UUID | None = None
+    model_name: str | None = None
+    latency_min_ms: int | None = None
+    latency_max_ms: int | None = None
+    success: bool | None = None
+    structured_output_valid: bool | None = None
     with_details: bool = False
     limit: int | None = None
 
@@ -54,7 +59,7 @@ def _postgres_trace_window(db: Session, query: TraceWindowQuery) -> list[Trace]:
         Trace.timestamp >= query.window_start,
         Trace.timestamp < query.window_end,
     )
-    if query.with_details:
+    if query.with_details or query.structured_output_valid is not None:
         statement = statement.options(
             selectinload(Trace.retrieval_span),
             selectinload(Trace.evaluations),
@@ -67,10 +72,35 @@ def _postgres_trace_window(db: Session, query: TraceWindowQuery) -> list[Trace]:
         statement = statement.where(Trace.prompt_version_record_id == query.prompt_version_record_id)
     if query.model_version_record_id is not None:
         statement = statement.where(Trace.model_version_record_id == query.model_version_record_id)
+    if query.model_name is not None:
+        statement = statement.where(Trace.model_name == query.model_name)
+    if query.success is not None:
+        statement = statement.where(Trace.success == query.success)
+    if query.latency_min_ms is not None:
+        statement = statement.where(Trace.latency_ms.is_not(None), Trace.latency_ms >= query.latency_min_ms)
+    if query.latency_max_ms is not None:
+        statement = statement.where(Trace.latency_ms.is_not(None), Trace.latency_ms <= query.latency_max_ms)
     statement = statement.order_by(desc(Trace.timestamp), desc(Trace.id))
+    traces = db.scalars(statement).unique().all()
+    if query.structured_output_valid is not None:
+        filtered: list[Trace] = []
+        for trace in traces:
+            structured = None
+            for evaluation in getattr(trace, "evaluations", []):
+                if evaluation.eval_type != STRUCTURED_VALIDITY_EVAL_TYPE:
+                    continue
+                if evaluation.label == "pass":
+                    structured = True
+                    break
+                if evaluation.label == "fail":
+                    structured = False
+                    break
+            if structured == query.structured_output_valid:
+                filtered.append(trace)
+        traces = filtered
     if query.limit is not None:
-        statement = statement.limit(query.limit)
-    return db.scalars(statement).unique().all()
+        traces = traces[: query.limit]
+    return traces
 
 
 def _structured_evaluations(trace_id: UUID, timestamp: datetime, structured_output_valid: bool | None):
@@ -171,6 +201,11 @@ def _warehouse_trace_window(db: Session, query: TraceWindowQuery):
             prompt_version_id=query.prompt_version_record_id,
             model_version_id=query.model_version_record_id,
             prompt_version=query.prompt_version,
+            model_name=query.model_name,
+            latency_min_ms=query.latency_min_ms,
+            latency_max_ms=query.latency_max_ms,
+            success=query.success,
+            structured_output_valid=query.structured_output_valid,
             limit=query.limit,
         )
     )

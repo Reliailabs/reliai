@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.common import APIModel
 from app.schemas.project import ModelVersionRead, PromptVersionRead
@@ -45,12 +45,60 @@ class DeploymentRead(APIModel):
     created_at: datetime
 
 
+class DeploymentRiskSignalRead(APIModel):
+    signal_name: str
+    value: float
+    weight: float
+    weighted_value: float
+    summary: str
+
+
+class DeploymentRiskRecommendationRead(APIModel):
+    action: str
+    summary: str
+
+
+class DeploymentRiskRead(APIModel):
+    deployment_id: UUID
+    risk_score: float
+    risk_level: str
+    analysis_json: dict[str, Any]
+    recommendations: list[DeploymentRiskRecommendationRead]
+    created_at: datetime
+
+
+class DeploymentSimulationCreate(BaseModel):
+    prompt_version_id: UUID | None = None
+    model_version_id: UUID | None = None
+    sample_size: int = Field(default=50, ge=1, le=500)
+
+    @model_validator(mode="after")
+    def validate_scope(self) -> "DeploymentSimulationCreate":
+        if self.prompt_version_id is None and self.model_version_id is None:
+            raise ValueError("prompt_version_id or model_version_id is required")
+        return self
+
+
+class DeploymentSimulationRead(APIModel):
+    id: UUID
+    project_id: UUID
+    prompt_version_id: UUID | None
+    model_version_id: UUID | None
+    trace_sample_size: int
+    predicted_failure_rate: float | None
+    predicted_latency_ms: float | None
+    risk_level: str | None
+    analysis_json: dict[str, Any]
+    created_at: datetime
+
+
 class DeploymentDetailRead(DeploymentRead):
     prompt_version: PromptVersionRead | None
     model_version: ModelVersionRead | None
     events: list[DeploymentEventRead]
     rollbacks: list[DeploymentRollbackRead]
     incident_ids: list[UUID]
+    latest_risk_score: DeploymentRiskRead | None = None
 
 
 class DeploymentListResponse(BaseModel):

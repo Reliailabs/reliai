@@ -5,9 +5,11 @@ from uuid import UUID
 from app.db.session import SessionLocal, get_queue
 from app.models.project import Project
 from app.services.alerts import ALERT_STATUS_PENDING, create_alert_deliveries_for_open_incidents
+from app.services.deployments import most_recent_project_deployment
 from app.services.incidents import sync_telemetry_freshness_incident
 from app.services.reliability_metrics import compute_project_reliability_metrics
 from app.workers.alerts import run_alert_delivery
+from app.workers.deployment_risk_analysis import enqueue_deployment_risk_analysis
 from app.workers.global_metrics_aggregator import enqueue_global_metrics_aggregation
 
 logger = logging.getLogger(__name__)
@@ -90,6 +92,13 @@ def run_project_reliability_metrics(
         db.commit()
         if delivery_ids:
             enqueue_alert_delivery_jobs(delivery_ids)
+        deployment = most_recent_project_deployment(
+            db,
+            project_id=project.id,
+            detected_at=computed_at,
+        )
+        if deployment is not None:
+            enqueue_deployment_risk_analysis(deployment_id=deployment.id)
         enqueue_global_metrics_aggregation(anchor_time=computed_at)
     finally:
         db.close()

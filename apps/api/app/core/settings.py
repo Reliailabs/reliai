@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     trace_warehouse_url: str | None = None
     clickhouse_database: str = "reliai"
+    event_stream_brokers: str | None = None
+    event_stream_topic_traces: str = "trace_events"
+    event_stream_topic_traces_dlq: str | None = "trace_events_dlq"
+    event_stream_consumer_timeout_ms: int = 1000
+    enabled_processors: str = "evaluation,warehouse,reliability_metrics,regression"
     slack_webhook_default: str | None = None
     alert_delivery_cooldown_minutes: int = 60
     slack_alert_max_attempts: int = 3

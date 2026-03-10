@@ -178,6 +178,9 @@ export default async function IncidentDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href={`/incidents/${incident.id}/command`}>Open Command Center</Link>
+          </Button>
           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${severityTone(incident.severity)}`}>
             {incident.severity}
           </span>

@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -10,21 +10,20 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_, desc, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db.session import get_queue
 from app.models.project import Project
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 from app.schemas.trace import TraceIngestRequest, TraceListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_trace_access
+from app.services.event_stream import TraceIngestedEventPayload, publish_event
 from app.services.guardrails import evaluate_trace_guardrails
 from app.services.incidents import _structured_output_label
 from app.services.onboarding import mark_trace_ingested
 from app.services.reliability_graph import sync_trace_retrieval_span
 from app.services.registry import link_trace_registry_records
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
-from app.workers.evaluations import run_trace_evaluations
-from app.workers.trace_warehouse_ingest import run_trace_warehouse_ingest
+from app.core.settings import get_settings
 
 logger = logging.getLogger(__name__)
 PREVIEW_LENGTH = 240
@@ -66,18 +65,30 @@ def _decode_cursor(cursor: str) -> tuple[datetime, UUID]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid cursor") from exc
 
 
-def enqueue_trace_evaluations(trace_id: UUID) -> None:
+def publish_trace_ingested_event(trace: Trace) -> None:
     try:
-        get_queue().enqueue(run_trace_evaluations, str(trace_id))
+        settings = get_settings()
+        timestamp = trace.timestamp
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        payload = TraceIngestedEventPayload(
+            trace_id=str(trace.id),
+            project_id=str(trace.project_id),
+            timestamp=timestamp,
+            prompt_version_id=(
+                str(trace.prompt_version_record_id) if trace.prompt_version_record_id is not None else None
+            ),
+            model_version_id=(
+                str(trace.model_version_record_id) if trace.model_version_record_id is not None else None
+            ),
+            latency_ms=trace.latency_ms,
+            success=trace.success,
+            metadata=trace.metadata_json or {},
+        ).model_dump(mode="json")
+        payload["timestamp"] = timestamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+        publish_event(settings.event_stream_topic_traces, payload)
     except Exception:
-        logger.exception("failed to enqueue trace evaluations", extra={"trace_id": str(trace_id)})
-
-
-def enqueue_trace_warehouse_ingest(trace_id: UUID) -> None:
-    try:
-        get_queue().enqueue(run_trace_warehouse_ingest, str(trace_id))
-    except Exception:
-        logger.exception("failed to enqueue trace warehouse ingest", extra={"trace_id": str(trace_id)})
+        logger.exception("failed to publish trace ingest event", extra={"trace_id": str(trace.id)})
 
 
 def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> Trace:
@@ -157,8 +168,7 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     trace = create_trace(db, project, payload)
-    enqueue_trace_evaluations(trace.id)
-    enqueue_trace_warehouse_ingest(trace.id)
+    publish_trace_ingested_event(trace)
     return trace
 
 

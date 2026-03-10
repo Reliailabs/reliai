@@ -41,3 +41,7 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     incidents = relationship("Incident", back_populates="project")
     deployments = relationship("Deployment", back_populates="project")
     guardrail_policies = relationship("GuardrailPolicy", back_populates="project")
+    reliability_recommendations = relationship(
+        "ReliabilityRecommendation",
+        back_populates="project",
+    )

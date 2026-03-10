@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.models.guardrail_event import GuardrailEvent
 from app.models.guardrail_policy import GuardrailPolicy
+from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.project import Project
 from app.models.trace import Trace
 from app.schemas.guardrail import GuardrailPolicyCreate
@@ -53,6 +54,10 @@ def active_guardrail_policies(db: Session, *, project_id) -> list[GuardrailPolic
         .where(GuardrailPolicy.project_id == project_id, GuardrailPolicy.is_active.is_(True))
         .order_by(GuardrailPolicy.created_at.asc(), GuardrailPolicy.id.asc())
     ).all()
+
+
+def get_active_guardrail_policies(db: Session, *, project_id) -> list[GuardrailPolicy]:
+    return active_guardrail_policies(db, project_id=project_id)
 
 
 def _is_json_output(value: str | None) -> bool:
@@ -158,3 +163,31 @@ def evaluate_trace_guardrails(db: Session, *, project: Project, trace: Trace) ->
         db.flush()
         events.append(event)
     return events
+
+
+def record_runtime_guardrail_event(
+    db: Session,
+    *,
+    project_id,
+    trace_id,
+    policy_id,
+    action_taken: str,
+    provider_model: str | None,
+    latency_ms: int | None,
+    metadata_json: dict | None,
+) -> GuardrailRuntimeEvent:
+    policy = db.get(GuardrailPolicy, policy_id)
+    if policy is None or policy.project_id != project_id:
+        raise ValueError("Guardrail policy does not belong to project")
+    event = GuardrailRuntimeEvent(
+        trace_id=trace_id,
+        policy_id=policy_id,
+        action_taken=action_taken,
+        provider_model=provider_model,
+        latency_ms=latency_ms,
+        metadata_json=metadata_json,
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event

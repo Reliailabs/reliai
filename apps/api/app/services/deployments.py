@@ -13,6 +13,8 @@ from app.models.model_version import ModelVersion
 from app.models.prompt_version import PromptVersion
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
+from app.services.deployment_risk_engine import get_deployment_risk_score
+from app.workers.deployment_risk_analysis import enqueue_deployment_risk_analysis
 
 DEPLOYMENT_EVENT_CREATED = "created"
 
@@ -79,6 +81,7 @@ def create_deployment(db: Session, *, project_id: UUID, payload) -> Deployment:
         )
     )
     db.commit()
+    enqueue_deployment_risk_analysis(deployment_id=deployment.id)
     return get_deployment_by_id(db, deployment_id=deployment.id)  # type: ignore[return-value]
 
 
@@ -99,6 +102,7 @@ def get_deployment_by_id(db: Session, *, deployment_id: UUID) -> Deployment | No
             selectinload(Deployment.events),
             selectinload(Deployment.rollbacks),
             selectinload(Deployment.incidents),
+            selectinload(Deployment.risk_score),
         )
         .where(Deployment.id == deployment_id)
     )
@@ -109,6 +113,14 @@ def get_deployment_detail(db: Session, *, operator: OperatorContext, deployment_
     if deployment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deployment not found")
     require_project_access(db, operator, deployment.project_id)
+    return deployment
+
+
+def get_deployment_detail_with_risk(db: Session, *, operator: OperatorContext, deployment_id: UUID) -> Deployment:
+    deployment = get_deployment_detail(db, operator=operator, deployment_id=deployment_id)
+    if deployment.risk_score is None:
+        return deployment
+    deployment.risk_score = get_deployment_risk_score(db, deployment_id=deployment.id)
     return deployment
 
 

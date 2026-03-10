@@ -6,6 +6,107 @@ export interface GuardrailDecision {
   metadata: Record<string, unknown> | null;
 }
 
+export interface ReliaiLlmRequest {
+  projectId: string;
+  traceId: string;
+  model: string;
+  prompt: string;
+  guardrailPolicies?: {
+    id: string;
+    policyType: "structured_output" | "hallucination" | "cost_budget" | "latency_retry";
+    configJson: Record<string, unknown>;
+    isActive?: boolean;
+  }[];
+  loadPolicies?: (projectId: string) => Promise<{
+    id: string;
+    policyType: "structured_output" | "hallucination" | "cost_budget" | "latency_retry";
+    configJson: Record<string, unknown>;
+    isActive?: boolean;
+  }[]>;
+  providerExecutor: (request: {
+    projectId: string;
+    model: string;
+    prompt: string;
+    metadata?: Record<string, unknown> | null;
+    retrievalSourceCount?: number | null;
+  }) => Promise<{
+    model: string;
+    outputText: string | null;
+    success: boolean;
+    errorType?: string | null;
+    latencyMs?: number | null;
+    totalCostUsd?: number | string | null;
+    metadata?: Record<string, unknown> | null;
+  }>;
+  recordEvent?: (input: {
+    traceId: string;
+    policyId: string;
+    actionTaken: GuardrailAction;
+    providerModel: string | null;
+    latencyMs: number | null;
+    metadata: Record<string, unknown> | null;
+  }) => Promise<void>;
+  metadata?: Record<string, unknown> | null;
+  retrievalSourceCount?: number | null;
+  reliaiApiBaseUrl?: string;
+  apiKey?: string;
+  fetchImpl?: typeof fetch;
+}
+
+const POLICY_CACHE_TTL_MS = 60_000;
+const policyCache = new Map<string, { expiresAt: number; policies: ReliaiLlmRequest["guardrailPolicies"] }>();
+
+export function clearReliaiGuardrailPolicyCache() {
+  policyCache.clear();
+}
+
+async function fetchRuntimeGuardrailPolicies(input: {
+  projectId: string;
+  reliaiApiBaseUrl: string;
+  apiKey: string;
+  fetchImpl?: typeof fetch;
+}) {
+  const baseUrl = input.reliaiApiBaseUrl.replace(/\/$/, "");
+  const cacheKey = `${baseUrl}:${input.projectId}`;
+  const now = Date.now();
+  const cached = policyCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.policies ?? [];
+  }
+  const fetcher = input.fetchImpl ?? fetch;
+  const response = await fetcher(`${baseUrl}/api/v1/runtime/guardrails`, {
+    method: "GET",
+    headers: {
+      "X-API-Key": input.apiKey,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to load runtime guardrails: ${response.status}`);
+  }
+  const payload = (await response.json()) as {
+    policies: Array<{
+      id: string;
+      policy_type: "structured_output" | "hallucination" | "cost_budget" | "latency_retry";
+      action: GuardrailAction;
+      config: Record<string, unknown>;
+    }>;
+  };
+  const policies = payload.policies.map((policy) => ({
+    id: policy.id,
+    policyType: policy.policy_type,
+    configJson: {
+      action: policy.action,
+      ...policy.config,
+    },
+    isActive: true,
+  }));
+  policyCache.set(cacheKey, {
+    expiresAt: now + POLICY_CACHE_TTL_MS,
+    policies,
+  });
+  return policies;
+}
+
 export function validateStructuredOutput(
   outputText: string | null | undefined,
   config: { action: GuardrailAction; requireJson?: boolean },
@@ -66,4 +167,33 @@ export function latencyRetryPolicy(
       fallback_model: config.fallbackModel ?? null,
     },
   };
+}
+
+export async function reliaiLLM(input: ReliaiLlmRequest) {
+  const { executeLlmRequest } = await import("../../runtime-proxy/src/index.ts");
+  const loadPolicies =
+    input.loadPolicies ??
+    (input.guardrailPolicies == null && input.reliaiApiBaseUrl && input.apiKey
+      ? (projectId: string) =>
+          fetchRuntimeGuardrailPolicies({
+            projectId,
+            reliaiApiBaseUrl: input.reliaiApiBaseUrl as string,
+            apiKey: input.apiKey as string,
+            fetchImpl: input.fetchImpl,
+          })
+      : undefined);
+  return executeLlmRequest({
+    traceId: input.traceId,
+    request: {
+      projectId: input.projectId,
+      model: input.model,
+      prompt: input.prompt,
+      metadata: input.metadata,
+      retrievalSourceCount: input.retrievalSourceCount,
+    },
+    policies: input.guardrailPolicies,
+    loadPolicies,
+    providerExecutor: input.providerExecutor,
+    recordEvent: input.recordEvent,
+  });
 }

@@ -318,11 +318,7 @@ def test_reliability_endpoint_is_tenant_safe_and_returns_scorecard(client, db_se
             "output_text": "{\"ok\":true}",
         },
     )
-    queued_job = next(
-        job for job in fake_queue.jobs if getattr(job[0], "__name__", "") == "run_trace_evaluations"
-    )
-    trace_id = UUID(queued_job[1][0])
-    trace = db_session.get(Trace, trace_id)
+    trace = db_session.query(Trace).filter(Trace.request_id == "rel-score").one()
     assert trace is not None
     evaluation = Evaluation(
         trace_id=trace.id,

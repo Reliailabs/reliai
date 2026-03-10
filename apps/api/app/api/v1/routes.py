@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import require_operator
 from app.db.session import get_db
+from app.models.project import Project
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.auth import AuthSessionResponse, AuthSignInRequest, OperatorMembershipRead, OperatorRead
@@ -14,17 +15,44 @@ from app.schemas.deployment import (
     DeploymentDetailRead,
     DeploymentEventRead,
     DeploymentListResponse,
+    DeploymentRiskRead,
     DeploymentRead,
     DeploymentRollbackRead,
+    DeploymentSimulationCreate,
+    DeploymentSimulationRead,
     IncidentDeploymentContextRead,
+)
+from app.schemas.event_pipeline import (
+    EventPipelineConsumerRead,
+    EventPipelineRead,
+    EventPipelineResponse,
 )
 from app.schemas.global_metrics import (
     GlobalModelReliabilityListResponse,
     GlobalModelReliabilityMetricRead,
     GlobalModelReliabilityRead,
 )
+from app.schemas.guardrail_metrics import (
+    GuardrailMetricsRead,
+    GuardrailPolicyMetricsRead,
+    GuardrailRuntimeEventSummaryRead,
+)
 from app.schemas.guardrail import GuardrailPolicyCreate, GuardrailPolicyListResponse, GuardrailPolicyRead
+from app.schemas.reliability_control_panel import (
+    ProjectReliabilityControlPanelRead,
+)
+from app.schemas.reliability_recommendation import ReliabilityRecommendationRead
+from app.schemas.runtime_guardrail import (
+    RuntimeGuardrailEventCreate,
+    RuntimeGuardrailEventRead,
+    RuntimeGuardrailPolicyListResponse,
+    RuntimeGuardrailPolicyRead,
+)
 from app.schemas.incident import (
+    GuardrailActivityRead,
+    IncidentCommandCenterRead,
+    IncidentCommandCenterRootCauseRead,
+    IncidentCommandTraceCompareRead,
     IncidentCompareRead,
     IncidentDetailRead,
     IncidentListItemRead,
@@ -70,6 +98,14 @@ from app.schemas.reliability import (
     ReliabilityMetricSeriesRead,
     ReliabilityRecentIncidentRead,
 )
+from app.schemas.reliability_intelligence import (
+    GuardrailEffectivenessListResponse,
+    GuardrailEffectivenessRead,
+    ModelReliabilityPatternListResponse,
+    ModelReliabilityPatternRead,
+    PromptFailurePatternListResponse,
+    PromptFailurePatternRead,
+)
 from app.schemas.reliability_graph import (
     GraphIncidentRootCauseRead,
     GraphTraceEvaluationRead,
@@ -97,24 +133,42 @@ from app.schemas.trace import (
     TraceAcceptedResponse,
     TraceDetailRead,
     TraceIngestRequest,
+    TraceListItemRead,
     TraceListQuery,
     TraceListResponse,
 )
+from app.schemas.trace_cohort import (
+    TraceCohortMetricsRead,
+    TraceCohortRequest,
+    TraceCohortResponse,
+)
 from app.schemas.timeline import TimelineEventRead, TimelineResponse
 from app.services.api_keys import authenticate_api_key, create_api_key
+from app.services.cohort_queries import aggregate_cohort_metrics, query_trace_cohort
 from app.services.deployments import (
     create_deployment,
     get_deployment_detail,
     list_project_deployments,
 )
+from app.services.event_processing_metrics import get_event_pipeline_status
+from app.services.deployment_simulation_engine import create_deployment_simulation
+from app.services.deployment_risk_engine import calculate_deployment_risk
 from app.services.global_metrics import list_global_model_reliability
-from app.services.guardrails import create_guardrail_policy, list_guardrail_policies
+from app.services.guardrail_metrics import get_guardrail_policy_metrics, get_recent_guardrail_events
+from app.services.guardrails import (
+    create_guardrail_policy,
+    get_active_guardrail_policies,
+    list_guardrail_policies,
+    record_runtime_guardrail_event,
+)
 from app.services.auth import (
     OperatorContext,
+    get_operator_context,
     get_operator_memberships,
     revoke_session,
     sign_in_operator,
 )
+from app.services.incident_command_center import get_incident_command_center
 from app.services.incidents import (
     acknowledge_incident,
     assign_incident_owner,
@@ -166,6 +220,16 @@ from app.services.reliability_metrics import (
     project_reliability_trends,
 )
 from app.services.reliability_graph import get_incident_graph
+from app.services.reliability_control_panel import get_project_reliability_control_panel
+from app.services.reliability_recommendations import (
+    generate_recommendations,
+    get_active_recommendations,
+)
+from app.services.reliability_intelligence import (
+    get_guardrail_recommendations,
+    get_model_insights,
+    get_prompt_risk_scores,
+)
 from app.services.registry import (
     build_model_version_path,
     build_prompt_version_path,
@@ -175,6 +239,7 @@ from app.services.registry import (
 from app.services.model_versions import get_model_version_detail
 from app.services.traces import get_trace_compare, get_trace_detail, ingest_trace, list_traces
 from app.services.timeline import get_project_timeline
+from app.workers.deployment_simulation import enqueue_deployment_simulation
 
 router = APIRouter()
 
@@ -224,6 +289,18 @@ def _global_model_reliability_item(item: dict) -> GlobalModelReliabilityRead:
     )
 
 
+def _model_reliability_pattern_item(item) -> ModelReliabilityPatternRead:
+    return ModelReliabilityPatternRead.model_validate(item)
+
+
+def _prompt_failure_pattern_item(item) -> PromptFailurePatternRead:
+    return PromptFailurePatternRead.model_validate(item)
+
+
+def _guardrail_effectiveness_item(item) -> GuardrailEffectivenessRead:
+    return GuardrailEffectivenessRead.model_validate(item)
+
+
 def _deployment_item(deployment) -> DeploymentRead:
     return DeploymentRead.model_validate(deployment)
 
@@ -234,6 +311,116 @@ def _deployment_event_item(event) -> DeploymentEventRead:
 
 def _deployment_rollback_item(rollback) -> DeploymentRollbackRead:
     return DeploymentRollbackRead.model_validate(rollback)
+
+
+def _deployment_risk_item(risk_score) -> DeploymentRiskRead:
+    return DeploymentRiskRead(
+        deployment_id=risk_score.deployment_id,
+        risk_score=float(risk_score.risk_score),
+        risk_level=risk_score.risk_level,
+        analysis_json=risk_score.analysis_json,
+        recommendations=risk_score.analysis_json.get("recommendations", []),
+        created_at=risk_score.created_at,
+    )
+
+
+def _deployment_simulation_item(simulation) -> DeploymentSimulationRead:
+    return DeploymentSimulationRead.model_validate(simulation)
+
+
+def _runtime_guardrail_event_item(event) -> RuntimeGuardrailEventRead:
+    return RuntimeGuardrailEventRead.model_validate(event)
+
+
+def _runtime_guardrail_policy_item(policy) -> RuntimeGuardrailPolicyRead:
+    config = dict(policy.config_json or {})
+    action = str(config.pop("action"))
+    return RuntimeGuardrailPolicyRead(
+        id=policy.id,
+        policy_type=policy.policy_type,
+        action=action,
+        config=config,
+    )
+
+
+def _guardrail_policy_metrics_item(item: dict) -> GuardrailPolicyMetricsRead:
+    return GuardrailPolicyMetricsRead(
+        policy_id=item["policy_id"],
+        policy_type=item["policy_type"],
+        action=item["action"],
+        trigger_count=item["trigger_count"],
+        last_triggered_at=item["last_triggered_at"],
+    )
+
+
+def _guardrail_runtime_event_summary_item(item: dict) -> GuardrailRuntimeEventSummaryRead:
+    return GuardrailRuntimeEventSummaryRead(
+        policy_type=item["policy_type"],
+        action_taken=item["action_taken"],
+        provider_model=item["provider_model"],
+        latency_ms=item["latency_ms"],
+        created_at=item["created_at"],
+        trace_id=item["trace_id"],
+        trace_available=item["trace_available"],
+    )
+
+
+def _event_pipeline_consumer_item(item) -> EventPipelineConsumerRead:
+    return EventPipelineConsumerRead.model_validate(item)
+
+
+def _event_pipeline_item(item) -> EventPipelineRead:
+    return EventPipelineRead(
+        topic=item.topic,
+        dead_letter_topic=item.dead_letter_topic,
+        total_events_published=item.total_events_published,
+        recent_events_published=item.recent_events_published,
+        window_minutes=item.window_minutes,
+        consumers=[_event_pipeline_consumer_item(consumer) for consumer in item.consumers],
+    )
+
+
+def _reliability_recommendation_item(item) -> ReliabilityRecommendationRead:
+    return ReliabilityRecommendationRead(
+        id=item.id,
+        project_id=item.project_id,
+        type=item.recommendation_type,
+        severity=item.severity,
+        title=item.title,
+        description=item.description,
+        evidence_json=item.evidence_json,
+        created_at=item.created_at,
+    )
+
+
+def _project_from_session_or_api_key(
+    *,
+    db: Session,
+    project_id: UUID,
+    x_api_key: str | None,
+    authorization: str | None,
+):
+    if x_api_key:
+        api_key = authenticate_api_key(db, x_api_key)
+        if api_key is None:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+        if api_key.project_id != project_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        project = db.get(Project, project_id)
+        if project is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        return project
+
+    if authorization and authorization.lower().startswith("bearer "):
+        operator = get_operator_context(db, authorization[7:])
+        return require_project_access(db, operator, project_id)
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+
+
+def _trace_list_item(trace) -> TraceListItemRead:
+    return TraceListItemRead.model_validate(trace)
 
 
 def _incident_deployment_context_item(incident) -> IncidentDeploymentContextRead | None:
@@ -269,6 +456,19 @@ def _incident_analysis_item(report) -> IncidentAnalysisRead:
     )
 
 
+def _incident_command_root_cause_item(report) -> IncidentCommandCenterRootCauseRead:
+    return IncidentCommandCenterRootCauseRead(
+        incident_id=report.incident.id,
+        generated_at=report.generated_at,
+        root_cause_probabilities=[
+            RootCauseProbabilityRead.model_validate(item)
+            for item in report.root_cause_probabilities
+        ],
+        evidence=report.evidence,
+        recommended_fix=RootCauseRecommendedFixRead.model_validate(report.recommended_fix),
+    )
+
+
 def _incident_event_item(event) -> IncidentEventRead:
     return IncidentEventRead(
         id=event.id,
@@ -280,6 +480,14 @@ def _incident_event_item(event) -> IncidentEventRead:
         else None,
         metadata_json=event.metadata_json,
         created_at=event.created_at,
+    )
+
+
+def _guardrail_activity_item(item) -> GuardrailActivityRead:
+    return GuardrailActivityRead(
+        policy_type=item.policy_type,
+        trigger_count=item.trigger_count,
+        last_trigger_time=item.last_trigger_time,
     )
 
 
@@ -551,9 +759,37 @@ def _incident_compare_item(incident, regressions, representative_traces, baselin
     )
 
 
+def _incident_detail_item(
+    incident,
+    regressions,
+    traces,
+    events,
+    representative_traces,
+    baseline_traces,
+) -> IncidentDetailRead:
+    item = _incident_list_item(incident)
+    return IncidentDetailRead(
+        **item.model_dump(),
+        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
+        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
+        events=[_incident_event_item(event) for event in events],
+        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+        deployment_context=_incident_deployment_context_item(incident),
+    )
+
+
 @router.get("/health")
 def versioned_health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.get("/system/event-pipeline", response_model=EventPipelineResponse)
+def get_event_pipeline_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> EventPipelineResponse:
+    del operator
+    return EventPipelineResponse(pipeline=_event_pipeline_item(get_event_pipeline_status(db)))
 
 
 @router.get("/models/reliability", response_model=GlobalModelReliabilityListResponse)
@@ -563,6 +799,33 @@ def list_global_model_reliability_endpoint(
     items = list_global_model_reliability(db)
     return GlobalModelReliabilityListResponse(
         items=[_global_model_reliability_item(item) for item in items]
+    )
+
+
+@router.get("/intelligence/models", response_model=ModelReliabilityPatternListResponse)
+def list_model_intelligence_endpoint(
+    db: Session = Depends(get_db),
+) -> ModelReliabilityPatternListResponse:
+    return ModelReliabilityPatternListResponse(
+        items=[_model_reliability_pattern_item(item) for item in get_model_insights(db)]
+    )
+
+
+@router.get("/intelligence/prompts", response_model=PromptFailurePatternListResponse)
+def list_prompt_intelligence_endpoint(
+    db: Session = Depends(get_db),
+) -> PromptFailurePatternListResponse:
+    return PromptFailurePatternListResponse(
+        items=[_prompt_failure_pattern_item(item) for item in get_prompt_risk_scores(db)]
+    )
+
+
+@router.get("/intelligence/guardrails", response_model=GuardrailEffectivenessListResponse)
+def list_guardrail_intelligence_endpoint(
+    db: Session = Depends(get_db),
+) -> GuardrailEffectivenessListResponse:
+    return GuardrailEffectivenessListResponse(
+        items=[_guardrail_effectiveness_item(item) for item in get_guardrail_recommendations(db)]
     )
 
 
@@ -764,6 +1027,28 @@ def create_project_guardrail_endpoint(
     return GuardrailPolicyRead.model_validate(policy)
 
 
+@router.get("/projects/{project_id}/guardrail-metrics", response_model=GuardrailMetricsRead)
+def get_project_guardrail_metrics_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> GuardrailMetricsRead:
+    _project_from_session_or_api_key(
+        db=db,
+        project_id=project_id,
+        x_api_key=x_api_key,
+        authorization=authorization,
+    )
+    return GuardrailMetricsRead(
+        policies=[_guardrail_policy_metrics_item(item) for item in get_guardrail_policy_metrics(db, project_id)],
+        recent_events=[
+            _guardrail_runtime_event_summary_item(item)
+            for item in get_recent_guardrail_events(db, project_id)
+        ],
+    )
+
+
 @router.post(
     "/projects/{project_id}/deployments",
     response_model=DeploymentRead,
@@ -791,6 +1076,30 @@ def list_project_deployments_endpoint(
     return DeploymentListResponse(items=[_deployment_item(item) for item in deployments])
 
 
+@router.post(
+    "/projects/{project_id}/deployments/simulate",
+    response_model=DeploymentSimulationRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def create_deployment_simulation_endpoint(
+    project_id: UUID,
+    payload: DeploymentSimulationCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DeploymentSimulationRead:
+    project = require_project_access(db, operator, project_id)
+    simulation = create_deployment_simulation(
+        db,
+        organization_id=project.organization_id,
+        project_id=project.id,
+        prompt_version_id=payload.prompt_version_id,
+        model_version_id=payload.model_version_id,
+        sample_size=payload.sample_size,
+    )
+    enqueue_deployment_simulation(simulation_id=simulation.id)
+    return _deployment_simulation_item(simulation)
+
+
 @router.get("/deployments/{deployment_id}", response_model=DeploymentDetailRead)
 def get_deployment_detail_endpoint(
     deployment_id: UUID,
@@ -809,7 +1118,22 @@ def get_deployment_detail_endpoint(
         events=[_deployment_event_item(event) for event in deployment.events],
         rollbacks=[_deployment_rollback_item(item) for item in deployment.rollbacks],
         incident_ids=[incident.id for incident in deployment.incidents],
+        latest_risk_score=_deployment_risk_item(deployment.risk_score)
+        if deployment.risk_score is not None
+        else None,
     )
+
+
+@router.get("/deployments/{deployment_id}/risk", response_model=DeploymentRiskRead)
+def get_deployment_risk_endpoint(
+    deployment_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DeploymentRiskRead:
+    deployment = get_deployment_detail(db, operator=operator, deployment_id=deployment_id)
+    risk_score = calculate_deployment_risk(db, deployment_id=deployment.id)
+    db.commit()
+    return _deployment_risk_item(risk_score)
 
 
 @router.get("/projects/{project_id}/reliability", response_model=ProjectReliabilityRead)
@@ -914,6 +1238,38 @@ def get_project_timeline_endpoint(
     require_project_access(db, operator, project_id)
     items = get_project_timeline(db, project_id=project_id, limit=max(1, min(limit, 200)))
     return TimelineResponse(items=[TimelineEventRead.model_validate(item) for item in items])
+
+
+@router.get(
+    "/projects/{project_id}/control-panel",
+    response_model=ProjectReliabilityControlPanelRead,
+)
+def get_project_reliability_control_panel_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectReliabilityControlPanelRead:
+    require_project_access(db, operator, project_id)
+    return ProjectReliabilityControlPanelRead.model_validate(
+        get_project_reliability_control_panel(db, project_id)
+    )
+
+
+@router.get(
+    "/projects/{project_id}/recommendations",
+    response_model=list[ReliabilityRecommendationRead],
+)
+def get_project_recommendations_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> list[ReliabilityRecommendationRead]:
+    require_project_access(db, operator, project_id)
+    items = get_active_recommendations(db, project_id)
+    if not items:
+        items = generate_recommendations(db, project_id)
+        db.commit()
+    return [_reliability_recommendation_item(item) for item in items]
 
 
 @router.get("/projects/{project_id}/prompt-versions", response_model=PromptVersionListResponse)
@@ -1029,14 +1385,49 @@ def get_incident_detail_endpoint(
     traces = get_incident_traces(db, incident)
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
-    item = _incident_list_item(incident)
-    return IncidentDetailRead(
-        **item.model_dump(),
-        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
-        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
-        events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
-        deployment_context=_incident_deployment_context_item(incident),
+    return _incident_detail_item(
+        incident,
+        regressions,
+        traces,
+        events,
+        representative_traces,
+        baseline_traces,
+    )
+
+
+@router.get("/incidents/{incident_id}/command", response_model=IncidentCommandCenterRead)
+def get_incident_command_center_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentCommandCenterRead:
+    command = get_incident_command_center(db, operator, incident_id)
+    return IncidentCommandCenterRead(
+        incident=_incident_detail_item(
+            command.incident,
+            command.regressions,
+            command.traces,
+            command.events,
+            command.representative_traces,
+            command.baseline_traces,
+        ),
+        root_cause=_incident_command_root_cause_item(command.root_cause_report),
+        trace_compare=IncidentCommandTraceCompareRead(
+            failing_trace_summary=_trace_compare_item(command.trace_compare.trace)
+            if command.trace_compare is not None
+            else None,
+            baseline_trace_summary=_trace_compare_item(command.trace_compare.baseline_trace)
+            if command.trace_compare is not None and command.trace_compare.baseline_trace is not None
+            else None,
+            compare_link=command.compare_link,
+        ),
+        deployment_context=_incident_deployment_context_item(command.incident),
+        guardrail_activity=[_guardrail_activity_item(item) for item in command.guardrail_activity],
+        related_regressions=[
+            RegressionSnapshotRead.model_validate(regression)
+            for regression in command.related_regressions
+        ],
+        recent_signals=list(command.recent_signals),
     )
 
 
@@ -1074,14 +1465,13 @@ def acknowledge_incident_endpoint(
     traces = get_incident_traces(db, incident)
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
-    item = _incident_list_item(incident)
-    return IncidentDetailRead(
-        **item.model_dump(),
-        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
-        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
-        events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
-        deployment_context=_incident_deployment_context_item(incident),
+    return _incident_detail_item(
+        incident,
+        regressions,
+        traces,
+        events,
+        representative_traces,
+        baseline_traces,
     )
 
 
@@ -1102,14 +1492,13 @@ def assign_incident_owner_endpoint(
     traces = get_incident_traces(db, incident)
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
-    item = _incident_list_item(incident)
-    return IncidentDetailRead(
-        **item.model_dump(),
-        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
-        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
-        events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
-        deployment_context=_incident_deployment_context_item(incident),
+    return _incident_detail_item(
+        incident,
+        regressions,
+        traces,
+        events,
+        representative_traces,
+        baseline_traces,
     )
 
 
@@ -1124,14 +1513,13 @@ def resolve_incident_endpoint(
     traces = get_incident_traces(db, incident)
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
-    item = _incident_list_item(incident)
-    return IncidentDetailRead(
-        **item.model_dump(),
-        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
-        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
-        events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
-        deployment_context=_incident_deployment_context_item(incident),
+    return _incident_detail_item(
+        incident,
+        regressions,
+        traces,
+        events,
+        representative_traces,
+        baseline_traces,
     )
 
 
@@ -1146,14 +1534,13 @@ def reopen_incident_endpoint(
     traces = get_incident_traces(db, incident)
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
-    item = _incident_list_item(incident)
-    return IncidentDetailRead(
-        **item.model_dump(),
-        regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
-        traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
-        events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
-        deployment_context=_incident_deployment_context_item(incident),
+    return _incident_detail_item(
+        incident,
+        regressions,
+        traces,
+        events,
+        representative_traces,
+        baseline_traces,
     )
 
 
@@ -1335,6 +1722,39 @@ def list_traces_endpoint(
     return TraceListResponse(items=result.items, next_cursor=result.next_cursor)
 
 
+@router.post("/projects/{project_id}/trace-cohorts", response_model=TraceCohortResponse)
+def query_trace_cohort_endpoint(
+    project_id: UUID,
+    payload: TraceCohortRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> TraceCohortResponse:
+    project = require_project_access(db, operator, project_id)
+    cohort = query_trace_cohort(
+        db,
+        project=project,
+        filters=payload.filters,
+        aggregation=payload.aggregation,
+    )
+    _, metrics = aggregate_cohort_metrics(
+        db,
+        project=project,
+        filters=payload.filters,
+    )
+    return TraceCohortResponse(
+        project_id=project.id,
+        backend=cohort.backend,
+        metrics=TraceCohortMetricsRead(
+            trace_count=metrics["trace_count"],
+            error_rate=metrics["error_rate"],
+            average_latency_ms=metrics["average_latency_ms"],
+            structured_output_validity=metrics["structured_output_validity_rate"],
+            average_cost_usd=metrics["average_cost_usd"],
+        ),
+        items=[_trace_list_item(item) for item in cohort.items],
+    )
+
+
 @router.get("/traces/{trace_id}", response_model=TraceDetailRead)
 def get_trace_detail_endpoint(
     trace_id: UUID,
@@ -1476,3 +1896,70 @@ def ingest_trace_endpoint(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
     trace = ingest_trace(db, api_key, payload)
     return TraceAcceptedResponse(trace_id=trace.id)
+
+
+@router.post(
+    "/runtime/guardrail-events",
+    response_model=RuntimeGuardrailEventRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_runtime_guardrail_event_endpoint(
+    payload: RuntimeGuardrailEventCreate,
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> RuntimeGuardrailEventRead:
+    provided_key = x_api_key
+    if provided_key is None and authorization and authorization.lower().startswith("bearer "):
+        provided_key = authorization[7:]
+    if not provided_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key is required",
+        )
+    api_key = authenticate_api_key(db, provided_key)
+    if api_key is None:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    try:
+        event = record_runtime_guardrail_event(
+            db,
+            project_id=api_key.project_id,
+            trace_id=payload.trace_id,
+            policy_id=payload.policy_id,
+            action_taken=payload.action_taken,
+            provider_model=payload.provider_model,
+            latency_ms=payload.latency_ms,
+            metadata_json=payload.metadata_json,
+        )
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return _runtime_guardrail_event_item(event)
+
+
+@router.get(
+    "/runtime/guardrails",
+    response_model=RuntimeGuardrailPolicyListResponse,
+)
+def list_runtime_guardrails_endpoint(
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> RuntimeGuardrailPolicyListResponse:
+    provided_key = x_api_key
+    if provided_key is None and authorization and authorization.lower().startswith("bearer "):
+        provided_key = authorization[7:]
+    if not provided_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key is required",
+        )
+    api_key = authenticate_api_key(db, provided_key)
+    if api_key is None:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    policies = get_active_guardrail_policies(db, project_id=api_key.project_id)
+    return RuntimeGuardrailPolicyListResponse(
+        policies=[_runtime_guardrail_policy_item(policy) for policy in policies]
+    )

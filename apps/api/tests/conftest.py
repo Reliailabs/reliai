@@ -16,16 +16,24 @@ from app.db.session import get_db
 from app.db import base as _db_base  # noqa: F401
 from app.main import app
 from app.models.base import Base
-from app.services import traces as trace_services
+from app.processors import evaluation_processor as evaluation_processor_module
+from app.processors import warehouse_processor as warehouse_processor_module
+from app.services import event_stream as event_stream_service
+from app.services import event_processing_metrics as event_processing_metrics_service
 from app.services.trace_warehouse import (
     TraceWarehouseAggregateQuery,
     TraceWarehouseEventRow,
     TraceWarehouseQuery,
 )
 from app.workers import alerts as alert_worker
+from app.workers import deployment_risk_analysis as deployment_risk_worker
+from app.workers import deployment_simulation as deployment_simulation_worker
 from app.workers import evaluations as evaluation_worker
 from app.workers import global_metrics_aggregator as global_metrics_worker
+from app.workers import regression_detection as regression_detection_worker
+from app.workers import reliability_intelligence as reliability_intelligence_worker
 from app.workers import reliability_metrics as reliability_metrics_worker
+from app.workers import reliability_recommendations as reliability_recommendations_worker
 from app.workers import reliability_sweep as reliability_sweep_worker
 from app.workers import scheduler as scheduler_worker
 
@@ -81,6 +89,17 @@ class FakeTraceWarehouseClient:
                 continue
             if query.model_name is not None and metadata.get("__model_name") != query.model_name:
                 continue
+            if query.latency_min_ms is not None and (row.latency_ms is None or row.latency_ms < query.latency_min_ms):
+                continue
+            if query.latency_max_ms is not None and (row.latency_ms is None or row.latency_ms > query.latency_max_ms):
+                continue
+            if query.success is not None and row.success != query.success:
+                continue
+            if (
+                query.structured_output_valid is not None
+                and row.structured_output_valid != query.structured_output_valid
+            ):
+                continue
             matches.append(row)
         matches.sort(key=lambda item: (item.timestamp, str(item.trace_id)), reverse=True)
         if query.limit is not None:
@@ -94,26 +113,60 @@ class FakeTraceWarehouseClient:
                 project_id=query.project_id,
                 window_start=query.window_start,
                 window_end=query.window_end,
+                prompt_version_id=query.prompt_version_id,
+                model_version_id=query.model_version_id,
+                prompt_version=query.prompt_version,
+                model_name=query.model_name,
+                latency_min_ms=query.latency_min_ms,
+                latency_max_ms=query.latency_max_ms,
+                success=query.success,
+                structured_output_valid=query.structured_output_valid,
             )
         )
         if not rows:
             return {
                 "trace_count": 0,
                 "success_rate": None,
+                "error_rate": None,
                 "average_latency_ms": None,
                 "structured_output_validity_rate": None,
+                "average_cost_usd": None,
             }
         success_rate = sum(1 for row in rows if row.success) / len(rows)
         latencies = [row.latency_ms for row in rows if row.latency_ms is not None]
         structured = [row.structured_output_valid for row in rows if row.structured_output_valid is not None]
+        costs = [float(row.cost) for row in rows if row.cost is not None]
         return {
             "trace_count": len(rows),
             "success_rate": success_rate,
+            "error_rate": 1 - success_rate,
             "average_latency_ms": sum(latencies) / len(latencies) if latencies else None,
             "structured_output_validity_rate": (
                 sum(1 for value in structured if value) / len(structured) if structured else None
             ),
+            "average_cost_usd": sum(costs) / len(costs) if costs else None,
         }
+
+    def query_all_trace_events(self, *, window_start, window_end, limit=None):
+        matches = []
+        start = window_start if window_start.tzinfo is not None else window_start.replace(tzinfo=timezone.utc)
+        end = window_end if window_end.tzinfo is not None else window_end.replace(tzinfo=timezone.utc)
+        for row in self.rows.values():
+            timestamp = row.timestamp if row.timestamp.tzinfo is not None else row.timestamp.replace(tzinfo=timezone.utc)
+            if timestamp < start or timestamp >= end:
+                continue
+            matches.append(row)
+        matches.sort(key=lambda item: (item.timestamp, str(item.trace_id)), reverse=True)
+        if limit is not None:
+            return matches[:limit]
+        return matches
+
+
+@pytest.fixture
+def fake_event_stream(monkeypatch: pytest.MonkeyPatch) -> event_stream_service.InMemoryEventStreamClient:
+    client = event_stream_service.InMemoryEventStreamClient()
+    monkeypatch.setattr(event_stream_service, "get_event_stream_client", lambda: client)
+    return client
 
 
 class BorrowedSession:
@@ -156,14 +209,29 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(autouse=True)
+def patch_event_processing_metrics_session(
+    monkeypatch: pytest.MonkeyPatch,
+    db_session: Session,
+) -> None:
+    monkeypatch.setattr(
+        event_processing_metrics_service,
+        "SessionLocal",
+        lambda: BorrowedSession(db_session),
+    )
+
+
 @pytest.fixture
 def fake_queue(monkeypatch: pytest.MonkeyPatch) -> FakeQueue:
     queue = FakeQueue()
-    monkeypatch.setattr(trace_services, "get_queue", lambda: queue)
     monkeypatch.setattr(evaluation_worker, "get_queue", lambda: queue)
+    monkeypatch.setattr(deployment_risk_worker, "get_queue", lambda: queue)
+    monkeypatch.setattr(deployment_simulation_worker, "get_queue", lambda: queue)
     monkeypatch.setattr(alert_worker, "get_queue", lambda: queue)
     monkeypatch.setattr(reliability_metrics_worker, "get_queue", lambda: queue)
     monkeypatch.setattr(global_metrics_worker, "get_queue", lambda: queue)
+    monkeypatch.setattr(reliability_intelligence_worker, "get_queue", lambda: queue)
+    monkeypatch.setattr(reliability_recommendations_worker, "get_queue", lambda: queue)
     monkeypatch.setattr(scheduler_worker, "get_queue", lambda: queue)
     monkeypatch.setattr(reliability_sweep_worker, "enqueue_alert_delivery_jobs", lambda ids: [queue.enqueue(alert_worker.run_alert_delivery, str(item)) for item in ids])
     return queue
@@ -175,9 +243,12 @@ def fake_trace_warehouse(
     db_session: Session,
 ) -> FakeTraceWarehouseClient:
     from app.services import trace_warehouse as trace_warehouse_service
-    from app.workers import trace_warehouse_ingest as trace_warehouse_worker
 
     client = FakeTraceWarehouseClient()
     monkeypatch.setattr(trace_warehouse_service, "get_trace_warehouse_client", lambda: client)
-    monkeypatch.setattr(trace_warehouse_worker, "SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr(evaluation_processor_module, "SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr(warehouse_processor_module, "SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr(evaluation_worker, "SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr(reliability_metrics_worker, "SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr(regression_detection_worker, "SessionLocal", lambda: BorrowedSession(db_session))
     return client

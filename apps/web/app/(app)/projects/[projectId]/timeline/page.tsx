@@ -10,6 +10,7 @@ function eventIcon(eventType: string) {
   if (eventType === "incident") return ShieldAlert;
   if (eventType === "deployment") return GitCommitHorizontal;
   if (eventType === "guardrail") return BellElectric;
+  if (eventType === "guardrail_runtime_enforced") return BellElectric;
   return TriangleAlert;
 }
 
@@ -18,6 +19,7 @@ function tone(event: TimelineEventRead) {
   if (event.severity === "high") return "border-orange-300 bg-orange-50/70 text-orange-700";
   if (event.severity === "medium") return "border-amber-300 bg-amber-50/70 text-amber-800";
   if (event.event_type === "deployment") return "border-sky-300 bg-sky-50/70 text-sky-700";
+  if (event.event_type === "guardrail_runtime_enforced") return "border-fuchsia-300 bg-fuchsia-50/70 text-fuchsia-700";
   return "border-zinc-300 bg-zinc-50 text-zinc-700";
 }
 
@@ -25,6 +27,7 @@ function eventLabel(eventType: string) {
   if (eventType === "incident") return "Incident";
   if (eventType === "deployment") return "Deployment";
   if (eventType === "guardrail") return "Guardrail";
+  if (eventType === "guardrail_runtime_enforced") return "Runtime guardrail";
   return "Regression";
 }
 
@@ -118,13 +121,13 @@ export default async function ProjectTimelinePage({
                     </div>
                     {href ? (
                       <div className="mt-4">
-                        <Link
+                        <a
                           href={href}
                           className="inline-flex items-center gap-2 text-sm font-medium text-ink underline-offset-4 hover:text-steel hover:underline"
                         >
                           Open detail
                           <ArrowRight className="h-4 w-4" />
-                        </Link>
+                        </a>
                       </div>
                     ) : null}
                   </article>

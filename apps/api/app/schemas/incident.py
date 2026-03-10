@@ -16,7 +16,9 @@ from app.schemas.investigation import (
     PromptVersionContextRead,
     RootCauseHintRead,
 )
+from app.schemas.root_cause_analysis import RootCauseProbabilityRead, RootCauseRecommendedFixRead
 from app.schemas.regression import RegressionSnapshotRead
+from app.schemas.timeline import TimelineEventRead
 from app.schemas.trace import TraceCompareItemRead
 
 
@@ -102,6 +104,36 @@ class IncidentDetailRead(IncidentListItemRead):
     events: list[IncidentEventRead] = []
     compare: IncidentCompareRead
     deployment_context: IncidentDeploymentContextRead | None = None
+
+
+class IncidentCommandCenterRootCauseRead(APIModel):
+    incident_id: UUID
+    generated_at: datetime
+    root_cause_probabilities: list[RootCauseProbabilityRead]
+    evidence: dict[str, Any]
+    recommended_fix: RootCauseRecommendedFixRead
+
+
+class IncidentCommandTraceCompareRead(APIModel):
+    failing_trace_summary: TraceCompareItemRead | None
+    baseline_trace_summary: TraceCompareItemRead | None
+    compare_link: str
+
+
+class GuardrailActivityRead(APIModel):
+    policy_type: str
+    trigger_count: int
+    last_trigger_time: datetime | None
+
+
+class IncidentCommandCenterRead(APIModel):
+    incident: IncidentDetailRead
+    root_cause: IncidentCommandCenterRootCauseRead
+    trace_compare: IncidentCommandTraceCompareRead
+    deployment_context: IncidentDeploymentContextRead | None
+    guardrail_activity: list[GuardrailActivityRead]
+    related_regressions: list[RegressionSnapshotRead]
+    recent_signals: list[TimelineEventRead]
 
 
 class IncidentOwnerAssignRequest(BaseModel):
