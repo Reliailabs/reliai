@@ -127,6 +127,61 @@ def test_operator_flow_smoke(client, db_session, fake_queue, fake_trace_warehous
     assert trace_compare.status_code == 200
     assert trace_compare.json()["pairs"]
 
+    staging_environment = client.post(
+        f"/api/v1/projects/{project['id']}/environments",
+        headers=auth_headers(session_payload),
+        json={"name": "staging", "type": "staging"},
+    )
+    assert staging_environment.status_code == 201
+
+    staging_baseline = ingest_trace(
+        client,
+        api_key["api_key"],
+        {
+            "timestamp": "2026-03-01T09:00:00Z",
+            "request_id": "staging-baseline",
+            "environment": "staging",
+            "model_name": "gpt-4.1-mini",
+            "model_provider": "openai",
+            "prompt_version": "v1",
+            "output_text": "{\"ok\":true}",
+            "success": True,
+            "latency_ms": 220,
+            "prompt_tokens": 42,
+            "completion_tokens": 11,
+            "metadata_json": {"expected_output_format": "json"},
+        },
+    )
+    staging_current = ingest_trace(
+        client,
+        api_key["api_key"],
+        {
+            "timestamp": "2026-03-01T09:10:00Z",
+            "request_id": "staging-current",
+            "environment": "staging",
+            "model_name": "gpt-4.1-mini",
+            "model_provider": "openai",
+            "prompt_version": "v1",
+            "output_text": "not-json",
+            "success": False,
+            "error_type": "provider_error",
+            "latency_ms": 680,
+            "prompt_tokens": 45,
+            "completion_tokens": 13,
+            "metadata_json": {"expected_output_format": "json"},
+        },
+    )
+    _run_signal_pipeline(db_session, UUID(staging_baseline["trace_id"]))
+    _run_signal_pipeline(db_session, UUID(staging_current["trace_id"]))
+
+    staging_compare = client.get(
+        f"/api/v1/traces/{staging_current['trace_id']}/compare",
+        headers=auth_headers(session_payload),
+    )
+    assert staging_compare.status_code == 200
+    staging_pair = staging_compare.json()["pairs"][0]
+    assert staging_pair["baseline_trace"]["request_id"] == "staging-baseline"
+
     linked_trace = db_session.get(Trace, latest_trace_id)
     assert linked_trace is not None
     assert linked_trace.prompt_version_record_id is not None

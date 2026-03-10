@@ -24,12 +24,22 @@ def _ensure_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def _maybe_uuid(value: str | UUID | None) -> UUID | None:
+    if value is None or isinstance(value, UUID):
+        return value
+    try:
+        return UUID(str(value))
+    except ValueError:
+        return None
+
+
 @dataclass(frozen=True)
 class TraceWindowQuery:
     organization_id: UUID
     project_id: UUID
     window_start: datetime
     window_end: datetime
+    environment_id: UUID | None = None
     prompt_version: str | None = None
     prompt_version_record_id: UUID | None = None
     model_version_record_id: UUID | None = None
@@ -59,6 +69,8 @@ def _postgres_trace_window(db: Session, query: TraceWindowQuery) -> list[Trace]:
         Trace.timestamp >= query.window_start,
         Trace.timestamp < query.window_end,
     )
+    if query.environment_id is not None:
+        statement = statement.where(Trace.environment_id == query.environment_id)
     if query.with_details or query.structured_output_valid is not None:
         statement = statement.options(
             selectinload(Trace.retrieval_span),
@@ -160,6 +172,7 @@ def _warehouse_trace_view(
         id=row.trace_id,
         organization_id=row.organization_id,
         project_id=row.project_id,
+        environment_id=row.environment_id,
         environment=metadata.get("environment", "warehouse"),
         timestamp=row.timestamp,
         created_at=row.timestamp,
@@ -180,7 +193,7 @@ def _warehouse_trace_view(
         success=row.success,
         error_type=row.error_type,
         metadata_json=metadata,
-        prompt_version_record_id=row.prompt_version_id,
+        prompt_version_record_id=_maybe_uuid(row.prompt_version_id),
         model_version_record_id=row.model_version_id,
         prompt_version_record=prompt_version_record,
         model_version_record=model_version_record,
@@ -196,6 +209,7 @@ def _warehouse_trace_window(db: Session, query: TraceWindowQuery):
         TraceWarehouseQuery(
             organization_id=query.organization_id,
             project_id=query.project_id,
+            environment_id=query.environment_id,
             window_start=query.window_start,
             window_end=query.window_end,
             prompt_version_id=query.prompt_version_record_id,
@@ -209,7 +223,10 @@ def _warehouse_trace_window(db: Session, query: TraceWindowQuery):
             limit=query.limit,
         )
     )
-    prompt_ids = sorted({row.prompt_version_id for row in rows if row.prompt_version_id is not None}, key=str)
+    prompt_ids = sorted(
+        {_maybe_uuid(row.prompt_version_id) for row in rows if _maybe_uuid(row.prompt_version_id) is not None},
+        key=str,
+    )
     model_ids = sorted({row.model_version_id for row in rows if row.model_version_id is not None}, key=str)
     prompt_versions = {
         item.id: item
@@ -230,7 +247,7 @@ def _warehouse_trace_window(db: Session, query: TraceWindowQuery):
     return [
         _warehouse_trace_view(
             row,
-            prompt_version_record=prompt_versions.get(row.prompt_version_id),
+            prompt_version_record=prompt_versions.get(_maybe_uuid(row.prompt_version_id)),
             model_version_record=model_versions.get(row.model_version_id),
         )
         for row in rows
@@ -239,5 +256,9 @@ def _warehouse_trace_window(db: Session, query: TraceWindowQuery):
 
 def query_trace_window(db: Session, query: TraceWindowQuery):
     if _warehouse_backed(query):
-        return _warehouse_trace_window(db, query)
+        warehouse_rows = _warehouse_trace_window(db, query)
+        if warehouse_rows:
+            return warehouse_rows
+        # Keep investigation flows working while warehouse coverage is still partial.
+        return _postgres_trace_window(db, query)
     return _postgres_trace_window(db, query)

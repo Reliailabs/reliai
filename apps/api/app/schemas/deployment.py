@@ -36,6 +36,7 @@ class DeploymentRollbackRead(APIModel):
 class DeploymentRead(APIModel):
     id: UUID
     project_id: UUID
+    environment_id: UUID
     prompt_version_id: UUID | None
     model_version_id: UUID | None
     environment: str
@@ -68,6 +69,7 @@ class DeploymentRiskRead(APIModel):
 
 
 class DeploymentSimulationCreate(BaseModel):
+    environment: str | None = Field(default=None, min_length=2, max_length=32)
     prompt_version_id: UUID | None = None
     model_version_id: UUID | None = None
     sample_size: int = Field(default=50, ge=1, le=500)
@@ -82,6 +84,7 @@ class DeploymentSimulationCreate(BaseModel):
 class DeploymentSimulationRead(APIModel):
     id: UUID
     project_id: UUID
+    environment_id: UUID
     prompt_version_id: UUID | None
     model_version_id: UUID | None
     trace_sample_size: int

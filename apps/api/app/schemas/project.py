@@ -1,19 +1,17 @@
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from app.schemas.common import APIModel
+from app.schemas.environment import EnvironmentRead, EnvironmentType, EnvironmentTypeInput
 from app.schemas.reliability import ReliabilityMetricPointRead
-
-EnvironmentType = Literal["prod", "staging", "dev"]
 
 
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=2, max_length=255)
     slug: str | None = Field(default=None, min_length=2, max_length=80, pattern=r"^[a-z0-9-]+$")
-    environment: EnvironmentType
+    environment: EnvironmentTypeInput
     description: str | None = Field(default=None, max_length=2000)
 
 
@@ -27,6 +25,7 @@ class ProjectRead(APIModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    environments: list[EnvironmentRead] = []
 
 
 class PromptVersionRead(APIModel):

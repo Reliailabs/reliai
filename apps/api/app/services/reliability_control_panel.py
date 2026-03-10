@@ -13,6 +13,7 @@ from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.models.trace import Trace
+from app.services.environments import normalize_environment_name
 from app.services.global_metrics import (
     METRIC_AVERAGE_LATENCY_MS,
     METRIC_STRUCTURED_OUTPUT_VALIDITY_RATE,
@@ -24,20 +25,25 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def get_project_reliability_control_panel(db: Session, project_id: UUID) -> dict:
+def get_project_reliability_control_panel(db: Session, project_id: UUID, environment: str | None = None) -> dict:
     now = _utc_now()
     last_24h = now - timedelta(hours=24)
+    normalized_environment = normalize_environment_name(environment) if environment is not None else None
 
+    latest_deployment_statement = select(Deployment).where(Deployment.project_id == project_id)
+    if normalized_environment is not None:
+        latest_deployment_statement = latest_deployment_statement.where(Deployment.environment == normalized_environment)
     latest_deployment = db.scalar(
-        select(Deployment)
-        .where(Deployment.project_id == project_id)
+        latest_deployment_statement
         .options(selectinload(Deployment.risk_score), selectinload(Deployment.model_version))
         .order_by(desc(Deployment.deployed_at), desc(Deployment.id))
     )
 
+    recent_incident_statement = select(Incident).where(Incident.project_id == project_id)
+    if normalized_environment is not None:
+        recent_incident_statement = recent_incident_statement.where(Incident.environment_ref.has(name=normalized_environment))
     recent_incidents = db.scalars(
-        select(Incident)
-        .where(Incident.project_id == project_id)
+        recent_incident_statement
         .order_by(desc(Incident.started_at), desc(Incident.id))
         .limit(5)
     ).all()
@@ -45,6 +51,7 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID) -> dict
         db.scalar(
             select(func.count(Incident.id)).where(
                 Incident.project_id == project_id,
+                Incident.environment_ref.has(name=normalized_environment) if normalized_environment is not None else True,
                 Incident.started_at >= last_24h,
             )
         )
@@ -57,6 +64,7 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID) -> dict
             .join(GuardrailPolicy, GuardrailPolicy.id == GuardrailRuntimeEvent.policy_id)
             .where(
                 GuardrailPolicy.project_id == project_id,
+                GuardrailPolicy.environment_ref.has(name=normalized_environment) if normalized_environment is not None else True,
                 GuardrailRuntimeEvent.created_at >= last_24h,
             )
         )
@@ -70,6 +78,7 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID) -> dict
         .join(GuardrailRuntimeEvent, GuardrailRuntimeEvent.policy_id == GuardrailPolicy.id)
         .where(
             GuardrailPolicy.project_id == project_id,
+            GuardrailPolicy.environment_ref.has(name=normalized_environment) if normalized_environment is not None else True,
             GuardrailRuntimeEvent.created_at >= last_24h,
         )
         .group_by(GuardrailPolicy.policy_type)
@@ -79,7 +88,10 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID) -> dict
 
     latest_simulation = db.scalar(
         select(DeploymentSimulation)
-        .where(DeploymentSimulation.project_id == project_id)
+        .where(
+            DeploymentSimulation.project_id == project_id,
+            DeploymentSimulation.environment_ref.has(name=normalized_environment) if normalized_environment is not None else True,
+        )
         .order_by(desc(DeploymentSimulation.created_at), desc(DeploymentSimulation.id))
     )
 
@@ -91,7 +103,10 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID) -> dict
     else:
         latest_trace = db.scalar(
             select(Trace)
-            .where(Trace.project_id == project_id)
+            .where(
+                Trace.project_id == project_id,
+                Trace.environment == normalized_environment if normalized_environment is not None else True,
+            )
             .order_by(desc(Trace.created_at), desc(Trace.id))
         )
         if latest_trace is not None:

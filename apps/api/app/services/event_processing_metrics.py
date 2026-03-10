@@ -22,12 +22,14 @@ CONSUMER_EVALUATION = "evaluation_consumer"
 CONSUMER_TRACE_WAREHOUSE = "trace_warehouse_consumer"
 CONSUMER_RELIABILITY_METRICS = "reliability_metrics_consumer"
 CONSUMER_REGRESSION_DETECTION = "regression_detection_consumer"
+CONSUMER_AUTOMATION = "automation_consumer"
 
 CONSUMER_TOPICS = {
     CONSUMER_EVALUATION: "trace_events",
     CONSUMER_TRACE_WAREHOUSE: "trace_events",
     CONSUMER_RELIABILITY_METRICS: "trace_events",
     CONSUMER_REGRESSION_DETECTION: "trace_events",
+    CONSUMER_AUTOMATION: "trace_events",
 }
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import desc, func, select
@@ -52,6 +52,12 @@ class IncidentCommandCenterResult:
     recent_signals: list[TimelineEventRead]
 
 
+def _coerce_utc_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def _select_anchor_trace(current_traces: list[Trace]) -> Trace | None:
     if not current_traces:
         return None
@@ -68,8 +74,13 @@ def _select_anchor_trace(current_traces: list[Trace]) -> Trace | None:
     )[0]
 
 
-def _guardrail_activity(db: Session, *, project_id: UUID) -> list[GuardrailActivitySummary]:
-    rows = db.execute(
+def _guardrail_activity(
+    db: Session,
+    *,
+    project_id: UUID,
+    environment_name: str | None = None,
+) -> list[GuardrailActivitySummary]:
+    statement = (
         select(
             GuardrailPolicy.policy_type,
             func.count(GuardrailRuntimeEvent.id).label("trigger_count"),
@@ -77,6 +88,11 @@ def _guardrail_activity(db: Session, *, project_id: UUID) -> list[GuardrailActiv
         )
         .join(GuardrailPolicy, GuardrailPolicy.id == GuardrailRuntimeEvent.policy_id)
         .where(GuardrailPolicy.project_id == project_id)
+    )
+    if environment_name is not None:
+        statement = statement.where(GuardrailPolicy.environment_ref.has(name=environment_name))
+    rows = db.execute(
+        statement
         .group_by(GuardrailPolicy.policy_type)
         .order_by(desc("trigger_count"), desc("last_trigger_time"), GuardrailPolicy.policy_type.asc())
     ).all()
@@ -110,14 +126,20 @@ def _related_regressions(db: Session, *, incident: Incident, limit: int = 6) -> 
 
 
 def _recent_signals(db: Session, *, incident: Incident, limit: int = 8) -> list[TimelineEventRead]:
-    timeline = get_project_timeline(db, project_id=incident.project_id, limit=max(limit * 2, 16))
-    start = incident.started_at - timedelta(hours=6)
-    end = incident.started_at + timedelta(hours=6)
+    timeline = get_project_timeline(
+        db,
+        project_id=incident.project_id,
+        limit=max(limit * 2, 16),
+        environment=incident.environment_ref.name if incident.environment_ref is not None else None,
+    )
+    incident_started_at = _coerce_utc_datetime(incident.started_at)
+    start = incident_started_at - timedelta(hours=6)
+    end = incident_started_at + timedelta(hours=6)
     filtered = [
         item
         for item in timeline
         if (item.metadata or {}).get("incident_id") != str(incident.id)
-        and start <= item.timestamp <= end
+        and start <= _coerce_utc_datetime(item.timestamp) <= end
     ]
     if len(filtered) < limit:
         filtered = [
@@ -165,7 +187,11 @@ def get_incident_command_center(
         graph_root_causes=graph["root_causes"],
         trace_compare=trace_compare,
         compare_link=compare_link,
-        guardrail_activity=_guardrail_activity(db, project_id=incident.project_id),
+        guardrail_activity=_guardrail_activity(
+            db,
+            project_id=incident.project_id,
+            environment_name=incident.environment_ref.name if incident.environment_ref is not None else None,
+        ),
         related_regressions=_related_regressions(db, incident=incident),
         recent_signals=_recent_signals(db, incident=incident),
     )

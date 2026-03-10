@@ -123,7 +123,7 @@ def test_operator_can_create_and_fetch_organization_and_project(client, db_sessi
         headers=auth_headers(session_payload),
     )
     assert project_fetch.status_code == 200
-    assert project_fetch.json()["environment"] == "prod"
+    assert project_fetch.json()["environment"] == "production"
 
 
 def test_create_organization_rejects_owner_mismatch(client, db_session):
@@ -248,7 +248,7 @@ def test_ingest_trace_happy_path(client, db_session, fake_event_stream):
     stored_trace = db_session.get(Trace, UUID(payload["trace_id"]))
     assert stored_trace is not None
     assert stored_trace.organization_id == UUID(organization["id"])
-    assert stored_trace.environment == "prod"
+    assert stored_trace.environment == "production"
     assert stored_trace.output_preview == "Hi"
     assert stored_trace.is_explainable is True
 
@@ -514,6 +514,7 @@ def test_trace_detail_is_tenant_safe_and_includes_evaluations(client, db_session
     trace_id = accepted["trace_id"]
 
     monkeypatch.setattr("app.workers.evaluations.SessionLocal", lambda: db_session)
+    monkeypatch.setattr("app.processors.evaluation_processor.SessionLocal", lambda: db_session)
     run_trace_evaluations(trace_id)
 
     detail = client.get(f"/api/v1/traces/{trace_id}", headers=auth_headers(owner_one_session))

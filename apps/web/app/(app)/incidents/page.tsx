@@ -23,11 +23,13 @@ export default async function IncidentsPage({
   const severity = typeof params.severity === "string" ? params.severity : "";
   const owner = typeof params.owner === "string" ? params.owner : "";
   const projectId = typeof params.projectId === "string" ? params.projectId : "";
+  const environment = typeof params.environment === "string" ? params.environment : "";
   const dateFrom = typeof params.dateFrom === "string" ? params.dateFrom : "";
   const dateTo = typeof params.dateTo === "string" ? params.dateTo : "";
 
   const incidents = await listIncidents({
     ...(projectId ? { projectId } : {}),
+    ...(environment ? { environment } : {}),
     ...(status === "open" || status === "resolved" ? { status } : {}),
     ...(severity === "critical" || severity === "high" || severity === "medium" || severity === "low"
       ? { severity }
@@ -62,7 +64,7 @@ export default async function IncidentsPage({
       </header>
 
       <Card className="rounded-[28px] border-zinc-300 p-5">
-        <form action="/incidents" className="grid gap-4 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto_auto]">
+        <form action="/incidents" className="grid gap-4 xl:grid-cols-[repeat(6,minmax(0,1fr))_auto_auto]">
           <label className="space-y-2">
             <span className="text-xs uppercase tracking-[0.18em] text-steel">Status</span>
             <select
@@ -100,6 +102,19 @@ export default async function IncidentsPage({
               <option value="me">Assigned to me</option>
               <option value="assigned">Any assigned</option>
               <option value="unassigned">Unassigned</option>
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs uppercase tracking-[0.18em] text-steel">Environment</span>
+            <select
+              name="environment"
+              defaultValue={environment}
+              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+            >
+              <option value="">Any</option>
+              <option value="production">Production</option>
+              <option value="staging">Staging</option>
+              <option value="development">Development</option>
             </select>
           </label>
           <label className="space-y-2">

@@ -55,6 +55,7 @@ class EvaluationRead(APIModel):
 
 class TraceListQuery(BaseModel):
     project_id: UUID | None = None
+    environment: str | None = Field(default=None, max_length=64)
     prompt_version_id: UUID | None = None
     model_version_id: UUID | None = None
     model_name: str | None = Field(default=None, max_length=255)
@@ -75,6 +76,7 @@ class TraceListQuery(BaseModel):
 class TraceIngestRequest(BaseModel):
     timestamp: datetime
     request_id: str = Field(min_length=2, max_length=255)
+    environment: str | None = Field(default=None, max_length=64)
     user_id: str | None = Field(default=None, max_length=255)
     session_id: str | None = Field(default=None, max_length=255)
     model_name: str = Field(min_length=1, max_length=255)

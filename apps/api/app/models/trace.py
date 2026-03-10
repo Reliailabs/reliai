@@ -26,6 +26,7 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     project_id: Mapped[UUID] = mapped_column(
         ForeignKey("projects.id"), nullable=False, index=True
     )
+    environment_id: Mapped[UUID] = mapped_column(ForeignKey("environments.id"), nullable=False, index=True)
     prompt_version_record_id: Mapped[UUID | None] = mapped_column(ForeignKey("prompt_versions.id"), index=True)
     model_version_record_id: Mapped[UUID | None] = mapped_column(ForeignKey("model_versions.id"), index=True)
     environment: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -50,6 +51,7 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     metadata_json: Mapped[dict | None] = mapped_column(JSON)
 
     project = relationship("Project", back_populates="traces")
+    environment_ref = relationship("Environment", back_populates="traces")
     prompt_version_record = relationship("PromptVersion", back_populates="traces")
     model_version_record = relationship("ModelVersion", back_populates="traces")
     retrieval_span = relationship("RetrievalSpan", back_populates="trace", uselist=False)

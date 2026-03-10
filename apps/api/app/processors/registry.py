@@ -59,12 +59,14 @@ def enabled_processor_names() -> set[str]:
 def get_processor_registry() -> ProcessorRegistry:
     global _defaults_registered
     if not _defaults_registered:
+        from app.processors.automation_processor import AutomationProcessor
         from app.processors.evaluation_processor import EvaluationProcessor
         from app.processors.regression_processor import RegressionProcessor
         from app.processors.reliability_metrics_processor import ReliabilityMetricsProcessor
         from app.processors.warehouse_processor import WarehouseProcessor
 
         for processor_class in (
+            AutomationProcessor,
             EvaluationProcessor,
             RegressionProcessor,
             ReliabilityMetricsProcessor,

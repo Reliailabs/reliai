@@ -15,6 +15,7 @@ from app.models.guardrail_policy import GuardrailPolicy
 from app.models.model_reliability_pattern import ModelReliabilityPattern
 from app.models.prompt_failure_pattern import PromptFailurePattern
 from app.models.trace import Trace
+from app.services.reliability_pattern_mining import build_prompt_pattern_hash, get_pattern_risk
 from app.services.trace_warehouse import TraceWarehouseEventRow, query_all_traces
 
 INTELLIGENCE_LOOKBACK_DAYS = 30
@@ -235,6 +236,13 @@ def get_network_risk_adjustment(
         prompt_signal = min(0.12, prompt_pattern.failure_rate * 0.12)
         adjustment += prompt_signal
 
+    reliability_pattern_risk = get_pattern_risk(
+        db,
+        model_family=model_name,
+        prompt_pattern_hash=build_prompt_pattern_hash(prompt_version),
+    )
+    adjustment += float(reliability_pattern_risk["value"])
+
     return {
         "value": round(min(0.25, adjustment), 4),
         "model_pattern": {
@@ -250,5 +258,7 @@ def get_network_risk_adjustment(
         "components": {
             "model_signal": round(model_signal, 4),
             "prompt_signal": round(prompt_signal, 4),
+            "reliability_pattern_signal": round(float(reliability_pattern_risk["value"]), 4),
         },
+        "reliability_pattern_risk": reliability_pattern_risk,
     }

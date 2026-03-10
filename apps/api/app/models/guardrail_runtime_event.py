@@ -15,6 +15,7 @@ class GuardrailRuntimeEvent(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     trace_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    environment_id: Mapped[UUID] = mapped_column(ForeignKey("environments.id"), nullable=False, index=True)
     policy_id: Mapped[UUID] = mapped_column(ForeignKey("guardrail_policies.id"), nullable=False, index=True)
     action_taken: Mapped[str] = mapped_column(String(32), nullable=False)
     provider_model: Mapped[str | None] = mapped_column(String(255))
@@ -22,3 +23,4 @@ class GuardrailRuntimeEvent(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
     policy = relationship("GuardrailPolicy", back_populates="runtime_events")
+    environment_ref = relationship("Environment", back_populates="guardrail_runtime_events")

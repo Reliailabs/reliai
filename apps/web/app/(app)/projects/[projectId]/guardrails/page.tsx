@@ -18,13 +18,18 @@ function actionTone(action: string) {
 
 export default async function ProjectGuardrailsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { projectId } = await params;
+  const rawSearchParams = searchParams ? await searchParams : {};
+  const environment =
+    typeof rawSearchParams.environment === "string" ? rawSearchParams.environment : undefined;
   const [project, guardrailMetrics] = await Promise.all([
     getProject(projectId),
-    getProjectGuardrailMetrics(projectId),
+    getProjectGuardrailMetrics(projectId, environment),
   ]);
 
   const totalTriggers = guardrailMetrics.policies.reduce((sum, policy) => sum + policy.trigger_count, 0);
@@ -34,10 +39,13 @@ export default async function ProjectGuardrailsPage({
     <div className="space-y-6">
       <header className="overflow-hidden rounded-[28px] border border-zinc-300 bg-white shadow-sm">
         <div className="border-b border-zinc-200 bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(15,23,42,0))] px-6 py-5">
-          <Link href={`/projects/${projectId}/control`} className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink">
+          <a
+            href={`/projects/${projectId}/control${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+            className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to control panel
-          </Link>
+          </a>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-steel">Guardrail dashboard</p>
@@ -58,7 +66,7 @@ export default async function ProjectGuardrailsPage({
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-steel">Environment</p>
-                <p className="mt-2 text-2xl font-semibold text-ink">{project.environment}</p>
+                <p className="mt-2 text-2xl font-semibold text-ink">{environment ?? project.environment}</p>
               </div>
             </div>
           </div>

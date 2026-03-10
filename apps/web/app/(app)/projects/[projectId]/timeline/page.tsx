@@ -54,22 +54,30 @@ function eventMeta(event: TimelineEventRead) {
 
 export default async function ProjectTimelinePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { projectId } = await params;
+  const rawSearchParams = searchParams ? await searchParams : {};
+  const environment =
+    typeof rawSearchParams.environment === "string" ? rawSearchParams.environment : undefined;
   const [project, timeline] = await Promise.all([
     getProject(projectId),
-    getProjectTimeline(projectId),
+    getProjectTimeline(projectId, 100, environment),
   ]);
 
   return (
     <div className="space-y-6">
       <header className="rounded-[28px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
-        <Link href={`/projects/${projectId}/reliability`} className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink">
+        <a
+          href={`/projects/${projectId}/reliability${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+          className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to reliability
-        </Link>
+        </a>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Investigation timeline</p>
@@ -79,7 +87,7 @@ export default async function ProjectTimelinePage({
             </p>
           </div>
           <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
-            {project.environment} · {timeline.items.length} events
+            {environment ?? project.environment} · {timeline.items.length} events
           </div>
         </div>
       </header>

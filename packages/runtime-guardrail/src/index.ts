@@ -9,6 +9,7 @@ export interface GuardrailDecision {
 export interface ReliaiLlmRequest {
   projectId: string;
   traceId: string;
+  environment?: string;
   model: string;
   prompt: string;
   guardrailPolicies?: {
@@ -62,24 +63,32 @@ export function clearReliaiGuardrailPolicyCache() {
 
 async function fetchRuntimeGuardrailPolicies(input: {
   projectId: string;
+  environment?: string;
   reliaiApiBaseUrl: string;
   apiKey: string;
   fetchImpl?: typeof fetch;
 }) {
   const baseUrl = input.reliaiApiBaseUrl.replace(/\/$/, "");
-  const cacheKey = `${baseUrl}:${input.projectId}`;
+  const cacheKey = `${baseUrl}:${input.projectId}:${input.environment ?? "production"}`;
   const now = Date.now();
   const cached = policyCache.get(cacheKey);
   if (cached && cached.expiresAt > now) {
     return cached.policies ?? [];
   }
   const fetcher = input.fetchImpl ?? fetch;
-  const response = await fetcher(`${baseUrl}/api/v1/runtime/guardrails`, {
-    method: "GET",
-    headers: {
-      "X-API-Key": input.apiKey,
+  const params = new URLSearchParams();
+  if (input.environment) {
+    params.set("environment", input.environment);
+  }
+  const response = await fetcher(
+    `${baseUrl}/api/v1/runtime/guardrails${params.toString() ? `?${params.toString()}` : ""}`,
+    {
+      method: "GET",
+      headers: {
+        "X-API-Key": input.apiKey,
+      },
     },
-  });
+  );
   if (!response.ok) {
     throw new Error(`Failed to load runtime guardrails: ${response.status}`);
   }
@@ -177,6 +186,7 @@ export async function reliaiLLM(input: ReliaiLlmRequest) {
       ? (projectId: string) =>
           fetchRuntimeGuardrailPolicies({
             projectId,
+            environment: input.environment,
             reliaiApiBaseUrl: input.reliaiApiBaseUrl as string,
             apiKey: input.apiKey as string,
             fetchImpl: input.fetchImpl,
@@ -186,6 +196,7 @@ export async function reliaiLLM(input: ReliaiLlmRequest) {
     traceId: input.traceId,
     request: {
       projectId: input.projectId,
+      environment: input.environment,
       model: input.model,
       prompt: input.prompt,
       metadata: input.metadata,

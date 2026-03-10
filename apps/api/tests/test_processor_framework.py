@@ -6,7 +6,7 @@ from app.processors.base_processor import BaseProcessor
 from app.processors.dispatcher import dispatch_event, dispatch_event_sync
 from app.processors.registry import ProcessorRegistry
 from app.processors.runner import run_processor_runner
-from app.services.event_stream import EventMessage
+from app.services.event_stream import EventMessage, TRACE_EVALUATED_EVENT
 from .test_api import create_api_key, create_operator, create_organization, create_project, ingest_trace, sign_in
 
 
@@ -135,4 +135,11 @@ def test_runner_can_limit_enabled_processors(
 
     assert len(reports) == 1
     assert [result.processor_name for result in reports[0].processor_results] == ["evaluation", "warehouse"]
+    warehouse_reports = run_processor_runner(
+        max_events=1,
+        enabled_processors=["warehouse"],
+        accepted_event_types={TRACE_EVALUATED_EVENT},
+    )
+    assert len(warehouse_reports) == 1
+    assert [result.processor_name for result in warehouse_reports[0].processor_results] == ["warehouse"]
     assert len(fake_trace_warehouse.rows) == 1

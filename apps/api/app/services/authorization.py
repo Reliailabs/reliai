@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.project import Project
 from app.models.trace import Trace
 from app.services.auth import OperatorContext
+from app.services.environments import normalize_environment_name
 
 
 def require_organization_membership(operator: OperatorContext, organization_id: UUID) -> None:
@@ -18,6 +19,7 @@ def require_project_access(db: Session, operator: OperatorContext, project_id: U
     project = db.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project.environment = normalize_environment_name(project.environment)
     require_organization_membership(operator, project.organization_id)
     return project
 

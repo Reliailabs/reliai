@@ -40,7 +40,13 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     regression_snapshots = relationship("RegressionSnapshot", back_populates="project")
     incidents = relationship("Incident", back_populates="project")
     deployments = relationship("Deployment", back_populates="project")
+    environments = relationship("Environment", back_populates="project")
     guardrail_policies = relationship("GuardrailPolicy", back_populates="project")
+    automation_rules = relationship("AutomationRule", back_populates="project")
+    external_processors = relationship("ExternalProcessor", back_populates="project")
+    trace_ingestion_policies = relationship("TraceIngestionPolicy", back_populates="project")
+    metadata_cardinalities = relationship("MetadataCardinality", back_populates="project")
+    processor_failures = relationship("ProcessorFailure", back_populates="project")
     reliability_recommendations = relationship(
         "ReliabilityRecommendation",
         back_populates="project",

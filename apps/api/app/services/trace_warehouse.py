@@ -10,6 +10,7 @@ from uuid import UUID
 
 import httpx
 
+from app.events import build_trace_event_payload, validate_trace_event
 from app.core.settings import get_settings
 from app.models.trace import Trace
 
@@ -48,6 +49,7 @@ class TraceWarehouseQuery:
     project_id: UUID
     window_start: datetime
     window_end: datetime
+    environment_id: UUID | None = None
     prompt_version_id: UUID | None = None
     model_version_id: UUID | None = None
     prompt_version: str | None = None
@@ -65,6 +67,7 @@ class TraceWarehouseAggregateQuery:
     project_id: UUID
     window_start: datetime
     window_end: datetime
+    environment_id: UUID | None = None
     prompt_version_id: UUID | None = None
     model_version_id: UUID | None = None
     prompt_version: str | None = None
@@ -80,19 +83,28 @@ class TraceWarehouseEventRow:
     timestamp: datetime
     organization_id: UUID
     project_id: UUID
+    environment_id: UUID | None
     trace_id: UUID
-    prompt_version_id: UUID | None
-    model_version_id: UUID | None
-    latency_ms: int | None
     success: bool
-    error_type: str | None
-    input_tokens: int | None
-    output_tokens: int | None
-    cost: Decimal | None
-    structured_output_valid: bool | None
-    retrieval_latency_ms: int | None
-    retrieval_chunks: int | None
-    metadata_json: dict[str, Any] | None
+    event_version: int = 1
+    model_provider: str | None = None
+    model_family: str | None = None
+    model_revision: str | None = None
+    prompt_version_id: str | None = None
+    model_version_id: UUID | None = None
+    latency_ms: int | None = None
+    error_type: str | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cost_usd: Decimal | None = None
+    structured_output_valid: bool | None = None
+    retrieval_latency_ms: int | None = None
+    retrieval_chunks: int | None = None
+    metadata_json: dict[str, Any] | None = None
+
+    @property
+    def cost(self) -> Decimal | None:
+        return self.cost_usd
 
 
 class TraceWarehouseClient:
@@ -174,18 +186,23 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         create_sql = f"""
         CREATE TABLE IF NOT EXISTS {TRACE_WAREHOUSE_TABLE}
         (
+            event_version UInt16,
             timestamp DateTime64(3, 'UTC'),
             organization_id UUID,
             project_id UUID,
+            environment_id Nullable(UUID),
             trace_id UUID,
-            prompt_version_id Nullable(UUID),
+            model_provider Nullable(String),
+            model_family Nullable(String),
+            model_revision Nullable(String),
+            prompt_version_id Nullable(String),
             model_version_id Nullable(UUID),
             latency_ms Nullable(Int32),
             success Bool,
             error_type Nullable(String),
             input_tokens Nullable(Int32),
             output_tokens Nullable(Int32),
-            cost Nullable(Float64),
+            cost_usd Nullable(Float64),
             structured_output_valid Nullable(Bool),
             retrieval_latency_ms Nullable(Int32),
             retrieval_chunks Nullable(Int32),
@@ -206,18 +223,23 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         payload = b"\n".join(
             json.dumps(
                 {
+                    "event_version": row.event_version,
                     "timestamp": _ensure_utc(row.timestamp).isoformat(),
                     "organization_id": str(row.organization_id),
                     "project_id": str(row.project_id),
+                    "environment_id": str(row.environment_id) if row.environment_id is not None else None,
                     "trace_id": str(row.trace_id),
-                    "prompt_version_id": str(row.prompt_version_id) if row.prompt_version_id is not None else None,
+                    "model_provider": row.model_provider,
+                    "model_family": row.model_family,
+                    "model_revision": row.model_revision,
+                    "prompt_version_id": row.prompt_version_id,
                     "model_version_id": str(row.model_version_id) if row.model_version_id is not None else None,
                     "latency_ms": row.latency_ms,
                     "success": row.success,
                     "error_type": row.error_type,
                     "input_tokens": row.input_tokens,
                     "output_tokens": row.output_tokens,
-                    "cost": _decimal_to_float(row.cost),
+                    "cost_usd": _decimal_to_float(row.cost_usd),
                     "structured_output_valid": row.structured_output_valid,
                     "retrieval_latency_ms": row.retrieval_latency_ms,
                     "retrieval_chunks": row.retrieval_chunks,
@@ -244,8 +266,11 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             "window_start": _ensure_utc(query.window_start).isoformat(),
             "window_end": _ensure_utc(query.window_end).isoformat(),
         }
+        if query.environment_id is not None:
+            clauses.append("environment_id = toUUID({environment_id:String})")
+            params["environment_id"] = str(query.environment_id)
         if query.prompt_version_id is not None:
-            clauses.append("prompt_version_id = toUUID({prompt_version_id:String})")
+            clauses.append("prompt_version_id = {prompt_version_id:String}")
             params["prompt_version_id"] = str(query.prompt_version_id)
         if query.model_version_id is not None:
             clauses.append("model_version_id = toUUID({model_version_id:String})")
@@ -254,7 +279,9 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             clauses.append("JSONExtractString(metadata_json, '__prompt_version') = {prompt_version:String}")
             params["prompt_version"] = query.prompt_version
         if query.model_name is not None:
-            clauses.append("JSONExtractString(metadata_json, '__model_name') = {model_name:String}")
+            clauses.append(
+                "(model_family = {model_name:String} OR JSONExtractString(metadata_json, '__model_name') = {model_name:String})"
+            )
             params["model_name"] = query.model_name
         if query.latency_min_ms is not None:
             clauses.append("latency_ms >= {latency_min_ms:Int32}")
@@ -272,10 +299,15 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         limit_clause = f" LIMIT {query.limit}" if query.limit is not None else ""
         sql = f"""
         SELECT
+            event_version,
             timestamp,
             organization_id,
             project_id,
+            environment_id,
             trace_id,
+            model_provider,
+            model_family,
+            model_revision,
             prompt_version_id,
             model_version_id,
             latency_ms,
@@ -283,7 +315,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             error_type,
             input_tokens,
             output_tokens,
-            cost,
+            cost_usd,
             structured_output_valid,
             retrieval_latency_ms,
             retrieval_chunks,
@@ -302,18 +334,23 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             payload = json.loads(line)
             rows.append(
                 TraceWarehouseEventRow(
+                    event_version=int(payload.get("event_version", 1)),
                     timestamp=datetime.fromisoformat(payload["timestamp"]),
                     organization_id=UUID(payload["organization_id"]),
                     project_id=UUID(payload["project_id"]),
+                    environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
                     trace_id=UUID(payload["trace_id"]),
-                    prompt_version_id=UUID(payload["prompt_version_id"]) if payload.get("prompt_version_id") else None,
+                    model_provider=payload.get("model_provider"),
+                    model_family=payload.get("model_family"),
+                    model_revision=payload.get("model_revision"),
+                    prompt_version_id=payload.get("prompt_version_id"),
                     model_version_id=UUID(payload["model_version_id"]) if payload.get("model_version_id") else None,
                     latency_ms=payload.get("latency_ms"),
                     success=bool(payload["success"]),
                     error_type=payload.get("error_type"),
                     input_tokens=payload.get("input_tokens"),
                     output_tokens=payload.get("output_tokens"),
-                    cost=Decimal(str(payload["cost"])) if payload.get("cost") is not None else None,
+                    cost_usd=Decimal(str(payload["cost_usd"])) if payload.get("cost_usd") is not None else None,
                     structured_output_valid=payload.get("structured_output_valid"),
                     retrieval_latency_ms=payload.get("retrieval_latency_ms"),
                     retrieval_chunks=payload.get("retrieval_chunks"),
@@ -336,8 +373,11 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             "window_start": _ensure_utc(query.window_start).isoformat(),
             "window_end": _ensure_utc(query.window_end).isoformat(),
         }
+        if query.environment_id is not None:
+            clauses.append("environment_id = toUUID({environment_id:String})")
+            params["environment_id"] = str(query.environment_id)
         if query.prompt_version_id is not None:
-            clauses.append("prompt_version_id = toUUID({prompt_version_id:String})")
+            clauses.append("prompt_version_id = {prompt_version_id:String}")
             params["prompt_version_id"] = str(query.prompt_version_id)
         if query.model_version_id is not None:
             clauses.append("model_version_id = toUUID({model_version_id:String})")
@@ -346,7 +386,9 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             clauses.append("JSONExtractString(metadata_json, '__prompt_version') = {prompt_version:String}")
             params["prompt_version"] = query.prompt_version
         if query.model_name is not None:
-            clauses.append("JSONExtractString(metadata_json, '__model_name') = {model_name:String}")
+            clauses.append(
+                "(model_family = {model_name:String} OR JSONExtractString(metadata_json, '__model_name') = {model_name:String})"
+            )
             params["model_name"] = query.model_name
         if query.latency_min_ms is not None:
             clauses.append("latency_ms >= {latency_min_ms:Int32}")
@@ -367,7 +409,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             1 - avg(toFloat64(success)) AS error_rate,
             avg(latency_ms) AS average_latency_ms,
             avg(toFloat64(structured_output_valid)) AS structured_output_validity_rate,
-            avg(cost) AS average_cost_usd
+            avg(cost_usd) AS average_cost_usd
         FROM {TRACE_WAREHOUSE_TABLE}
         WHERE {' AND '.join(clauses)}
         FORMAT JSONEachRow
@@ -408,10 +450,14 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         limit_clause = f" LIMIT {limit}" if limit is not None else ""
         sql = f"""
         SELECT
+            event_version,
             timestamp,
             organization_id,
             project_id,
             trace_id,
+            model_provider,
+            model_family,
+            model_revision,
             prompt_version_id,
             model_version_id,
             latency_ms,
@@ -419,7 +465,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             error_type,
             input_tokens,
             output_tokens,
-            cost,
+            cost_usd,
             structured_output_valid,
             retrieval_latency_ms,
             retrieval_chunks,
@@ -439,18 +485,22 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             payload = json.loads(line)
             rows.append(
                 TraceWarehouseEventRow(
+                    event_version=int(payload.get("event_version", 1)),
                     timestamp=_ensure_utc(datetime.fromisoformat(payload["timestamp"])),
                     organization_id=UUID(payload["organization_id"]),
                     project_id=UUID(payload["project_id"]),
                     trace_id=UUID(payload["trace_id"]),
-                    prompt_version_id=UUID(payload["prompt_version_id"]) if payload.get("prompt_version_id") else None,
+                    model_provider=payload.get("model_provider"),
+                    model_family=payload.get("model_family"),
+                    model_revision=payload.get("model_revision"),
+                    prompt_version_id=payload.get("prompt_version_id"),
                     model_version_id=UUID(payload["model_version_id"]) if payload.get("model_version_id") else None,
                     latency_ms=payload.get("latency_ms"),
                     success=bool(payload.get("success")),
                     error_type=payload.get("error_type"),
                     input_tokens=payload.get("input_tokens"),
                     output_tokens=payload.get("output_tokens"),
-                    cost=Decimal(str(payload["cost"])) if payload.get("cost") is not None else None,
+                    cost_usd=Decimal(str(payload["cost_usd"])) if payload.get("cost_usd") is not None else None,
                     structured_output_valid=payload.get("structured_output_valid"),
                     retrieval_latency_ms=payload.get("retrieval_latency_ms"),
                     retrieval_chunks=payload.get("retrieval_chunks"),
@@ -474,30 +524,42 @@ def trace_warehouse_enabled() -> bool:
     return bool(get_settings().trace_warehouse_url)
 
 
-def build_trace_event_row(trace: Trace) -> TraceWarehouseEventRow:
-    metadata = dict(trace.metadata_json or {})
-    metadata.setdefault("__model_name", trace.model_name)
-    metadata.setdefault("__model_provider", trace.model_provider)
-    metadata.setdefault("__prompt_version", trace.prompt_version)
-    metadata.setdefault("request_id", trace.request_id)
-    metadata.setdefault("environment", trace.environment)
+def build_trace_event_row_from_payload(payload: dict[str, Any]) -> TraceWarehouseEventRow:
+    event = validate_trace_event(payload)
     return TraceWarehouseEventRow(
-        timestamp=trace.timestamp,
-        organization_id=trace.organization_id,
-        project_id=trace.project_id,
-        trace_id=trace.id,
-        prompt_version_id=trace.prompt_version_record_id,
-        model_version_id=trace.model_version_record_id,
-        latency_ms=trace.latency_ms,
-        success=trace.success,
-        error_type=trace.error_type,
-        input_tokens=trace.prompt_tokens,
-        output_tokens=trace.completion_tokens,
-        cost=trace.total_cost_usd,
-        structured_output_valid=_structured_output_valid(trace),
-        retrieval_latency_ms=trace.retrieval_span.retrieval_latency_ms if trace.retrieval_span is not None else None,
-        retrieval_chunks=trace.retrieval_span.source_count if trace.retrieval_span is not None else None,
-        metadata_json=metadata,
+        event_version=int(event["event_version"]),
+        timestamp=_ensure_utc(datetime.fromisoformat(event["timestamp"])),
+        organization_id=UUID(event["organization_id"]),
+        project_id=UUID(event["project_id"]),
+        environment_id=UUID(event["environment_id"]) if event.get("environment_id") else None,
+        trace_id=UUID(event["trace_id"]),
+        model_provider=(event.get("model") or {}).get("provider"),
+        model_family=(event.get("model") or {}).get("family"),
+        model_revision=(event.get("model") or {}).get("revision"),
+        prompt_version_id=event.get("prompt_version_id"),
+        model_version_id=UUID(event["model_version_id"]) if event.get("model_version_id") else None,
+        latency_ms=event.get("latency_ms"),
+        success=bool(event["success"]),
+        error_type=(event.get("metadata") or {}).get("error_type"),
+        input_tokens=(event.get("tokens") or {}).get("input"),
+        output_tokens=(event.get("tokens") or {}).get("output"),
+        cost_usd=Decimal(str(event["cost_usd"])) if event.get("cost_usd") is not None else None,
+        structured_output_valid=(event.get("evaluation") or {}).get("structured_output_valid"),
+        retrieval_latency_ms=(event.get("retrieval") or {}).get("latency_ms"),
+        retrieval_chunks=(event.get("retrieval") or {}).get("chunks"),
+        metadata_json=event.get("metadata") or {},
+    )
+
+
+def build_trace_event_row(trace: Trace) -> TraceWarehouseEventRow:
+    return build_trace_event_row_from_payload(
+        build_trace_event_payload(
+            trace,
+            event_type="trace_evaluated",
+            structured_output_valid=_structured_output_valid(trace),
+            quality_pass=_structured_output_valid(trace),
+            metadata_overrides={"error_type": trace.error_type} if trace.error_type is not None else None,
+        )
     )
 
 
@@ -507,6 +569,18 @@ def ingest_trace_event(trace: Trace) -> None:
         client.insert_trace_events([build_trace_event_row(trace)])
     except Exception:
         logger.exception("failed to ingest trace event into warehouse", extra={"trace_id": str(trace.id)})
+
+
+def ingest_trace_event_payload(payload: dict[str, Any]) -> None:
+    client = get_trace_warehouse_client()
+    event = validate_trace_event(payload)
+    try:
+        client.insert_trace_events([build_trace_event_row_from_payload(event)])
+    except Exception:
+        logger.exception(
+            "failed to ingest trace event payload into warehouse",
+            extra={"trace_id": event.get("trace_id")},
+        )
 
 
 def query_traces(filters: TraceWarehouseQuery) -> list[TraceWarehouseEventRow]:

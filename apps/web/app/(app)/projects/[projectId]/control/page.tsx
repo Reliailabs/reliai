@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
-import { getProject, getProjectRecommendations, getProjectReliabilityControlPanel } from "@/lib/api";
+import {
+  getProject,
+  getProjectGuardrailMetrics,
+  getProjectRecommendations,
+  getProjectReliabilityControlPanel,
+} from "@/lib/api";
 
 function percent(value: number | null) {
   if (value === null) return "n/a";
@@ -72,14 +77,20 @@ function recommendationTone(severity: string) {
 
 export default async function ProjectControlPanelPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { projectId } = await params;
-  const [project, panel, recommendations] = await Promise.all([
+  const rawSearchParams = searchParams ? await searchParams : {};
+  const environment =
+    typeof rawSearchParams.environment === "string" ? rawSearchParams.environment : undefined;
+  const [project, panel, recommendations, guardrailMetrics] = await Promise.all([
     getProject(projectId),
-    getProjectReliabilityControlPanel(projectId),
+    getProjectReliabilityControlPanel(projectId, environment),
     getProjectRecommendations(projectId),
+    getProjectGuardrailMetrics(projectId, environment),
   ]);
   const status = systemStatus(panel);
   const StatusIcon = status.icon;
@@ -88,10 +99,13 @@ export default async function ProjectControlPanelPage({
     <div className="space-y-6">
       <header className="overflow-hidden rounded-[30px] border border-zinc-300 bg-white shadow-sm">
         <div className="relative border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.08),transparent_50%),linear-gradient(180deg,rgba(248,250,252,0.95),rgba(255,255,255,1))] px-6 py-6">
-          <Link href={`/projects/${projectId}/timeline`} className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink">
+          <a
+            href={`/projects/${projectId}/timeline${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+            className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to timeline
-          </Link>
+          </a>
           <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-steel">AI reliability control panel</p>
@@ -208,13 +222,13 @@ export default async function ProjectControlPanelPage({
                     <h2 className="mt-2 text-2xl font-semibold text-ink">Production protection</h2>
                   </div>
                 </div>
-                <Link
-                  href={`/projects/${projectId}/guardrails`}
+                <a
+                  href={`/projects/${projectId}/guardrails${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
                   className="inline-flex items-center gap-2 text-sm font-medium text-ink hover:text-slate-700"
                 >
                   Open dashboard
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
               </div>
               <div className="mt-6 space-y-3">
                 <div className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
@@ -228,6 +242,52 @@ export default async function ProjectControlPanelPage({
               </div>
             </Card>
           </div>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Bot className="h-5 w-5 text-steel" />
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-steel">Processors</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-ink">External processor hooks</h2>
+                </div>
+              </div>
+              <a
+                href={`/projects/${projectId}/processors${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+                className="inline-flex items-center gap-2 text-sm font-medium text-ink hover:text-slate-700"
+              >
+                Open processors
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-steel">
+              Register project-scoped HTTP processors for trace and evaluation events. Reliai signs each
+              delivery and records failures after bounded retries so external automation stays inspectable.
+            </p>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-5 w-5 text-steel" />
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-steel">Trace ingestion</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-ink">Volume and metadata control</h2>
+                </div>
+              </div>
+              <a
+                href={`/projects/${projectId}/ingestion${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+                className="inline-flex items-center gap-2 text-sm font-medium text-ink hover:text-slate-700"
+              >
+                Open ingestion
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-steel">
+              Control downstream sample rates, bound metadata cardinality before it pollutes analytics,
+              and keep sensitive metadata keys out of persisted telemetry.
+            </p>
+          </Card>
 
           <Card className="rounded-[28px] border-zinc-300 p-6">
             <div className="flex items-center gap-3">
@@ -300,8 +360,8 @@ export default async function ProjectControlPanelPage({
             <div className="flex items-center gap-3">
               <TriangleAlert className="h-5 w-5 text-steel" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent incidents</p>
-                <h2 className="mt-2 text-2xl font-semibold text-ink">Active reliability pressure</h2>
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Active incidents</p>
+                <h2 className="mt-2 text-2xl font-semibold text-ink">Daily investigation queue</h2>
               </div>
             </div>
             {panel.incidents.recent_incidents.length === 0 ? (
@@ -312,14 +372,15 @@ export default async function ProjectControlPanelPage({
             ) : (
               <div className="mt-5 space-y-3">
                 {panel.incidents.recent_incidents.map((incident) => (
-                  <Link
+                  <div
                     key={incident.incident_id}
-                    href={`/incidents/${incident.incident_id}`}
-                    className="block rounded-[22px] border border-zinc-200 px-4 py-4 transition hover:bg-zinc-50"
+                    className="rounded-[22px] border border-zinc-200 px-4 py-4 transition hover:bg-zinc-50"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-medium text-ink">{incident.title}</p>
+                        <Link href={`/incidents/${incident.incident_id}`} className="text-sm font-medium text-ink underline-offset-4 hover:underline">
+                          {incident.title}
+                        </Link>
                         <p className="mt-1 text-sm text-steel">{formatTime(incident.started_at)}</p>
                       </div>
                       <div className="text-right">
@@ -329,7 +390,47 @@ export default async function ProjectControlPanelPage({
                         <p className="mt-1 text-xs uppercase tracking-[0.18em] text-steel">{incident.status}</p>
                       </div>
                     </div>
-                  </Link>
+                    <div className="mt-3 flex items-center gap-4 text-sm font-medium text-ink">
+                      <Link href={`/incidents/${incident.incident_id}`} className="underline-offset-4 hover:underline">
+                        Open incident
+                      </Link>
+                      <Link href={`/incidents/${incident.incident_id}/investigate`} className="underline-offset-4 hover:underline">
+                        Investigate
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center gap-3">
+              <BellElectric className="h-5 w-5 text-steel" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent guardrail triggers</p>
+                <h2 className="mt-2 text-2xl font-semibold text-ink">Runtime interventions</h2>
+              </div>
+            </div>
+            {guardrailMetrics.recent_events.length === 0 ? (
+              <div className="mt-5 rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-sm leading-6 text-steel">
+                No recent runtime guardrail triggers were recorded. Retries, blocks, and fallbacks will appear here
+                once production traffic starts hitting active policies.
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {guardrailMetrics.recent_events.slice(0, 5).map((event) => (
+                  <div key={`${event.trace_id}-${event.created_at}`} className="rounded-[22px] border border-zinc-200 px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-ink">{event.policy_type}</p>
+                        <p className="mt-1 text-sm text-steel">
+                          {event.action_taken} · {event.provider_model ?? "model n/a"} · {formatTime(event.created_at)}
+                        </p>
+                      </div>
+                      <span className="text-sm font-medium text-ink">{event.latency_ms ? `${event.latency_ms}ms` : "n/a"}</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

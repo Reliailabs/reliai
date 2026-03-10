@@ -66,13 +66,18 @@ function ScorePill({ score }: { score: number | null }) {
 
 export default async function ProjectReliabilityPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { projectId } = await params;
+  const rawSearchParams = searchParams ? await searchParams : {};
+  const environment =
+    typeof rawSearchParams.environment === "string" ? rawSearchParams.environment : undefined;
   const [project, reliability] = await Promise.all([
     getProject(projectId),
-    getProjectReliability(projectId),
+    getProjectReliability(projectId, environment),
   ]);
 
   const headlineCards = [
@@ -148,10 +153,13 @@ export default async function ProjectReliabilityPage({
   return (
     <div className="space-y-6">
       <header className="rounded-[28px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
-        <Link href={`/projects/${projectId}/regressions`} className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink">
+        <a
+          href={`/projects/${projectId}/regressions${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+          className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to regressions
-        </Link>
+        </a>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Project reliability</p>
@@ -162,16 +170,16 @@ export default async function ProjectReliabilityPage({
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href={`/projects/${projectId}/timeline`}
+            <a
+              href={`/projects/${projectId}/timeline${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
               className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
             >
               <History className="h-4 w-4" />
               Timeline
-            </Link>
+            </a>
             <ScorePill score={reliability.reliability_score} />
             <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
-              {project.environment}
+              {environment ?? project.environment}
             </div>
           </div>
         </div>

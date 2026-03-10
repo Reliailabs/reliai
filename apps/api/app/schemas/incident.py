@@ -7,7 +7,11 @@ from pydantic import BaseModel, Field
 
 from app.schemas.alert_delivery import AlertDeliveryRead
 from app.schemas.common import APIModel
-from app.schemas.deployment import IncidentDeploymentContextRead
+from app.schemas.deployment import (
+    DeploymentRiskRead,
+    DeploymentSimulationRead,
+    IncidentDeploymentContextRead,
+)
 from app.schemas.incident_event import IncidentEventRead
 from app.schemas.investigation import (
     CohortPivotRead,
@@ -24,6 +28,7 @@ from app.schemas.trace import TraceCompareItemRead
 
 class IncidentListQuery(BaseModel):
     project_id: UUID | None = None
+    environment: str | None = Field(default=None, max_length=64)
     scope_type: str | None = Field(default=None, pattern=r"^(project|prompt_version)$")
     scope_id: str | None = None
     status: str | None = Field(default=None, pattern=r"^(open|resolved)$")
@@ -49,6 +54,7 @@ class IncidentListItemRead(APIModel):
     id: UUID
     organization_id: UUID
     project_id: UUID
+    environment_id: UUID
     project_name: str
     incident_type: str
     severity: str
@@ -134,6 +140,54 @@ class IncidentCommandCenterRead(APIModel):
     guardrail_activity: list[GuardrailActivityRead]
     related_regressions: list[RegressionSnapshotRead]
     recent_signals: list[TimelineEventRead]
+
+
+class InvestigationKeyDifferenceRead(APIModel):
+    dimension: str
+    title: str
+    current_value: str | None
+    baseline_value: str | None
+    changed: bool
+    metadata_json: dict[str, Any] | None = None
+
+
+class InvestigationRecommendationRead(APIModel):
+    recommendation_id: UUID | None
+    recommended_action: str
+    confidence: float
+    supporting_evidence: dict[str, Any]
+
+
+class InvestigationDeploymentContextRead(APIModel):
+    deployment: IncidentDeploymentContextRead | None
+    latest_risk_score: DeploymentRiskRead | None
+    latest_simulation: DeploymentSimulationRead | None
+    deployment_link: str | None
+
+
+class IncidentInvestigationTraceComparisonRead(APIModel):
+    compare_link: str
+    failing_trace_summary: TraceCompareItemRead | None
+    baseline_trace_summary: TraceCompareItemRead | None
+    comparison: dict[str, Any]
+    key_differences: list[InvestigationKeyDifferenceRead]
+
+
+class IncidentInvestigationRootCauseRead(APIModel):
+    incident_id: UUID
+    generated_at: datetime
+    ranked_causes: list[RootCauseProbabilityRead]
+    evidence: dict[str, Any]
+    recommended_fix: RootCauseRecommendedFixRead
+
+
+class IncidentInvestigationRead(APIModel):
+    incident: IncidentDetailRead
+    root_cause_analysis: IncidentInvestigationRootCauseRead
+    deployment_context: InvestigationDeploymentContextRead
+    trace_comparison: IncidentInvestigationTraceComparisonRead
+    recommendations: list[InvestigationRecommendationRead]
+    guardrail_activity: list[GuardrailActivityRead]
 
 
 class IncidentOwnerAssignRequest(BaseModel):

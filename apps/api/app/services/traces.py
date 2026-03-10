@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone as trace_timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -10,18 +10,21 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_, desc, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.events import build_trace_event_payload, validate_trace_event
 from app.models.project import Project
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 from app.schemas.trace import TraceIngestRequest, TraceListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_trace_access
-from app.services.event_stream import TraceIngestedEventPayload, publish_event
+from app.services.event_stream import TRACE_INGESTED_EVENT, publish_event
+from app.services.environments import normalize_environment_name, resolve_project_environment
 from app.services.guardrails import evaluate_trace_guardrails
 from app.services.incidents import _structured_output_label
 from app.services.onboarding import mark_trace_ingested
 from app.services.reliability_graph import sync_trace_retrieval_span
 from app.services.registry import link_trace_registry_records
+from app.services.trace_ingestion_control import apply_trace_ingestion_controls
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 from app.core.settings import get_settings
 
@@ -68,24 +71,12 @@ def _decode_cursor(cursor: str) -> tuple[datetime, UUID]:
 def publish_trace_ingested_event(trace: Trace) -> None:
     try:
         settings = get_settings()
-        timestamp = trace.timestamp
-        if timestamp.tzinfo is None:
-            timestamp = timestamp.replace(tzinfo=timezone.utc)
-        payload = TraceIngestedEventPayload(
-            trace_id=str(trace.id),
-            project_id=str(trace.project_id),
-            timestamp=timestamp,
-            prompt_version_id=(
-                str(trace.prompt_version_record_id) if trace.prompt_version_record_id is not None else None
-            ),
-            model_version_id=(
-                str(trace.model_version_record_id) if trace.model_version_record_id is not None else None
-            ),
-            latency_ms=trace.latency_ms,
-            success=trace.success,
-            metadata=trace.metadata_json or {},
-        ).model_dump(mode="json")
-        payload["timestamp"] = timestamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+        payload = validate_trace_event(
+            build_trace_event_payload(
+                trace,
+                event_type=TRACE_INGESTED_EVENT,
+            )
+        )
         publish_event(settings.event_stream_topic_traces, payload)
     except Exception:
         logger.exception("failed to publish trace ingest event", extra={"trace_id": str(trace.id)})
@@ -93,6 +84,11 @@ def publish_trace_ingested_event(trace: Trace) -> None:
 
 def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> Trace:
     try:
+        environment = resolve_project_environment(
+            db,
+            project=project,
+            name=payload.environment,
+        )
         is_explainable = bool(
             payload.model_name
             and payload.prompt_version
@@ -103,7 +99,8 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
         trace = Trace(
             organization_id=project.organization_id,
             project_id=project.id,
-            environment=project.environment,
+            environment_id=environment.id,
+            environment=environment.name,
             timestamp=payload.timestamp,
             request_id=payload.request_id,
             user_id=payload.user_id,
@@ -153,6 +150,16 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
         project.last_trace_received_at = trace.created_at
         db.add(project)
 
+        try:
+            validate_trace_event(
+                build_trace_event_payload(
+                    trace,
+                    event_type=TRACE_INGESTED_EVENT,
+                )
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
         mark_trace_ingested(db, project.organization_id)
         db.commit()
     except Exception:
@@ -167,8 +174,10 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
     project = db.get(Project, api_key.project_id)
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    trace = create_trace(db, project, payload)
-    publish_trace_ingested_event(trace)
+    controlled = apply_trace_ingestion_controls(db, project=project, payload=payload)
+    trace = create_trace(db, project, controlled.payload)
+    if controlled.publish_event:
+        publish_trace_ingested_event(trace)
     return trace
 
 
@@ -181,6 +190,8 @@ def list_traces(db: Session, operator: OperatorContext, filters: TraceListQuery)
 
     if filters.project_id is not None:
         statement = statement.where(Trace.project_id == filters.project_id)
+    if filters.environment is not None:
+        statement = statement.where(Trace.environment == normalize_environment_name(filters.environment))
     if filters.model_name is not None:
         statement = statement.where(Trace.model_name == filters.model_name)
     if filters.prompt_version is not None:
@@ -238,6 +249,12 @@ def _numeric_distance(left: int | Decimal | None, right: int | Decimal | None) -
     return abs(float(left) - float(right))
 
 
+def _coerce_utc_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=trace_timezone.utc)
+    return value.astimezone(trace_timezone.utc)
+
+
 def _trace_baseline_sort_key(trace: Trace, candidate: Trace):
     structured_pass = _structured_output_label(candidate) == "pass"
     record_prompt_match = (
@@ -262,7 +279,7 @@ def _trace_baseline_sort_key(trace: Trace, candidate: Trace):
             _numeric_distance(candidate.prompt_tokens, trace.prompt_tokens)
             + _numeric_distance(candidate.completion_tokens, trace.completion_tokens)
         ),
-        candidate.timestamp,
+        _coerce_utc_datetime(candidate.timestamp),
         str(candidate.id),
     )
 
@@ -278,9 +295,10 @@ def _rank_trace_baseline_candidates(trace: Trace, candidates: list[Trace]) -> li
 def get_trace_compare(db: Session, operator: OperatorContext, trace_id: UUID) -> TraceCompareResult:
     require_trace_access(db, operator, trace_id)
     trace = get_trace_detail(db, operator, trace_id)
-    baseline_window_end = trace.timestamp
-    current_window_start = trace.timestamp
-    current_window_end = trace.timestamp
+    trace_timestamp = _coerce_utc_datetime(trace.timestamp)
+    baseline_window_end = trace_timestamp
+    current_window_start = trace_timestamp
+    current_window_end = trace_timestamp
 
     search_windows = [
         timedelta(hours=24),
@@ -298,6 +316,7 @@ def get_trace_compare(db: Session, operator: OperatorContext, trace_id: UUID) ->
                 TraceWindowQuery(
                     organization_id=trace.organization_id,
                     project_id=trace.project_id,
+                    environment_id=trace.environment_id,
                     window_start=baseline_window_start,
                     window_end=baseline_window_end,
                     prompt_version=trace.prompt_version if trace.prompt_version_record_id is None else None,
@@ -318,7 +337,7 @@ def get_trace_compare(db: Session, operator: OperatorContext, trace_id: UUID) ->
                 or getattr(candidate, "model_provider", None) == trace.model_provider
                 or trace.model_version_record_id is not None
             )
-            and candidate.timestamp < trace.timestamp
+            and _coerce_utc_datetime(candidate.timestamp) < trace_timestamp
         ]
         ranked = _rank_trace_baseline_candidates(trace, candidates)
         if ranked:
@@ -333,6 +352,7 @@ def get_trace_compare(db: Session, operator: OperatorContext, trace_id: UUID) ->
                 TraceWindowQuery(
                     organization_id=trace.organization_id,
                     project_id=trace.project_id,
+                    environment_id=trace.environment_id,
                     window_start=baseline_window_start,
                     window_end=baseline_window_end,
                     with_details=True,
@@ -340,7 +360,7 @@ def get_trace_compare(db: Session, operator: OperatorContext, trace_id: UUID) ->
                 ),
             )
             if candidate.id != trace.id
-            and candidate.timestamp < trace.timestamp
+            and _coerce_utc_datetime(candidate.timestamp) < trace_timestamp
             and candidate.success
             and (
                 (

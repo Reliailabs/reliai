@@ -16,6 +16,7 @@ from app.models.evaluation_rollup import EvaluationRollup
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
+from app.services.reliability_pattern_mining import build_prompt_pattern_hash, get_pattern_risk
 
 RISK_LEVEL_LOW = "low"
 RISK_LEVEL_MEDIUM = "medium"
@@ -186,6 +187,8 @@ def _signal_summary(name: str, value: float, baseline: TraceWindowStats, current
         return f"p95 latency {baseline.p95_latency_ms:.0f}ms -> {current.p95_latency_ms:.0f}ms"
     if name == "error_rate_delta":
         return f"error rate {baseline.error_rate:.2f} -> {current.error_rate:.2f}"
+    if name == "pattern_risk":
+        return f"cross-project failure patterns contributed {value:.2f} risk"
     return f"nearby regressions matched deployment scope ({value:.2f})"
 
 
@@ -276,6 +279,13 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
     baseline_stats = _window_stats(baseline_traces)
     current_stats = _window_stats(current_traces)
     regression_signal, regression_metrics = _matching_regression_signal(db, deployment=deployment)
+    pattern_risk = get_pattern_risk(
+        db,
+        model_family=deployment.model_version.model_family if deployment.model_version is not None else None,
+        prompt_pattern_hash=build_prompt_pattern_hash(
+            str(deployment.prompt_version_id) if deployment.prompt_version_id is not None else None
+        ),
+    )
 
     structured_output_delta = _clamp(
         max(
@@ -311,7 +321,7 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
             }
         )
 
-    risk_score = round(sum(item["weighted_value"] for item in signals), 4)
+    risk_score = round(sum(item["weighted_value"] for item in signals) + float(pattern_risk["value"]), 4)
     analysis_json = {
         "window_minutes": WINDOW_MINUTES,
         "baseline_window_start": baseline_start.isoformat(),
@@ -328,6 +338,7 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
         "baseline_p95_latency_ms": round(baseline_stats.p95_latency_ms, 2),
         "current_p95_latency_ms": round(current_stats.p95_latency_ms, 2),
         "matched_regression_metrics": regression_metrics,
+        "pattern_risk": pattern_risk,
         "latest_success_rate": _latest_quality_metric(
             db, deployment=deployment, metric_name="quality_pass_rate"
         ),

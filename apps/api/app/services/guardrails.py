@@ -13,6 +13,7 @@ from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.project import Project
 from app.models.trace import Trace
 from app.schemas.guardrail import GuardrailPolicyCreate
+from app.services.environments import normalize_environment_name, resolve_project_environment
 
 POLICY_STRUCTURED_OUTPUT = "structured_output"
 POLICY_HALLUCINATION = "hallucination"
@@ -27,17 +28,21 @@ class GuardrailDecision:
     metadata_json: dict | None
 
 
-def list_guardrail_policies(db: Session, *, project_id) -> list[GuardrailPolicy]:
+def list_guardrail_policies(db: Session, *, project_id, environment: str | None = None) -> list[GuardrailPolicy]:
+    statement = select(GuardrailPolicy).where(GuardrailPolicy.project_id == project_id)
+    if environment is not None:
+        statement = statement.where(GuardrailPolicy.environment_ref.has(name=normalize_environment_name(environment)))
     return db.scalars(
-        select(GuardrailPolicy)
-        .where(GuardrailPolicy.project_id == project_id)
+        statement
         .order_by(GuardrailPolicy.created_at.desc(), GuardrailPolicy.id.desc())
     ).all()
 
 
 def create_guardrail_policy(db: Session, *, project: Project, payload: GuardrailPolicyCreate) -> GuardrailPolicy:
+    environment = resolve_project_environment(db, project=project, name=payload.environment)
     policy = GuardrailPolicy(
         project_id=project.id,
+        environment_id=environment.id,
         policy_type=payload.policy_type,
         config_json=payload.config_json,
         is_active=payload.is_active,
@@ -48,16 +53,18 @@ def create_guardrail_policy(db: Session, *, project: Project, payload: Guardrail
     return policy
 
 
-def active_guardrail_policies(db: Session, *, project_id) -> list[GuardrailPolicy]:
+def active_guardrail_policies(db: Session, *, project_id, environment: str | None = None) -> list[GuardrailPolicy]:
+    statement = select(GuardrailPolicy).where(GuardrailPolicy.project_id == project_id, GuardrailPolicy.is_active.is_(True))
+    if environment is not None:
+        statement = statement.where(GuardrailPolicy.environment_ref.has(name=normalize_environment_name(environment)))
     return db.scalars(
-        select(GuardrailPolicy)
-        .where(GuardrailPolicy.project_id == project_id, GuardrailPolicy.is_active.is_(True))
+        statement
         .order_by(GuardrailPolicy.created_at.asc(), GuardrailPolicy.id.asc())
     ).all()
 
 
-def get_active_guardrail_policies(db: Session, *, project_id) -> list[GuardrailPolicy]:
-    return active_guardrail_policies(db, project_id=project_id)
+def get_active_guardrail_policies(db: Session, *, project_id, environment: str | None = None) -> list[GuardrailPolicy]:
+    return active_guardrail_policies(db, project_id=project_id, environment=environment)
 
 
 def _is_json_output(value: str | None) -> bool:
@@ -140,7 +147,7 @@ def latency_retry_policy(*, latency_ms: int | None, config_json: dict) -> Guardr
 
 def evaluate_trace_guardrails(db: Session, *, project: Project, trace: Trace) -> list[GuardrailEvent]:
     events: list[GuardrailEvent] = []
-    for policy in active_guardrail_policies(db, project_id=project.id):
+    for policy in active_guardrail_policies(db, project_id=project.id, environment=trace.environment):
         if policy.policy_type == POLICY_STRUCTURED_OUTPUT:
             decision = validate_structured_output(output_text=trace.output_text, config_json=policy.config_json)
         elif policy.policy_type == POLICY_HALLUCINATION:
@@ -181,6 +188,7 @@ def record_runtime_guardrail_event(
         raise ValueError("Guardrail policy does not belong to project")
     event = GuardrailRuntimeEvent(
         trace_id=trace_id,
+        environment_id=policy.environment_id,
         policy_id=policy_id,
         action_taken=action_taken,
         provider_model=provider_model,

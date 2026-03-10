@@ -4,11 +4,18 @@ import { cookies } from "next/headers";
 
 import type {
   AlertDeliveryListResponse,
+  CustomerReliabilityDetailRead,
+  CustomerReliabilityListRead,
   DeploymentDetailRead,
+  DeploymentListResponse,
   EventPipelineRead,
+  EnvironmentListResponse,
+  ExternalProcessorListResponse,
+  ExternalProcessorRead,
   GuardrailMetrics,
   IncidentCommandCenterRead,
   IncidentDetailRead,
+  IncidentInvestigationRead,
   IncidentEventListResponse,
   IncidentListResponse,
   ModelVersionDetailRead,
@@ -20,11 +27,15 @@ import type {
   ProjectReliabilityControlPanel,
   ProjectReliabilityRead,
   ProjectRead,
+  ReliabilityPatternListResponse,
+  ReliabilityPatternRead,
   ReliabilityRecommendation,
   PromptVersionDetailRead,
   PromptVersionListResponse,
   RegressionDetailRead,
   RegressionListResponse,
+  SystemGrowthRead,
+  TraceIngestionPolicyRead,
   TimelineResponse,
   TraceComparisonRead,
   TraceDetailRead,
@@ -78,28 +89,121 @@ export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
 }
 
-export async function getProjectReliability(projectId: string) {
-  return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
+export async function listProjectEnvironments(projectId: string) {
+  return request<EnvironmentListResponse>(`/api/v1/projects/${projectId}/environments`);
 }
 
-export async function getProjectGuardrailMetrics(projectId: string) {
-  return request<GuardrailMetrics>(`/api/v1/projects/${projectId}/guardrail-metrics`);
+export async function getProjectReliability(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability${query ? `?${query}` : ""}`);
 }
 
-export async function getProjectReliabilityControlPanel(projectId: string) {
-  return request<ProjectReliabilityControlPanel>(`/api/v1/projects/${projectId}/control-panel`);
+export async function getProjectGuardrailMetrics(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<GuardrailMetrics>(`/api/v1/projects/${projectId}/guardrail-metrics${query ? `?${query}` : ""}`);
+}
+
+export async function getProjectReliabilityControlPanel(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<ProjectReliabilityControlPanel>(`/api/v1/projects/${projectId}/control-panel${query ? `?${query}` : ""}`);
 }
 
 export async function getProjectRecommendations(projectId: string) {
   return request<ReliabilityRecommendation[]>(`/api/v1/projects/${projectId}/recommendations`);
 }
 
+export async function getProjectIngestionPolicy(projectId: string) {
+  return request<TraceIngestionPolicyRead>(`/api/v1/projects/${projectId}/ingestion-policy`);
+}
+
+export async function updateProjectIngestionPolicy(
+  projectId: string,
+  payload: {
+    sampling_success_rate: number;
+    sampling_error_rate: number;
+    max_metadata_fields: number;
+    max_cardinality_per_field: number;
+    retention_days_success: number;
+    retention_days_error: number;
+  }
+) {
+  return request<TraceIngestionPolicyRead>(`/api/v1/projects/${projectId}/ingestion-policy`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function getSystemEventPipeline() {
   return request<{ pipeline: EventPipelineRead }>(`/api/v1/system/event-pipeline`);
 }
 
-export async function getProjectTimeline(projectId: string, limit = 100) {
-  return request<TimelineResponse>(`/api/v1/projects/${projectId}/timeline?limit=${encodeURIComponent(String(limit))}`);
+export async function listProjectProcessors(projectId: string) {
+  return request<ExternalProcessorListResponse>(`/api/v1/projects/${projectId}/processors`);
+}
+
+export async function createProjectProcessor(
+  projectId: string,
+  payload: {
+    name: string;
+    event_type: string;
+    endpoint_url: string;
+    secret: string;
+    enabled?: boolean;
+  }
+) {
+  return request<ExternalProcessorRead>(`/api/v1/projects/${projectId}/processors`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateProjectProcessor(
+  projectId: string,
+  processorId: string,
+  payload: {
+    name?: string;
+    endpoint_url?: string;
+    secret?: string;
+    enabled?: boolean;
+  }
+) {
+  return request<ExternalProcessorRead>(`/api/v1/projects/${projectId}/processors/${processorId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function getSystemGrowth() {
+  return request<SystemGrowthRead>(`/api/v1/system/growth`);
+}
+
+export async function getSystemCustomers() {
+  return request<CustomerReliabilityListRead>(`/api/v1/system/customers`);
+}
+
+export async function getSystemCustomerDetail(projectId: string) {
+  return request<CustomerReliabilityDetailRead>(`/api/v1/system/customers/${projectId}`);
+}
+
+export async function getReliabilityPatterns() {
+  return request<ReliabilityPatternListResponse>(`/api/v1/intelligence/patterns`);
+}
+
+export async function getReliabilityPattern(patternId: string) {
+  return request<ReliabilityPatternRead>(`/api/v1/intelligence/patterns/${patternId}`);
+}
+
+export async function getProjectTimeline(projectId: string, limit = 100, environment?: string) {
+  const params = new URLSearchParams();
+  params.set("limit", String(limit));
+  if (environment) params.set("environment", environment);
+  return request<TimelineResponse>(`/api/v1/projects/${projectId}/timeline?${params.toString()}`);
 }
 
 export async function listProjects(filters: { organizationId?: string; limit?: number } = {}) {
@@ -112,6 +216,7 @@ export async function listProjects(filters: { organizationId?: string; limit?: n
 
 export interface TraceFilters {
   projectId?: string;
+  environment?: string;
   promptVersionId?: string;
   modelVersionId?: string;
   modelName?: string;
@@ -127,6 +232,7 @@ export async function listTraces(filters: TraceFilters = {}) {
   const params = new URLSearchParams();
 
   if (filters.projectId) params.set("project_id", filters.projectId);
+  if (filters.environment) params.set("environment", filters.environment);
   if (filters.promptVersionId) params.set("prompt_version_id", filters.promptVersionId);
   if (filters.modelVersionId) params.set("model_version_id", filters.modelVersionId);
   if (filters.modelName) params.set("model_name", filters.modelName);
@@ -151,6 +257,7 @@ export async function getTraceCompare(traceId: string) {
 
 export async function listIncidents(filters: {
   projectId?: string;
+  environment?: string;
   status?: "open" | "resolved";
   severity?: "critical" | "high" | "medium" | "low";
   ownerOperatorUserId?: string;
@@ -161,6 +268,7 @@ export async function listIncidents(filters: {
 } = {}) {
   const params = new URLSearchParams();
   if (filters.projectId) params.set("project_id", filters.projectId);
+  if (filters.environment) params.set("environment", filters.environment);
   if (filters.status) params.set("status", filters.status);
   if (filters.severity) params.set("severity", filters.severity);
   if (filters.ownerOperatorUserId) params.set("owner_operator_user_id", filters.ownerOperatorUserId);
@@ -178,6 +286,10 @@ export async function getIncidentDetail(incidentId: string) {
 
 export async function getIncidentCommandCenter(incidentId: string) {
   return request<IncidentCommandCenterRead>(`/api/v1/incidents/${incidentId}/command`);
+}
+
+export async function getIncidentInvestigation(incidentId: string) {
+  return request<IncidentInvestigationRead>(`/api/v1/incidents/${incidentId}/investigation`);
 }
 
 export async function getIncidentTraceCompare(incidentId: string) {
@@ -249,6 +361,15 @@ export async function getRegressionCompare(regressionId: string) {
 
 export async function getDeploymentDetail(deploymentId: string) {
   return request<DeploymentDetailRead>(`/api/v1/deployments/${deploymentId}`);
+}
+
+export async function listProjectDeployments(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<DeploymentListResponse>(
+    `/api/v1/projects/${projectId}/deployments${query ? `?${query}` : ""}`
+  );
 }
 
 export async function listProjectPromptVersions(projectId: string) {

@@ -12,6 +12,7 @@ from app.models.incident import Incident
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.auth import OperatorContext
+from app.services.deployment_risk_engine import calculate_deployment_risk
 from app.services.incidents import (
     derive_dimension_summaries,
     derive_root_cause_hints,
@@ -103,7 +104,7 @@ def _prompt_concentration_entry(
     )
     return {
         "cause_type": "prompt_concentration",
-        "label": f"Prompt {hint.get('current_value') or 'unknown'} concentration",
+        "label": f"Prompt change probability: {hint.get('current_value') or 'unknown'}",
         "raw_score": max(0.0, current_share - baseline_share) + deployment_bonus,
         "evidence_json": {
             "current_value": hint.get("current_value"),
@@ -132,7 +133,7 @@ def _model_concentration_entry(
     )
     return {
         "cause_type": "model_concentration",
-        "label": f"Model {hint.get('current_value') or 'unknown'} concentration",
+        "label": f"Model change probability: {hint.get('current_value') or 'unknown'}",
         "raw_score": max(0.0, current_share - baseline_share) + deployment_bonus,
         "evidence_json": {
             "current_value": hint.get("current_value"),
@@ -187,12 +188,32 @@ def _retrieval_shift_entry(*, current_traces: list[Trace], baseline_traces: list
         return None
     return {
         "cause_type": "retrieval_shift",
-        "label": "Retrieval latency shifted",
+        "label": "Retrieval latency spike",
         "raw_score": min(0.25, delta_ratio),
         "evidence_json": {
             "current_retrieval_median_ms": current_median,
             "baseline_retrieval_median_ms": baseline_median,
             "delta_ratio": round(delta_ratio, 4),
+        },
+    }
+
+
+def _deployment_risk_correlation_entry(*, deployment: Deployment | None) -> dict[str, Any] | None:
+    if deployment is None or deployment.risk_score is None:
+        return None
+    risk_level = deployment.risk_score.risk_level
+    risk_score = float(deployment.risk_score.risk_score)
+    if risk_level not in {"medium", "high"}:
+        return None
+    return {
+        "cause_type": "deployment_risk_correlation",
+        "label": "Deployment risk correlation",
+        "raw_score": min(0.35, risk_score),
+        "evidence_json": {
+            "deployment_id": str(deployment.id),
+            "risk_score": round(risk_score, 4),
+            "risk_level": risk_level,
+            "signals": deployment.risk_score.analysis_json.get("signals", []),
         },
     }
 
@@ -241,6 +262,10 @@ def _recommended_fix(top_probability: dict[str, Any]) -> dict[str, Any]:
             "retrieval_investigation",
             "Inspect retrieval latency and source availability changes before adjusting prompt or model behavior.",
         ),
+        "deployment_risk_correlation": (
+            "deployment_rollback_check",
+            "Review the latest deployment risk signals and consider narrowing or rolling back the rollout before broader changes.",
+        ),
         "error_cluster": (
             "error_type_investigation",
             "Inspect the dominant error cluster and the linked failing traces before rollout changes.",
@@ -267,6 +292,7 @@ def _window_backend(incident: Incident, *, start_key: str, end_key: str) -> str 
         TraceWindowQuery(
             organization_id=incident.organization_id,
             project_id=incident.project_id,
+            environment_id=incident.environment_id,
             window_start=datetime.fromisoformat(start_raw),
             window_end=datetime.fromisoformat(end_raw),
             prompt_version=summary.get("scope_id") if summary.get("scope_type") == "prompt_version" else None,
@@ -286,6 +312,8 @@ def analyze_incident_root_cause(
     if deployment is not None:
         deployment.prompt_version
         deployment.model_version
+        if deployment.risk_score is None:
+            deployment.risk_score = calculate_deployment_risk(db, deployment_id=deployment.id)
     hints = derive_root_cause_hints(
         incident=incident,
         current_traces=current_traces,
@@ -301,6 +329,7 @@ def analyze_incident_root_cause(
         _model_concentration_entry(hints=hints, deployment=deployment),
         _latency_change_entry(current_traces=current_traces, baseline_traces=baseline_traces),
         _retrieval_shift_entry(current_traces=current_traces, baseline_traces=baseline_traces),
+        _deployment_risk_correlation_entry(deployment=deployment),
         _error_cluster_entry(current_traces=current_traces),
     ]
     probabilities = _normalize_probabilities([entry for entry in entries if entry is not None])

@@ -1,6 +1,7 @@
 from app.services.auth import get_operator_context
 from app.services.root_cause_engine import analyze_incident_root_cause, get_incident_analysis
 from .test_api import auth_headers, create_operator, sign_in
+from .test_incident_command_center import _seed_incident_with_deployment
 from .test_incidents import _incident_for_type, _seed_success_rate_regression
 
 
@@ -62,3 +63,15 @@ def test_incident_analysis_service_matches_endpoint_shape(client, db_session, fa
     )
     assert str(report.incident.id) == str(incident.id)
     assert report.evidence["current_trace_ids"]
+
+
+def test_root_cause_engine_includes_deployment_correlation_when_risk_is_present(client, db_session, fake_queue):
+    owner_session, _, _, incident, _ = _seed_incident_with_deployment(client, db_session)
+
+    report = get_incident_analysis(
+        db_session,
+        get_operator_context(db_session, owner_session["session_token"]),
+        incident_id=incident.id,
+    )
+    cause_types = {item["cause_type"] for item in report.root_cause_probabilities}
+    assert "deployment_risk_correlation" in cause_types

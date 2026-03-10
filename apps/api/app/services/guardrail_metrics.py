@@ -8,16 +8,21 @@ from sqlalchemy.orm import Session
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.trace import Trace
+from app.services.environments import normalize_environment_name
 
 
-def get_guardrail_policy_metrics(db: Session, project_id: UUID) -> list[dict]:
+def get_guardrail_policy_metrics(db: Session, project_id: UUID, environment: str | None = None) -> list[dict]:
+    policy_statement = select(GuardrailPolicy).where(GuardrailPolicy.project_id == project_id)
+    if environment is not None:
+        policy_statement = policy_statement.where(
+            GuardrailPolicy.environment_ref.has(name=normalize_environment_name(environment))
+        )
     policies = db.scalars(
-        select(GuardrailPolicy)
-        .where(GuardrailPolicy.project_id == project_id)
+        policy_statement
         .order_by(GuardrailPolicy.created_at.asc(), GuardrailPolicy.id.asc())
     ).all()
 
-    aggregates = db.execute(
+    aggregate_statement = (
         select(
             GuardrailRuntimeEvent.policy_id.label("policy_id"),
             func.count(GuardrailRuntimeEvent.id).label("trigger_count"),
@@ -26,7 +31,12 @@ def get_guardrail_policy_metrics(db: Session, project_id: UUID) -> list[dict]:
         .join(GuardrailPolicy, GuardrailPolicy.id == GuardrailRuntimeEvent.policy_id)
         .where(GuardrailPolicy.project_id == project_id)
         .group_by(GuardrailRuntimeEvent.policy_id)
-    ).all()
+    )
+    if environment is not None:
+        aggregate_statement = aggregate_statement.where(
+            GuardrailPolicy.environment_ref.has(name=normalize_environment_name(environment))
+        )
+    aggregates = db.execute(aggregate_statement).all()
     aggregate_by_policy = {row.policy_id: row for row in aggregates}
 
     items = []
@@ -55,8 +65,8 @@ def get_guardrail_policy_metrics(db: Session, project_id: UUID) -> list[dict]:
     return items
 
 
-def get_recent_guardrail_events(db: Session, project_id: UUID, limit: int = 20) -> list[dict]:
-    events = db.execute(
+def get_recent_guardrail_events(db: Session, project_id: UUID, limit: int = 20, environment: str | None = None) -> list[dict]:
+    statement = (
         select(
             GuardrailRuntimeEvent.trace_id,
             GuardrailRuntimeEvent.action_taken,
@@ -69,7 +79,10 @@ def get_recent_guardrail_events(db: Session, project_id: UUID, limit: int = 20) 
         .where(GuardrailPolicy.project_id == project_id)
         .order_by(desc(GuardrailRuntimeEvent.created_at), desc(GuardrailRuntimeEvent.id))
         .limit(limit)
-    ).all()
+    )
+    if environment is not None:
+        statement = statement.where(GuardrailPolicy.environment_ref.has(name=normalize_environment_name(environment)))
+    events = db.execute(statement).all()
 
     trace_ids = [row.trace_id for row in events]
     existing_trace_ids = set()

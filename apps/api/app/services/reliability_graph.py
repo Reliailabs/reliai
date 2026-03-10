@@ -87,6 +87,7 @@ def _incident_window_traces(db: Session, *, incident: Incident) -> list[Trace]:
         TraceWindowQuery(
             organization_id=incident.organization_id,
             project_id=incident.project_id,
+            environment_id=incident.environment_id,
             window_start=window_start,
             window_end=window_end,
             prompt_version=summary.get("scope_id") if summary.get("scope_type") == "prompt_version" else None,

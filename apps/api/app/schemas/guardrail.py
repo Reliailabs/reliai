@@ -9,6 +9,7 @@ from app.schemas.common import APIModel
 
 class GuardrailPolicyCreate(BaseModel):
     policy_type: str = Field(pattern=r"^(structured_output|hallucination|cost_budget|latency_retry)$")
+    environment: str | None = Field(default=None, max_length=64)
     config_json: dict[str, Any]
     is_active: bool = True
 
@@ -29,6 +30,7 @@ class GuardrailPolicyCreate(BaseModel):
 class GuardrailPolicyRead(APIModel):
     id: UUID
     project_id: UUID
+    environment_id: UUID
     policy_type: str
     config_json: dict[str, Any]
     is_active: bool

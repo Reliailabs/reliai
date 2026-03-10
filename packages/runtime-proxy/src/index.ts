@@ -15,6 +15,7 @@ export interface RuntimeGuardrailPolicy {
 
 export interface RuntimeProviderRequest {
   projectId: string;
+  environment?: string;
   model: string;
   prompt: string;
   metadata?: Record<string, unknown> | null;

@@ -21,6 +21,7 @@ class RuntimeGuardrailPolicyListResponse(BaseModel):
 class RuntimeGuardrailEventCreate(BaseModel):
     trace_id: UUID
     policy_id: UUID
+    environment: str | None = Field(default=None, max_length=64)
     action_taken: str = Field(pattern=r"^(block|retry|fallback_model|log_only)$")
     provider_model: str | None = Field(default=None, max_length=255)
     latency_ms: int | None = Field(default=None, ge=0)
@@ -31,6 +32,7 @@ class RuntimeGuardrailEventRead(APIModel):
     id: UUID
     trace_id: UUID
     policy_id: UUID
+    environment_id: UUID
     action_taken: str
     provider_model: str | None
     latency_ms: int | None

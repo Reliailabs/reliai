@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -17,9 +17,15 @@ class DeploymentRiskScore(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     deployment_id: Mapped[UUID] = mapped_column(ForeignKey("deployments.id"), nullable=False, index=True)
+    environment_id: Mapped[UUID] = mapped_column(ForeignKey("environments.id"), nullable=False, index=True)
     risk_score: Mapped[float] = mapped_column(Numeric(6, 4), nullable=False)
     risk_level: Mapped[str] = mapped_column(String(16), nullable=False)
     analysis_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
 
     deployment = relationship("Deployment", back_populates="risk_score")
+    environment_ref = relationship("Environment", back_populates="deployment_risk_scores")

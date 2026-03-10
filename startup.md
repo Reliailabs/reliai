@@ -77,3 +77,17 @@ PYTHONPATH=/Users/robert/Documents/Reliai/apps/api /Users/robert/Documents/Relia
 cd /Users/robert/Documents/Reliai/apps/api
 PYTHONPATH=/Users/robert/Documents/Reliai/apps/api /Users/robert/Documents/Reliai/.venv/bin/python -m app.scripts.seed
 ```
+
+Correct. The platform-level internal dashboard is:
+
+- [http://127.0.0.1:3000/system/growth](http://127.0.0.1:3000/system/growth)
+
+That page is the internal platform health surface, not a customer/project view.
+
+Related internal pages:
+
+- Platform growth: [http://127.0.0.1:3000/system/growth](http://127.0.0.1:3000/system/growth)
+- Event pipeline: [http://127.0.0.1:3000/system/pipeline](http://127.0.0.1:3000/system/pipeline)
+- Customer reliability ops: [http://127.0.0.1:3000/system/customers](http://127.0.0.1:3000/system/customers)
+
+If you want, I can add a direct navigation link from [apps/web/app/(app)/system/growth/page.tsx](</Users/robert/Documents/Reliai/apps/web/app/(app)/system/growth/page.tsx>) to the new customer dashboard so the internal surfaces are connected.

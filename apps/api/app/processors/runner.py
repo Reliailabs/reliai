@@ -22,6 +22,7 @@ def run_processor_runner(
     enabled_processors: list[str] | None = None,
     group_id: str | None = None,
     consumer_name: str | None = None,
+    accepted_event_types: set[str] | None = None,
 ) -> list[DispatchReport]:
     settings = get_settings()
     registry = get_processor_registry()
@@ -34,9 +35,11 @@ def run_processor_runner(
         for message in consume_events(
             topic,
             group_id=group_id or f"{TRACE_EVENT_CONSUMER_GROUP_PREFIX}.processors",
-            max_events=max_events,
+            max_events=None if accepted_event_types is not None else max_events,
             timeout_ms=settings.event_stream_consumer_timeout_ms,
         ):
+            if accepted_event_types is not None and message.event_type not in accepted_event_types:
+                continue
             processors = processors_for_topic(message.topic, enabled_processors=selected_processors)
             if not processors:
                 logger.info("no processors enabled for topic", extra={"topic": message.topic})

@@ -1,13 +1,16 @@
 from app.models.alert_delivery import AlertDelivery
+from app.models.automation_rule import AutomationRule
 from app.models.api_key import APIKey
 from app.models.deployment import Deployment
 from app.models.deployment_event import DeploymentEvent
 from app.models.deployment_simulation import DeploymentSimulation
 from app.models.deployment_risk_score import DeploymentRiskScore
 from app.models.deployment_rollback import DeploymentRollback
+from app.models.environment import Environment
 from app.models.evaluation import Evaluation
 from app.models.evaluation_rollup import EvaluationRollup
 from app.models.event_processing_metric import EventProcessingMetric
+from app.models.external_processor import ExternalProcessor
 from app.models.guardrail_effectiveness import GuardrailEffectiveness
 from app.models.guardrail_event import GuardrailEvent
 from app.models.guardrail_policy import GuardrailPolicy
@@ -16,6 +19,7 @@ from app.models.global_model_reliability import GlobalModelReliability
 from app.models.incident import Incident
 from app.models.incident_root_cause import IncidentRootCause
 from app.models.incident_event import IncidentEvent
+from app.models.metadata_cardinality import MetadataCardinality
 from app.models.model_version import ModelVersion
 from app.models.model_reliability_pattern import ModelReliabilityPattern
 from app.models.onboarding_checklist import OnboardingChecklist
@@ -24,28 +28,34 @@ from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser
+from app.models.processor_failure import ProcessorFailure
 from app.models.project import Project
 from app.models.prompt_failure_pattern import PromptFailurePattern
 from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.reliability_metric import ReliabilityMetric
+from app.models.reliability_pattern import ReliabilityPattern
 from app.models.reliability_recommendation import ReliabilityRecommendation
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 from app.models.trace_evaluation import TraceEvaluation
+from app.models.trace_ingestion_policy import TraceIngestionPolicy
 from app.models.trace_retrieval_span import TraceRetrievalSpan
 
 __all__ = [
     "AlertDelivery",
+    "AutomationRule",
     "APIKey",
     "Deployment",
     "DeploymentEvent",
     "DeploymentSimulation",
     "DeploymentRiskScore",
     "DeploymentRollback",
+    "Environment",
     "Evaluation",
     "EvaluationRollup",
     "EventProcessingMetric",
+    "ExternalProcessor",
     "GuardrailEffectiveness",
     "GuardrailEvent",
     "GuardrailPolicy",
@@ -54,6 +64,7 @@ __all__ = [
     "Incident",
     "IncidentRootCause",
     "IncidentEvent",
+    "MetadataCardinality",
     "ModelVersion",
     "ModelReliabilityPattern",
     "OnboardingChecklist",
@@ -62,14 +73,17 @@ __all__ = [
     "OrganizationMember",
     "OperatorSession",
     "OperatorUser",
+    "ProcessorFailure",
     "Project",
     "PromptFailurePattern",
     "PromptVersion",
     "RegressionSnapshot",
     "ReliabilityMetric",
+    "ReliabilityPattern",
     "ReliabilityRecommendation",
     "RetrievalSpan",
     "Trace",
     "TraceEvaluation",
+    "TraceIngestionPolicy",
     "TraceRetrievalSpan",
 ]

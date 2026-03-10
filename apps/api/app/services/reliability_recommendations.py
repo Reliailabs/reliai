@@ -11,6 +11,8 @@ from app.models.deployment_simulation import DeploymentSimulation
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.reliability_recommendation import ReliabilityRecommendation
+from app.services.guardrail_recommendations import recommend_guardrails_from_patterns
+from app.services.reliability_pattern_mining import build_prompt_pattern_hash, get_pattern_risk
 from app.services.reliability_metrics import (
     METRIC_QUALITY_PASS_RATE,
     METRIC_STRUCTURED_OUTPUT_VALIDITY_RATE,
@@ -66,7 +68,11 @@ def generate_recommendations(db: Session, project_id: UUID) -> list[ReliabilityR
     latest_deployment = db.scalar(
         select(Deployment)
         .where(Deployment.project_id == project_id)
-        .options(selectinload(Deployment.risk_score))
+        .options(
+            selectinload(Deployment.risk_score),
+            selectinload(Deployment.prompt_version),
+            selectinload(Deployment.model_version),
+        )
         .order_by(desc(Deployment.deployed_at), desc(Deployment.id))
     )
     latest_simulation = db.scalar(
@@ -98,6 +104,22 @@ def generate_recommendations(db: Session, project_id: UUID) -> list[ReliabilityR
     ).first()
 
     items: list[ReliabilityRecommendation] = []
+    pattern_context_model_family = None
+    pattern_context_prompt_hash = None
+    if latest_deployment is not None:
+        pattern_context_model_family = (
+            latest_deployment.model_version.model_family
+            if latest_deployment.model_version is not None
+            else None
+        )
+        pattern_context_prompt_hash = build_prompt_pattern_hash(
+            str(latest_deployment.prompt_version_id) if latest_deployment.prompt_version_id is not None else None
+        )
+    pattern_risk = get_pattern_risk(
+        db,
+        model_family=pattern_context_model_family,
+        prompt_pattern_hash=pattern_context_prompt_hash,
+    )
 
     structured_validity = latest_metrics.get(METRIC_STRUCTURED_OUTPUT_VALIDITY_RATE)
     if structured_validity is not None and structured_validity.value_number < 0.9:
@@ -289,6 +311,26 @@ def generate_recommendations(db: Session, project_id: UUID) -> list[ReliabilityR
                     ),
                     "related_incident_types": ["structured_output_validity_drop", "latency_spike"],
                     "related_cause_types": ["error_cluster", "latency_change"],
+                },
+            )
+        )
+
+    for recommendation in recommend_guardrails_from_patterns(pattern_risk=pattern_risk):
+        items.append(
+            _create_recommendation(
+                db,
+                project_id=project_id,
+                recommendation_type="guardrail_intelligence",
+                severity=SEVERITY_WARNING,
+                title=str(recommendation["title"]),
+                description=str(recommendation["description"]),
+                evidence_json={
+                    "policy_type": recommendation["policy_type"],
+                    "recommended_action": recommendation["recommended_action"],
+                    "failure_probability": recommendation["failure_probability"],
+                    "pattern_risk": pattern_risk,
+                    "related_cause_types": ["cross_project_pattern"],
+                    "related_incident_types": ["latency_spike", "quality_drop"],
                 },
             )
         )

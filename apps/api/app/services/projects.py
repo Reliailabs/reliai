@@ -9,6 +9,7 @@ from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_organization_membership
+from app.services.environments import ensure_project_bootstrap_environments, normalize_environment_name
 from app.services.onboarding import mark_project_created
 from app.services.utils import slugify
 
@@ -24,7 +25,7 @@ def create_project(db: Session, organization_id, payload: ProjectCreate) -> Proj
         organization_id=organization.id,
         name=payload.name,
         slug=payload.slug or slugify(payload.name),
-        environment=payload.environment,
+        environment=normalize_environment_name(payload.environment),
         description=payload.description,
     )
     db.add(project)
@@ -38,6 +39,7 @@ def create_project(db: Session, organization_id, payload: ProjectCreate) -> Proj
         ) from exc
 
     mark_project_created(db, organization.id)
+    ensure_project_bootstrap_environments(db, project=project)
     db.commit()
     db.refresh(project)
     return project
@@ -47,6 +49,7 @@ def get_project(db: Session, project_id) -> Project:
     project = db.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project.environment = normalize_environment_name(project.environment)
     return project
 
 
@@ -58,4 +61,7 @@ def list_projects(db: Session, operator: OperatorContext, query: ProjectListQuer
     if query.organization_id is not None:
         statement = statement.where(Project.organization_id == query.organization_id)
     statement = statement.order_by(Project.name).limit(query.limit)
-    return db.scalars(statement).all()
+    projects = db.scalars(statement).all()
+    for project in projects:
+        project.environment = normalize_environment_name(project.environment)
+    return projects

@@ -13,6 +13,7 @@ from app.models.deployment_simulation import DeploymentSimulation
 from app.models.model_version import ModelVersion
 from app.models.project import Project
 from app.models.prompt_version import PromptVersion
+from app.services.environments import resolve_project_environment
 from app.services.reliability_intelligence import get_network_risk_adjustment
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 
@@ -69,6 +70,7 @@ def _simulation_query(
     *,
     organization_id: UUID,
     project_id: UUID,
+    environment_id: UUID,
     window_start: datetime,
     window_end: datetime,
     prompt_version: PromptVersion | None,
@@ -78,6 +80,7 @@ def _simulation_query(
     return TraceWindowQuery(
         organization_id=organization_id,
         project_id=project_id,
+        environment_id=environment_id,
         window_start=window_start,
         window_end=window_end,
         prompt_version=prompt_version.version if prompt_version is not None else None,
@@ -116,6 +119,7 @@ def _sample_historical_traces(
     *,
     organization_id: UUID,
     project_id: UUID,
+    environment_id: UUID,
     prompt_version: PromptVersion | None,
     model_version: ModelVersion | None,
     sample_size: int,
@@ -129,6 +133,7 @@ def _sample_historical_traces(
         _simulation_query(
             organization_id=organization_id,
             project_id=project_id,
+            environment_id=environment_id,
             window_start=recent_start,
             window_end=now,
             prompt_version=prompt_version,
@@ -149,6 +154,7 @@ def _sample_historical_traces(
         _simulation_query(
             organization_id=organization_id,
             project_id=project_id,
+            environment_id=environment_id,
             window_start=full_start,
             window_end=recent_start,
             prompt_version=prompt_version,
@@ -165,6 +171,7 @@ def _sample_historical_traces(
             TraceWindowQuery(
                 organization_id=organization_id,
                 project_id=project_id,
+                environment_id=environment_id,
                 window_start=recent_start,
                 window_end=now,
                 prompt_version=prompt_version.version if prompt_version is not None else None,
@@ -177,6 +184,7 @@ def _sample_historical_traces(
             TraceWindowQuery(
                 organization_id=organization_id,
                 project_id=project_id,
+                environment_id=environment_id,
                 window_start=full_start,
                 window_end=recent_start,
                 prompt_version=prompt_version.version if prompt_version is not None else None,
@@ -192,6 +200,7 @@ def _sample_historical_traces(
             TraceWindowQuery(
                 organization_id=organization_id,
                 project_id=project_id,
+                environment_id=environment_id,
                 window_start=recent_start,
                 window_end=now,
                 model_version_record_id=model_version.id,
@@ -204,6 +213,7 @@ def _sample_historical_traces(
             TraceWindowQuery(
                 organization_id=organization_id,
                 project_id=project_id,
+                environment_id=environment_id,
                 window_start=full_start,
                 window_end=recent_start,
                 model_version_record_id=model_version.id,
@@ -219,6 +229,7 @@ def _sample_historical_traces(
             TraceWindowQuery(
                 organization_id=organization_id,
                 project_id=project_id,
+                environment_id=environment_id,
                 window_start=recent_start,
                 window_end=now,
                 model_name=model_version.model_name,  # type: ignore[arg-type]
@@ -231,6 +242,7 @@ def _sample_historical_traces(
             TraceWindowQuery(
                 organization_id=organization_id,
                 project_id=project_id,
+                environment_id=environment_id,
                 window_start=full_start,
                 window_end=recent_start,
                 model_name=model_version.model_name,  # type: ignore[arg-type]
@@ -332,7 +344,11 @@ def _analysis_for_traces(
         db,
         prompt_version=prompt_version.version if prompt_version is not None else None,
         model_provider=model_version.provider if model_version is not None else None,
-        model_name=model_version.model_name if model_version is not None else None,
+        model_name=(
+            model_version.model_family
+            if model_version is not None and model_version.model_family is not None
+            else model_version.model_name if model_version is not None else None
+        ),
     )
     score = min(1.0, base_score + float(network_risk["value"]))
     risk_level = _risk_level(score)
@@ -400,18 +416,24 @@ def create_deployment_simulation(
     *,
     organization_id: UUID,
     project_id: UUID,
+    environment_name: str | None,
     prompt_version_id: UUID | None,
     model_version_id: UUID | None,
     sample_size: int,
 ) -> DeploymentSimulation:
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     prompt_version, model_version = _validate_registry_scope(
         db,
         project_id=project_id,
         prompt_version_id=prompt_version_id,
         model_version_id=model_version_id,
     )
+    environment = resolve_project_environment(db, project=project, name=environment_name)
     simulation = DeploymentSimulation(
         project_id=project_id,
+        environment_id=environment.id,
         prompt_version_id=prompt_version.id if prompt_version is not None else None,
         model_version_id=model_version.id if model_version is not None else None,
         trace_sample_size=sample_size,
@@ -421,6 +443,7 @@ def create_deployment_simulation(
         analysis_json={
             "status": SIMULATION_STATUS_QUEUED,
             "requested_sample_size": sample_size,
+            "environment": environment.name,
             "prompt_version_id": str(prompt_version.id) if prompt_version is not None else None,
             "model_version_id": str(model_version.id) if model_version is not None else None,
         },
@@ -456,6 +479,7 @@ def simulate_deployment(db: Session, *, simulation_id: UUID) -> DeploymentSimula
         db,
         organization_id=project.organization_id,
         project_id=simulation.project_id,
+        environment_id=simulation.environment_id,
         prompt_version=prompt_version,
         model_version=model_version,
         sample_size=simulation.trace_sample_size,

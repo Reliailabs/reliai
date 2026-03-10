@@ -4,7 +4,7 @@ from app.models.evaluation import Evaluation
 from app.models.incident import Incident
 from app.models.reliability_metric import ReliabilityMetric
 from app.models.trace import Trace
-from app.services.event_stream import TRACE_INGESTED_EVENT
+from app.services.event_stream import TRACE_EVALUATED_EVENT, TRACE_INGESTED_EVENT
 from app.workers.evaluation_consumer import run_evaluation_consumer
 from app.workers.regression_detection_consumer import run_regression_detection_consumer
 from app.workers.reliability_metrics_consumer import run_reliability_metrics_consumer
@@ -39,7 +39,16 @@ def test_trace_ingest_publishes_trace_event(client, db_session, fake_event_strea
     assert message.event_type == TRACE_INGESTED_EVENT
     assert message.key == project["id"]
     assert message.payload["trace_id"] == response["trace_id"]
+    assert message.payload["event_version"] == 1
+    assert message.payload["organization_id"] == organization["id"]
     assert message.payload["project_id"] == project["id"]
+    production_environment_id = next(
+        environment["id"]
+        for environment in project["environments"]
+        if environment["name"] == "production"
+    )
+    assert message.payload["environment_id"] == production_environment_id
+    assert message.payload["model"]["family"] in {"gpt-4.1-mini", "gpt-4-mini"}
 
 
 def test_trace_consumers_process_trace_event(
@@ -95,6 +104,14 @@ def test_trace_consumers_process_trace_event(
         )
 
     assert run_evaluation_consumer(max_events=20) == 20
+    messages = list(fake_event_stream.consume("trace_events"))
+    assert len([message for message in messages if message.event_type == TRACE_INGESTED_EVENT]) == 20
+    evaluated_messages = [message for message in messages if message.event_type == TRACE_EVALUATED_EVENT]
+    assert len(evaluated_messages) == 20
+    assert evaluated_messages[0].payload["metadata"]["evaluation_result"]["eval_type"] == "structured_validity"
+    assert "structured_output_valid" in evaluated_messages[0].payload["evaluation"]
+    assert evaluated_messages[0].payload["environment_id"] is not None
+
     assert run_trace_warehouse_consumer(max_events=20) == 20
     assert run_reliability_metrics_consumer(max_events=20) == 20
     assert run_regression_detection_consumer(max_events=20) == 20
@@ -103,6 +120,7 @@ def test_trace_consumers_process_trace_event(
     assert len(traces) == 20
     assert db_session.query(Evaluation).count() == 20
     assert len(fake_trace_warehouse.rows) == 20
+    assert all(row.environment_id is not None for row in fake_trace_warehouse.rows.values())
     assert db_session.query(ReliabilityMetric).count() > 0
     assert db_session.query(Incident).count() > 0
 
@@ -155,4 +173,6 @@ def test_trace_event_ordering_is_stable_per_project(client, db_session, fake_eve
         "2026-03-09T12:00:00Z",
         "2026-03-09T12:02:00Z",
     ]
-    assert [message.offset for message in first_project_messages] == [0, 1]
+    assert [message.offset for message in first_project_messages] == sorted(
+        message.offset for message in first_project_messages
+    )

@@ -10,11 +10,15 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.deployment import Deployment
 from app.models.deployment_event import DeploymentEvent
 from app.models.model_version import ModelVersion
+from app.models.project import Project
 from app.models.prompt_version import PromptVersion
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
 from app.services.deployment_risk_engine import get_deployment_risk_score
+from app.services.environments import normalize_environment_name, resolve_project_environment
+from app.services.event_stream import DeploymentCreatedEventPayload, publish_event
 from app.workers.deployment_risk_analysis import enqueue_deployment_risk_analysis
+from app.core.settings import get_settings
 
 DEPLOYMENT_EVENT_CREATED = "created"
 
@@ -50,17 +54,22 @@ def _validate_registry_scope(
 
 
 def create_deployment(db: Session, *, project_id: UUID, payload) -> Deployment:
+    project = db.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     prompt_version, model_version = _validate_registry_scope(
         db,
         project_id=project_id,
         prompt_version_id=payload.prompt_version_id,
         model_version_id=payload.model_version_id,
     )
+    environment = resolve_project_environment(db, project=project, name=payload.environment)
     deployment = Deployment(
         project_id=project_id,
+        environment_id=environment.id,
         prompt_version_id=prompt_version.id if prompt_version is not None else None,
         model_version_id=model_version.id if model_version is not None else None,
-        environment=payload.environment,
+        environment=environment.name,
         deployed_by=payload.deployed_by,
         deployed_at=_as_utc(payload.deployed_at),
         metadata_json=payload.metadata_json,
@@ -81,14 +90,30 @@ def create_deployment(db: Session, *, project_id: UUID, payload) -> Deployment:
         )
     )
     db.commit()
+    publish_event(
+        get_settings().event_stream_topic_traces,
+        DeploymentCreatedEventPayload(
+            project_id=str(deployment.project_id),
+            environment_id=str(deployment.environment_id),
+            deployment_id=str(deployment.id),
+            deployed_at=deployment.deployed_at,
+            environment=deployment.environment,
+            deployed_by=deployment.deployed_by,
+            prompt_version_id=str(prompt_version.id) if prompt_version is not None else None,
+            model_version_id=str(model_version.id) if model_version is not None else None,
+            metadata=deployment.metadata_json or {},
+        ).model_dump(mode="json"),
+    )
     enqueue_deployment_risk_analysis(deployment_id=deployment.id)
     return get_deployment_by_id(db, deployment_id=deployment.id)  # type: ignore[return-value]
 
 
-def list_project_deployments(db: Session, *, project_id: UUID) -> list[Deployment]:
+def list_project_deployments(db: Session, *, project_id: UUID, environment: str | None = None) -> list[Deployment]:
+    statement = select(Deployment).where(Deployment.project_id == project_id)
+    if environment is not None:
+        statement = statement.where(Deployment.environment == normalize_environment_name(environment))
     return db.scalars(
-        select(Deployment)
-        .where(Deployment.project_id == project_id)
+        statement
         .order_by(desc(Deployment.deployed_at), desc(Deployment.id))
     ).all()
 

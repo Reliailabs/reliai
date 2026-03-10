@@ -104,6 +104,13 @@ export default async function IncidentCommandCenterPage({
             >
               {incident.status}
             </span>
+            <Link
+              href={`/incidents/${incident.id}/investigate`}
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+            >
+              Investigate
+              <ShieldAlert className="h-4 w-4" />
+            </Link>
             <a
               href={command.trace_compare.compare_link}
               className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
@@ -111,6 +118,15 @@ export default async function IncidentCommandCenterPage({
               Open trace compare
               <GitCompareArrows className="h-4 w-4" />
             </a>
+            {command.deployment_context ? (
+              <Link
+                href={`/deployments/${command.deployment_context.deployment.id}`}
+                className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+              >
+                View deployment
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            ) : null}
           </div>
         </div>
       </header>

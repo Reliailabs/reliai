@@ -32,15 +32,28 @@ export interface ProjectRead {
   organization_id: string;
   name: string;
   slug: string;
-  environment: "prod" | "staging" | "dev";
+  environment: "production" | "staging" | "development";
   description: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  environments: EnvironmentRead[];
 }
 
 export interface ProjectListResponse {
   items: ProjectRead[];
+}
+
+export interface EnvironmentRead {
+  id: string;
+  project_id: string;
+  name: string;
+  type: "production" | "staging" | "development";
+  created_at: string;
+}
+
+export interface EnvironmentListResponse {
+  items: EnvironmentRead[];
 }
 
 export interface ReliabilityMetricPointRead {
@@ -185,6 +198,161 @@ export interface EventPipelineRead {
   recent_events_published: number;
   window_minutes: number;
   consumers: EventPipelineConsumerRead[];
+}
+
+export interface ExternalProcessorRead {
+  id: string;
+  project_id: string;
+  name: string;
+  event_type: string;
+  endpoint_url: string;
+  enabled: boolean;
+  has_secret: boolean;
+  created_at: string;
+  recent_failure_count: number;
+  last_failure_at: string | null;
+}
+
+export interface ExternalProcessorListResponse {
+  items: ExternalProcessorRead[];
+}
+
+export interface MetadataCardinalityRead {
+  field_name: string;
+  unique_values_count: number;
+  limit_reached: boolean;
+}
+
+export interface TraceIngestionPolicyRead {
+  project_id: string;
+  environment_id: string | null;
+  sampling_success_rate: number;
+  sampling_error_rate: number;
+  max_metadata_fields: number;
+  max_cardinality_per_field: number;
+  retention_days_success: number;
+  retention_days_error: number;
+  created_at: string;
+  sensitive_field_patterns: string[];
+  cardinality_summary: MetadataCardinalityRead[];
+}
+
+export interface GrowthDailyPoint {
+  date: string;
+  count: number;
+}
+
+export interface SystemGrowthTraceVolume {
+  today: number;
+  seven_day_avg: number;
+  growth_pct: number;
+  daily_points: GrowthDailyPoint[];
+}
+
+export interface SystemGrowthIncidentMetrics {
+  incidents_detected: number;
+  avg_mttr_minutes: number;
+  daily_points: GrowthDailyPoint[];
+}
+
+export interface SystemGrowthGuardrailMetrics {
+  retries: number;
+  fallbacks: number;
+  blocks: number;
+}
+
+export interface SystemGrowthUsageTiers {
+  under_1m: number;
+  "1m_10m": number;
+  "10m_100m": number;
+  "100m_plus": number;
+}
+
+export interface SystemGrowthRead {
+  trace_volume: SystemGrowthTraceVolume;
+  incident_metrics: SystemGrowthIncidentMetrics;
+  guardrail_metrics: SystemGrowthGuardrailMetrics;
+  usage_tiers: SystemGrowthUsageTiers;
+}
+
+export interface CustomerReliabilityProjectRead {
+  project_id: string;
+  project_name: string;
+  trace_volume_24h: number;
+  traces_per_day: number;
+  guardrail_rate: number;
+  incident_rate: number;
+  processor_failures: number;
+  processor_failure_rate: number;
+  pipeline_lag: number;
+  risk_level: string;
+}
+
+export interface CustomerReliabilityListRead {
+  projects: CustomerReliabilityProjectRead[];
+}
+
+export interface CustomerReliabilityDailyPointRead {
+  date: string;
+  trace_volume: number;
+}
+
+export interface CustomerReliabilityGuardrailEventRead {
+  created_at: string;
+  policy_type: string;
+  action_taken: string;
+  provider_model: string | null;
+  latency_ms: number | null;
+}
+
+export interface CustomerReliabilityIncidentRead {
+  incident_id: string;
+  title: string;
+  severity: string;
+  status: string;
+  started_at: string;
+}
+
+export interface CustomerReliabilityDeploymentRead {
+  deployment_id: string;
+  environment: string;
+  deployed_at: string;
+  deployed_by: string | null;
+}
+
+export interface CustomerReliabilityProcessorFailureRead {
+  failure_id: string;
+  processor_name: string;
+  event_type: string;
+  attempts: number;
+  last_error: string;
+  created_at: string;
+}
+
+export interface CustomerReliabilityDetailRead {
+  project: CustomerReliabilityProjectRead;
+  trace_volume_chart: CustomerReliabilityDailyPointRead[];
+  guardrail_triggers: CustomerReliabilityGuardrailEventRead[];
+  incident_history: CustomerReliabilityIncidentRead[];
+  deployment_changes: CustomerReliabilityDeploymentRead[];
+  processor_failures: CustomerReliabilityProcessorFailureRead[];
+  recent_timeline: TimelineEventRead[];
+}
+
+export interface ReliabilityPatternRead {
+  id: string;
+  pattern_type: string;
+  model_family: string | null;
+  prompt_pattern_hash: string | null;
+  failure_type: string;
+  failure_probability: number;
+  sample_count: number;
+  first_seen_at: string;
+  last_seen_at: string;
+}
+
+export interface ReliabilityPatternListResponse {
+  items: ReliabilityPatternRead[];
 }
 
 export interface ReliabilityRecommendation {
@@ -334,6 +502,7 @@ export interface DeploymentRollbackRead {
 export interface DeploymentRead {
   id: string;
   project_id: string;
+  environment_id: string;
   prompt_version_id: string | null;
   model_version_id: string | null;
   environment: string;
@@ -354,6 +523,20 @@ export interface DeploymentRiskRead {
   risk_level: "low" | "medium" | "high";
   analysis_json: Record<string, unknown>;
   recommendations: DeploymentRiskRecommendationRead[];
+  created_at: string;
+}
+
+export interface DeploymentSimulationRead {
+  id: string;
+  project_id: string;
+  environment_id: string;
+  prompt_version_id: string | null;
+  model_version_id: string | null;
+  trace_sample_size: number;
+  predicted_failure_rate: number | null;
+  predicted_latency_ms: number | null;
+  risk_level: "low" | "medium" | "high" | null;
+  analysis_json: Record<string, unknown>;
   created_at: string;
 }
 
@@ -672,6 +855,7 @@ export interface IncidentListItemRead {
   id: string;
   organization_id: string;
   project_id: string;
+  environment_id: string;
   project_name: string;
   incident_type: string;
   severity: "critical" | "high" | "medium" | "low";
@@ -773,4 +957,46 @@ export interface IncidentCommandCenterRead {
   guardrail_activity: GuardrailActivityRead[];
   related_regressions: RegressionSnapshotRead[];
   recent_signals: TimelineEventRead[];
+}
+
+export interface InvestigationRecommendationRead {
+  recommendation_id: string | null;
+  recommended_action: string;
+  confidence: number;
+  supporting_evidence: Record<string, unknown>;
+}
+
+export interface InvestigationKeyDifferenceRead {
+  dimension: string;
+  title: string;
+  current_value: string | null;
+  baseline_value: string | null;
+  changed: boolean;
+  metadata_json: Record<string, unknown> | null;
+}
+
+export interface IncidentInvestigationRead {
+  incident: IncidentDetailRead;
+  root_cause_analysis: {
+    incident_id: string;
+    generated_at: string;
+    ranked_causes: RootCauseProbabilityRead[];
+    evidence: Record<string, unknown>;
+    recommended_fix: RootCauseRecommendedFixRead;
+  };
+  deployment_context: {
+    deployment: IncidentDeploymentContextRead | null;
+    latest_risk_score: DeploymentRiskRead | null;
+    latest_simulation: DeploymentSimulationRead | null;
+    deployment_link: string | null;
+  };
+  trace_comparison: {
+    compare_link: string;
+    failing_trace_summary: TraceCompareItemRead | null;
+    baseline_trace_summary: TraceCompareItemRead | null;
+    comparison: Record<string, unknown>;
+    key_differences: InvestigationKeyDifferenceRead[];
+  };
+  recommendations: InvestigationRecommendationRead[];
+  guardrail_activity: GuardrailActivityRead[];
 }

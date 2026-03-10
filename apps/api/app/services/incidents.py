@@ -26,6 +26,7 @@ from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
 from app.services.deployments import most_recent_project_deployment
+from app.services.environments import normalize_environment_name
 from app.services.reliability_graph import sync_incident_root_causes
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 from app.schemas.incident import IncidentListQuery
@@ -591,6 +592,10 @@ def list_incidents(db: Session, operator: OperatorContext, query: IncidentListQu
     )
     if query.project_id is not None:
         statement = statement.where(Incident.project_id == query.project_id)
+    if query.environment is not None:
+        statement = statement.where(
+            Incident.environment_ref.has(name=normalize_environment_name(query.environment))
+        )
     if query.status is not None:
         statement = statement.where(Incident.status == query.status)
     if query.severity is not None:
@@ -707,6 +712,7 @@ def _load_window_traces(
         TraceWindowQuery(
             organization_id=incident.organization_id,
             project_id=incident.project_id,
+            environment_id=incident.environment_id,
             window_start=window_start,
             window_end=window_end,
             prompt_version=summary.get("scope_id") if summary.get("scope_type") == "prompt_version" else None,
@@ -743,6 +749,47 @@ def _selected_metadata(trace: Trace) -> dict[str, Any] | None:
         if len(excerpt) >= 6:
             break
     return excerpt or None
+
+
+def _prompt_version_record_item(trace: Trace) -> dict[str, Any] | None:
+    record = trace.prompt_version_record
+    if record is None:
+        return None
+    return {
+        "id": record.id,
+        "project_id": record.project_id,
+        "version": record.version,
+        "label": record.label,
+        "notes": record.notes,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }
+
+
+def _model_version_record_item(trace: Trace) -> dict[str, Any] | None:
+    record = trace.model_version_record
+    if record is None:
+        return None
+    return {
+        "id": record.id,
+        "project_id": record.project_id,
+        "provider": record.provider,
+        "model_name": record.model_name,
+        "model_version": record.model_version,
+        "model_family": record.model_family,
+        "model_revision": record.model_revision,
+        "route_key": record.route_key,
+        "label": record.label,
+        "identity_key": record.identity_key,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }
+
+
+def _coerce_utc_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 
 def _trace_sort_key(trace: Trace, *, incident_type: str, window_kind: str) -> tuple:
@@ -795,7 +842,9 @@ def _select_representative_traces(
 
     near_anchor = sorted(
         traces,
-        key=lambda trace: abs((trace.timestamp - incident.started_at).total_seconds()),
+        key=lambda trace: abs(
+            (_coerce_utc_datetime(trace.timestamp) - _coerce_utc_datetime(incident.started_at)).total_seconds()
+        ),
     )
     for trace in near_anchor:
         if trace.id in seen:
@@ -1433,13 +1482,18 @@ def derive_root_cause_hints(
                 }
             )
 
+    incident_started_at = _coerce_utc_datetime(incident.started_at) if incident is not None else None
     failing_after_start = (
-        [trace for trace in failing_current if trace.timestamp >= incident.started_at]
-        if incident is not None
+        [
+            trace
+            for trace in failing_current
+            if _coerce_utc_datetime(trace.timestamp) >= incident_started_at
+        ]
+        if incident_started_at is not None
         else []
     )
     if incident is not None and len(failing_current) >= 3 and len(failing_after_start) / len(failing_current) >= 0.70:
-        cluster_started_at = min(trace.timestamp for trace in failing_after_start)
+        cluster_started_at = min(_coerce_utc_datetime(trace.timestamp) for trace in failing_after_start)
         hints.append(
             {
                 "hint_type": "time_cluster",
@@ -1478,8 +1532,8 @@ def build_trace_compare_item(trace: Trace) -> dict[str, Any]:
         "prompt_tokens": trace.prompt_tokens,
         "completion_tokens": trace.completion_tokens,
         "total_cost_usd": trace.total_cost_usd,
-        "prompt_version_record": trace.prompt_version_record,
-        "model_version_record": trace.model_version_record,
+        "prompt_version_record": _prompt_version_record_item(trace),
+        "model_version_record": _model_version_record_item(trace),
         "structured_output": {
             "label": structured_output_label,
             "score": next(

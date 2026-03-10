@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -17,6 +17,7 @@ from app.models.incident import Incident
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
+from app.services.environments import normalize_environment_name
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,12 @@ class TimelineEvent:
     summary: str
     severity: str | None
     metadata: dict | None
+
+
+def _coerce_utc_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 
 def _format_decimal(value: Decimal | None) -> str:
@@ -269,16 +276,22 @@ def _regression_event(snapshot: RegressionSnapshot) -> TimelineEvent:
     )
 
 
-def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100) -> list[TimelineEvent]:
+def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100, environment: str | None = None) -> list[TimelineEvent]:
+    normalized_environment = normalize_environment_name(environment) if environment is not None else None
+    incidents_statement = select(Incident).where(Incident.project_id == project_id)
+    if normalized_environment is not None:
+        incidents_statement = incidents_statement.where(Incident.environment_ref.has(name=normalized_environment))
     incidents = db.scalars(
-        select(Incident)
-        .where(Incident.project_id == project_id)
+        incidents_statement
         .order_by(desc(Incident.started_at), desc(Incident.id))
         .limit(limit)
     ).all()
 
+    deployments_statement = select(Deployment)
+    if normalized_environment is not None:
+        deployments_statement = deployments_statement.where(Deployment.environment == normalized_environment)
     deployments = db.scalars(
-        select(Deployment)
+        deployments_statement
         .options(
             selectinload(Deployment.prompt_version),
             selectinload(Deployment.model_version),
@@ -302,12 +315,18 @@ def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100) -> 
             selectinload(GuardrailEvent.trace),
             selectinload(GuardrailEvent.policy),
         )
-        .where(Trace.project_id == project_id)
+        .where(
+            Trace.project_id == project_id,
+            Trace.environment == normalized_environment if normalized_environment is not None else True,
+        )
         .order_by(desc(GuardrailEvent.created_at), desc(GuardrailEvent.id))
         .limit(limit)
     ).all()
+    runtime_statement = select(GuardrailRuntimeEvent)
+    if normalized_environment is not None:
+        runtime_statement = runtime_statement.where(GuardrailRuntimeEvent.environment_ref.has(name=normalized_environment))
     guardrail_runtime_events = db.scalars(
-        select(GuardrailRuntimeEvent)
+        runtime_statement
         .join(GuardrailRuntimeEvent.policy)
         .options(selectinload(GuardrailRuntimeEvent.policy))
         .where(GuardrailPolicy.project_id == project_id)
@@ -321,7 +340,10 @@ def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100) -> 
             selectinload(DeploymentRiskScore.deployment).selectinload(Deployment.prompt_version),
             selectinload(DeploymentRiskScore.deployment).selectinload(Deployment.model_version),
         )
-        .where(Deployment.project_id == project_id)
+        .where(
+            Deployment.project_id == project_id,
+            Deployment.environment == normalized_environment if normalized_environment is not None else True,
+        )
         .order_by(desc(DeploymentRiskScore.created_at), desc(DeploymentRiskScore.id))
         .limit(limit)
     ).all()
@@ -333,6 +355,9 @@ def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100) -> 
         )
         .where(
             DeploymentSimulation.project_id == project_id,
+            DeploymentSimulation.environment_ref.has(name=normalized_environment)
+            if normalized_environment is not None
+            else True,
             DeploymentSimulation.risk_level.is_not(None),
         )
         .order_by(desc(DeploymentSimulation.created_at), desc(DeploymentSimulation.id))
@@ -350,7 +375,7 @@ def get_project_timeline(db: Session, *, project_id: UUID, limit: int = 100) -> 
     ]
     merged.sort(
         key=lambda item: (
-            item.timestamp,
+            _coerce_utc_datetime(item.timestamp),
             item.event_type,
             (item.metadata or {}).get("incident_id")
             or (item.metadata or {}).get("deployment_id")

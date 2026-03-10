@@ -15,6 +15,7 @@ class Deployment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
+    environment_id: Mapped[UUID] = mapped_column(ForeignKey("environments.id"), nullable=False, index=True)
     prompt_version_id: Mapped[UUID | None] = mapped_column(ForeignKey("prompt_versions.id"), index=True)
     model_version_id: Mapped[UUID | None] = mapped_column(ForeignKey("model_versions.id"), index=True)
     environment: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -23,6 +24,7 @@ class Deployment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
     project = relationship("Project", back_populates="deployments")
+    environment_ref = relationship("Environment", back_populates="deployments")
     prompt_version = relationship("PromptVersion", back_populates="deployments")
     model_version = relationship("ModelVersion", back_populates="deployments")
     events = relationship("DeploymentEvent", back_populates="deployment")

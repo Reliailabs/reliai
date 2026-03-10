@@ -16,9 +16,10 @@ from app.db.session import get_db
 from app.db import base as _db_base  # noqa: F401
 from app.main import app
 from app.models.base import Base
+from app.processors import automation_processor as automation_processor_module
 from app.processors import evaluation_processor as evaluation_processor_module
-from app.processors import warehouse_processor as warehouse_processor_module
 from app.services import event_stream as event_stream_service
+from app.services import external_processors as external_processors_service
 from app.services import event_processing_metrics as event_processing_metrics_service
 from app.services.trace_warehouse import (
     TraceWarehouseAggregateQuery,
@@ -36,6 +37,7 @@ from app.workers import reliability_metrics as reliability_metrics_worker
 from app.workers import reliability_recommendations as reliability_recommendations_worker
 from app.workers import reliability_sweep as reliability_sweep_worker
 from app.workers import scheduler as scheduler_worker
+from app.workers import trace_warehouse_consumer as trace_warehouse_consumer_worker
 
 
 class FakeQueue:
@@ -78,16 +80,22 @@ class FakeTraceWarehouseClient:
             timestamp = row.timestamp if row.timestamp.tzinfo is not None else row.timestamp.replace(tzinfo=timezone.utc)
             if row.organization_id != query.organization_id or row.project_id != query.project_id:
                 continue
+            if query.environment_id is not None and row.environment_id != query.environment_id:
+                continue
             if timestamp < window_start or timestamp >= window_end:
                 continue
-            if query.prompt_version_id is not None and row.prompt_version_id != query.prompt_version_id:
+            if query.prompt_version_id is not None and row.prompt_version_id != str(query.prompt_version_id):
                 continue
             if query.model_version_id is not None and row.model_version_id != query.model_version_id:
                 continue
             metadata = row.metadata_json or {}
             if query.prompt_version is not None and metadata.get("__prompt_version") != query.prompt_version:
                 continue
-            if query.model_name is not None and metadata.get("__model_name") != query.model_name:
+            if (
+                query.model_name is not None
+                and row.model_family != query.model_name
+                and metadata.get("__model_name") != query.model_name
+            ):
                 continue
             if query.latency_min_ms is not None and (row.latency_ms is None or row.latency_ms < query.latency_min_ms):
                 continue
@@ -219,6 +227,11 @@ def patch_event_processing_metrics_session(
         "SessionLocal",
         lambda: BorrowedSession(db_session),
     )
+    monkeypatch.setattr(
+        external_processors_service,
+        "SessionLocal",
+        lambda: BorrowedSession(db_session),
+    )
 
 
 @pytest.fixture
@@ -246,9 +259,10 @@ def fake_trace_warehouse(
 
     client = FakeTraceWarehouseClient()
     monkeypatch.setattr(trace_warehouse_service, "get_trace_warehouse_client", lambda: client)
+    monkeypatch.setattr(automation_processor_module, "SessionLocal", lambda: BorrowedSession(db_session))
     monkeypatch.setattr(evaluation_processor_module, "SessionLocal", lambda: BorrowedSession(db_session))
-    monkeypatch.setattr(warehouse_processor_module, "SessionLocal", lambda: BorrowedSession(db_session))
     monkeypatch.setattr(evaluation_worker, "SessionLocal", lambda: BorrowedSession(db_session))
     monkeypatch.setattr(reliability_metrics_worker, "SessionLocal", lambda: BorrowedSession(db_session))
     monkeypatch.setattr(regression_detection_worker, "SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr(trace_warehouse_consumer_worker, "SessionLocal", lambda: BorrowedSession(db_session))
     return client

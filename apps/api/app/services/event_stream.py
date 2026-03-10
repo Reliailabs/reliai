@@ -18,6 +18,10 @@ from app.core.settings import get_settings
 logger = logging.getLogger(__name__)
 
 TRACE_INGESTED_EVENT = "trace_ingested"
+TRACE_EVALUATED_EVENT = "trace_evaluated"
+REGRESSION_DETECTED_EVENT = "regression_detected"
+DEPLOYMENT_CREATED_EVENT = "deployment_created"
+AUTOMATION_TRIGGERED_EVENT = "automation_triggered"
 TRACE_EVENT_CONSUMER_GROUP_PREFIX = "reliai"
 IN_MEMORY_PARTITIONS = 8
 
@@ -28,11 +32,74 @@ class TraceIngestedEventPayload(BaseModel):
     event_type: str = TRACE_INGESTED_EVENT
     trace_id: str
     project_id: str
+    environment_id: str | None = None
     timestamp: datetime
     prompt_version_id: str | None = None
     model_version_id: str | None = None
     latency_ms: int | None = None
     success: bool
+    metadata: dict[str, Any] | None = None
+
+
+class TraceEvaluatedEventPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_type: str = TRACE_EVALUATED_EVENT
+    trace_id: str
+    project_id: str
+    environment_id: str | None = None
+    timestamp: datetime
+    prompt_version_id: str | None = None
+    model_version_id: str | None = None
+    evaluation_result: dict[str, Any]
+    structured_output_valid: bool | None = None
+    latency_ms: int | None = None
+    success: bool
+    metadata: dict[str, Any] | None = None
+
+
+class RegressionDetectedEventPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_type: str = REGRESSION_DETECTED_EVENT
+    project_id: str
+    environment_id: str | None = None
+    regression_snapshot_id: str
+    trace_id: str
+    detected_at: datetime
+    metric_name: str
+    current_value: float
+    baseline_value: float
+    delta_absolute: float
+    delta_percent: float | None = None
+    scope_type: str
+    scope_id: str
+    metadata: dict[str, Any] | None = None
+
+
+class DeploymentCreatedEventPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_type: str = DEPLOYMENT_CREATED_EVENT
+    project_id: str
+    environment_id: str | None = None
+    deployment_id: str
+    deployed_at: datetime
+    environment: str
+    deployed_by: str | None = None
+    prompt_version_id: str | None = None
+    model_version_id: str | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class AutomationTriggeredEventPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_type: str = AUTOMATION_TRIGGERED_EVENT
+    project_id: str
+    rule_id: str
+    source_event_type: str
+    action_type: str
     metadata: dict[str, Any] | None = None
 
 

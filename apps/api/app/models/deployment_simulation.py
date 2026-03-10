@@ -16,6 +16,7 @@ class DeploymentSimulation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
+    environment_id: Mapped[UUID] = mapped_column(ForeignKey("environments.id"), nullable=False, index=True)
     prompt_version_id: Mapped[UUID | None] = mapped_column(ForeignKey("prompt_versions.id"), index=True)
     model_version_id: Mapped[UUID | None] = mapped_column(ForeignKey("model_versions.id"), index=True)
     trace_sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -26,5 +27,6 @@ class DeploymentSimulation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     project = relationship("Project")
+    environment_ref = relationship("Environment", back_populates="deployment_simulations")
     prompt_version = relationship("PromptVersion")
     model_version = relationship("ModelVersion")
