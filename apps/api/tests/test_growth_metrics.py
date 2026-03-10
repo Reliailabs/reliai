@@ -10,7 +10,11 @@ from .test_api import auth_headers, create_operator, create_organization, create
 
 
 def _seed_growth_operator(client, db_session, *, suffix: str):
-    operator = create_operator(db_session, email=f"growth-{suffix}@acme.test")
+    operator = create_operator(
+        db_session,
+        email=f"growth-{suffix}@acme.test",
+        is_system_admin=True,
+    )
     session_payload = sign_in(client, email=operator.email)
     return session_payload
 

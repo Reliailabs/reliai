@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from app.schemas.common import APIModel
 
 PlanType = Literal["free", "pilot", "growth", "enterprise"]
-RoleType = Literal["owner", "admin", "member"]
+RoleType = Literal["owner", "admin", "member", "org_admin", "engineer", "viewer"]
 
 
 class OrganizationCreate(BaseModel):
@@ -22,6 +22,7 @@ class OrganizationRead(APIModel):
     id: UUID
     name: str
     slug: str
+    sso_required: bool = False
     plan: PlanType
     created_at: datetime
     updated_at: datetime

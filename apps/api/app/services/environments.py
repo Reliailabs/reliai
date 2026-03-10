@@ -21,6 +21,7 @@ from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.models.project import Project
 from app.models.trace import Trace
+from app.services.audit_log import log_action
 
 LEGACY_ENVIRONMENT_NAME_MAP = {
     "prod": ENVIRONMENT_PRODUCTION,
@@ -88,7 +89,14 @@ def get_default_environment(db: Session, *, project_id: UUID) -> Environment:
     return environment
 
 
-def create_environment(db: Session, *, project: Project, name: str, environment_type: str | None = None) -> Environment:
+def create_environment(
+    db: Session,
+    *,
+    project: Project,
+    name: str,
+    environment_type: str | None = None,
+    actor_user_id: UUID | None = None,
+) -> Environment:
     normalized_name = normalize_environment_name(name)
     environment = Environment(
         project_id=project.id,
@@ -96,6 +104,20 @@ def create_environment(db: Session, *, project: Project, name: str, environment_
         type=environment_type_for_name(environment_type or normalized_name),
     )
     db.add(environment)
+    if actor_user_id is not None:
+        log_action(
+            db,
+            organization_id=project.organization_id,
+            user_id=actor_user_id,
+            action="environment_created",
+            resource_type="environment",
+            resource_id=environment.id,
+            metadata={
+                "project_id": str(project.id),
+                "name": environment.name,
+                "type": environment.type,
+            },
+        )
     try:
         db.commit()
     except IntegrityError as exc:

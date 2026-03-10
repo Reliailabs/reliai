@@ -12,7 +12,9 @@ class OrganizationMember(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     organization_id: Mapped[UUID] = mapped_column(
         ForeignKey("organizations.id"), nullable=False, index=True
     )
-    auth_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    auth_user_id: Mapped[str | None] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="owner")
 
     organization = relationship("Organization", back_populates="members")
+    user = relationship("User", back_populates="memberships")

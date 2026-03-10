@@ -1,7 +1,5 @@
 import "server-only";
 
-import { cookies } from "next/headers";
-
 import type {
   AlertDeliveryListResponse,
   CustomerReliabilityDetailRead,
@@ -27,6 +25,7 @@ import type {
   ProjectReliabilityControlPanel,
   ProjectReliabilityRead,
   ProjectRead,
+  ReliabilityActionLogListResponse,
   ReliabilityPatternListResponse,
   ReliabilityPatternRead,
   ReliabilityRecommendation,
@@ -42,11 +41,11 @@ import type {
   TraceListResponse
 } from "@reliai/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-export const SESSION_COOKIE_NAME = "reliai_session";
+import { getApiAccessToken } from "@/lib/auth";
+import { API_URL } from "@/lib/constants";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const sessionToken = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  const sessionToken = await getApiAccessToken();
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
@@ -112,6 +111,10 @@ export async function getProjectReliabilityControlPanel(projectId: string, envir
   if (environment) params.set("environment", environment);
   const query = params.toString();
   return request<ProjectReliabilityControlPanel>(`/api/v1/projects/${projectId}/control-panel${query ? `?${query}` : ""}`);
+}
+
+export async function listProjectAutomationActions(projectId: string) {
+  return request<ReliabilityActionLogListResponse>(`/api/v1/projects/${projectId}/automation-actions`);
 }
 
 export async function getProjectRecommendations(projectId: string) {

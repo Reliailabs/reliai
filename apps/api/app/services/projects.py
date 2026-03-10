@@ -8,7 +8,7 @@ from app.models.organization import Organization
 from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectListQuery
 from app.services.auth import OperatorContext
-from app.services.authorization import require_organization_membership
+from app.services.authorization import authorized_project_ids, require_organization_membership
 from app.services.environments import ensure_project_bootstrap_environments, normalize_environment_name
 from app.services.onboarding import mark_project_created
 from app.services.utils import slugify
@@ -57,7 +57,11 @@ def list_projects(db: Session, operator: OperatorContext, query: ProjectListQuer
     if query.organization_id is not None:
         require_organization_membership(operator, query.organization_id)
 
-    statement = select(Project).where(Project.organization_id.in_(operator.organization_ids))
+    allowed_project_ids = authorized_project_ids(db, operator, organization_id=query.organization_id)
+    if not allowed_project_ids:
+        return []
+
+    statement = select(Project).where(Project.id.in_(allowed_project_ids))
     if query.organization_id is not None:
         statement = statement.where(Project.organization_id == query.organization_id)
     statement = statement.order_by(Project.name).limit(query.limit)

@@ -7,14 +7,16 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.settings import get_settings
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser
 from app.models.organization_member import OrganizationMember
+from app.models.user import User
 from app.schemas.auth import AuthSignInRequest
+from app.services.auth_workos import authenticate_workos_token
 
 
 def _current_time_like(value: datetime) -> datetime:
@@ -57,26 +59,100 @@ def hash_session_token(token: str) -> str:
 
 @dataclass
 class OperatorContext:
-    operator: OperatorUser
-    session: OperatorSession
+    operator: User
     memberships: list[OrganizationMember]
+    expires_at: datetime
+    auth_source: str
+    session_token: str | None = None
 
     @property
     def organization_ids(self) -> list[UUID]:
         return [membership.organization_id for membership in self.memberships]
 
 
-def create_operator_user(db: Session, *, email: str, password: str) -> OperatorUser:
+def _dev_auth_enabled() -> bool:
+    settings = get_settings()
+    return settings.app_env != "production" and settings.workos_dev_auth_enabled
+
+
+def _workos_enabled() -> bool:
+    settings = get_settings()
+    return bool(settings.workos_api_key and settings.workos_client_id)
+
+
+def _get_or_create_app_user(
+    db: Session,
+    *,
+    email: str,
+    legacy_operator_user_id: UUID | None = None,
+    workos_user_id: str | None = None,
+    is_active: bool = True,
+) -> User:
+    statement = select(User).where(User.email == email.strip().lower())
+    user = db.scalar(statement)
+    if user is None and workos_user_id is not None:
+        user = db.scalar(select(User).where(User.workos_user_id == workos_user_id))
+    if user is None and legacy_operator_user_id is not None:
+        user = db.scalar(select(User).where(User.legacy_operator_user_id == legacy_operator_user_id))
+    if user is None:
+        user = User(
+            id=legacy_operator_user_id or None,
+            legacy_operator_user_id=legacy_operator_user_id,
+            workos_user_id=workos_user_id,
+            email=email.strip().lower(),
+            is_active=is_active,
+        )
+        db.add(user)
+        db.flush()
+        return user
+
+    user.email = email.strip().lower()
+    user.is_active = is_active
+    if user.workos_user_id is None and workos_user_id is not None:
+        user.workos_user_id = workos_user_id
+    if user.legacy_operator_user_id is None and legacy_operator_user_id is not None:
+        user.legacy_operator_user_id = legacy_operator_user_id
+    db.add(user)
+    db.flush()
+    return user
+
+
+def create_operator_user(
+    db: Session,
+    *,
+    email: str,
+    password: str,
+    is_system_admin: bool = False,
+) -> OperatorUser:
     operator = OperatorUser(email=email.strip().lower(), password_hash=_hash_password(password))
     db.add(operator)
+    db.flush()
+    user = _get_or_create_app_user(
+        db,
+        email=operator.email,
+        legacy_operator_user_id=operator.id,
+        is_active=operator.is_active,
+    )
+    user.is_system_admin = is_system_admin
+    db.add(user)
     db.flush()
     return operator
 
 
-def sign_in_operator(db: Session, payload: AuthSignInRequest) -> tuple[OperatorUser, OperatorSession, str]:
+def sign_in_operator(db: Session, payload: AuthSignInRequest) -> tuple[User, OperatorSession, str]:
+    if not _dev_auth_enabled():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
     operator = db.scalar(select(OperatorUser).where(OperatorUser.email == payload.email))
     if operator is None or not operator.is_active or not verify_password(payload.password, operator.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    app_user = _get_or_create_app_user(
+        db,
+        email=operator.email,
+        legacy_operator_user_id=operator.id,
+        is_active=operator.is_active,
+    )
 
     plaintext_token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(days=get_settings().auth_session_days)
@@ -87,18 +163,26 @@ def sign_in_operator(db: Session, payload: AuthSignInRequest) -> tuple[OperatorU
     )
     db.add(session)
     db.commit()
-    db.refresh(operator)
+    db.refresh(app_user)
     db.refresh(session)
-    return operator, session, plaintext_token
+    return app_user, session, plaintext_token
 
 
-def get_operator_memberships(db: Session, operator_user_id: UUID) -> list[OrganizationMember]:
+def get_operator_memberships(db: Session, user_id: UUID) -> list[OrganizationMember]:
     return db.scalars(
-        select(OrganizationMember).where(OrganizationMember.auth_user_id == str(operator_user_id))
+        select(OrganizationMember).where(
+            or_(
+                OrganizationMember.user_id == user_id,
+                OrganizationMember.auth_user_id == str(user_id),
+            )
+        )
     ).all()
 
 
-def get_operator_context(db: Session, token: str) -> OperatorContext:
+def get_legacy_operator_context(db: Session, token: str) -> OperatorContext:
+    if not _dev_auth_enabled():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
+
     token_hash = hash_session_token(token)
     session = db.scalar(
         select(OperatorSession).where(
@@ -115,11 +199,33 @@ def get_operator_context(db: Session, token: str) -> OperatorContext:
     if operator is None or not operator.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
 
-    memberships = get_operator_memberships(db, operator.id)
+    app_user = _get_or_create_app_user(
+        db,
+        email=operator.email,
+        legacy_operator_user_id=operator.id,
+        is_active=operator.is_active,
+    )
+    memberships = get_operator_memberships(db, app_user.id)
     session.last_used_at = datetime.now(timezone.utc)
     db.add(session)
     db.commit()
-    return OperatorContext(operator=operator, session=session, memberships=memberships)
+    return OperatorContext(
+        operator=app_user,
+        memberships=memberships,
+        expires_at=session.expires_at,
+        auth_source="legacy",
+        session_token=token,
+    )
+
+
+def get_operator_context(db: Session, token: str) -> OperatorContext:
+    if _workos_enabled() and token.count(".") == 2:
+        return authenticate_workos_token(db, token)
+    if _dev_auth_enabled():
+        return get_legacy_operator_context(db, token)
+    if _workos_enabled():
+        return authenticate_workos_token(db, token)
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
 
 
 def revoke_session(db: Session, token: str) -> None:

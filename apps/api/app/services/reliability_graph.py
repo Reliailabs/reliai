@@ -20,6 +20,7 @@ from app.models.trace import Trace
 from app.models.trace_evaluation import TraceEvaluation
 from app.models.trace_retrieval_span import TraceRetrievalSpan
 from app.services.auth import OperatorContext
+from app.services.authorization import require_project_access
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 
 
@@ -162,10 +163,11 @@ def get_incident_graph(db: Session, operator: OperatorContext, incident_id: UUID
     incident = db.scalar(
         select(Incident)
         .options(joinedload(Incident.project), selectinload(Incident.root_causes))
-        .where(Incident.id == incident_id, Incident.organization_id.in_(operator.organization_ids))
+        .where(Incident.id == incident_id)
     )
     if incident is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    require_project_access(db, operator, incident.project_id)
 
     summary = incident.summary_json or {}
     regression_snapshot_ids = [UUID(value) for value in summary.get("regression_snapshot_ids", [])]

@@ -168,12 +168,40 @@ export interface ControlPanelModelReliability {
   structured_output_validity: number | null;
 }
 
+export interface ReliabilityActionLogRead {
+  id: string;
+  project_id: string;
+  rule_id: string | null;
+  action_type: string;
+  target: string;
+  status: string;
+  detail_json: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ReliabilityActionLogListResponse {
+  items: ReliabilityActionLogRead[];
+}
+
+export interface ControlPanelAutomaticAction {
+  action_id: string;
+  action_type: string;
+  target: string;
+  status: string;
+  created_at: string;
+}
+
+export interface ControlPanelAutomaticActions {
+  recent_actions: ControlPanelAutomaticAction[];
+}
+
 export interface ProjectReliabilityControlPanel {
   deployment_risk: ControlPanelDeploymentRisk;
   simulation: ControlPanelSimulation;
   incidents: ControlPanelIncidents;
   guardrails: ControlPanelGuardrails;
   model_reliability: ControlPanelModelReliability;
+  automatic_actions: ControlPanelAutomaticActions;
 }
 
 export interface EventPipelineConsumerRead {

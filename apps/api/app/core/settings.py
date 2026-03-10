@@ -31,6 +31,16 @@ class Settings(BaseSettings):
     api_key_hash_secret: str = "change-me"
     auth_session_hash_secret: str = "change-me-session-secret"
     auth_session_days: int = 14
+    workos_api_key: str | None = None
+    workos_client_id: str | None = None
+    workos_redirect_uri: str | None = None
+    workos_logout_redirect_uri: str | None = None
+    workos_cookie_password: str | None = None
+    workos_scim_webhook_secret: str | None = None
+    workos_dev_auth_enabled: bool = True
+    public_api_rate_limit_per_minute: int = 120
+    ingest_rate_limit_per_minute: int = 600
+    processor_dispatch_rate_limit_per_minute: int = 300
     trace_input_text_max_chars: int = 20000
     trace_output_text_max_chars: int = 20000
     trace_metadata_max_bytes: int = 16384

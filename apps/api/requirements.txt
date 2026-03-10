@@ -5,9 +5,11 @@ kafka-python==2.1.5
 psycopg[binary]==3.2.6
 pydantic-settings==2.8.1
 pytest==8.3.4
+PyJWT[crypto]==2.10.1
 python-dotenv==1.0.1
 redis==5.2.1
 rq==2.1.0
 ruff==0.9.7
 sqlalchemy==2.0.38
 uvicorn==0.34.0
+workos==5.22.0

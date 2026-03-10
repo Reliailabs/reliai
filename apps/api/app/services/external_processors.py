@@ -17,6 +17,7 @@ from app.db.session import SessionLocal
 from app.models.external_processor import ExternalProcessor
 from app.models.processor_failure import ProcessorFailure
 from app.models.project import Project
+from app.services.audit_log import log_action
 from app.schemas.external_processor import ExternalProcessorCreate, ExternalProcessorUpdate
 from app.services.event_stream import EventMessage
 
@@ -46,6 +47,7 @@ def create_external_processor(
     *,
     project: Project,
     payload: ExternalProcessorCreate,
+    actor_user_id: UUID | None = None,
 ) -> ExternalProcessor:
     processor = ExternalProcessor(
         project_id=project.id,
@@ -56,6 +58,20 @@ def create_external_processor(
         enabled=payload.enabled,
     )
     db.add(processor)
+    if actor_user_id is not None:
+        log_action(
+            db,
+            organization_id=project.organization_id,
+            user_id=actor_user_id,
+            action="processor_created",
+            resource_type="external_processor",
+            resource_id=processor.id,
+            metadata={
+                "project_id": str(project.id),
+                "event_type": processor.event_type,
+                "enabled": processor.enabled,
+            },
+        )
     db.commit()
     db.refresh(processor)
     return processor
@@ -67,6 +83,7 @@ def update_external_processor(
     project: Project,
     processor_id: UUID,
     payload: ExternalProcessorUpdate,
+    actor_user_id: UUID | None = None,
 ) -> ExternalProcessor:
     processor = db.scalar(
         select(ExternalProcessor).where(
@@ -87,6 +104,20 @@ def update_external_processor(
         processor.enabled = payload.enabled
 
     db.add(processor)
+    if actor_user_id is not None:
+        log_action(
+            db,
+            organization_id=project.organization_id,
+            user_id=actor_user_id,
+            action="processor_updated",
+            resource_type="external_processor",
+            resource_id=processor.id,
+            metadata={
+                "project_id": str(project.id),
+                "event_type": processor.event_type,
+                "enabled": processor.enabled,
+            },
+        )
     db.commit()
     db.refresh(processor)
     return processor

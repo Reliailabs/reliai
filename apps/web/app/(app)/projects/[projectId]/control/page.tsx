@@ -75,6 +75,18 @@ function recommendationTone(severity: string) {
   return "border-zinc-200 bg-zinc-50 text-zinc-800";
 }
 
+function actionStatusTone(status: string) {
+  if (status === "success") return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (status === "dry_run") return "border-sky-200 bg-sky-50 text-sky-800";
+  if (status.startsWith("skipped_")) return "border-amber-200 bg-amber-50 text-amber-800";
+  if (status === "error") return "border-rose-200 bg-rose-50 text-rose-800";
+  return "border-zinc-200 bg-zinc-50 text-zinc-800";
+}
+
+function actionLabel(actionType: string) {
+  return actionType.replaceAll("_", " ");
+}
+
 export default async function ProjectControlPanelPage({
   params,
   searchParams,
@@ -264,6 +276,46 @@ export default async function ProjectControlPanelPage({
               Register project-scoped HTTP processors for trace and evaluation events. Reliai signs each
               delivery and records failures after bounded retries so external automation stays inspectable.
             </p>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5 text-steel" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Automatic reliability actions</p>
+                <h2 className="mt-2 text-2xl font-semibold text-ink">Mitigation audit trail</h2>
+              </div>
+            </div>
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-steel">
+              When automation rules fire, Reliai records whether it rolled back, enabled a guardrail,
+              increased sampling, or skipped the action because of dry-run or cooldown safety controls.
+            </p>
+            {panel.automatic_actions.recent_actions.length === 0 ? (
+              <div className="mt-5 rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-sm leading-6 text-steel">
+                No automated mitigation actions recorded yet. Recent rollbacks, guardrail enables, sampling
+                changes, and processor disables will appear here once an automation rule executes.
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {panel.automatic_actions.recent_actions.map((action) => (
+                  <div key={action.action_id} className="rounded-[22px] border border-zinc-200 px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-ink">
+                          {actionLabel(action.action_type)}
+                          {" -> "}
+                          {action.target}
+                        </p>
+                        <p className="mt-1 text-sm text-steel">{formatTime(action.created_at)}</p>
+                      </div>
+                      <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${actionStatusTone(action.status)}`}>
+                        {action.status.replaceAll("_", " ")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card className="rounded-[28px] border-zinc-300 p-6">

@@ -42,11 +42,16 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     deployments = relationship("Deployment", back_populates="project")
     environments = relationship("Environment", back_populates="project")
     guardrail_policies = relationship("GuardrailPolicy", back_populates="project")
+    project_members = relationship("ProjectMember", back_populates="project")
     automation_rules = relationship("AutomationRule", back_populates="project")
     external_processors = relationship("ExternalProcessor", back_populates="project")
+    customer_exports = relationship("CustomerExport")
+    sdk_metrics = relationship("SDKMetric")
+    platform_extensions = relationship("PlatformExtension")
     trace_ingestion_policies = relationship("TraceIngestionPolicy", back_populates="project")
     metadata_cardinalities = relationship("MetadataCardinality", back_populates="project")
     processor_failures = relationship("ProcessorFailure", back_populates="project")
+    reliability_action_logs = relationship("ReliabilityActionLog", back_populates="project")
     reliability_recommendations = relationship(
         "ReliabilityRecommendation",
         back_populates="project",

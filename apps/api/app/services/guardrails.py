@@ -12,6 +12,7 @@ from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.project import Project
 from app.models.trace import Trace
+from app.services.audit_log import log_action
 from app.schemas.guardrail import GuardrailPolicyCreate
 from app.services.environments import normalize_environment_name, resolve_project_environment
 
@@ -38,7 +39,13 @@ def list_guardrail_policies(db: Session, *, project_id, environment: str | None 
     ).all()
 
 
-def create_guardrail_policy(db: Session, *, project: Project, payload: GuardrailPolicyCreate) -> GuardrailPolicy:
+def create_guardrail_policy(
+    db: Session,
+    *,
+    project: Project,
+    payload: GuardrailPolicyCreate,
+    actor_user_id=None,
+) -> GuardrailPolicy:
     environment = resolve_project_environment(db, project=project, name=payload.environment)
     policy = GuardrailPolicy(
         project_id=project.id,
@@ -48,6 +55,21 @@ def create_guardrail_policy(db: Session, *, project: Project, payload: Guardrail
         is_active=payload.is_active,
     )
     db.add(policy)
+    if actor_user_id is not None:
+        log_action(
+            db,
+            organization_id=project.organization_id,
+            user_id=actor_user_id,
+            action="guardrail_enabled" if payload.is_active else "guardrail_created",
+            resource_type="guardrail_policy",
+            resource_id=policy.id,
+            metadata={
+                "project_id": str(project.id),
+                "environment_id": str(environment.id),
+                "policy_type": payload.policy_type,
+                "is_active": payload.is_active,
+            },
+        )
     db.commit()
     db.refresh(policy)
     return policy

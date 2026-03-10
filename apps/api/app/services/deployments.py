@@ -12,6 +12,7 @@ from app.models.deployment_event import DeploymentEvent
 from app.models.model_version import ModelVersion
 from app.models.project import Project
 from app.models.prompt_version import PromptVersion
+from app.services.audit_log import log_action
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
 from app.services.deployment_risk_engine import get_deployment_risk_score
@@ -53,7 +54,13 @@ def _validate_registry_scope(
     return prompt_version, model_version
 
 
-def create_deployment(db: Session, *, project_id: UUID, payload) -> Deployment:
+def create_deployment(
+    db: Session,
+    *,
+    project_id: UUID,
+    payload,
+    actor_user_id: UUID | None = None,
+) -> Deployment:
     project = db.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
@@ -89,6 +96,21 @@ def create_deployment(db: Session, *, project_id: UUID, payload) -> Deployment:
             created_at=deployment.deployed_at,
         )
     )
+    if actor_user_id is not None:
+        log_action(
+            db,
+            organization_id=project.organization_id,
+            user_id=actor_user_id,
+            action="deployment_created",
+            resource_type="deployment",
+            resource_id=deployment.id,
+            metadata={
+                "project_id": str(project.id),
+                "environment": deployment.environment,
+                "prompt_version_id": str(prompt_version.id) if prompt_version is not None else None,
+                "model_version_id": str(model_version.id) if model_version is not None else None,
+            },
+        )
     db.commit()
     publish_event(
         get_settings().event_stream_topic_traces,

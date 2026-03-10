@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
 import { getSystemCustomerDetail } from "@/lib/api";
-import { requireOperatorSession } from "@/lib/auth";
 
 function compactNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -35,7 +34,6 @@ export default async function SystemCustomerDetailPage({
 }: {
   params: Promise<{ projectId: string }>;
 }) {
-  await requireOperatorSession();
   const { projectId } = await params;
   const detail = await getSystemCustomerDetail(projectId).catch((error: Error) => {
     if (error.message.includes("403") || error.message.includes("404")) {

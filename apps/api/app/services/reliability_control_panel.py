@@ -12,6 +12,7 @@ from app.models.global_model_reliability import GlobalModelReliability
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
+from app.models.reliability_action_log import ReliabilityActionLog
 from app.models.trace import Trace
 from app.services.environments import normalize_environment_name
 from app.services.global_metrics import (
@@ -192,5 +193,22 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID, environ
             "success_rate": model_metrics["success_rate"],
             "average_latency": model_metrics["average_latency"],
             "structured_output_validity": model_metrics["structured_output_validity"],
+        },
+        "automatic_actions": {
+            "recent_actions": [
+                {
+                    "action_id": item.id,
+                    "action_type": item.action_type,
+                    "target": item.target,
+                    "status": item.status,
+                    "created_at": item.created_at,
+                }
+                for item in db.scalars(
+                    select(ReliabilityActionLog)
+                    .where(ReliabilityActionLog.project_id == project_id)
+                    .order_by(desc(ReliabilityActionLog.created_at), desc(ReliabilityActionLog.id))
+                    .limit(5)
+                ).all()
+            ]
         },
     }

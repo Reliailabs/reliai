@@ -54,6 +54,7 @@ from app.schemas.guardrail import GuardrailPolicyCreate, GuardrailPolicyListResp
 from app.schemas.reliability_control_panel import (
     ProjectReliabilityControlPanelRead,
 )
+from app.schemas.reliability_action import ReliabilityActionLogListResponse, ReliabilityActionLogRead
 from app.schemas.reliability_recommendation import ReliabilityRecommendationRead
 from app.schemas.runtime_guardrail import (
     RuntimeGuardrailEventCreate,
@@ -179,7 +180,7 @@ from app.services.deployments import (
     get_deployment_detail,
     list_project_deployments,
 )
-from app.services.environments import create_environment, list_project_environments
+from app.services.environments import create_environment, list_project_environments, resolve_project_environment
 from app.services.event_processing_metrics import get_event_pipeline_status
 from app.services.external_processors import (
     create_external_processor,
@@ -229,7 +230,14 @@ from app.services.incidents import (
 )
 from app.services.regressions import get_regression_compare, get_regression_detail, list_project_regressions
 from app.services.root_cause_engine import get_incident_analysis
-from app.services.authorization import require_organization_membership, require_project_access
+from app.services.authorization import (
+    require_environment_access,
+    require_organization_membership,
+    require_org_role,
+    require_project_access,
+    require_project_role,
+    require_system_admin,
+)
 from app.services.organizations import create_organization, get_organization
 from app.services.organization_alert_targets import (
     get_org_alert_target,
@@ -259,6 +267,7 @@ from app.services.reliability_metrics import (
 )
 from app.services.reliability_graph import get_incident_graph
 from app.services.reliability_control_panel import get_project_reliability_control_panel
+from app.services.reliability_actions import list_project_reliability_actions
 from app.services.reliability_pattern_mining import get_reliability_pattern, list_reliability_patterns
 from app.services.reliability_recommendations import (
     generate_recommendations,
@@ -442,6 +451,10 @@ def _reliability_recommendation_item(item) -> ReliabilityRecommendationRead:
         evidence_json=item.evidence_json,
         created_at=item.created_at,
     )
+
+
+def _reliability_action_log_item(item) -> ReliabilityActionLogRead:
+    return ReliabilityActionLogRead.model_validate(item)
 
 
 def _project_from_session_or_api_key(
@@ -892,7 +905,7 @@ def get_event_pipeline_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> EventPipelineResponse:
-    del operator
+    require_system_admin(operator)
     return EventPipelineResponse(pipeline=_event_pipeline_item(get_event_pipeline_status(db)))
 
 
@@ -901,6 +914,7 @@ def get_system_customers_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> CustomerReliabilityListRead:
+    require_system_admin(operator)
     items = list_customer_reliability_projects(db, operator=operator)
     return CustomerReliabilityListRead(
         projects=[CustomerReliabilityProjectRead.model_validate(item) for item in items]
@@ -913,6 +927,7 @@ def get_system_customer_detail_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> CustomerReliabilityDetailRead:
+    require_system_admin(operator)
     return CustomerReliabilityDetailRead.model_validate(
         get_customer_reliability_project_detail(db, operator=operator, project_id=project_id)
     )
@@ -923,7 +938,7 @@ def get_system_growth_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> SystemGrowthRead:
-    del operator
+    require_system_admin(operator)
     return SystemGrowthRead.model_validate(get_growth_metrics(db))
 
 
@@ -1006,7 +1021,11 @@ def sign_in_operator_endpoint(
     operator, session, session_token = sign_in_operator(db, payload)
     return AuthSessionResponse(
         session_token=session_token,
-        operator=OperatorRead(id=operator.id, email=operator.email),
+        operator=OperatorRead(
+            id=operator.id,
+            email=operator.email,
+            is_system_admin=operator.is_system_admin,
+        ),
         memberships=[
             OperatorMembershipRead(organization_id=membership.organization_id, role=membership.role)
             for membership in get_operator_memberships(db, operator.id)
@@ -1020,12 +1039,16 @@ def auth_session_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> AuthSessionResponse:
     return AuthSessionResponse(
-        operator=OperatorRead(id=operator.operator.id, email=operator.operator.email),
+        operator=OperatorRead(
+            id=operator.operator.id,
+            email=operator.operator.email,
+            is_system_admin=operator.operator.is_system_admin,
+        ),
         memberships=[
             OperatorMembershipRead(organization_id=membership.organization_id, role=membership.role)
             for membership in operator.memberships
         ],
-        expires_at=operator.session.expires_at,
+        expires_at=operator.expires_at,
     )
 
 
@@ -1036,7 +1059,9 @@ def sign_out_operator_endpoint(
 ) -> Response:
     if authorization is None or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
-    revoke_session(db, authorization[7:])
+    token = authorization[7:]
+    if token.count(".") != 2:
+        revoke_session(db, token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -1074,7 +1099,7 @@ def upsert_org_alert_target_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OrganizationAlertTargetRead:
-    require_organization_membership(operator, organization_id)
+    require_org_role(operator, organization_id, "org_admin")
     target = upsert_org_alert_target(db, organization_id=organization_id, payload=payload)
     return OrganizationAlertTargetRead(**org_alert_target_read_model(target))
 
@@ -1088,7 +1113,7 @@ def enable_org_alert_target_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OrganizationAlertTargetRead:
-    require_organization_membership(operator, organization_id)
+    require_org_role(operator, organization_id, "org_admin")
     target = set_org_alert_target_enabled(db, organization_id=organization_id, enabled=True)
     return OrganizationAlertTargetRead(**org_alert_target_read_model(target))
 
@@ -1102,7 +1127,7 @@ def disable_org_alert_target_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OrganizationAlertTargetRead:
-    require_organization_membership(operator, organization_id)
+    require_org_role(operator, organization_id, "org_admin")
     target = set_org_alert_target_enabled(db, organization_id=organization_id, enabled=False)
     return OrganizationAlertTargetRead(**org_alert_target_read_model(target))
 
@@ -1116,7 +1141,7 @@ def test_org_alert_target_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OrganizationAlertTargetTestResponse:
-    require_organization_membership(operator, organization_id)
+    require_org_role(operator, organization_id, "org_admin")
     success, detail = test_org_alert_target(db, organization_id)
     return OrganizationAlertTargetTestResponse(
         success=success,
@@ -1136,7 +1161,7 @@ def create_project_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> ProjectRead:
-    require_organization_membership(operator, organization_id)
+    require_org_role(operator, organization_id, "org_admin")
     return create_project(db, organization_id, payload)
 
 
@@ -1181,8 +1206,14 @@ def create_project_environment_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> EnvironmentRead:
-    project = require_project_access(db, operator, project_id)
-    environment = create_environment(db, project=project, name=payload.name, environment_type=payload.type)
+    project = require_project_role(db, operator, project_id, "engineer")
+    environment = create_environment(
+        db,
+        project=project,
+        name=payload.name,
+        environment_type=payload.type,
+        actor_user_id=operator.operator.id,
+    )
     return EnvironmentRead.model_validate(environment)
 
 
@@ -1210,8 +1241,13 @@ def create_project_processor_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> ExternalProcessorRead:
-    project = require_project_access(db, operator, project_id)
-    processor = create_external_processor(db, project=project, payload=payload)
+    project = require_project_role(db, operator, project_id, "engineer")
+    processor = create_external_processor(
+        db,
+        project=project,
+        payload=payload,
+        actor_user_id=operator.operator.id,
+    )
     return ExternalProcessorRead.model_validate(processor_read_model(db, processor))
 
 
@@ -1223,12 +1259,13 @@ def update_project_processor_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> ExternalProcessorRead:
-    project = require_project_access(db, operator, project_id)
+    project = require_project_role(db, operator, project_id, "engineer")
     processor = update_external_processor(
         db,
         project=project,
         processor_id=processor_id,
         payload=payload,
+        actor_user_id=operator.operator.id,
     )
     return ExternalProcessorRead.model_validate(processor_read_model(db, processor))
 
@@ -1250,7 +1287,7 @@ def update_project_ingestion_policy_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> TraceIngestionPolicyRead:
-    project = require_project_access(db, operator, project_id)
+    project = require_project_role(db, operator, project_id, "engineer")
     upsert_project_ingestion_policy(db, project=project, payload=payload)
     return _trace_ingestion_policy_item(db, project)
 
@@ -1263,6 +1300,8 @@ def list_project_guardrails_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> GuardrailPolicyListResponse:
     require_project_access(db, operator, project_id)
+    if environment is not None:
+        require_environment_access(db, operator, project_id, environment)
     items = list_guardrail_policies(db, project_id=project_id, environment=environment)
     return GuardrailPolicyListResponse(items=[GuardrailPolicyRead.model_validate(item) for item in items])
 
@@ -1278,8 +1317,13 @@ def create_project_guardrail_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> GuardrailPolicyRead:
-    project = require_project_access(db, operator, project_id)
-    policy = create_guardrail_policy(db, project=project, payload=payload)
+    project = require_project_role(db, operator, project_id, "engineer")
+    policy = create_guardrail_policy(
+        db,
+        project=project,
+        payload=payload,
+        actor_user_id=operator.operator.id,
+    )
     return GuardrailPolicyRead.model_validate(policy)
 
 
@@ -1291,12 +1335,14 @@ def get_project_guardrail_metrics_endpoint(
     x_api_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
 ) -> GuardrailMetricsRead:
-    _project_from_session_or_api_key(
+    project = _project_from_session_or_api_key(
         db=db,
         project_id=project_id,
         x_api_key=x_api_key,
         authorization=authorization,
     )
+    if environment is not None:
+        resolve_project_environment(db, project=project, name=environment)
     return GuardrailMetricsRead(
         policies=[_guardrail_policy_metrics_item(item) for item in get_guardrail_policy_metrics(db, project_id, environment)],
         recent_events=[
@@ -1317,8 +1363,13 @@ def create_deployment_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> DeploymentRead:
-    require_project_access(db, operator, project_id)
-    deployment = create_deployment(db, project_id=project_id, payload=payload)
+    require_project_role(db, operator, project_id, "engineer")
+    deployment = create_deployment(
+        db,
+        project_id=project_id,
+        payload=payload,
+        actor_user_id=operator.operator.id,
+    )
     return _deployment_item(deployment)
 
 
@@ -1330,6 +1381,8 @@ def list_project_deployments_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> DeploymentListResponse:
     require_project_access(db, operator, project_id)
+    if environment is not None:
+        require_environment_access(db, operator, project_id, environment)
     deployments = list_project_deployments(db, project_id=project_id, environment=environment)
     return DeploymentListResponse(items=[_deployment_item(item) for item in deployments])
 
@@ -1345,7 +1398,7 @@ def create_deployment_simulation_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> DeploymentSimulationRead:
-    project = require_project_access(db, operator, project_id)
+    project = require_project_role(db, operator, project_id, "engineer")
     simulation = create_deployment_simulation(
         db,
         organization_id=project.organization_id,
@@ -1403,6 +1456,8 @@ def get_project_reliability_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> ProjectReliabilityRead:
     project = require_project_access(db, operator, project_id)
+    if environment is not None:
+        require_environment_access(db, operator, project_id, environment)
     latest = latest_project_reliability_metrics(db, project_id=project_id)
     metric_values = {
         "detection_latency_p90": latest.get(METRIC_INCIDENT_DETECTION_LATENCY_P90).value_number
@@ -1497,6 +1552,8 @@ def get_project_timeline_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> TimelineResponse:
     require_project_access(db, operator, project_id)
+    if environment is not None:
+        require_environment_access(db, operator, project_id, environment)
     items = get_project_timeline(db, project_id=project_id, limit=max(1, min(limit, 200)), environment=environment)
     return TimelineResponse(items=[TimelineEventRead.model_validate(item) for item in items])
 
@@ -1512,8 +1569,28 @@ def get_project_reliability_control_panel_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> ProjectReliabilityControlPanelRead:
     require_project_access(db, operator, project_id)
+    if environment is not None:
+        require_environment_access(db, operator, project_id, environment)
     return ProjectReliabilityControlPanelRead.model_validate(
         get_project_reliability_control_panel(db, project_id, environment)
+    )
+
+
+@router.get(
+    "/projects/{project_id}/automation-actions",
+    response_model=ReliabilityActionLogListResponse,
+)
+def list_project_automation_actions_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ReliabilityActionLogListResponse:
+    require_project_access(db, operator, project_id)
+    return ReliabilityActionLogListResponse(
+        items=[
+            _reliability_action_log_item(item)
+            for item in list_project_reliability_actions(db, project_id=project_id)
+        ]
     )
 
 
@@ -1795,6 +1872,8 @@ def acknowledge_incident_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> IncidentDetailRead:
+    incident = get_incident_detail(db, operator, incident_id)
+    require_project_role(db, operator, incident.project_id, "engineer")
     incident = acknowledge_incident(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
@@ -1817,6 +1896,8 @@ def assign_incident_owner_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> IncidentDetailRead:
+    incident = get_incident_detail(db, operator, incident_id)
+    require_project_role(db, operator, incident.project_id, "engineer")
     incident = assign_incident_owner(
         db,
         operator,
@@ -1843,6 +1924,8 @@ def resolve_incident_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> IncidentDetailRead:
+    incident = get_incident_detail(db, operator, incident_id)
+    require_project_role(db, operator, incident.project_id, "engineer")
     incident = resolve_incident(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
@@ -1864,6 +1947,8 @@ def reopen_incident_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> IncidentDetailRead:
+    incident = get_incident_detail(db, operator, incident_id)
+    require_project_role(db, operator, incident.project_id, "engineer")
     incident = reopen_incident(db, operator, incident_id)
     regressions = get_incident_regressions(db, incident)
     traces = get_incident_traces(db, incident)
@@ -2053,6 +2138,8 @@ def list_traces_endpoint(
 ) -> TraceListResponse:
     if filters.project_id is not None:
         require_project_access(db, operator, filters.project_id)
+        if filters.environment is not None:
+            require_environment_access(db, operator, filters.project_id, filters.environment)
     result = list_traces(db, operator, filters)
     return TraceListResponse(items=result.items, next_cursor=result.next_cursor)
 
@@ -2065,6 +2152,8 @@ def list_project_traces_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> TraceListResponse:
     require_project_access(db, operator, project_id)
+    if filters.environment is not None:
+        require_environment_access(db, operator, project_id, filters.environment)
     result = list_traces(
         db,
         operator,
@@ -2216,7 +2305,7 @@ def create_api_key_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> APIKeyCreateResponse:
-    project = require_project_access(db, operator, project_id)
+    project = require_project_role(db, operator, project_id, "engineer")
     key_record, plaintext_key = create_api_key(db, project.id, payload)
     return APIKeyCreateResponse(
         api_key=plaintext_key, api_key_record=APIKeyRead.model_validate(key_record)

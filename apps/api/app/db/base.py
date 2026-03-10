@@ -1,6 +1,8 @@
+from app.models.audit_log import AuditLog
 from app.models.alert_delivery import AlertDelivery
 from app.models.automation_rule import AutomationRule
 from app.models.api_key import APIKey
+from app.models.customer_export import CustomerExport
 from app.models.deployment import Deployment
 from app.models.deployment_event import DeploymentEvent
 from app.models.deployment_simulation import DeploymentSimulation
@@ -28,25 +30,34 @@ from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser
+from app.models.platform_extension import PlatformExtension
 from app.models.processor_failure import ProcessorFailure
 from app.models.project import Project
+from app.models.project_member import ProjectMember
 from app.models.prompt_failure_pattern import PromptFailurePattern
 from app.models.prompt_version import PromptVersion
 from app.models.reliability_metric import ReliabilityMetric
+from app.models.reliability_action_log import ReliabilityActionLog
 from app.models.reliability_pattern import ReliabilityPattern
 from app.models.reliability_recommendation import ReliabilityRecommendation  # noqa: F401
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.retrieval_span import RetrievalSpan
+from app.models.public_api_key import PublicApiKey
+from app.models.sdk_metric import SDKMetric
 from app.models.trace import Trace
 from app.models.trace_evaluation import TraceEvaluation
 from app.models.trace_ingestion_policy import TraceIngestionPolicy
 from app.models.trace_retrieval_span import TraceRetrievalSpan
 from app.models.model_version import ModelVersion
+from app.models.user import User
+from app.models.usage_quota import UsageQuota
 
 __all__ = [
     "AlertDelivery",
+    "AuditLog",
     "AutomationRule",
     "APIKey",
+    "CustomerExport",
     "Deployment",
     "DeploymentEvent",
     "DeploymentSimulation",
@@ -73,17 +84,24 @@ __all__ = [
     "OrganizationMember",
     "OperatorSession",
     "OperatorUser",
+    "PlatformExtension",
     "ProcessorFailure",
     "Project",
+    "ProjectMember",
     "PromptFailurePattern",
     "PromptVersion",
     "ModelVersion",
+    "ReliabilityActionLog",
     "ReliabilityMetric",
     "ReliabilityPattern",
     "RegressionSnapshot",
+    "PublicApiKey",
     "RetrievalSpan",
+    "SDKMetric",
     "Trace",
     "TraceEvaluation",
     "TraceIngestionPolicy",
     "TraceRetrievalSpan",
+    "User",
+    "UsageQuota",
 ]

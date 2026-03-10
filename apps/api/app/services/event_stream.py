@@ -22,6 +22,18 @@ TRACE_EVALUATED_EVENT = "trace_evaluated"
 REGRESSION_DETECTED_EVENT = "regression_detected"
 DEPLOYMENT_CREATED_EVENT = "deployment_created"
 AUTOMATION_TRIGGERED_EVENT = "automation_triggered"
+SDK_REQUEST_EVENT = "sdk_request"
+SDK_ERROR_EVENT = "sdk_error"
+SDK_LATENCY_EVENT = "sdk_latency"
+SDK_RETRY_EVENT = "sdk_retry"
+PLATFORM_DEGRADED_EVENT = "platform_degraded"
+PLATFORM_RECOVERED_EVENT = "platform_recovered"
+SDK_EVENT_TYPES = {
+    SDK_REQUEST_EVENT,
+    SDK_ERROR_EVENT,
+    SDK_LATENCY_EVENT,
+    SDK_RETRY_EVENT,
+}
 TRACE_EVENT_CONSUMER_GROUP_PREFIX = "reliai"
 IN_MEMORY_PARTITIONS = 8
 

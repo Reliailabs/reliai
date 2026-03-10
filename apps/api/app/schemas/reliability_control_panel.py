@@ -44,9 +44,22 @@ class ControlPanelModelReliabilityRead(APIModel):
     structured_output_validity: float | None
 
 
+class ControlPanelAutomaticActionRead(APIModel):
+    action_id: UUID
+    action_type: str
+    target: str
+    status: str
+    created_at: datetime
+
+
+class ControlPanelAutomaticActionsRead(APIModel):
+    recent_actions: list[ControlPanelAutomaticActionRead]
+
+
 class ProjectReliabilityControlPanelRead(APIModel):
     deployment_risk: ControlPanelDeploymentRiskRead
     simulation: ControlPanelSimulationRead
     incidents: ControlPanelIncidentsRead
     guardrails: ControlPanelGuardrailsRead
     model_reliability: ControlPanelModelReliabilityRead
+    automatic_actions: ControlPanelAutomaticActionsRead

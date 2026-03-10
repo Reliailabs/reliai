@@ -14,8 +14,19 @@ from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
 from app.workers.evaluations import run_trace_evaluations
 
 
-def create_operator(db_session, *, email: str, password: str = "reliai-test-password"):
-    operator = create_operator_user(db_session, email=email, password=password)
+def create_operator(
+    db_session,
+    *,
+    email: str,
+    password: str = "reliai-test-password",
+    is_system_admin: bool = False,
+):
+    operator = create_operator_user(
+        db_session,
+        email=email,
+        password=password,
+        is_system_admin=is_system_admin,
+    )
     db_session.commit()
     db_session.refresh(operator)
     return operator
@@ -526,7 +537,7 @@ def test_trace_detail_is_tenant_safe_and_includes_evaluations(client, db_session
     assert payload["evaluations"][0]["label"] == "pass"
 
     forbidden = client.get(f"/api/v1/traces/{trace_id}", headers=auth_headers(owner_two_session))
-    assert forbidden.status_code == 404
+    assert forbidden.status_code == 403
 
     stored_evaluation = db_session.query(Evaluation).filter(Evaluation.trace_id == UUID(trace_id)).one()
     assert stored_evaluation.label == "pass"
@@ -545,4 +556,4 @@ def test_membership_row_created_for_operator_owned_organization(client, db_sessi
         )
         .one()
     )
-    assert membership.role == "owner"
+    assert membership.role == "org_admin"

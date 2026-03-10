@@ -3,7 +3,6 @@ import { ArrowLeft, BrainCircuit, ChevronRight, ShieldAlert, TriangleAlert, Wayp
 
 import { Card } from "@/components/ui/card";
 import { getReliabilityPatterns } from "@/lib/api";
-import { requireOperatorSession } from "@/lib/auth";
 
 function percent(value: number) {
   return `${(value * 100).toFixed(value >= 0.1 ? 1 : 2)}%`;
@@ -23,7 +22,6 @@ function probabilityTone(value: number) {
 }
 
 export default async function ReliabilityPatternsPage() {
-  await requireOperatorSession();
   const { items } = await getReliabilityPatterns().catch(() => ({ items: [] }));
   const highProbabilityCount = items.filter((item) => item.failure_probability >= 0.25).length;
   const totalSamples = items.reduce((sum, item) => sum + item.sample_count, 0);

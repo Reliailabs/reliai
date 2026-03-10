@@ -577,6 +577,7 @@ def run() -> None:
             db.add(
                 OrganizationMember(
                     organization_id=organization.id,
+                    user_id=operator.id,
                     auth_user_id=str(operator.id),
                     role="owner",
                 )
@@ -588,13 +589,14 @@ def run() -> None:
             membership = db.scalar(
                 select(OrganizationMember).where(
                     OrganizationMember.organization_id == organization.id,
-                    OrganizationMember.auth_user_id == str(operator.id),
+                    OrganizationMember.user_id == operator.id,
                 )
             )
             if membership is None:
                 db.add(
                     OrganizationMember(
                         organization_id=organization.id,
+                        user_id=operator.id,
                         auth_user_id=str(operator.id),
                         role="owner",
                     )

@@ -17,7 +17,11 @@ from .test_api import auth_headers, create_operator, create_organization, create
 
 
 def _seed_customer_project(client, db_session, *, suffix: str):
-    operator = create_operator(db_session, email=f"customers-{suffix}@acme.test")
+    operator = create_operator(
+        db_session,
+        email=f"customers-{suffix}@acme.test",
+        is_system_admin=True,
+    )
     session = sign_in(client, email=operator.email)
     organization = create_organization(
         client,
@@ -206,7 +210,11 @@ def test_system_customer_detail_endpoint_is_operator_scoped(client, db_session, 
     monkeypatch.setattr("app.services.customer_reliability_metrics._utc_now", lambda: now)
 
     session_payload, organization, project = _seed_customer_project(client, db_session, suffix="detail")
-    other_operator = create_operator(db_session, email="customers-detail-other@acme.test")
+    other_operator = create_operator(
+        db_session,
+        email="customers-detail-other@acme.test",
+        is_system_admin=False,
+    )
     other_session = sign_in(client, email=other_operator.email)
     project_environment_id = UUID(project["environments"][0]["id"])
 

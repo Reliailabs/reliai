@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -6,19 +8,25 @@ from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.schemas.organization import OrganizationCreate
+from app.services.workos_roles import normalize_org_role
 
 
 def create_organization(db: Session, payload: OrganizationCreate) -> Organization:
     try:
-        organization = Organization(name=payload.name, slug=payload.slug, plan=payload.plan)
+        organization = Organization(
+            name=payload.name,
+            slug=payload.slug,
+            plan=payload.plan,
+        )
         db.add(organization)
         db.flush()
 
         db.add(
             OrganizationMember(
                 organization_id=organization.id,
+                user_id=UUID(payload.owner_auth_user_id),
                 auth_user_id=payload.owner_auth_user_id,
-                role=payload.owner_role,
+                role=normalize_org_role(payload.owner_role),
             )
         )
         db.add(OnboardingChecklist(organization_id=organization.id))

@@ -22,6 +22,7 @@ class OperatorMembershipRead(BaseModel):
 class OperatorRead(BaseModel):
     id: UUID
     email: str
+    is_system_admin: bool = False
 
 
 class AuthSessionResponse(BaseModel):

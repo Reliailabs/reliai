@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -11,6 +11,7 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False, index=True)
+    sso_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     plan: Mapped[str] = mapped_column(String(32), nullable=False, default="free")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -29,3 +30,7 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="organization",
         uselist=False,
     )
+    audit_logs = relationship("AuditLog", back_populates="organization")
+    public_api_keys = relationship("PublicApiKey", back_populates="organization")
+    usage_quota = relationship("UsageQuota", back_populates="organization", uselist=False)
+    platform_extensions = relationship("PlatformExtension", back_populates="organization")

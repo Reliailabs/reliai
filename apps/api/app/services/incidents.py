@@ -19,11 +19,11 @@ from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
 from app.models.model_version import ModelVersion
 from app.models.organization_member import OrganizationMember
-from app.models.operator_user import OperatorUser
 from app.models.project import Project
 from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
+from app.models.user import User
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
 from app.services.deployments import most_recent_project_deployment
 from app.services.environments import normalize_environment_name
@@ -31,7 +31,8 @@ from app.services.reliability_graph import sync_incident_root_causes
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 from app.schemas.incident import IncidentListQuery
 from app.services.auth import OperatorContext
-from app.services.authorization import require_project_access
+from app.services.audit_log import log_action
+from app.services.authorization import authorized_project_ids, require_project_access
 from app.services.registry import build_model_version_path, build_prompt_version_path
 from app.services.rollups import RollupScope, quantize_decimal
 
@@ -579,6 +580,9 @@ def _latest_alert_delivery(db: Session, incident_id: UUID) -> AlertDelivery | No
 def list_incidents(db: Session, operator: OperatorContext, query: IncidentListQuery) -> list[Incident]:
     if query.project_id is not None:
         require_project_access(db, operator, query.project_id)
+        allowed_project_ids = [query.project_id]
+    else:
+        allowed_project_ids = authorized_project_ids(db, operator)
 
     statement = (
         select(Incident)
@@ -587,7 +591,7 @@ def list_incidents(db: Session, operator: OperatorContext, query: IncidentListQu
             joinedload(Incident.acknowledged_by_operator),
             joinedload(Incident.owner_operator),
         )
-        .where(Incident.organization_id.in_(operator.organization_ids))
+        .where(Incident.project_id.in_(allowed_project_ids))
         .order_by(desc(Incident.started_at), desc(Incident.updated_at))
     )
     if query.project_id is not None:
@@ -642,10 +646,11 @@ def get_incident_detail(db: Session, operator: OperatorContext, incident_id: UUI
             joinedload(Incident.acknowledged_by_operator),
             joinedload(Incident.owner_operator),
         )
-        .where(Incident.id == incident_id, Incident.organization_id.in_(operator.organization_ids))
+        .where(Incident.id == incident_id)
     )
     if incident is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    require_project_access(db, operator, incident.project_id)
     incident.latest_alert_delivery = _latest_alert_delivery(db, incident.id)
     return incident
 
@@ -1594,21 +1599,30 @@ def acknowledge_incident(db: Session, operator: OperatorContext, incident_id: UU
         metadata_json={"status": incident.status},
         created_at=timestamp,
     )
+    log_action(
+        db,
+        organization_id=incident.organization_id,
+        user_id=operator.operator.id,
+        action="incident_acknowledged",
+        resource_type="incident",
+        resource_id=incident.id,
+        metadata={"project_id": str(incident.project_id), "status": incident.status},
+    )
     db.commit()
     return get_incident_detail(db, operator, incident.id)
 
 
 def _require_operator_membership_for_incident(
     db: Session, *, incident: Incident, operator_user_id: UUID
-) -> OperatorUser:
-    candidate = db.get(OperatorUser, operator_user_id)
+) -> User:
+    candidate = db.get(User, operator_user_id)
     if candidate is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator not found")
 
     membership = db.scalar(
         select(OrganizationMember).where(
             OrganizationMember.organization_id == incident.organization_id,
-            OrganizationMember.auth_user_id == str(operator_user_id),
+            OrganizationMember.user_id == operator_user_id,
         )
     )
     if membership is None:
@@ -1643,6 +1657,15 @@ def assign_incident_owner(
             metadata_json={"previous_owner_operator_user_id": str(previous_owner_id)},
             created_at=timestamp,
         )
+        log_action(
+            db,
+            organization_id=incident.organization_id,
+            user_id=operator.operator.id,
+            action="incident_owner_cleared",
+            resource_type="incident",
+            resource_id=incident.id,
+            metadata={"project_id": str(incident.project_id)},
+        )
     else:
         owner = _require_operator_membership_for_incident(
             db, incident=incident, operator_user_id=owner_operator_user_id
@@ -1663,6 +1686,18 @@ def assign_incident_owner(
             },
             created_at=timestamp,
         )
+        log_action(
+            db,
+            organization_id=incident.organization_id,
+            user_id=operator.operator.id,
+            action="incident_owner_assigned",
+            resource_type="incident",
+            resource_id=incident.id,
+            metadata={
+                "project_id": str(incident.project_id),
+                "owner_operator_user_id": str(owner_operator_user_id),
+            },
+        )
     db.commit()
     return get_incident_detail(db, operator, incident.id)
 
@@ -1677,6 +1712,15 @@ def resolve_incident(db: Session, operator: OperatorContext, incident_id: UUID) 
         actor_operator_user_id=operator.operator.id,
         reason="manual_resolve",
     )
+    log_action(
+        db,
+        organization_id=incident.organization_id,
+        user_id=operator.operator.id,
+        action="incident_resolved",
+        resource_type="incident",
+        resource_id=incident.id,
+        metadata={"project_id": str(incident.project_id)},
+    )
     db.commit()
     return get_incident_detail(db, operator, incident.id)
 
@@ -1690,6 +1734,15 @@ def reopen_incident(db: Session, operator: OperatorContext, incident_id: UUID) -
         reopened_at=timestamp,
         actor_operator_user_id=operator.operator.id,
         reason="manual_reopen",
+    )
+    log_action(
+        db,
+        organization_id=incident.organization_id,
+        user_id=operator.operator.id,
+        action="incident_reopened",
+        resource_type="incident",
+        resource_id=incident.id,
+        metadata={"project_id": str(incident.project_id)},
     )
     db.commit()
     return get_incident_detail(db, operator, incident.id)

@@ -3,7 +3,6 @@ import { AlertTriangle, ArrowLeft, ChevronRight, FolderKanban, ShieldAlert, Work
 
 import { Card } from "@/components/ui/card";
 import { getSystemCustomers } from "@/lib/api";
-import { requireOperatorSession } from "@/lib/auth";
 
 function compactNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -23,7 +22,6 @@ function riskTone(riskLevel: string) {
 }
 
 export default async function SystemCustomersPage() {
-  await requireOperatorSession();
   const { projects } = await getSystemCustomers().catch(() => ({ projects: [] }));
   const highRiskCount = projects.filter((project) => project.risk_level === "high").length;
   const totalTraceVolume = projects.reduce((sum, project) => sum + project.trace_volume_24h, 0);

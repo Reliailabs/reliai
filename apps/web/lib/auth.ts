@@ -1,16 +1,22 @@
 import "server-only";
 
+import { withAuth, getSignInUrl, signOut as workosSignOut } from "@workos-inc/authkit-nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { SESSION_COOKIE_NAME } from "@/lib/api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import {
+  API_URL,
+  SESSION_COOKIE_NAME,
+  devAuthEnabled,
+  workosConfigured,
+  workosLogoutRedirectUri,
+} from "@/lib/constants";
 
 export interface OperatorSession {
   operator: {
     id: string;
     email: string;
+    is_system_admin: boolean;
   };
   memberships: Array<{
     organization_id: string;
@@ -19,13 +25,12 @@ export interface OperatorSession {
   expires_at: string;
 }
 
-async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+async function authRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
       ...(init?.headers ?? {})
     },
     cache: "no-store"
@@ -38,7 +43,23 @@ async function authRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export async function getApiAccessToken(): Promise<string | null> {
+  const legacyToken = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  if (legacyToken) {
+    return legacyToken;
+  }
+  if (!workosConfigured()) {
+    return null;
+  }
+  const session = await withAuth({ ensureSignedIn: false });
+  return session.user ? session.accessToken : null;
+}
+
 export async function signIn(email: string, password: string) {
+  if (!devAuthEnabled()) {
+    return null;
+  }
+
   const response = await fetch(`${API_URL}/api/v1/auth/sign-in`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -60,14 +81,21 @@ export async function signIn(email: string, password: string) {
   return session;
 }
 
+export async function getWorkosSignInUrl(): Promise<string | null> {
+  if (!workosConfigured()) {
+    return null;
+  }
+  return getSignInUrl({ returnTo: "/dashboard" });
+}
+
 export async function getOperatorSession(): Promise<OperatorSession | null> {
-  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  const token = await getApiAccessToken();
   if (!token) {
     return null;
   }
 
   try {
-    return await authRequest<OperatorSession>("/api/v1/auth/session");
+    return await authRequest<OperatorSession>("/api/v1/auth/session", token);
   } catch {
     return null;
   }
@@ -81,8 +109,17 @@ export async function requireOperatorSession(): Promise<OperatorSession> {
   return session;
 }
 
+export async function requireSystemAdminSession(): Promise<OperatorSession> {
+  const session = await requireOperatorSession();
+  if (!session.operator.is_system_admin) {
+    redirect("/");
+  }
+  return session;
+}
+
 export async function signOut(): Promise<void> {
-  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (token) {
     await fetch(`${API_URL}/api/v1/auth/sign-out`, {
       method: "POST",
@@ -91,6 +128,13 @@ export async function signOut(): Promise<void> {
       },
       cache: "no-store"
     }).catch(() => undefined);
+    cookieStore.delete(SESSION_COOKIE_NAME);
+    return;
   }
-  (await cookies()).delete(SESSION_COOKIE_NAME);
+  if (workosConfigured()) {
+    cookieStore.delete(SESSION_COOKIE_NAME);
+    await workosSignOut({
+      returnTo: workosLogoutRedirectUri()
+    });
+  }
 }

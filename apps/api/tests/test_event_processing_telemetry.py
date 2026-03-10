@@ -8,7 +8,11 @@ from .test_api import auth_headers, create_api_key, create_operator, create_orga
 
 
 def _seed_pipeline_project(client, db_session, *, slug: str):
-    operator = create_operator(db_session, email=f"{slug}@acme.test")
+    operator = create_operator(
+        db_session,
+        email=f"{slug}@acme.test",
+        is_system_admin=True,
+    )
     session_payload = sign_in(client, email=operator.email)
     organization = create_organization(client, session_payload, name="Pipeline Telemetry Org", slug=slug)
     project = create_project(client, session_payload, organization["id"], name="Pipeline Telemetry Service")

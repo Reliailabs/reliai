@@ -16,7 +16,7 @@ from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
 from app.schemas.trace import TraceIngestRequest, TraceListQuery
 from app.services.auth import OperatorContext
-from app.services.authorization import require_trace_access
+from app.services.authorization import authorized_project_ids, require_project_access, require_trace_access
 from app.services.event_stream import TRACE_INGESTED_EVENT, publish_event
 from app.services.environments import normalize_environment_name, resolve_project_environment
 from app.services.guardrails import evaluate_trace_guardrails
@@ -182,9 +182,15 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
 
 
 def list_traces(db: Session, operator: OperatorContext, filters: TraceListQuery) -> TraceListResult:
+    if filters.project_id is not None:
+        require_project_access(db, operator, filters.project_id)
+        allowed_project_ids = [filters.project_id]
+    else:
+        allowed_project_ids = authorized_project_ids(db, operator)
+
     statement = (
         select(Trace)
-        .where(Trace.organization_id.in_(operator.organization_ids))
+        .where(Trace.project_id.in_(allowed_project_ids))
         .order_by(desc(Trace.created_at), desc(Trace.id))
     )
 
@@ -234,11 +240,12 @@ def get_trace_detail(db: Session, operator: OperatorContext, trace_id: UUID) -> 
             selectinload(Trace.prompt_version_record),
             selectinload(Trace.model_version_record),
         )
-        .where(Trace.id == trace_id, Trace.organization_id.in_(operator.organization_ids))
+        .where(Trace.id == trace_id)
     )
     trace = db.scalar(statement)
     if trace is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
+    require_project_access(db, operator, trace.project_id)
     trace.evaluations.sort(key=lambda item: (item.eval_type, item.created_at))
     return trace
 

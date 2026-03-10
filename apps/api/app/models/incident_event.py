@@ -18,8 +18,8 @@ class IncidentEvent(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     incident_id: Mapped[UUID] = mapped_column(ForeignKey("incidents.id"), nullable=False, index=True)
     event_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    actor_operator_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("operator_users.id"))
+    actor_operator_user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     metadata_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
     incident = relationship("Incident", back_populates="events")
-    actor_operator_user = relationship("OperatorUser", back_populates="incident_events")
+    actor_operator_user = relationship("User", back_populates="incident_events")

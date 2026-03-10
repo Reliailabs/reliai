@@ -3,20 +3,22 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any
 from uuid import UUID
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.models.automation_rule import AutomationRule
 from app.models.incident import Incident
 from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.project import Project
+from app.models.reliability_action_log import ReliabilityActionLog
 from app.core.settings import get_settings
+from app.services.deployments import most_recent_project_deployment
 from app.services.alerts import ALERT_CHANNEL_SLACK_WEBHOOK
 from app.services.event_stream import AutomationTriggeredEventPayload, EventMessage, publish_event
 from app.services.incidents import (
@@ -24,11 +26,26 @@ from app.services.incidents import (
     INCIDENT_EVENT_REOPENED,
     append_incident_event,
 )
+from app.services.reliability_actions import (
+    ACTION_STATUS_DRY_RUN,
+    ACTION_STATUS_SKIPPED_COOLDOWN,
+    ACTION_STATUS_SKIPPED_FREQUENCY,
+    ACTION_STATUS_SUCCESS,
+    disable_processor,
+    enable_guardrail,
+    increase_sampling,
+    log_reliability_action,
+    rollback_deployment,
+)
 
 ACTION_CREATE_INCIDENT = "create_incident"
 ACTION_SEND_WEBHOOK = "send_webhook"
 ACTION_SEND_SLACK_ALERT = "send_slack_alert"
 ACTION_TRIGGER_PROCESSOR = "trigger_processor"
+ACTION_ROLLBACK_DEPLOYMENT = "rollback_deployment"
+ACTION_ENABLE_GUARDRAIL = "enable_guardrail"
+ACTION_INCREASE_SAMPLING = "increase_sampling"
+ACTION_DISABLE_PROCESSOR = "disable_processor"
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -258,6 +275,146 @@ def _execute_trigger_processor(rule: AutomationRule, event: EventMessage) -> Non
     publish_event(get_settings().event_stream_topic_traces, payload)
 
 
+def _recent_action_count(db: Session, *, rule: AutomationRule, since: datetime) -> int:
+    return int(
+        db.scalar(
+            select(func.count(ReliabilityActionLog.id)).where(
+                ReliabilityActionLog.rule_id == rule.id,
+                ReliabilityActionLog.created_at >= since,
+                ReliabilityActionLog.status.in_([ACTION_STATUS_SUCCESS, ACTION_STATUS_DRY_RUN]),
+            )
+        )
+        or 0
+    )
+
+
+def _latest_action(db: Session, *, rule: AutomationRule) -> ReliabilityActionLog | None:
+    return db.scalar(
+        select(ReliabilityActionLog)
+        .where(
+            ReliabilityActionLog.rule_id == rule.id,
+            ReliabilityActionLog.status.in_([ACTION_STATUS_SUCCESS, ACTION_STATUS_DRY_RUN]),
+        )
+        .order_by(desc(ReliabilityActionLog.created_at), desc(ReliabilityActionLog.id))
+    )
+
+
+def _log_rule_skip(
+    db: Session,
+    *,
+    rule: AutomationRule,
+    status: str,
+    target: str,
+    event: EventMessage,
+    detail: str,
+) -> None:
+    log_reliability_action(
+        db,
+        project_id=rule.project_id,
+        rule_id=rule.id,
+        action_type=rule.action_type,
+        target=target,
+        status=status,
+        detail_json={"detail": detail, "event_type": event.event_type},
+    )
+
+
+def _mitigation_target(rule: AutomationRule, event: EventMessage) -> str:
+    action_config = rule.action_config or {}
+    if rule.action_type == ACTION_ROLLBACK_DEPLOYMENT:
+        deployment_id = action_config.get("deployment_id") or event.payload.get("deployment_id")
+        return f"deployment:{deployment_id}" if deployment_id else "deployment:auto"
+    if rule.action_type == ACTION_ENABLE_GUARDRAIL:
+        return f"guardrail:{action_config.get('policy_type', 'structured_output')}"
+    if rule.action_type == ACTION_DISABLE_PROCESSOR:
+        processor_id = action_config.get("processor_id")
+        return f"processor:{processor_id}" if processor_id else "processor:missing"
+    if rule.action_type == ACTION_INCREASE_SAMPLING:
+        return f"trace_ingestion_policy:{rule.project_id}"
+    return f"action:{rule.action_type}"
+
+
+def _should_skip_for_safety(db: Session, *, rule: AutomationRule, event: EventMessage) -> bool:
+    target = _mitigation_target(rule, event)
+    if rule.cooldown_minutes > 0:
+        latest = _latest_action(db, rule=rule)
+        if latest is not None:
+            boundary = _as_utc(latest.created_at) + timedelta(minutes=rule.cooldown_minutes)
+            if boundary > _event_timestamp(event):
+                _log_rule_skip(
+                    db,
+                    rule=rule,
+                    status=ACTION_STATUS_SKIPPED_COOLDOWN,
+                    target=target,
+                    event=event,
+                    detail=f"Action is cooling down until {boundary.isoformat()}",
+                )
+                return True
+    if rule.max_actions_per_hour > 0:
+        hourly_count = _recent_action_count(db, rule=rule, since=_event_timestamp(event) - timedelta(hours=1))
+        if hourly_count >= rule.max_actions_per_hour:
+            _log_rule_skip(
+                db,
+                rule=rule,
+                status=ACTION_STATUS_SKIPPED_FREQUENCY,
+                target=target,
+                event=event,
+                detail="Max actions per hour reached",
+            )
+            return True
+    return False
+
+
+def _execute_reliability_action(db: Session, *, rule: AutomationRule, project: Project, event: EventMessage) -> None:
+    action_config = rule.action_config or {}
+    if rule.action_type == ACTION_ROLLBACK_DEPLOYMENT:
+        deployment_id = action_config.get("deployment_id") or event.payload.get("deployment_id")
+        if deployment_id is None:
+            deployment = most_recent_project_deployment(db, project_id=project.id, detected_at=_event_timestamp(event))
+            if deployment is None:
+                raise ValueError("rollback_deployment action could not resolve a deployment")
+            deployment_id = deployment.id
+        rollback_deployment(
+            db,
+            project_id=project.id,
+            deployment_id=UUID(str(deployment_id)),
+            rule_id=rule.id,
+            dry_run=rule.dry_run,
+            rollback_reason=str(action_config.get("rollback_reason", "Automated reliability rollback")),
+        )
+        return
+    if rule.action_type == ACTION_ENABLE_GUARDRAIL:
+        enable_guardrail(
+            db,
+            project_id=project.id,
+            policy_type=str(action_config.get("policy_type", "structured_output")),
+            rule_id=rule.id,
+            dry_run=rule.dry_run,
+        )
+        return
+    if rule.action_type == ACTION_INCREASE_SAMPLING:
+        increase_sampling(
+            db,
+            project_id=project.id,
+            rule_id=rule.id,
+            dry_run=rule.dry_run,
+        )
+        return
+    if rule.action_type == ACTION_DISABLE_PROCESSOR:
+        processor_id = action_config.get("processor_id")
+        if processor_id is None:
+            raise ValueError("disable_processor action requires action_config.processor_id")
+        disable_processor(
+            db,
+            project_id=project.id,
+            processor_id=UUID(str(processor_id)),
+            rule_id=rule.id,
+            dry_run=rule.dry_run,
+        )
+        return
+    raise ValueError(f"Unsupported reliability action '{rule.action_type}'")
+
+
 def evaluate_automation_rules(db: Session, event: EventMessage) -> list[str]:
     project_id = event.payload.get("project_id")
     if project_id is None:
@@ -269,16 +426,49 @@ def evaluate_automation_rules(db: Session, event: EventMessage) -> list[str]:
     for rule in _enabled_rules(db, project_id=project.id, event_type=event.event_type):
         if not _matches_condition(rule.condition_json, event.payload):
             continue
-        if rule.action_type == ACTION_CREATE_INCIDENT:
-            _execute_create_incident(db, rule=rule, project=project, event=event)
-        elif rule.action_type == ACTION_SEND_WEBHOOK:
-            _execute_send_webhook(rule, event)
-        elif rule.action_type == ACTION_SEND_SLACK_ALERT:
-            _execute_send_slack_alert(db, rule=rule, project=project, event=event)
-        elif rule.action_type == ACTION_TRIGGER_PROCESSOR:
-            _execute_trigger_processor(rule, event)
-        else:
-            raise ValueError(f"Unsupported automation action '{rule.action_type}'")
+        if rule.action_type in {
+            ACTION_ROLLBACK_DEPLOYMENT,
+            ACTION_ENABLE_GUARDRAIL,
+            ACTION_INCREASE_SAMPLING,
+            ACTION_DISABLE_PROCESSOR,
+        } and _should_skip_for_safety(db, rule=rule, event=event):
+            continue
+        try:
+            if rule.action_type == ACTION_CREATE_INCIDENT:
+                _execute_create_incident(db, rule=rule, project=project, event=event)
+            elif rule.action_type == ACTION_SEND_WEBHOOK:
+                _execute_send_webhook(rule, event)
+            elif rule.action_type == ACTION_SEND_SLACK_ALERT:
+                _execute_send_slack_alert(db, rule=rule, project=project, event=event)
+            elif rule.action_type == ACTION_TRIGGER_PROCESSOR:
+                _execute_trigger_processor(rule, event)
+            elif rule.action_type in {
+                ACTION_ROLLBACK_DEPLOYMENT,
+                ACTION_ENABLE_GUARDRAIL,
+                ACTION_INCREASE_SAMPLING,
+                ACTION_DISABLE_PROCESSOR,
+            }:
+                _execute_reliability_action(db, rule=rule, project=project, event=event)
+            else:
+                raise ValueError(f"Unsupported automation action '{rule.action_type}'")
+        except Exception as exc:
+            if rule.action_type in {
+                ACTION_ROLLBACK_DEPLOYMENT,
+                ACTION_ENABLE_GUARDRAIL,
+                ACTION_INCREASE_SAMPLING,
+                ACTION_DISABLE_PROCESSOR,
+            }:
+                log_reliability_action(
+                    db,
+                    project_id=project.id,
+                    rule_id=rule.id,
+                    action_type=rule.action_type,
+                    target=_mitigation_target(rule, event),
+                    status="error",
+                    detail_json={"error": str(exc), "event_type": event.event_type},
+                )
+                continue
+            raise
         triggered.append(rule)
     db.commit()
     for rule in triggered:
