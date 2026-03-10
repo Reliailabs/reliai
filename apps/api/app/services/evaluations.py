@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.evaluation import Evaluation
 from app.models.trace import Trace
+from app.services.reliability_graph import sync_trace_evaluation
 
 STRUCTURED_VALIDITY_EVAL_TYPE = "structured_validity"
 EVALUATOR_PROVIDER = "reliai"
@@ -56,6 +57,7 @@ def upsert_evaluation(
 
     db.add(evaluation)
     db.flush()
+    sync_trace_evaluation(db, evaluation=evaluation)
     return evaluation
 
 

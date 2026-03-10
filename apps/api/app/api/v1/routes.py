@@ -55,6 +55,13 @@ from app.schemas.reliability import (
     ReliabilityMetricSeriesRead,
     ReliabilityRecentIncidentRead,
 )
+from app.schemas.reliability_graph import (
+    GraphIncidentRootCauseRead,
+    GraphTraceEvaluationRead,
+    GraphTraceRead,
+    GraphTraceRetrievalSpanRead,
+    IncidentGraphRead,
+)
 from app.schemas.regression import (
     RegressionDetailRead,
     RegressionListQuery,
@@ -128,6 +135,7 @@ from app.services.reliability_metrics import (
     latest_project_reliability_metrics,
     project_reliability_trends,
 )
+from app.services.reliability_graph import get_incident_graph
 from app.services.registry import (
     build_model_version_path,
     build_prompt_version_path,
@@ -214,6 +222,33 @@ def _model_version_context_item(item: dict) -> ModelVersionContextRead:
 
 def _trace_compare_item(trace) -> TraceCompareItemRead:
     return TraceCompareItemRead.model_validate(build_trace_compare_item(trace))
+
+
+def _graph_trace_evaluation_item(item) -> GraphTraceEvaluationRead:
+    return GraphTraceEvaluationRead.model_validate(item)
+
+
+def _graph_trace_item(trace) -> GraphTraceRead:
+    return GraphTraceRead(
+        id=trace.id,
+        request_id=trace.request_id,
+        timestamp=trace.timestamp,
+        success=trace.success,
+        error_type=trace.error_type,
+        latency_ms=trace.latency_ms,
+        prompt_version=trace.prompt_version,
+        model_name=trace.model_name,
+        prompt_version_record=PromptVersionRead.model_validate(trace.prompt_version_record)
+        if trace.prompt_version_record is not None
+        else None,
+        model_version_record=ModelVersionRead.model_validate(trace.model_version_record)
+        if trace.model_version_record is not None
+        else None,
+        retrieval_span=GraphTraceRetrievalSpanRead.model_validate(trace.graph_retrieval_span)
+        if trace.graph_retrieval_span is not None
+        else None,
+        evaluations=[_graph_trace_evaluation_item(item) for item in trace.graph_evaluations],
+    )
 
 
 def _version_trace_item(trace) -> VersionTraceRead:
@@ -817,6 +852,29 @@ def get_incident_detail_endpoint(
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
         compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+    )
+
+
+@router.get("/incidents/{incident_id}/graph", response_model=IncidentGraphRead)
+def get_incident_graph_endpoint(
+    incident_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> IncidentGraphRead:
+    graph = get_incident_graph(db, operator, incident_id)
+    return IncidentGraphRead(
+        incident=_incident_list_item(graph["incident"]),
+        regressions=[RegressionSnapshotRead.model_validate(item) for item in graph["regressions"]],
+        traces=[_graph_trace_item(item) for item in graph["traces"]],
+        prompt_version=PromptVersionRead.model_validate(graph["prompt_version"])
+        if graph["prompt_version"] is not None
+        else None,
+        model_version=ModelVersionRead.model_validate(graph["model_version"])
+        if graph["model_version"] is not None
+        else None,
+        deployment=graph["deployment"],
+        evaluations=[_graph_trace_evaluation_item(item) for item in graph["evaluations"]],
+        root_causes=[GraphIncidentRootCauseRead.model_validate(item) for item in graph["root_causes"]],
     )
 
 

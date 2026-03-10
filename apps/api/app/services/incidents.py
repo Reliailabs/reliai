@@ -24,6 +24,7 @@ from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
+from app.services.reliability_graph import sync_incident_root_causes
 from app.schemas.incident import IncidentListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
@@ -410,6 +411,7 @@ def sync_incidents_for_scope(
         incident.resolved_at = None
         db.add(incident)
         db.flush()
+        sync_incident_root_causes(db, incident=incident)
 
     return result
 

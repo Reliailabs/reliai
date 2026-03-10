@@ -49,3 +49,4 @@ class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="owned_incidents",
     )
     events = relationship("IncidentEvent", back_populates="incident")
+    root_causes = relationship("IncidentRootCause", back_populates="incident")

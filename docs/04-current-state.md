@@ -36,3 +36,7 @@
 - Expose evaluation status more clearly in the traces list.
 - Start regression rollup groundwork needed for incidents.
 - Prepare incident persistence and threshold definitions for the next vertical slice.
+
+## future backlog
+- [Milestone 21 — Trace Columnar Analytics Layer](/Users/robert/Documents/Reliai/docs/backlog/milestone-21-trace-analytics-layer.md): future-scale columnar warehouse plan for high-volume trace analytics once operational DB query limits are reached.
+- [Milestone 22 — Control Plane Architecture](/Users/robert/Documents/Reliai/docs/backlog/milestone-22-control-plane-architecture.md): strategic architecture guardrail defining Reliai as a control plane over managed infrastructure layers.

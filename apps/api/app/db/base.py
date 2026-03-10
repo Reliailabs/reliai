@@ -3,6 +3,7 @@ from app.models.api_key import APIKey
 from app.models.evaluation import Evaluation
 from app.models.evaluation_rollup import EvaluationRollup
 from app.models.incident import Incident
+from app.models.incident_root_cause import IncidentRootCause
 from app.models.incident_event import IncidentEvent
 from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
@@ -16,6 +17,8 @@ from app.models.reliability_metric import ReliabilityMetric
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.retrieval_span import RetrievalSpan
 from app.models.trace import Trace
+from app.models.trace_evaluation import TraceEvaluation
+from app.models.trace_retrieval_span import TraceRetrievalSpan
 from app.models.model_version import ModelVersion
 
 __all__ = [
@@ -24,6 +27,7 @@ __all__ = [
     "Evaluation",
     "EvaluationRollup",
     "Incident",
+    "IncidentRootCause",
     "IncidentEvent",
     "OnboardingChecklist",
     "Organization",
@@ -38,4 +42,6 @@ __all__ = [
     "RegressionSnapshot",
     "RetrievalSpan",
     "Trace",
+    "TraceEvaluation",
+    "TraceRetrievalSpan",
 ]

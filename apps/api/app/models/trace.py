@@ -54,3 +54,5 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     model_version_record = relationship("ModelVersion", back_populates="traces")
     retrieval_span = relationship("RetrievalSpan", back_populates="trace", uselist=False)
     evaluations = relationship("Evaluation", back_populates="trace")
+    graph_evaluations = relationship("TraceEvaluation", back_populates="trace")
+    graph_retrieval_span = relationship("TraceRetrievalSpan", back_populates="trace", uselist=False)

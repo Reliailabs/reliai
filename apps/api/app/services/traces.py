@@ -19,6 +19,7 @@ from app.services.auth import OperatorContext
 from app.services.authorization import require_trace_access
 from app.services.incidents import _structured_output_label
 from app.services.onboarding import mark_trace_ingested
+from app.services.reliability_graph import sync_trace_retrieval_span
 from app.services.registry import link_trace_registry_records
 from app.workers.evaluations import run_trace_evaluations
 
@@ -105,16 +106,25 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
         db.add(trace)
         db.flush()
 
+        retrieval_span = None
         if payload.retrieval is not None:
-            db.add(
-                RetrievalSpan(
-                    trace_id=trace.id,
-                    retrieval_latency_ms=payload.retrieval.retrieval_latency_ms,
-                    source_count=payload.retrieval.source_count,
-                    top_k=payload.retrieval.top_k,
-                    query_text=payload.retrieval.query_text,
-                    retrieved_chunks_json=payload.retrieval.retrieved_chunks_json,
-                )
+            retrieval_span = RetrievalSpan(
+                trace_id=trace.id,
+                retrieval_latency_ms=payload.retrieval.retrieval_latency_ms,
+                source_count=payload.retrieval.source_count,
+                top_k=payload.retrieval.top_k,
+                query_text=payload.retrieval.query_text,
+                retrieved_chunks_json=payload.retrieval.retrieved_chunks_json,
+            )
+            db.add(retrieval_span)
+            db.flush()
+            sync_trace_retrieval_span(
+                db,
+                trace_id=trace.id,
+                retrieval_provider=(payload.metadata_json or {}).get("retrieval_provider")
+                if payload.metadata_json is not None
+                else None,
+                retrieval_span=retrieval_span,
             )
 
         link_trace_registry_records(db, trace=trace, project=project)
