@@ -35,9 +35,13 @@ from app.schemas.customer_reliability import (
     CustomerReliabilityListRead,
     CustomerReliabilityProjectRead,
 )
+from app.schemas.customer_expansion_metrics import SystemCustomerExpansionRead
 from app.schemas.deployment import (
     DeploymentCreate,
     DeploymentDetailRead,
+    DeploymentGateRead,
+    DeploymentIntelligencePatternRead,
+    DeploymentIntelligenceRead,
     DeploymentEventRead,
     DeploymentListResponse,
     DeploymentRiskRead,
@@ -141,6 +145,11 @@ from app.schemas.organization_alert_target import (
     OrganizationAlertTargetTestResponse,
     OrganizationAlertTargetUpsertRequest,
 )
+from app.schemas.organization_guardrail import (
+    OrganizationGuardrailPolicyListResponse,
+    OrganizationGuardrailPolicyRead,
+    PolicyViolationEventCreate,
+)
 from app.schemas.project import (
     ModelVersionDetailRead,
     ModelVersionListResponse,
@@ -174,6 +183,7 @@ from app.schemas.reliability_pattern import ReliabilityPatternListResponse, Reli
 from app.schemas.reliability_graph import (
     GraphGuardrailRecommendationListResponse,
     GraphGuardrailRecommendationRead,
+    GlobalReliabilityPatternListResponse,
     ReliabilityGraphEdgeRead,
     ReliabilityGraphNodeDetailRead,
     ReliabilityGraphNodeRead,
@@ -206,10 +216,17 @@ from app.schemas.trace import (
     TraceComparisonRead,
     TraceAcceptedResponse,
     TraceDetailRead,
+    TraceGraphAnalysisRead,
+    TraceGraphAnalysisSpanRead,
+    TraceGraphEdgeRead,
+    TraceGraphNodeRead,
+    TraceGraphRead,
     TraceIngestRequest,
     TraceListItemRead,
     TraceListQuery,
     TraceListResponse,
+    TraceReplayRead,
+    TraceReplayStepRead,
 )
 from app.schemas.trace_cohort import (
     TraceCohortMetricsRead,
@@ -230,9 +247,12 @@ from app.services.customer_reliability_metrics import (
     get_customer_reliability_project_detail,
     list_customer_reliability_projects,
 )
+from app.services.customer_expansion_metrics import get_customer_expansion_metrics
 from app.services.deployments import (
     create_deployment,
     get_deployment_detail,
+    get_deployment_gate_result,
+    get_deployment_intelligence,
     list_project_deployments,
 )
 from app.services.environments import create_environment, list_project_environments, resolve_project_environment
@@ -243,12 +263,18 @@ from app.services.external_processors import (
     processor_read_model,
     update_external_processor,
 )
-from app.services.platform_extensions import create_platform_extension, list_platform_extensions
+from app.services.platform_extensions import (
+    create_platform_extension,
+    extension_read_model,
+    list_platform_extensions,
+    list_system_platform_extensions,
+)
 from app.services.deployment_simulation_engine import create_deployment_simulation
 from app.services.deployment_risk_engine import calculate_deployment_risk
 from app.services.global_metrics import list_global_model_reliability
 from app.services.growth_metrics import get_growth_metrics
 from app.services.guardrail_metrics import get_guardrail_policy_metrics, get_recent_guardrail_events
+from app.services.guardrail_metrics import get_trace_guardrail_policy_counts
 from app.services.guardrails import (
     create_guardrail_policy,
     get_active_guardrail_policies,
@@ -307,6 +333,10 @@ from app.services.organization_alert_targets import (
     set_org_alert_target_enabled,
     test_org_alert_target,
     upsert_org_alert_target,
+)
+from app.services.organization_guardrails import (
+    list_active_organization_guardrail_policies,
+    require_api_key_organization_access,
 )
 from app.services.projects import create_project, list_projects
 from app.services.public_api import (
@@ -378,9 +408,11 @@ from app.services.trace_ingestion_control import (
     resolve_trace_environment,
     upsert_project_ingestion_policy,
 )
+from app.services.trace_graph import get_trace_graph, get_trace_graph_analysis
+from app.services.trace_replay import get_trace_replay
 from app.services.traces import get_trace_compare, get_trace_detail, ingest_trace, list_traces
 from app.services.timeline import get_project_timeline
-from app.services.event_stream import publish_event
+from app.services.event_stream import PolicyViolationEventPayload, publish_event
 from app.services.usage_quotas import (
     enforce_daily_api_quota,
     get_or_create_usage_quota,
@@ -548,6 +580,15 @@ def _guardrail_runtime_event_summary_item(item: dict) -> GuardrailRuntimeEventSu
     )
 
 
+def _guardrail_trace_policy_count_item(item: dict):
+    from app.schemas.guardrail_metrics import GuardrailTracePolicyCountRead
+
+    return GuardrailTracePolicyCountRead(
+        policy_type=item["policy_type"],
+        trigger_count=item["trigger_count"],
+    )
+
+
 def _event_pipeline_consumer_item(item) -> EventPipelineConsumerRead:
     return EventPipelineConsumerRead.model_validate(item)
 
@@ -560,6 +601,32 @@ def _event_pipeline_item(item) -> EventPipelineRead:
         recent_events_published=item.recent_events_published,
         window_minutes=item.window_minutes,
         consumers=[_event_pipeline_consumer_item(consumer) for consumer in item.consumers],
+    )
+
+
+def _deployment_intelligence_item(item: dict) -> DeploymentIntelligenceRead:
+    return DeploymentIntelligenceRead(
+        deployment_id=item["deployment_id"],
+        risk_score=item.get("risk_score"),
+        risk_explanations=[str(value) for value in item.get("risk_explanations", [])],
+        graph_risk_patterns=[
+            DeploymentIntelligencePatternRead(
+                pattern=str(pattern["pattern"]),
+                risk=str(pattern["risk"]),
+                trace_count=int(pattern["trace_count"]),
+            )
+            for pattern in item.get("graph_risk_patterns", [])
+        ],
+        recommended_guardrails=[str(value) for value in item.get("recommended_guardrails", [])],
+    )
+
+
+def _deployment_gate_item(item: dict) -> DeploymentGateRead:
+    return DeploymentGateRead(
+        decision=str(item["decision"]),
+        risk_score=int(item["risk_score"]),
+        explanations=[str(value) for value in item.get("explanations", [])],
+        recommended_guardrails=[str(value) for value in item.get("recommended_guardrails", [])],
     )
 
 
@@ -584,8 +651,13 @@ def _public_api_key_item(item) -> PublicAPIKeyRead:
     return PublicAPIKeyRead.model_validate(item)
 
 
-def _platform_extension_item(item) -> PlatformExtensionRead:
-    return PlatformExtensionRead.model_validate(item)
+def _organization_guardrail_policy_item(item) -> OrganizationGuardrailPolicyRead:
+    return OrganizationGuardrailPolicyRead.model_validate(item)
+
+
+def _platform_extension_item(db: Session, item) -> PlatformExtensionRead:
+    payload = item if isinstance(item, dict) else extension_read_model(db, item)
+    return PlatformExtensionRead.model_validate(payload)
 
 
 def _project_from_session_or_api_key(
@@ -646,6 +718,44 @@ def _public_api_key_from_headers(
         db.rollback()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
     return key
+
+
+def _trace_replay_access_from_headers(
+    *,
+    db: Session,
+    trace_project_id: UUID,
+    trace_organization_id: UUID,
+    x_api_key: str | None,
+    authorization: str | None,
+) -> None:
+    if x_api_key:
+        api_key = authenticate_api_key(db, x_api_key)
+        if api_key is not None:
+            if api_key.project_id != trace_project_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+            return
+
+        public_key = authenticate_public_api_key(db, x_api_key)
+        if public_key is None:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+        if public_key.organization_id != trace_organization_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        enforce_rate_limit(
+            scope="public_api",
+            key=str(public_key.organization_id),
+            limit=get_settings().public_api_rate_limit_per_minute,
+            window_seconds=60,
+        )
+        enforce_daily_api_quota(db, organization_id=public_key.organization_id)
+        return
+
+    if authorization and authorization.lower().startswith("bearer "):
+        operator = get_operator_context(db, authorization[7:])
+        require_project_access(db, operator, trace_project_id)
+        return
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
 
 
 def _operator_context_for_public_project(project: Project):
@@ -884,6 +994,10 @@ def _trace_detail_item(trace, registry_pivots, compare_path: str | None) -> Trac
         environment=trace.environment,
         timestamp=trace.timestamp,
         request_id=trace.request_id,
+        trace_id=trace.trace_id,
+        span_id=trace.span_id,
+        parent_span_id=trace.parent_span_id,
+        span_name=trace.span_name,
         user_id=trace.user_id,
         session_id=trace.session_id,
         model_name=trace.model_name,
@@ -899,6 +1013,8 @@ def _trace_detail_item(trace, registry_pivots, compare_path: str | None) -> Trac
         total_cost_usd=trace.total_cost_usd,
         success=trace.success,
         error_type=trace.error_type,
+        guardrail_policy=trace.guardrail_policy,
+        guardrail_action=trace.guardrail_action,
         metadata_json=trace.metadata_json,
         created_at=trace.created_at,
         prompt_version_record=PromptVersionRead.model_validate(trace.prompt_version_record)
@@ -1116,6 +1232,15 @@ def get_system_growth_endpoint(
     return SystemGrowthRead.model_validate(get_growth_metrics(db))
 
 
+@router.get("/system/customer-expansion", response_model=SystemCustomerExpansionRead)
+def get_system_customer_expansion_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> SystemCustomerExpansionRead:
+    require_system_admin(operator)
+    return SystemCustomerExpansionRead.model_validate(get_customer_expansion_metrics(db))
+
+
 @router.get("/system/platform", response_model=PlatformMetricsRead)
 def get_system_platform_endpoint(
     db: Session = Depends(get_db),
@@ -1150,8 +1275,49 @@ def get_system_global_intelligence_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> ReliabilityGraphPatternListResponse:
     require_system_admin(operator)
+    items = get_global_reliability_patterns(db)
     return ReliabilityGraphPatternListResponse(
-        items=[_graph_pattern_item(item) for item in get_global_reliability_patterns(db)]
+        items=[
+            _graph_pattern_item(
+                {
+                    "pattern": item["pattern"],
+                    "risk_level": item["risk_level"],
+                    "traces": item["trace_count"],
+                    "confidence": item["confidence"],
+                    "source_node_id": f"global:{item['model_family']}",
+                    "target_node_id": f"global:{item['issue']}",
+                    "relationship_type": "global_pattern",
+                    "source_type": "model_family",
+                    "source_key": item["model_family"],
+                    "target_type": "pattern",
+                    "target_key": item["issue"],
+                }
+            )
+            for item in items
+        ]
+    )
+
+
+@router.get("/system/extensions", response_model=PlatformExtensionListResponse)
+def list_system_extensions_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> PlatformExtensionListResponse:
+    require_system_admin(operator)
+    return PlatformExtensionListResponse(
+        items=[_platform_extension_item(db, item) for item in list_system_platform_extensions(db)]
+    )
+
+
+@router.get("/intelligence/global-patterns", response_model=GlobalReliabilityPatternListResponse)
+def list_global_reliability_patterns_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> GlobalReliabilityPatternListResponse:
+    if not operator.operator.is_system_admin and not any(item.role == "org_admin" for item in operator.memberships):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return GlobalReliabilityPatternListResponse(
+        patterns=[item for item in get_global_reliability_patterns(db)]
     )
 
 
@@ -1209,7 +1375,9 @@ def get_reliability_graph_overview_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> ReliabilityGraphOverviewRead:
     patterns = get_high_risk_patterns(db, organization_ids=operator.organization_ids, limit=20)
-    node_ids = {item["source_node_id"] for item in patterns} | {item["target_node_id"] for item in patterns}
+    node_ids = {UUID(item["source_node_id"]) for item in patterns} | {
+        UUID(item["target_node_id"]) for item in patterns
+    }
     graph_nodes: list[ReliabilityGraphNode] = []
     for node_id in node_ids:
         node, _ = get_related_nodes(db, node_id=node_id, organization_ids=operator.organization_ids)
@@ -1226,7 +1394,7 @@ def get_reliability_graph_overview_endpoint(
         for _, edge in related:
             if edge.id in edge_ids:
                 continue
-            if edge.source_id == item["source_node_id"] and edge.target_id == item["target_node_id"]:
+            if edge.source_id == UUID(item["source_node_id"]) and edge.target_id == UUID(item["target_node_id"]):
                 edge_ids.add(edge.id)
                 edges.append(edge)
     return ReliabilityGraphOverviewRead(
@@ -1477,6 +1645,34 @@ def get_organization_endpoint(
     return get_organization(db, organization_id)
 
 
+@router.get(
+    "/organizations/{organization_id}/policies",
+    response_model=OrganizationGuardrailPolicyListResponse,
+)
+def list_organization_guardrail_policies_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> OrganizationGuardrailPolicyListResponse:
+    if x_api_key:
+        api_key = authenticate_api_key(db, x_api_key)
+        if api_key is None:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+        require_api_key_organization_access(db, api_key=api_key, organization_id=organization_id)
+    elif authorization and authorization.lower().startswith("bearer "):
+        operator = get_operator_context(db, authorization[7:])
+        require_organization_membership(operator, organization_id)
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+
+    items = list_active_organization_guardrail_policies(db, organization_id=organization_id)
+    return OrganizationGuardrailPolicyListResponse(
+        items=[_organization_guardrail_policy_item(item) for item in items]
+    )
+
+
 @router.get("/organizations/{organization_id}/members", response_model=OrganizationMemberListResponse)
 def list_organization_members_endpoint(
     organization_id: UUID,
@@ -1651,7 +1847,7 @@ def list_platform_extensions_endpoint(
 ) -> PlatformExtensionListResponse:
     require_org_role(operator, organization_id, "viewer")
     return PlatformExtensionListResponse(
-        items=[_platform_extension_item(item) for item in list_platform_extensions(db, organization_id=organization_id)]
+        items=[_platform_extension_item(db, item) for item in list_platform_extensions(db, organization_id=organization_id)]
     )
 
 
@@ -1670,7 +1866,7 @@ def create_platform_extension_endpoint(
     if payload.organization_id != organization_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization mismatch")
     extension = create_platform_extension(db, payload=payload, actor_user_id=operator.operator.id)
-    return _platform_extension_item(extension)
+    return _platform_extension_item(db, extension)
 
 
 @router.post(
@@ -1938,6 +2134,10 @@ def get_project_guardrail_metrics_endpoint(
             _guardrail_runtime_event_summary_item(item)
             for item in get_recent_guardrail_events(db, project_id, environment=environment)
         ],
+        trace_policy_counts=[
+            _guardrail_trace_policy_count_item(item)
+            for item in get_trace_guardrail_policy_counts(db, project_id, environment=environment)
+        ],
     )
 
 
@@ -2019,6 +2219,8 @@ def get_deployment_detail_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> DeploymentDetailRead:
     deployment = get_deployment_detail(db, operator=operator, deployment_id=deployment_id)
+    intelligence = get_deployment_intelligence(db, operator=operator, deployment_id=deployment_id)
+    gate = get_deployment_gate_result(db, operator=operator, deployment_id=deployment_id)
     return DeploymentDetailRead(
         **_deployment_item(deployment).model_dump(),
         prompt_version=PromptVersionRead.model_validate(deployment.prompt_version)
@@ -2033,6 +2235,8 @@ def get_deployment_detail_endpoint(
         latest_risk_score=_deployment_risk_item(deployment.risk_score)
         if deployment.risk_score is not None
         else None,
+        intelligence=_deployment_intelligence_item(intelligence),
+        gate=_deployment_gate_item(gate),
     )
 
 
@@ -2046,6 +2250,16 @@ def get_deployment_risk_endpoint(
     risk_score = calculate_deployment_risk(db, deployment_id=deployment.id)
     db.commit()
     return _deployment_risk_item(risk_score)
+
+
+@router.get("/deployments/{deployment_id}/gate", response_model=DeploymentGateRead)
+def get_deployment_gate_endpoint(
+    deployment_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DeploymentGateRead:
+    gate = get_deployment_gate_result(db, operator=operator, deployment_id=deployment_id)
+    return _deployment_gate_item(gate)
 
 
 @router.get("/projects/{project_id}/reliability", response_model=ProjectReliabilityRead)
@@ -2436,6 +2650,10 @@ def get_incident_command_center_endpoint(
         ),
         deployment_context=_incident_deployment_context_item(command.incident),
         guardrail_activity=[_guardrail_activity_item(item) for item in command.guardrail_activity],
+        possible_root_causes=list(command.possible_root_causes),
+        graph_related_patterns=list(command.graph_related_patterns),
+        similar_platform_failures=list(command.similar_platform_failures),
+        recommended_mitigations=list(command.recommended_mitigations),
         related_regressions=[
             RegressionSnapshotRead.model_validate(regression)
             for regression in command.related_regressions
@@ -2498,6 +2716,7 @@ def get_incident_investigation_endpoint(
             _investigation_recommendation_item(item) for item in investigation.recommendations
         ],
         guardrail_activity=[_guardrail_activity_item(item) for item in command.guardrail_activity],
+        possible_root_causes=list(command.possible_root_causes),
     )
 
 
@@ -2949,6 +3168,72 @@ def get_trace_detail_endpoint(
     return _trace_detail_item(trace, registry_pivots, f"/traces/{trace.id}/compare")
 
 
+@router.get("/traces/{trace_id}/graph", response_model=TraceGraphRead)
+def get_trace_graph_endpoint(
+    trace_id: str,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> TraceGraphRead:
+    graph = get_trace_graph(db, operator, trace_id)
+    return TraceGraphRead(
+        trace_id=graph["trace_id"],
+        project_id=graph["project_id"],
+        environment=graph["environment"],
+        nodes=[TraceGraphNodeRead.model_validate(item) for item in graph["nodes"]],
+        edges=[TraceGraphEdgeRead.model_validate(item) for item in graph["edges"]],
+    )
+
+
+@router.get("/traces/{trace_id}/replay", response_model=TraceReplayRead)
+def get_trace_replay_endpoint(
+    trace_id: str,
+    x_api_key: str | None = Header(default=None, alias="x-api-key"),
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> TraceReplayRead:
+    replay = get_trace_replay(db, trace_id)
+    _trace_replay_access_from_headers(
+        db=db,
+        trace_project_id=replay["project_id"],
+        trace_organization_id=replay["organization_id"],
+        x_api_key=x_api_key,
+        authorization=authorization,
+    )
+    return TraceReplayRead(
+        trace_id=replay["trace_id"],
+        project_id=replay["project_id"],
+        environment=replay["environment"],
+        steps=[TraceReplayStepRead.model_validate(item) for item in replay["steps"]],
+    )
+
+
+@router.get("/traces/{trace_id}/analysis", response_model=TraceGraphAnalysisRead)
+def get_trace_graph_analysis_endpoint(
+    trace_id: str,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> TraceGraphAnalysisRead:
+    analysis = get_trace_graph_analysis(db, operator, trace_id)
+    return TraceGraphAnalysisRead(
+        trace_id=analysis["trace_id"],
+        slowest_span=(
+            TraceGraphAnalysisSpanRead.model_validate(analysis["slowest_span"])
+            if analysis["slowest_span"] is not None
+            else None
+        ),
+        largest_token_span=(
+            TraceGraphAnalysisSpanRead.model_validate(analysis["largest_token_span"])
+            if analysis["largest_token_span"] is not None
+            else None
+        ),
+        most_guardrail_retries=(
+            TraceGraphAnalysisSpanRead.model_validate(analysis["most_guardrail_retries"])
+            if analysis["most_guardrail_retries"] is not None
+            else None
+        ),
+    )
+
+
 @router.get("/traces/{trace_id}/compare", response_model=TraceComparisonRead)
 def get_trace_compare_endpoint(
     trace_id: UUID,
@@ -3190,6 +3475,51 @@ def create_project_runtime_guardrail_event_endpoint(
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return _runtime_guardrail_event_item(event)
+
+
+@router.post(
+    "/runtime/policy-violations",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def create_policy_violation_event_endpoint(
+    payload: PolicyViolationEventCreate,
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> Response:
+    provided_key = x_api_key
+    if provided_key is None and authorization and authorization.lower().startswith("bearer "):
+        provided_key = authorization[7:]
+    if not provided_key:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key is required")
+    api_key = authenticate_api_key(db, provided_key)
+    if api_key is None:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    project = db.get(Project, api_key.project_id)
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    environment = resolve_project_environment(db, project=project, name=project.environment)
+    publish_event(
+        get_settings().event_stream_topic_traces,
+        PolicyViolationEventPayload(
+            organization_id=str(project.organization_id),
+            project_id=str(project.id),
+            environment_id=str(environment.id),
+            trace_id=payload.trace_id,
+            timestamp=datetime.now(timezone.utc),
+            policy_type=payload.policy_type,
+            enforcement_mode=payload.enforcement_mode,
+            action_taken=payload.action_taken,
+            metadata={
+                "provider_model": payload.provider_model,
+                "latency_ms": payload.latency_ms,
+                **(payload.metadata_json or {}),
+            }
+            or None,
+        ).model_dump(mode="json"),
+    )
+    return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
 @router.get(

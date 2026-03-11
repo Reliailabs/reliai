@@ -139,6 +139,32 @@ export default async function ProjectGuardrailsPage({
 
       <Card className="rounded-[28px] border-zinc-300 p-6">
         <div className="flex items-center gap-3">
+          <Shield className="h-5 w-5 text-steel" />
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Span guardrail analytics</p>
+            <h2 className="mt-2 text-2xl font-semibold text-ink">Guardrail usage in execution traces</h2>
+          </div>
+        </div>
+        {guardrailMetrics.trace_policy_counts.length === 0 ? (
+          <div className="mt-6 rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-10 text-sm leading-6 text-steel">
+            No span-level guardrail annotations have been ingested yet. SDK runtime guardrails will appear here once
+            distributed traces start sending first-class guardrail fields.
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {guardrailMetrics.trace_policy_counts.map((item) => (
+              <div key={item.policy_type} className="rounded-[24px] border border-zinc-200 bg-white px-5 py-4 shadow-sm">
+                <p className="text-xs uppercase tracking-[0.18em] text-steel">{item.policy_type}</p>
+                <p className="mt-2 text-2xl font-semibold text-ink">{item.trigger_count}</p>
+                <p className="mt-1 text-sm text-steel">annotated spans</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="rounded-[28px] border-zinc-300 p-6">
+        <div className="flex items-center gap-3">
           <Clock3 className="h-5 w-5 text-steel" />
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent guardrail events</p>

@@ -21,7 +21,7 @@ from app.services.authorization import require_project_access
 from app.services.deployments import list_project_deployments
 from app.services.event_processing_metrics import get_event_pipeline_status
 from app.services.timeline import get_project_timeline
-from app.services.trace_warehouse import query_all_traces
+from app.services.trace_query_router import query_daily_metrics, query_hourly_metrics
 
 SUMMARY_WINDOW_HOURS = 24
 DETAIL_WINDOW_DAYS = 7
@@ -129,12 +129,21 @@ def list_customer_reliability_projects(db: Session, *, operator: OperatorContext
 
     now = _utc_now()
     current_start, previous_start, current_end = _summary_windows(now)
-    warehouse_rows = query_all_traces(window_start=previous_start, window_end=current_end)
-    current_rows = [row for row in warehouse_rows if row.project_id in projects and row.timestamp >= current_start]
-    previous_rows = [row for row in warehouse_rows if row.project_id in projects and row.timestamp < current_start]
-
-    current_trace_counts = Counter(row.project_id for row in current_rows)
-    previous_trace_counts = Counter(row.project_id for row in previous_rows)
+    warehouse_rollups = query_hourly_metrics(
+        project_id=None,
+        environment_id=None,
+        start_time=previous_start,
+        end_time=current_end,
+    )
+    current_trace_counts: Counter[UUID] = Counter()
+    previous_trace_counts: Counter[UUID] = Counter()
+    for row in warehouse_rollups:
+        if row.project_id not in projects:
+            continue
+        if row.time_bucket >= current_start:
+            current_trace_counts[row.project_id] += int(row.trace_count)
+        else:
+            previous_trace_counts[row.project_id] += int(row.trace_count)
 
     incident_counts = {
         project_id: int(count)
@@ -257,12 +266,13 @@ def get_customer_reliability_project_detail(
     now = _utc_now()
     chart_start = _start_of_day(now) - timedelta(days=DETAIL_WINDOW_DAYS - 1)
     chart_end = _start_of_day(now) + timedelta(days=1)
-    chart_rows = [
-        row
-        for row in query_all_traces(window_start=chart_start, window_end=chart_end)
-        if row.project_id == project_id
-    ]
-    counts_by_day = Counter(row.timestamp.date().isoformat() for row in chart_rows)
+    chart_rows = query_daily_metrics(
+        project_id=project_id,
+        environment_id=None,
+        start_time=chart_start,
+        end_time=chart_end,
+    )
+    counts_by_day = Counter({row.time_bucket.date().isoformat(): int(row.trace_count) for row in chart_rows})
     trace_volume_chart = [
         {
             "date": (chart_start + timedelta(days=offset)).date().isoformat(),

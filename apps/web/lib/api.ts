@@ -4,13 +4,16 @@ import type {
   AlertDeliveryListResponse,
   CustomerReliabilityDetailRead,
   CustomerReliabilityListRead,
+  SystemCustomerExpansionRead,
   DeploymentDetailRead,
+  DeploymentGateRead,
   DeploymentListResponse,
   EventPipelineRead,
   EnvironmentListResponse,
   ExternalProcessorListResponse,
   ExternalProcessorRead,
   GuardrailMetrics,
+  GlobalReliabilityPatternListResponse,
   IncidentCommandCenterRead,
   IncidentDetailRead,
   IncidentInvestigationRead,
@@ -26,6 +29,7 @@ import type {
   ProjectReliabilityRead,
   ProjectRead,
   PlatformMetricsRead,
+  PlatformExtensionListResponse,
   GraphGuardrailRecommendationListResponse,
   ReliabilityActionLogListResponse,
   ReliabilityGraphOverviewRead,
@@ -42,6 +46,9 @@ import type {
   TimelineResponse,
   TraceComparisonRead,
   TraceDetailRead,
+  TraceGraphAnalysisRead,
+  TraceGraphRead,
+  TraceReplayRead,
   TraceListResponse
 } from "@reliai/types";
 
@@ -190,8 +197,16 @@ export async function getSystemGrowth() {
   return request<SystemGrowthRead>(`/api/v1/system/growth`);
 }
 
+export async function getSystemCustomerExpansion() {
+  return request<SystemCustomerExpansionRead>(`/api/v1/system/customer-expansion`);
+}
+
 export async function getSystemPlatform() {
   return request<PlatformMetricsRead>(`/api/v1/system/platform`);
+}
+
+export async function getSystemExtensions() {
+  return request<PlatformExtensionListResponse>(`/api/v1/system/extensions`);
 }
 
 export async function getSystemCustomers() {
@@ -220,6 +235,10 @@ export async function getReliabilityGraphGuardrailRecommendations() {
 
 export async function getSystemGlobalIntelligence() {
   return request<ReliabilityGraphPatternListResponse>(`/api/v1/system/global-intelligence`);
+}
+
+export async function getGlobalReliabilityPatterns() {
+  return request<GlobalReliabilityPatternListResponse>(`/api/v1/intelligence/global-patterns`);
 }
 
 export async function getReliabilityPattern(patternId: string) {
@@ -276,6 +295,18 @@ export async function listTraces(filters: TraceFilters = {}) {
 
 export async function getTraceDetail(traceId: string) {
   return request<TraceDetailRead>(`/api/v1/traces/${traceId}`);
+}
+
+export async function getTraceGraph(traceId: string) {
+  return request<TraceGraphRead>(`/api/v1/traces/${traceId}/graph`);
+}
+
+export async function getTraceAnalysis(traceId: string) {
+  return request<TraceGraphAnalysisRead>(`/api/v1/traces/${traceId}/analysis`);
+}
+
+export async function getTraceReplay(traceId: string) {
+  return request<TraceReplayRead>(`/api/v1/traces/${traceId}/replay`);
 }
 
 export async function getTraceCompare(traceId: string) {
@@ -388,6 +419,10 @@ export async function getRegressionCompare(regressionId: string) {
 
 export async function getDeploymentDetail(deploymentId: string) {
   return request<DeploymentDetailRead>(`/api/v1/deployments/${deploymentId}`);
+}
+
+export async function getDeploymentGate(deploymentId: string) {
+  return request<DeploymentGateRead>(`/api/v1/deployments/${deploymentId}/gate`);
 }
 
 export async function listProjectDeployments(projectId: string, environment?: string) {

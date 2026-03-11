@@ -76,6 +76,12 @@ class TraceListQuery(BaseModel):
 class TraceIngestRequest(BaseModel):
     timestamp: datetime
     request_id: str = Field(min_length=2, max_length=255)
+    trace_id: str | None = Field(default=None, max_length=255)
+    span_id: str | None = Field(default=None, max_length=255)
+    parent_span_id: str | None = Field(default=None, max_length=255)
+    span_name: str | None = Field(default=None, max_length=120)
+    guardrail_policy: str | None = Field(default=None, max_length=120)
+    guardrail_action: str | None = Field(default=None, max_length=120)
     environment: str | None = Field(default=None, max_length=64)
     user_id: str | None = Field(default=None, max_length=255)
     session_id: str | None = Field(default=None, max_length=255)
@@ -148,6 +154,10 @@ class TraceDetailRead(APIModel):
     environment: str
     timestamp: datetime
     request_id: str
+    trace_id: str
+    span_id: str
+    parent_span_id: str | None
+    span_name: str | None
     user_id: str | None
     session_id: str | None
     model_name: str
@@ -163,6 +173,8 @@ class TraceDetailRead(APIModel):
     total_cost_usd: Decimal | None
     success: bool
     error_type: str | None
+    guardrail_policy: str | None
+    guardrail_action: str | None
     metadata_json: dict[str, Any] | None
     created_at: datetime
     prompt_version_record: PromptVersionRead | None
@@ -171,6 +183,78 @@ class TraceDetailRead(APIModel):
     compare_path: str | None
     retrieval_span: RetrievalSpanRead | None
     evaluations: list[EvaluationRead]
+
+
+class TraceGraphNodeRead(APIModel):
+    id: UUID
+    trace_id: str
+    span_id: str
+    parent_span_id: str | None
+    span_name: str | None
+    span_type: str | None
+    model_name: str
+    model_provider: str | None
+    latency_ms: int | None
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    success: bool
+    guardrail_policy: str | None
+    guardrail_action: str | None
+    timestamp: datetime
+    metadata_json: dict[str, Any] | None
+
+
+class TraceGraphEdgeRead(APIModel):
+    parent_span_id: str
+    child_span_id: str
+
+
+class TraceGraphRead(APIModel):
+    trace_id: str
+    project_id: UUID
+    environment: str
+    nodes: list[TraceGraphNodeRead]
+    edges: list[TraceGraphEdgeRead]
+
+
+class TraceGraphAnalysisSpanRead(APIModel):
+    span_id: str
+    span_name: str | None
+    span_type: str | None
+    latency_ms: int | None = None
+    token_count: int | None = None
+    guardrail_policy: str | None = None
+    retry_count: int | None = None
+
+
+class TraceGraphAnalysisRead(APIModel):
+    trace_id: str
+    slowest_span: TraceGraphAnalysisSpanRead | None
+    largest_token_span: TraceGraphAnalysisSpanRead | None
+    most_guardrail_retries: TraceGraphAnalysisSpanRead | None
+
+
+class TraceReplayStepRead(APIModel):
+    span_id: str
+    parent_span_id: str | None
+    span_name: str | None
+    span_type: str
+    inputs: dict[str, Any] | None = None
+    template: str | None = None
+    variables: dict[str, Any] | None = None
+    model: str | None = None
+    parameters: dict[str, Any] | None = None
+    prompt: str | None = None
+    tool_name: str | None = None
+    guardrail_policy: str | None = None
+    guardrail_action: str | None = None
+
+
+class TraceReplayRead(APIModel):
+    trace_id: str
+    project_id: UUID
+    environment: str
+    steps: list[TraceReplayStepRead]
 
 
 class TraceCompareEvaluationRead(APIModel):

@@ -21,10 +21,12 @@ from app.processors import evaluation_processor as evaluation_processor_module
 from app.services import event_stream as event_stream_service
 from app.services import external_processors as external_processors_service
 from app.services import event_processing_metrics as event_processing_metrics_service
+from app.workers import reprocess_events_worker as reprocess_events_worker_module
 from app.services.trace_warehouse import (
     TraceWarehouseAggregateQuery,
     TraceWarehouseEventRow,
     TraceWarehouseQuery,
+    TraceWarehouseRollupRow,
 )
 from app.workers import alerts as alert_worker
 from app.workers import deployment_risk_analysis as deployment_risk_worker
@@ -62,7 +64,7 @@ class FakeTraceWarehouseClient:
 
     def insert_trace_events(self, rows: list[TraceWarehouseEventRow]) -> None:
         for row in rows:
-            self.rows[str(row.trace_id)] = row
+            self.rows[str(row.storage_trace_id)] = row
 
     def query_trace_events(self, query: TraceWarehouseQuery) -> list[TraceWarehouseEventRow]:
         matches = []
@@ -109,7 +111,7 @@ class FakeTraceWarehouseClient:
             ):
                 continue
             matches.append(row)
-        matches.sort(key=lambda item: (item.timestamp, str(item.trace_id)), reverse=True)
+        matches.sort(key=lambda item: (item.timestamp, str(item.storage_trace_id)), reverse=True)
         if query.limit is not None:
             return matches[: query.limit]
         return matches
@@ -155,6 +157,74 @@ class FakeTraceWarehouseClient:
             "average_cost_usd": sum(costs) / len(costs) if costs else None,
         }
 
+    def _rollup(self, *, start_time, end_time, project_id=None, environment_id=None, bucket: str) -> list[TraceWarehouseRollupRow]:
+        rows = self.query_all_trace_events(window_start=start_time, window_end=end_time)
+        buckets: dict[tuple[object, object, object, object], dict[str, float | int]] = {}
+        for row in rows:
+            if project_id is not None and row.project_id != project_id:
+                continue
+            if environment_id is not None and row.environment_id != environment_id:
+                continue
+            timestamp = row.timestamp if row.timestamp.tzinfo is not None else row.timestamp.replace(tzinfo=timezone.utc)
+            if bucket == "hourly":
+                time_bucket = timestamp.replace(minute=0, second=0, microsecond=0)
+            else:
+                time_bucket = timestamp.replace(hour=0, minute=0, second=0, microsecond=0)
+            key = (time_bucket, row.project_id, row.environment_id, row.model_family)
+            if key not in buckets:
+                buckets[key] = {
+                    "trace_count": 0,
+                    "success_total": 0.0,
+                    "latency_total": 0.0,
+                    "latency_count": 0,
+                    "token_count": 0,
+                    "cost_usd": 0.0,
+                }
+            bucket_row = buckets[key]
+            bucket_row["trace_count"] += 1
+            bucket_row["success_total"] += 1.0 if row.success else 0.0
+            if row.latency_ms is not None:
+                bucket_row["latency_total"] += float(row.latency_ms)
+                bucket_row["latency_count"] += 1
+            bucket_row["token_count"] += int((row.input_tokens or 0) + (row.output_tokens or 0))
+            bucket_row["cost_usd"] += float(row.cost or 0)
+        rollups: list[TraceWarehouseRollupRow] = []
+        for (time_bucket, row_project_id, row_environment_id, model_family), values in sorted(buckets.items()):
+            trace_count = int(values["trace_count"])
+            latency_count = int(values["latency_count"])
+            rollups.append(
+                TraceWarehouseRollupRow(
+                    time_bucket=time_bucket,
+                    project_id=row_project_id,
+                    environment_id=row_environment_id,
+                    model_family=model_family,
+                    trace_count=trace_count,
+                    success_rate=(float(values["success_total"]) / trace_count) if trace_count else None,
+                    latency_avg=(float(values["latency_total"]) / latency_count) if latency_count else None,
+                    token_count=int(values["token_count"]),
+                    cost_usd=float(values["cost_usd"]),
+                )
+            )
+        return rollups
+
+    def query_hourly_metrics(self, *, project_id, environment_id, start_time, end_time):
+        return self._rollup(
+            start_time=start_time,
+            end_time=end_time,
+            project_id=project_id,
+            environment_id=environment_id,
+            bucket="hourly",
+        )
+
+    def query_daily_metrics(self, *, project_id, environment_id, start_time, end_time):
+        return self._rollup(
+            start_time=start_time,
+            end_time=end_time,
+            project_id=project_id,
+            environment_id=environment_id,
+            bucket="daily",
+        )
+
     def query_all_trace_events(self, *, window_start, window_end, limit=None):
         matches = []
         start = window_start if window_start.tzinfo is not None else window_start.replace(tzinfo=timezone.utc)
@@ -164,7 +234,7 @@ class FakeTraceWarehouseClient:
             if timestamp < start or timestamp >= end:
                 continue
             matches.append(row)
-        matches.sort(key=lambda item: (item.timestamp, str(item.trace_id)), reverse=True)
+        matches.sort(key=lambda item: (item.timestamp, str(item.storage_trace_id)), reverse=True)
         if limit is not None:
             return matches[:limit]
         return matches
@@ -239,6 +309,23 @@ def patch_event_processing_metrics_session(
 ) -> None:
     monkeypatch.setattr(
         event_processing_metrics_service,
+        "SessionLocal",
+        lambda: BorrowedSession(db_session),
+    )
+
+
+@pytest.fixture(autouse=True)
+def patch_event_log_sessions(
+    monkeypatch: pytest.MonkeyPatch,
+    db_session: Session,
+) -> None:
+    monkeypatch.setattr(
+        event_stream_service,
+        "SessionLocal",
+        lambda: BorrowedSession(db_session),
+    )
+    monkeypatch.setattr(
+        reprocess_events_worker_module,
         "SessionLocal",
         lambda: BorrowedSession(db_session),
     )

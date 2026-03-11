@@ -19,6 +19,7 @@ class AutomationRule(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     condition_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     action_type: Mapped[str] = mapped_column(String(64), nullable=False)
     action_config: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    rule_source: Mapped[str] = mapped_column(String(32), nullable=False, default="manual")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     cooldown_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=60)
     dry_run: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

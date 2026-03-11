@@ -214,6 +214,26 @@ export default async function IncidentInvestigationPage({
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Card className="rounded-[28px] border-zinc-300 p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">AI investigation insights</p>
+          <div className="mt-4 space-y-3">
+            {investigation.possible_root_causes.length > 0 ? (
+              investigation.possible_root_causes.map((item, index) => (
+                <div key={`${String(item.type)}-${String(item.pattern)}-${index}`} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                  <p className="text-sm font-medium text-ink">{String(item.pattern).replaceAll("_", " ")}</p>
+                  <p className="mt-1 text-sm text-steel">
+                    {String(item.type).replaceAll("_", " ")} · {percent(Number(item.confidence ?? 0))}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-4 text-sm text-steel">
+                No graph-derived investigation hints are available for this incident yet.
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card className="rounded-[28px] border-zinc-300 p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-steel">Guardrail activity</p>
           {investigation.guardrail_activity.length > 0 ? (
             <div className="mt-4 space-y-3">

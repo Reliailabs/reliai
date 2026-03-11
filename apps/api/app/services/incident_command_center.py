@@ -8,6 +8,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.models.guardrail_policy import GuardrailPolicy
+from app.models.reliability_graph_node import ReliabilityGraphNode
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
@@ -22,7 +23,13 @@ from app.services.incidents import (
     get_incident_regressions,
     get_incident_traces,
 )
-from app.services.reliability_graph import get_incident_graph
+from app.services.global_reliability_patterns import find_similar_platform_failures
+from app.services.reliability_graph import (
+    NODE_INCIDENT,
+    get_graph_guardrail_recommendations,
+    get_incident_graph,
+    get_related_nodes,
+)
 from app.services.root_cause_engine import RootCauseReport, get_incident_analysis
 from app.services.timeline import get_project_timeline
 from app.services.traces import TraceCompareResult, get_trace_compare
@@ -45,6 +52,10 @@ class IncidentCommandCenterResult:
     baseline_traces: list[Trace]
     root_cause_report: RootCauseReport
     graph_root_causes: list[object]
+    possible_root_causes: list[dict]
+    graph_related_patterns: list[dict]
+    similar_platform_failures: list[dict]
+    recommended_mitigations: list[str]
     trace_compare: TraceCompareResult | None
     compare_link: str
     guardrail_activity: list[GuardrailActivitySummary]
@@ -148,6 +159,125 @@ def _recent_signals(db: Session, *, incident: Incident, limit: int = 8) -> list[
     return [TimelineEventRead.model_validate(item) for item in filtered[:limit]]
 
 
+def _possible_root_causes(
+    db: Session,
+    *,
+    operator: OperatorContext,
+    incident: Incident,
+    limit: int = 4,
+) -> list[dict]:
+    incident_node = db.scalar(
+        select(ReliabilityGraphNode).where(
+            ReliabilityGraphNode.organization_id == incident.organization_id,
+            ReliabilityGraphNode.project_id == incident.project_id,
+            ReliabilityGraphNode.node_type == NODE_INCIDENT,
+            ReliabilityGraphNode.node_key == str(incident.id),
+        )
+    )
+    if incident_node is None:
+        return []
+    _, related = get_related_nodes(db, node_id=incident_node.id, organization_ids=operator.organization_ids)
+    items: list[dict] = []
+    type_map = {
+        "model_family": "model_pattern",
+        "prompt_version": "prompt_pattern",
+        "retrieval_strategy": "retrieval_pattern",
+        "deployment": "deployment_pattern",
+        "guardrail_policy": "guardrail_pattern",
+    }
+    for related_node, edge in related:
+        mapped_type = type_map.get(related_node.node_type)
+        if mapped_type is None:
+            continue
+        items.append(
+            {
+                "type": mapped_type,
+                "pattern": related_node.node_key,
+                "confidence": round(float(edge.confidence), 4),
+            }
+        )
+    items.sort(key=lambda item: (-item["confidence"], item["pattern"]))
+    return items[:limit]
+
+
+def _graph_related_patterns(
+    db: Session,
+    *,
+    operator: OperatorContext,
+    incident: Incident,
+    limit: int = 4,
+) -> list[dict]:
+    incident_node = db.scalar(
+        select(ReliabilityGraphNode).where(
+            ReliabilityGraphNode.organization_id == incident.organization_id,
+            ReliabilityGraphNode.project_id == incident.project_id,
+            ReliabilityGraphNode.node_type == NODE_INCIDENT,
+            ReliabilityGraphNode.node_key == str(incident.id),
+        )
+    )
+    if incident_node is None:
+        return []
+    _, related = get_related_nodes(db, node_id=incident_node.id, organization_ids=operator.organization_ids)
+    patterns: list[dict] = []
+    for related_node, edge in related:
+        patterns.append(
+            {
+                "pattern": related_node.node_key,
+                "type": related_node.node_type,
+                "confidence": round(float(edge.confidence), 4),
+                "trace_count": int(edge.trace_count or 0),
+            }
+        )
+    patterns.sort(key=lambda item: (-item["confidence"], -item["trace_count"], item["pattern"]))
+    return patterns[:limit]
+
+
+def _recommended_mitigations(
+    db: Session,
+    *,
+    operator: OperatorContext,
+    incident: Incident,
+) -> list[str]:
+    recommendations = get_graph_guardrail_recommendations(
+        db,
+        organization_ids=operator.organization_ids,
+        project_id=incident.project_id,
+    )
+    mitigations = [
+        f"enable {item['policy_type']} guardrail"
+        for item in recommendations[:3]
+    ]
+    summary = incident.summary_json or {}
+    retrieval_chunks = summary.get("retrieval_chunks")
+    metric_name = str(summary.get("metric_name") or "")
+    if retrieval_chunks is not None or "latency" in metric_name:
+        mitigations.append("reduce retrieval chunk count")
+    unique: list[str] = []
+    seen: set[str] = set()
+    for item in mitigations:
+        if item in seen:
+            continue
+        seen.add(item)
+        unique.append(item)
+    return unique
+
+
+def _similar_platform_failures(
+    db: Session,
+    *,
+    incident: Incident,
+    traces: list[Trace],
+    limit: int = 3,
+) -> list[dict]:
+    model_family = None
+    for trace in traces:
+        metadata = trace.metadata_json or {}
+        model_family = str(metadata.get("__model_name") or trace.model_name or "").strip() or None
+        if model_family:
+            break
+    return find_similar_platform_failures(db, model_family=model_family, limit=limit)
+
+
 def get_incident_command_center(
     db: Session,
     operator: OperatorContext,
@@ -160,6 +290,10 @@ def get_incident_command_center(
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     root_cause_report = get_incident_analysis(db, operator, incident_id=incident_id)
     graph = get_incident_graph(db, operator, incident_id)
+    possible_root_causes = _possible_root_causes(db, operator=operator, incident=incident)
+    graph_related_patterns = _graph_related_patterns(db, operator=operator, incident=incident)
+    similar_platform_failures = _similar_platform_failures(db, incident=incident, traces=traces)
+    recommended_mitigations = _recommended_mitigations(db, operator=operator, incident=incident)
 
     anchor_trace = _select_anchor_trace(representative_traces)
     trace_compare = get_trace_compare(db, operator, anchor_trace.id) if anchor_trace is not None else None
@@ -185,6 +319,10 @@ def get_incident_command_center(
         baseline_traces=baseline_traces,
         root_cause_report=root_cause_report,
         graph_root_causes=graph["root_causes"],
+        possible_root_causes=possible_root_causes,
+        graph_related_patterns=graph_related_patterns,
+        similar_platform_failures=similar_platform_failures,
+        recommended_mitigations=recommended_mitigations,
         trace_compare=trace_compare,
         compare_link=compare_link,
         guardrail_activity=_guardrail_activity(

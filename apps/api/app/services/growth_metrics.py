@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.models.project import Project
-from app.services.trace_query_router import query_all_traces_via_router
+from app.services.trace_query_router import query_daily_metrics
 
 USAGE_TIER_UNDER_1M = 1_000_000
 USAGE_TIER_1M_10M = 10_000_000
@@ -65,14 +65,15 @@ def get_growth_metrics(db: Session) -> dict:
     chart_start = today_start - timedelta(days=TREND_WINDOW_DAYS - 1)
     usage_start = today_start - timedelta(days=USAGE_WINDOW_DAYS - 1)
 
-    _, trace_rows = query_all_traces_via_router(
-        window_start=prior_week_start,
-        window_end=tomorrow_start,
-        aggregated=True,
+    trace_rollups = query_daily_metrics(
+        project_id=None,
+        environment_id=None,
+        start_time=prior_week_start,
+        end_time=tomorrow_start,
     )
     trace_counts_by_day: Counter[str] = Counter()
-    for row in trace_rows:
-        trace_counts_by_day[_as_utc(row.timestamp).date().isoformat()] += 1
+    for row in trace_rollups:
+        trace_counts_by_day[row.time_bucket.date().isoformat()] += int(row.trace_count)
 
     today_count = int(trace_counts_by_day.get(today_start.date().isoformat(), 0))
     seven_day_avg = sum(
@@ -117,12 +118,17 @@ def get_growth_metrics(db: Session) -> dict:
     ).all():
         guardrail_action_counts[action] = int(count)
 
-    _, usage_rows = query_all_traces_via_router(
-        window_start=usage_start,
-        window_end=tomorrow_start,
-        aggregated=True,
+    usage_rollups = query_daily_metrics(
+        project_id=None,
+        environment_id=None,
+        start_time=usage_start,
+        end_time=tomorrow_start,
     )
-    trace_count_by_project = Counter(str(row.project_id) for row in usage_rows)
+    trace_count_by_project: Counter[str] = Counter()
+    for row in usage_rollups:
+        if row.project_id is None:
+            continue
+        trace_count_by_project[str(row.project_id)] += int(row.trace_count)
     active_project_ids = [
         str(project_id)
         for project_id in db.scalars(select(Project.id).where(Project.is_active.is_(True))).all()

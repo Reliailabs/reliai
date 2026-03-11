@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from app.processors.base_processor import BaseProcessor
 from app.processors.registry import processors_for_topic
-from app.services.external_processors import dispatch_external_processors
+from app.services.external_processors import dispatch_external_processors, dispatch_platform_extensions
 from app.services.event_stream import EventMessage
 
 logger = logging.getLogger(__name__)
@@ -83,6 +83,15 @@ async def dispatch_event(
                 success=external_result.success,
                 attempts=external_result.attempts,
                 error=external_result.error,
+            )
+        )
+    for extension_result in dispatch_platform_extensions(event):
+        results.append(
+            ProcessorDispatchResult(
+                processor_name=extension_result.processor_name,
+                success=extension_result.success,
+                attempts=extension_result.attempts,
+                error=extension_result.error,
             )
         )
     return DispatchReport(topic=event.topic, processor_results=results)

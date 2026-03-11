@@ -68,6 +68,27 @@ class DeploymentRiskRead(APIModel):
     created_at: datetime
 
 
+class DeploymentIntelligencePatternRead(APIModel):
+    pattern: str
+    risk: str
+    trace_count: int
+
+
+class DeploymentIntelligenceRead(APIModel):
+    deployment_id: UUID
+    risk_score: float | None
+    risk_explanations: list[str]
+    graph_risk_patterns: list[DeploymentIntelligencePatternRead]
+    recommended_guardrails: list[str]
+
+
+class DeploymentGateRead(APIModel):
+    decision: str
+    risk_score: int
+    explanations: list[str]
+    recommended_guardrails: list[str]
+
+
 class DeploymentSimulationCreate(BaseModel):
     environment: str | None = Field(default=None, min_length=2, max_length=32)
     prompt_version_id: UUID | None = None
@@ -102,6 +123,8 @@ class DeploymentDetailRead(DeploymentRead):
     rollbacks: list[DeploymentRollbackRead]
     incident_ids: list[UUID]
     latest_risk_score: DeploymentRiskRead | None = None
+    intelligence: DeploymentIntelligenceRead | None = None
+    gate: DeploymentGateRead | None = None
 
 
 class DeploymentListResponse(BaseModel):

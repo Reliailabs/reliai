@@ -1,6 +1,7 @@
 packages:
   - apps/web
   - packages/config
+  - packages/reliai-node
   - packages/runtime-guardrail
   - packages/runtime-proxy
   - packages/types

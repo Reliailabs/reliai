@@ -18,6 +18,9 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Index("ix_traces_project_prompt_version_created_at", "project_id", "prompt_version", "created_at"),
         Index("ix_traces_project_model_name_created_at", "project_id", "model_name", "created_at"),
         Index("ix_traces_project_request_id", "project_id", "request_id"),
+        Index("ix_traces_trace_id", "trace_id"),
+        Index("ix_traces_span_id", "span_id"),
+        Index("ix_traces_parent_span_id", "parent_span_id"),
     )
 
     organization_id: Mapped[UUID] = mapped_column(
@@ -32,6 +35,10 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     environment: Mapped[str] = mapped_column(String(32), nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     request_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    trace_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    span_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    parent_span_id: Mapped[str | None] = mapped_column(String(255))
+    span_name: Mapped[str | None] = mapped_column(String(120))
     user_id: Mapped[str | None] = mapped_column(String(255))
     session_id: Mapped[str | None] = mapped_column(String(255))
     model_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -48,6 +55,8 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     is_explainable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     success: Mapped[bool] = mapped_column(Boolean, nullable=False)
     error_type: Mapped[str | None] = mapped_column(String(120))
+    guardrail_policy: Mapped[str | None] = mapped_column(String(120))
+    guardrail_action: Mapped[str | None] = mapped_column(String(120))
     metadata_json: Mapped[dict | None] = mapped_column(JSON)
 
     project = relationship("Project", back_populates="traces")

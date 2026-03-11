@@ -16,6 +16,7 @@ from app.models.evaluation_rollup import EvaluationRollup
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
+from app.services.global_reliability_patterns import check_global_patterns
 from app.services.reliability_graph import get_model_failure_graph
 from app.services.reliability_pattern_mining import build_prompt_pattern_hash, get_pattern_risk
 
@@ -292,6 +293,20 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
         db,
         model_family=deployment.model_version.model_family if deployment.model_version is not None else None,
         organization_ids=[deployment.project.organization_id] if deployment.project is not None else None,
+        project_id=deployment.project_id,
+    )
+    global_pattern_risk = check_global_patterns(
+        db,
+        model_family=deployment.model_version.model_family if deployment.model_version is not None else None,
+    )
+    graph_explanations = [
+        f"{item['pattern']} detected"
+        for item in graph_risk["patterns"][:3]
+    ]
+    graph_explanations.extend(
+        item["description"]
+        for item in global_pattern_risk["patterns"][:2]
+        if item.get("description")
     )
 
     structured_output_delta = _clamp(
@@ -334,6 +349,10 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
         + float(graph_risk["risk_score"]),
         4,
     )
+    risk_score = round(
+        risk_score + float(global_pattern_risk["risk_score"]),
+        4,
+    )
     analysis_json = {
         "window_minutes": WINDOW_MINUTES,
         "baseline_window_start": baseline_start.isoformat(),
@@ -352,6 +371,8 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
         "matched_regression_metrics": regression_metrics,
         "pattern_risk": pattern_risk,
         "graph_risk": graph_risk,
+        "global_pattern_risk": global_pattern_risk,
+        "deployment_risk_explanations": graph_explanations,
         "latest_success_rate": _latest_quality_metric(
             db, deployment=deployment, metric_name="quality_pass_rate"
         ),

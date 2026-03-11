@@ -2,8 +2,9 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from app.services.evaluations import run_structured_output_validity_evaluation
+from app.services.trace_query_router import aggregate_trace_metrics
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
-from app.services.trace_warehouse import TraceWarehouseAggregateQuery, aggregate_trace_metrics
+from app.services.trace_warehouse import TraceWarehouseAggregateQuery
 from app.workers.trace_warehouse_ingest import run_trace_warehouse_ingest
 from .test_api import create_api_key, create_operator, create_organization, create_project, ingest_trace, sign_in
 
@@ -87,7 +88,7 @@ def test_trace_query_adapter_uses_postgres_for_recent_windows(
     def _unexpected_warehouse_call(*args, **kwargs):
         raise AssertionError("warehouse query should not be used for recent windows")
 
-    monkeypatch.setattr("app.services.trace_query_adapter.query_traces", _unexpected_warehouse_call)
+    monkeypatch.setattr("app.services.trace_query_adapter.query_recent_traces", _unexpected_warehouse_call)
 
     traces = query_trace_window(
         db_session,

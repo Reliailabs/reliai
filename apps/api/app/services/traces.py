@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone as trace_timezone
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_, desc, or_, select
@@ -59,6 +59,18 @@ def _build_preview(value: str | None) -> str | None:
     return compact[:PREVIEW_LENGTH] if compact else None
 
 
+def _trace_identity(payload: TraceIngestRequest) -> tuple[str | None, str | None, str | None, str | None, str | None, str | None]:
+    metadata = payload.metadata_json or {}
+    return (
+        payload.trace_id or str(metadata.get("reliai_trace_id") or metadata.get("trace_id") or "").strip() or None,
+        payload.span_id or str(metadata.get("reliai_span_id") or metadata.get("span_id") or "").strip() or None,
+        payload.parent_span_id or str(metadata.get("reliai_parent_span_id") or metadata.get("parent_span_id") or "").strip() or None,
+        payload.span_name or str(metadata.get("span_name") or "").strip() or None,
+        payload.guardrail_policy or str(metadata.get("guardrail_policy") or "").strip() or None,
+        payload.guardrail_action or str(metadata.get("guardrail_action") or "").strip() or None,
+    )
+
+
 def _encode_cursor(created_at: datetime, trace_id: UUID) -> str:
     payload = {"created_at": created_at.isoformat(), "id": str(trace_id)}
     return base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
@@ -88,11 +100,13 @@ def publish_trace_ingested_event(trace: Trace) -> None:
 
 def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> Trace:
     try:
+        trace_row_id = uuid4()
         environment = resolve_project_environment(
             db,
             project=project,
             name=payload.environment,
         )
+        trace_id, span_id, parent_span_id, span_name, guardrail_policy, guardrail_action = _trace_identity(payload)
         is_explainable = bool(
             payload.model_name
             and payload.prompt_version
@@ -101,12 +115,17 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
             and payload.completion_tokens is not None
         )
         trace = Trace(
+            id=trace_row_id,
             organization_id=project.organization_id,
             project_id=project.id,
             environment_id=environment.id,
             environment=environment.name,
             timestamp=payload.timestamp,
             request_id=payload.request_id,
+            trace_id=trace_id or str(trace_row_id),
+            span_id=span_id or str(trace_row_id),
+            parent_span_id=parent_span_id,
+            span_name=span_name,
             user_id=payload.user_id,
             session_id=payload.session_id,
             model_name=payload.model_name,
@@ -123,6 +142,8 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
             is_explainable=is_explainable,
             success=payload.success,
             error_type=payload.error_type,
+            guardrail_policy=guardrail_policy,
+            guardrail_action=guardrail_action,
             metadata_json=payload.metadata_json,
         )
         db.add(trace)

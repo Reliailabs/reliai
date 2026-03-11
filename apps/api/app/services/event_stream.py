@@ -14,6 +14,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from app.core.settings import get_settings
+from app.db.session import SessionLocal
+from app.services.event_log import record_event_log
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,7 @@ TRACE_INGESTED_EVENT = "trace_ingested"
 TRACE_EVALUATED_EVENT = "trace_evaluated"
 REGRESSION_DETECTED_EVENT = "regression_detected"
 DEPLOYMENT_CREATED_EVENT = "deployment_created"
+DEPLOYMENT_GATE_RESULT_EVENT = "deployment_gate_result"
 INCIDENT_CREATED_EVENT = "incident_created"
 AUTOMATION_TRIGGERED_EVENT = "automation_triggered"
 SDK_REQUEST_EVENT = "sdk_request"
@@ -30,6 +33,7 @@ SDK_RETRY_EVENT = "sdk_retry"
 PLATFORM_DEGRADED_EVENT = "platform_degraded"
 PLATFORM_RECOVERED_EVENT = "platform_recovered"
 PIPELINE_BACKPRESSURE_EVENT = "pipeline_backpressure"
+POLICY_VIOLATION_EVENT = "policy_violation"
 SDK_EVENT_TYPES = {
     SDK_REQUEST_EVENT,
     SDK_ERROR_EVENT,
@@ -106,6 +110,20 @@ class DeploymentCreatedEventPayload(BaseModel):
     metadata: dict[str, Any] | None = None
 
 
+class DeploymentGateResultEventPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_type: str = DEPLOYMENT_GATE_RESULT_EVENT
+    project_id: str
+    environment_id: str | None = None
+    deployment_id: str
+    decision: str
+    risk_score: int
+    explanations: list[str]
+    recommended_guardrails: list[str]
+    metadata: dict[str, Any] | None = None
+
+
 class AutomationTriggeredEventPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -129,6 +147,21 @@ class IncidentCreatedEventPayload(BaseModel):
     incident_type: str
     severity: str
     started_at: datetime
+    metadata: dict[str, Any] | None = None
+
+
+class PolicyViolationEventPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_type: str = POLICY_VIOLATION_EVENT
+    organization_id: str
+    project_id: str
+    environment_id: str | None = None
+    trace_id: str
+    timestamp: datetime
+    policy_type: str
+    enforcement_mode: str
+    action_taken: str
     metadata: dict[str, Any] | None = None
 
 
@@ -300,7 +333,19 @@ def get_event_stream_client() -> EventStreamClient:
 
 
 def publish_event(topic: str, payload: dict[str, Any]) -> EventMessage:
-    return get_event_stream_client().publish(topic=topic, key=_payload_key(payload), payload=payload)
+    message = get_event_stream_client().publish(topic=topic, key=_payload_key(payload), payload=payload)
+    db = SessionLocal()
+    try:
+        record_event_log(
+            db,
+            event_type=message.event_type,
+            payload=message.payload,
+            published_at=message.published_at,
+        )
+        db.commit()
+    finally:
+        db.close()
+    return message
 
 
 def consume_events(

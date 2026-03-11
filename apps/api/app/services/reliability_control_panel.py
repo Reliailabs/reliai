@@ -12,9 +12,18 @@ from app.models.global_model_reliability import GlobalModelReliability
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
+from app.models.project import Project
 from app.models.reliability_action_log import ReliabilityActionLog
 from app.models.trace import Trace
-from app.services.environments import normalize_environment_name
+from app.services.environments import get_default_environment, get_environment_by_name, normalize_environment_name
+from app.services.organization_guardrails import guardrail_compliance_for_project
+from app.services.reliability_graph import (
+    get_graph_guardrail_recommendations,
+    get_high_risk_patterns,
+    get_model_failure_graph,
+)
+from app.services.trace_query_router import query_recent_traces
+from app.services.trace_warehouse import TraceWarehouseQuery
 from app.services.global_metrics import (
     METRIC_AVERAGE_LATENCY_MS,
     METRIC_STRUCTURED_OUTPUT_VALIDITY_RATE,
@@ -26,17 +35,40 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _reliability_score(*, deployment_risk_level: str | None, incident_count: int, guardrail_triggers: int) -> int:
+    score = 100
+    if deployment_risk_level == "high":
+        score -= 25
+    elif deployment_risk_level == "medium":
+        score -= 12
+    score -= min(40, incident_count * 12)
+    score -= min(25, guardrail_triggers)
+    return max(0, score)
+
+
 def get_project_reliability_control_panel(db: Session, project_id: UUID, environment: str | None = None) -> dict:
     now = _utc_now()
     last_24h = now - timedelta(hours=24)
     normalized_environment = normalize_environment_name(environment) if environment is not None else None
+    project = db.get(Project, project_id)
+    if project is None:
+        raise ValueError("Project not found")
+    environment_record = (
+        get_environment_by_name(db, project_id=project_id, name=normalized_environment)
+        if normalized_environment is not None
+        else get_default_environment(db, project_id=project_id)
+    )
 
     latest_deployment_statement = select(Deployment).where(Deployment.project_id == project_id)
     if normalized_environment is not None:
         latest_deployment_statement = latest_deployment_statement.where(Deployment.environment == normalized_environment)
     latest_deployment = db.scalar(
         latest_deployment_statement
-        .options(selectinload(Deployment.risk_score), selectinload(Deployment.model_version))
+        .options(
+            selectinload(Deployment.project),
+            selectinload(Deployment.risk_score),
+            selectinload(Deployment.model_version),
+        )
         .order_by(desc(Deployment.deployed_at), desc(Deployment.id))
     )
 
@@ -86,6 +118,41 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID, environ
         .order_by(desc("trigger_count"), GuardrailPolicy.policy_type.asc())
         .limit(1)
     ).first()
+
+    warehouse_rows = query_recent_traces(
+        TraceWarehouseQuery(
+            organization_id=project.organization_id,
+            project_id=project_id,
+            environment_id=environment_record.id if environment_record is not None else None,
+            window_start=last_24h,
+            window_end=now,
+            limit=5000,
+        )
+    )
+    guardrail_activity_counts: dict[str, int] = {}
+    for row in warehouse_rows:
+        if row.guardrail_policy:
+            guardrail_activity_counts[row.guardrail_policy] = guardrail_activity_counts.get(row.guardrail_policy, 0) + 1
+    guardrail_activity = [
+        {
+            "policy_type": policy_type,
+            "trigger_count": trigger_count,
+        }
+        for policy_type, trigger_count in sorted(
+            guardrail_activity_counts.items(),
+            key=lambda item: (-item[1], item[0]),
+        )
+    ]
+
+    recent_deployments_statement = select(Deployment).where(Deployment.project_id == project_id)
+    if normalized_environment is not None:
+        recent_deployments_statement = recent_deployments_statement.where(Deployment.environment == normalized_environment)
+    recent_deployments = db.scalars(
+        recent_deployments_statement
+        .options(selectinload(Deployment.risk_score))
+        .order_by(desc(Deployment.deployed_at), desc(Deployment.id))
+        .limit(5)
+    ).all()
 
     latest_simulation = db.scalar(
         select(DeploymentSimulation)
@@ -141,7 +208,46 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID, environ
             elif row.metric_name == METRIC_STRUCTURED_OUTPUT_VALIDITY_RATE:
                 model_metrics["structured_output_validity"] = float(row.metric_value)
 
+    graph_high_risk_patterns = get_high_risk_patterns(
+        db,
+        organization_ids=[latest_deployment.project.organization_id] if latest_deployment is not None and latest_deployment.project is not None else None,
+        project_id=project_id,
+        limit=4,
+    )
+    recommended_guardrails = get_graph_guardrail_recommendations(
+        db,
+        organization_ids=[latest_deployment.project.organization_id] if latest_deployment is not None and latest_deployment.project is not None else None,
+        project_id=project_id,
+    )
+    model_failure_signals = get_model_failure_graph(
+        db,
+        model_family=current_model_name,
+        organization_ids=[latest_deployment.project.organization_id] if latest_deployment is not None and latest_deployment.project is not None else None,
+        project_id=project_id,
+    )
+
+    high_risk_patterns = [
+        {
+            "pattern": item["pattern"],
+            "risk_level": item["risk_level"],
+            "trace_count": item["traces"],
+            "confidence": item["confidence"],
+        }
+        for item in graph_high_risk_patterns
+    ]
+    reliability_score = _reliability_score(
+        deployment_risk_level=(
+            latest_deployment.risk_score.risk_level
+            if latest_deployment is not None and latest_deployment.risk_score is not None
+            else None
+        ),
+        incident_count=incident_rate_last_24h,
+        guardrail_triggers=guardrail_trigger_rate_last_24h,
+    )
+
     return {
+        "reliability_score": reliability_score,
+        "active_incidents": sum(1 for incident in recent_incidents if incident.status != "resolved"),
         "deployment_risk": {
             "latest_deployment_id": str(latest_deployment.id) if latest_deployment is not None else None,
             "deployed_at": latest_deployment.deployed_at if latest_deployment is not None else None,
@@ -188,12 +294,49 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID, environ
             "trigger_rate_last_24h": guardrail_trigger_rate_last_24h,
             "top_triggered_policy": top_policy_row.policy_type if top_policy_row is not None else None,
         },
+        "guardrail_activity": guardrail_activity,
+        "guardrail_compliance": guardrail_compliance_for_project(
+            db,
+            organization_id=project.organization_id,
+            project_id=project_id,
+            environment_id=environment_record.id if environment_record is not None else None,
+        ),
         "model_reliability": {
             "current_model": current_model_name,
             "success_rate": model_metrics["success_rate"],
             "average_latency": model_metrics["average_latency"],
             "structured_output_validity": model_metrics["structured_output_validity"],
         },
+        "high_risk_patterns": high_risk_patterns,
+        "graph_high_risk_patterns": high_risk_patterns,
+        "recommended_guardrails": [
+            {
+                "policy_type": item["policy_type"],
+                "recommended_action": item["recommended_action"],
+                "title": item["title"],
+                "confidence": item["confidence"],
+                "model_family": item.get("model_family"),
+            }
+            for item in recommended_guardrails
+        ],
+        "model_failure_signals": [
+            {
+                "pattern": item["pattern"],
+                "risk_level": item["risk_level"],
+                "confidence": item["confidence"],
+            }
+            for item in model_failure_signals["patterns"][:3]
+        ],
+        "recent_deployments": [
+            {
+                "deployment_id": deployment.id,
+                "deployed_at": deployment.deployed_at,
+                "environment": deployment.environment,
+                "risk_level": deployment.risk_score.risk_level if deployment.risk_score is not None else None,
+                "risk_score": float(deployment.risk_score.risk_score) if deployment.risk_score is not None else None,
+            }
+            for deployment in recent_deployments
+        ],
         "automatic_actions": {
             "recent_actions": [
                 {

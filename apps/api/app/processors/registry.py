@@ -2,9 +2,18 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 from app.core.settings import get_settings
 from app.processors.base_processor import BaseProcessor
+
+
+@dataclass(frozen=True)
+class ProcessorDescriptor:
+    processor_id: str
+    processor_type: str
+    version: str
+    topic: str
 
 
 class ProcessorRegistry:
@@ -27,6 +36,17 @@ class ProcessorRegistry:
 
     def list_processor_names(self) -> list[str]:
         return list(self._processor_classes.keys())
+
+    def list_descriptors(self) -> list[ProcessorDescriptor]:
+        return [
+            ProcessorDescriptor(
+                processor_id=processor_class.name,
+                processor_type=processor_class.processor_type,
+                version=processor_class.version,
+                topic=processor_class.topic,
+            )
+            for processor_class in self._processor_classes.values()
+        ]
 
     def subscribed_topics(self) -> list[str]:
         return list(self._subscriptions.keys())
@@ -60,6 +80,7 @@ def get_processor_registry() -> ProcessorRegistry:
     global _defaults_registered
     if not _defaults_registered:
         from app.processors.automation_processor import AutomationProcessor
+        from app.processors.deployment_processor import DeploymentProcessor
         from app.processors.evaluation_processor import EvaluationProcessor
         from app.processors.regression_processor import RegressionProcessor
         from app.processors.reliability_graph_processor import ReliabilityGraphProcessor
@@ -69,6 +90,7 @@ def get_processor_registry() -> ProcessorRegistry:
 
         for processor_class in (
             AutomationProcessor,
+            DeploymentProcessor,
             EvaluationProcessor,
             RegressionProcessor,
             ReliabilityGraphProcessor,
@@ -88,3 +110,7 @@ def processors_for_topic(
 ) -> list[BaseProcessor]:
     enabled = set(enabled_processors) if enabled_processors is not None else enabled_processor_names()
     return get_processor_registry().processors_for_topic(topic, enabled_processors=enabled)
+
+
+def core_processor_descriptors() -> list[ProcessorDescriptor]:
+    return get_processor_registry().list_descriptors()

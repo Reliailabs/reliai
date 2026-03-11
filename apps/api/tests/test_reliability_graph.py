@@ -3,6 +3,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 
+from app.models.global_reliability_pattern import GlobalReliabilityPattern
 from app.models.reliability_graph_edge import ReliabilityGraphEdge
 from app.models.reliability_graph_node import ReliabilityGraphNode
 from app.models.reliability_pattern import ReliabilityPattern
@@ -148,6 +149,23 @@ def test_system_global_intelligence_requires_admin(client, db_session, fake_queu
         db_session,
         anchor_time=datetime(2026, 3, 10, 15, 0, tzinfo=timezone.utc).isoformat(),
     )
+    db_session.add(
+        GlobalReliabilityPattern(
+            pattern_id="global-test-pattern",
+            pattern_type="model_failure",
+            conditions_json={"model_family": "gpt-4.1-mini", "failure_type": "request_failure"},
+            impact_metrics_json={
+                "description": "gpt-4.1-mini shows elevated request failure patterns",
+                "impact": "10 matching failures across 2 organizations with 40% average failure probability",
+                "recommended_guardrails": ["structured_output"],
+            },
+            occurrence_count=10,
+            organizations_affected=2,
+            confidence_score=0.61,
+            created_at=datetime(2026, 3, 10, 15, 0, tzinfo=timezone.utc),
+        )
+    )
+    db_session.commit()
     from .test_api import create_operator, sign_in
 
     operator = create_operator(db_session, email="system-admin@acme.test", is_system_admin=True)

@@ -17,6 +17,12 @@ from app.db.session import SessionLocal
 from app.models.external_processor import ExternalProcessor
 from app.models.processor_failure import ProcessorFailure
 from app.models.project import Project
+from app.services.platform_extensions import (
+    extension_allows_event,
+    extension_for_processor,
+    extension_runtime_limits,
+    record_extension_runtime,
+)
 from app.services.audit_log import log_action
 from app.schemas.external_processor import ExternalProcessorCreate, ExternalProcessorUpdate
 from app.services.event_stream import EventMessage
@@ -24,7 +30,6 @@ from app.services.rate_limiter import enforce_rate_limit
 from app.services.usage_quotas import enforce_processor_quota
 from app.core.settings import get_settings
 
-EXTERNAL_PROCESSOR_MAX_RETRIES = 3
 RECENT_FAILURE_WINDOW_HOURS = 24
 
 
@@ -208,6 +213,15 @@ def _record_failure(
 
 
 def _post_to_processor(processor: ExternalProcessor, payload: dict[str, Any]) -> None:
+    _post_to_processor_with_timeout(processor, payload, timeout_seconds=10)
+
+
+def _post_to_processor_with_timeout(
+    processor: ExternalProcessor,
+    payload: dict[str, Any],
+    *,
+    timeout_seconds: int,
+) -> None:
     signature = _sign_payload(processor.secret, payload)
     response = httpx.post(
         processor.endpoint_url,
@@ -216,9 +230,69 @@ def _post_to_processor(processor: ExternalProcessor, payload: dict[str, Any]) ->
             "X-Reliai-Signature": signature,
             "X-Reliai-Event-Type": payload["event_type"],
         },
-        timeout=10.0,
+        timeout=float(timeout_seconds),
     )
     response.raise_for_status()
+
+
+def _dispatch_processor_targets(
+    db: Session,
+    *,
+    event: EventMessage,
+    processors: list[ExternalProcessor],
+    label_prefix: str,
+) -> list[ExternalProcessorDispatchResult]:
+    payload = _request_payload(event)
+    results: list[ExternalProcessorDispatchResult] = []
+    parsed_project_id = UUID(str(event.payload["project_id"]))
+    for processor in processors:
+        extension = extension_for_processor(db, processor_id=processor.id)
+        if not extension_allows_event(extension, event_type=event.event_type):
+            continue
+        enforce_rate_limit(
+            scope="processor_dispatch",
+            key=f"{parsed_project_id}:{processor.id}",
+            limit=get_settings().processor_dispatch_rate_limit_per_minute,
+            window_seconds=60,
+        )
+        timeout_seconds, max_retries = extension_runtime_limits(extension)
+        attempts = 0
+        last_error: str | None = None
+        max_attempts = max_retries + 1
+        while attempts < max_attempts:
+            attempts += 1
+            try:
+                _post_to_processor_with_timeout(processor, payload, timeout_seconds=timeout_seconds)
+                record_extension_runtime(db, extension=extension, succeeded=True)
+                last_error = None
+                results.append(
+                    ExternalProcessorDispatchResult(
+                        processor_name=f"{label_prefix}:{processor.name}",
+                        success=True,
+                        attempts=attempts,
+                    )
+                )
+                break
+            except Exception as exc:
+                last_error = str(exc)
+        if last_error is not None:
+            _record_failure(
+                db,
+                processor=processor,
+                event=event,
+                attempts=attempts,
+                last_error=last_error,
+            )
+            record_extension_runtime(db, extension=extension, succeeded=False)
+            results.append(
+                ExternalProcessorDispatchResult(
+                    processor_name=f"{label_prefix}:{processor.name}",
+                    success=False,
+                    attempts=attempts,
+                    error=last_error,
+                )
+            )
+    return results
 
 
 def dispatch_external_processors(event: EventMessage) -> list[ExternalProcessorDispatchResult]:
@@ -237,49 +311,39 @@ def dispatch_external_processors(event: EventMessage) -> list[ExternalProcessorD
             project_id=parsed_project_id,
             event_type=event.event_type,
         )
-        payload = _request_payload(event)
-        results: list[ExternalProcessorDispatchResult] = []
-        for processor in processors:
-            enforce_rate_limit(
-                scope="processor_dispatch",
-                key=f"{parsed_project_id}:{processor.id}",
-                limit=get_settings().processor_dispatch_rate_limit_per_minute,
-                window_seconds=60,
-            )
-            attempts = 0
-            last_error: str | None = None
-            max_attempts = EXTERNAL_PROCESSOR_MAX_RETRIES + 1
-            while attempts < max_attempts:
-                attempts += 1
-                try:
-                    _post_to_processor(processor, payload)
-                    last_error = None
-                    results.append(
-                        ExternalProcessorDispatchResult(
-                            processor_name=f"external:{processor.name}",
-                            success=True,
-                            attempts=attempts,
-                        )
-                    )
-                    break
-                except Exception as exc:
-                    last_error = str(exc)
-            if last_error is not None:
-                _record_failure(
-                    db,
-                    processor=processor,
-                    event=event,
-                    attempts=attempts,
-                    last_error=last_error,
-                )
-                results.append(
-                    ExternalProcessorDispatchResult(
-                        processor_name=f"external:{processor.name}",
-                        success=False,
-                        attempts=attempts,
-                        error=last_error,
-                    )
-                )
-        return results
+        org_processors = [processor for processor in processors if extension_for_processor(db, processor_id=processor.id) is None]
+        return _dispatch_processor_targets(
+            db,
+            event=event,
+            processors=org_processors,
+            label_prefix="external",
+        )
+    finally:
+        db.close()
+
+
+def dispatch_platform_extensions(event: EventMessage) -> list[ExternalProcessorDispatchResult]:
+    project_id = event.payload.get("project_id")
+    if project_id is None:
+        return []
+    try:
+        parsed_project_id = UUID(str(project_id))
+    except (TypeError, ValueError):
+        return []
+
+    db = SessionLocal()
+    try:
+        processors = _enabled_processors_for_event(
+            db,
+            project_id=parsed_project_id,
+            event_type=event.event_type,
+        )
+        platform_processors = [processor for processor in processors if extension_for_processor(db, processor_id=processor.id) is not None]
+        return _dispatch_processor_targets(
+            db,
+            event=event,
+            processors=platform_processors,
+            label_prefix="extension",
+        )
     finally:
         db.close()

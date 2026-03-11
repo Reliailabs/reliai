@@ -6,7 +6,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete, desc, or_, select
+from sqlalchemy import delete, desc, func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.evaluation import Evaluation
@@ -412,6 +412,10 @@ def _edge_pattern(edge: ReliabilityGraphEdge, source: ReliabilityGraphNode, targ
         "confidence": round(float(edge.confidence), 4),
         "source_node_id": str(source.id),
         "target_node_id": str(target.id),
+        "source_type": source.node_type,
+        "source_key": source.node_key,
+        "target_type": target.node_type,
+        "target_key": target.node_key,
         "relationship_type": edge.relationship_type,
     }
 
@@ -420,6 +424,7 @@ def get_high_risk_patterns(
     db: Session,
     *,
     organization_ids: list[UUID] | None,
+    project_id: UUID | None = None,
     limit: int = 25,
 ) -> list[dict]:
     statement = (
@@ -442,6 +447,13 @@ def get_high_risk_patterns(
                 ReliabilityGraphEdge.organization_id.in_(organization_ids),
             )
         )
+    if project_id is not None:
+        statement = statement.where(
+            or_(
+                ReliabilityGraphEdge.project_id.is_(None),
+                ReliabilityGraphEdge.project_id == project_id,
+            )
+        )
     edges = db.scalars(statement).unique().all()
     return [_edge_pattern(edge, edge.source, edge.target) for edge in edges if edge.source and edge.target]
 
@@ -450,13 +462,26 @@ def get_graph_guardrail_recommendations(
     db: Session,
     *,
     organization_ids: list[UUID] | None,
+    project_id: UUID | None = None,
 ) -> list[dict]:
-    patterns = get_high_risk_patterns(db, organization_ids=organization_ids, limit=50)
+    patterns = get_high_risk_patterns(
+        db,
+        organization_ids=organization_ids,
+        project_id=project_id,
+        limit=50,
+    )
     recommendations: list[dict] = []
     for item in patterns:
         relationship = item["relationship_type"]
         pattern_text = str(item["pattern"])
         confidence = float(item["confidence"])
+        model_family = (
+            str(item["source_key"])
+            if item.get("source_type") == NODE_MODEL_FAMILY
+            else str(item["target_key"])
+            if item.get("target_type") == NODE_MODEL_FAMILY
+            else None
+        )
         if "latency" in pattern_text or relationship == REL_RETRIEVAL_FAILURE:
             recommendations.append(
                 {
@@ -465,6 +490,8 @@ def get_graph_guardrail_recommendations(
                     "title": "Add latency retry guardrail coverage",
                     "description": f"Graph correlations show latency pressure around {pattern_text}.",
                     "confidence": confidence,
+                    "pattern": pattern_text,
+                    "model_family": model_family,
                 }
             )
         if "incident" in pattern_text or relationship == REL_MODEL_INCIDENT:
@@ -475,6 +502,8 @@ def get_graph_guardrail_recommendations(
                     "title": "Add hallucination guardrail coverage",
                     "description": f"Graph correlations tie the current model or prompt shape to repeated incidents: {pattern_text}.",
                     "confidence": confidence,
+                    "pattern": pattern_text,
+                    "model_family": model_family,
                 }
             )
         if "structured_output" in pattern_text:
@@ -485,6 +514,8 @@ def get_graph_guardrail_recommendations(
                     "title": "Strengthen structured output guardrails",
                     "description": f"Graph correlations show structured output failures for {pattern_text}.",
                     "confidence": confidence,
+                    "pattern": pattern_text,
+                    "model_family": model_family,
                 }
             )
     unique: list[dict] = []
@@ -508,6 +539,12 @@ def get_graph_guardrail_recommendations(
                 f"{top_pattern['pattern']}. Start with a structured output retry guardrail."
             ),
             "confidence": float(top_pattern["confidence"]),
+            "pattern": str(top_pattern["pattern"]),
+            "model_family": (
+                str(top_pattern["source_key"])
+                if top_pattern.get("source_type") == NODE_MODEL_FAMILY
+                else None
+            ),
         }
     ]
 
@@ -517,6 +554,7 @@ def get_model_failure_graph(
     *,
     model_family: str | None,
     organization_ids: list[UUID] | None,
+    project_id: UUID | None = None,
 ) -> dict:
     if not model_family:
         return {"risk_score": 0.0, "patterns": []}
@@ -538,7 +576,74 @@ def get_model_failure_graph(
                 ReliabilityGraphEdge.organization_id.in_(organization_ids),
             )
         )
+    if project_id is not None:
+        statement = statement.where(
+            or_(
+                ReliabilityGraphEdge.project_id.is_(None),
+                ReliabilityGraphEdge.project_id == project_id,
+            )
+        )
     edges = db.scalars(statement).unique().all()
     patterns = [_edge_pattern(edge, edge.source, edge.target) for edge in edges if edge.source and edge.target]
     risk_score = round(min(0.2, sum(float(edge.confidence) * 0.1 for edge in edges[:3])), 4)
     return {"risk_score": risk_score, "patterns": patterns}
+
+
+def get_global_pattern_summaries(db: Session, *, limit: int = 25) -> list[dict]:
+    rows = db.execute(
+        select(
+            ReliabilityGraphNode.node_key.label("model_family"),
+            ReliabilityGraphEdge.relationship_type,
+            ReliabilityGraphNode.id.label("source_node_id"),
+            ReliabilityGraphEdge.target_id,
+            func.max(ReliabilityGraphEdge.confidence).label("confidence"),
+            func.sum(ReliabilityGraphEdge.trace_count).label("trace_count"),
+            func.count(func.distinct(ReliabilityGraphEdge.organization_id)).label("organizations_affected"),
+            func.min(ReliabilityGraphEdge.created_at).label("first_seen"),
+        )
+        .join(ReliabilityGraphNode, ReliabilityGraphEdge.source_id == ReliabilityGraphNode.id)
+        .where(
+            ReliabilityGraphEdge.source_type == NODE_MODEL_FAMILY,
+            ReliabilityGraphEdge.confidence >= HIGH_RISK_CONFIDENCE,
+            ReliabilityGraphEdge.trace_count >= HIGH_RISK_TRACE_MINIMUM,
+        )
+        .group_by(
+            ReliabilityGraphNode.node_key,
+            ReliabilityGraphEdge.relationship_type,
+            ReliabilityGraphNode.id,
+            ReliabilityGraphEdge.target_id,
+        )
+        .order_by(desc("confidence"), desc("trace_count"))
+        .limit(limit)
+    ).all()
+    target_nodes = {
+        node.id: node
+        for node in db.scalars(
+            select(ReliabilityGraphNode).where(
+                ReliabilityGraphNode.id.in_([row.target_id for row in rows])  # type: ignore[attr-defined]
+            )
+        ).all()
+    } if rows else {}
+    items: list[dict] = []
+    for row in rows:
+        target = target_nodes.get(row.target_id)
+        target_key = target.node_key if target is not None else "unknown"
+        risk_level = "high" if float(row.confidence or 0) >= 0.45 else "medium"
+        items.append(
+            {
+                "model_family": row.model_family,
+                "issue": f"{row.model_family} + {target_key}",
+                "risk_level": risk_level,
+                "organizations_affected": int(row.organizations_affected or 0),
+                "trace_count": int(row.trace_count or 0),
+                "first_seen": row.first_seen,
+                "recommended_guardrail": "latency_retry"
+                if row.relationship_type == REL_RETRIEVAL_FAILURE
+                else "hallucination"
+                if row.relationship_type == REL_MODEL_INCIDENT
+                else "structured_output",
+                "confidence": round(float(row.confidence or 0), 4),
+                "pattern": f"{row.model_family} + {target_key}",
+            }
+        )
+    return items

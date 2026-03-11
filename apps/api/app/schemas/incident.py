@@ -138,6 +138,10 @@ class IncidentCommandCenterRead(APIModel):
     trace_compare: IncidentCommandTraceCompareRead
     deployment_context: IncidentDeploymentContextRead | None
     guardrail_activity: list[GuardrailActivityRead]
+    possible_root_causes: list[dict[str, Any]]
+    graph_related_patterns: list[dict[str, Any]]
+    similar_platform_failures: list[dict[str, Any]]
+    recommended_mitigations: list[str]
     related_regressions: list[RegressionSnapshotRead]
     recent_signals: list[TimelineEventRead]
 
@@ -188,6 +192,7 @@ class IncidentInvestigationRead(APIModel):
     trace_comparison: IncidentInvestigationTraceComparisonRead
     recommendations: list[InvestigationRecommendationRead]
     guardrail_activity: list[GuardrailActivityRead]
+    possible_root_causes: list[dict[str, Any]]
 
 
 class IncidentOwnerAssignRequest(BaseModel):

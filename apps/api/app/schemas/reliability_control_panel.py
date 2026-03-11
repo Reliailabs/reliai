@@ -37,11 +37,44 @@ class ControlPanelGuardrailsRead(APIModel):
     top_triggered_policy: str | None
 
 
+class ControlPanelGuardrailActivityRead(APIModel):
+    policy_type: str
+    trigger_count: int
+
+
+class ControlPanelGuardrailComplianceRead(APIModel):
+    policy_type: str
+    enforcement_mode: str
+    coverage_pct: float
+    violation_count: int
+
+
 class ControlPanelModelReliabilityRead(APIModel):
     current_model: str | None
     success_rate: float | None
     average_latency: float | None
     structured_output_validity: float | None
+
+
+class ControlPanelGraphPatternRead(APIModel):
+    pattern: str
+    risk_level: str
+    trace_count: int
+    confidence: float
+
+
+class ControlPanelRecommendedGuardrailRead(APIModel):
+    policy_type: str
+    recommended_action: str
+    title: str
+    confidence: float
+    model_family: str | None = None
+
+
+class ControlPanelModelFailureSignalRead(APIModel):
+    pattern: str
+    risk_level: str
+    confidence: float
 
 
 class ControlPanelAutomaticActionRead(APIModel):
@@ -56,10 +89,27 @@ class ControlPanelAutomaticActionsRead(APIModel):
     recent_actions: list[ControlPanelAutomaticActionRead]
 
 
+class ControlPanelRecentDeploymentRead(APIModel):
+    deployment_id: UUID
+    deployed_at: datetime
+    environment: str
+    risk_level: str | None
+    risk_score: float | None
+
+
 class ProjectReliabilityControlPanelRead(APIModel):
+    reliability_score: int
+    active_incidents: int
     deployment_risk: ControlPanelDeploymentRiskRead
     simulation: ControlPanelSimulationRead
     incidents: ControlPanelIncidentsRead
     guardrails: ControlPanelGuardrailsRead
+    guardrail_activity: list[ControlPanelGuardrailActivityRead]
+    guardrail_compliance: list[ControlPanelGuardrailComplianceRead]
     model_reliability: ControlPanelModelReliabilityRead
+    high_risk_patterns: list[ControlPanelGraphPatternRead]
+    graph_high_risk_patterns: list[ControlPanelGraphPatternRead]
+    recommended_guardrails: list[ControlPanelRecommendedGuardrailRead]
+    model_failure_signals: list[ControlPanelModelFailureSignalRead]
+    recent_deployments: list[ControlPanelRecentDeploymentRead]
     automatic_actions: ControlPanelAutomaticActionsRead

@@ -103,3 +103,28 @@ def get_recent_guardrail_events(db: Session, project_id: UUID, limit: int = 20, 
         }
         for row in events
     ]
+
+
+def get_trace_guardrail_policy_counts(db: Session, project_id: UUID, environment: str | None = None) -> list[dict]:
+    statement = (
+        select(
+            Trace.guardrail_policy.label("policy_type"),
+            func.count(Trace.id).label("trigger_count"),
+        )
+        .where(
+            Trace.project_id == project_id,
+            Trace.guardrail_policy.is_not(None),
+        )
+        .group_by(Trace.guardrail_policy)
+        .order_by(func.count(Trace.id).desc(), Trace.guardrail_policy.asc())
+    )
+    if environment is not None:
+        statement = statement.where(Trace.environment == normalize_environment_name(environment))
+    rows = db.execute(statement).all()
+    return [
+        {
+            "policy_type": row.policy_type,
+            "trigger_count": int(row.trigger_count),
+        }
+        for row in rows
+    ]

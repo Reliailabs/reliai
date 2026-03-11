@@ -34,3 +34,7 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     public_api_keys = relationship("PublicApiKey", back_populates="organization")
     usage_quota = relationship("UsageQuota", back_populates="organization", uselist=False)
     platform_extensions = relationship("PlatformExtension", back_populates="organization")
+    organization_guardrail_policies = relationship(
+        "OrganizationGuardrailPolicy",
+        back_populates="organization",
+    )

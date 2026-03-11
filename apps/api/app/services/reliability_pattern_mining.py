@@ -9,7 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.reliability_pattern import ReliabilityPattern
-from app.services.trace_warehouse import TraceWarehouseEventRow, query_all_traces
+from app.services.trace_query_router import query_all_traces_via_router
+from app.services.trace_warehouse import MAX_EVENT_WINDOW, TraceWarehouseEventRow
 
 PATTERN_LOOKBACK_DAYS = 7
 LATENCY_SPIKE_THRESHOLD_MS = 1500
@@ -270,7 +271,13 @@ def upsert_patterns(db: Session, patterns: Iterable[MinedPattern]) -> list[Relia
 def mine_patterns_last_7_days(db: Session, *, anchor_time: datetime | None = None) -> list[ReliabilityPattern]:
     end = anchor_time or _utc_now()
     start = end - timedelta(days=PATTERN_LOOKBACK_DAYS)
-    rows = query_all_traces(window_start=start, window_end=end)
+    rows: list[TraceWarehouseEventRow] = []
+    cursor = start
+    while cursor < end:
+        window_end = min(cursor + MAX_EVENT_WINDOW, end)
+        _, batch = query_all_traces_via_router(window_start=cursor, window_end=window_end)
+        rows.extend(batch)
+        cursor = window_end
     patterns = [
         *mine_model_failure_patterns(rows),
         *mine_prompt_failure_patterns(rows),

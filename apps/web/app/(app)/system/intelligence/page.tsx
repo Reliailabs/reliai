@@ -3,9 +3,9 @@ import { AlertTriangle, ArrowLeft, BrainCircuit, Network, ShieldAlert } from "lu
 
 import { Card } from "@/components/ui/card";
 import {
+  getGlobalReliabilityPatterns,
   getReliabilityGraphGuardrailRecommendations,
   getReliabilityGraphHighRiskPatterns,
-  getSystemGlobalIntelligence,
 } from "@/lib/api";
 
 function tone(level: string) {
@@ -22,11 +22,11 @@ export default async function SystemIntelligencePage() {
   const [patterns, recommendations, globalPatterns] = await Promise.all([
     getReliabilityGraphHighRiskPatterns().catch(() => ({ items: [] })),
     getReliabilityGraphGuardrailRecommendations().catch(() => ({ items: [] })),
-    getSystemGlobalIntelligence().catch(() => ({ items: [] })),
+    getGlobalReliabilityPatterns().catch(() => ({ patterns: [] })),
   ]);
 
   const topPatterns = patterns.items.slice(0, 8);
-  const recentGlobal = globalPatterns.items.slice(0, 6);
+  const recentGlobal = globalPatterns.patterns.slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -73,7 +73,7 @@ export default async function SystemIntelligencePage() {
               <Network className="h-4 w-4" />
               <p className="text-xs uppercase tracking-[0.18em]">Global correlations</p>
             </div>
-            <p className="mt-3 text-3xl font-semibold text-ink">{globalPatterns.items.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-ink">{globalPatterns.patterns.length}</p>
             <p className="mt-2 text-sm text-steel">System-wide patterns aggregated across accessible traffic.</p>
           </div>
           <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
@@ -136,7 +136,7 @@ export default async function SystemIntelligencePage() {
                   </div>
                   <p className="mt-2 text-sm leading-6 text-steel">{item.description}</p>
                   <p className="mt-3 text-xs uppercase tracking-[0.14em] text-steel">
-                    {item.policy_type} · {item.recommended_action}
+                    {(item.model_family ?? "model signal")} · {item.policy_type} · {item.recommended_action}
                   </p>
                 </div>
               ))}
@@ -144,19 +144,22 @@ export default async function SystemIntelligencePage() {
           </Card>
 
           <Card className="rounded-[28px] border-zinc-300 p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent cross-project patterns</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Emerging model regressions</p>
             <h2 className="mt-2 text-2xl font-semibold text-ink">Global intelligence feed</h2>
             <div className="mt-6 space-y-3">
               {recentGlobal.map((item) => (
-                <div key={`${item.source_node_id}:${item.target_node_id}`} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                <div key={`${item.model_family}:${item.issue}`} className="rounded-2xl border border-zinc-200 px-4 py-3">
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-medium text-ink">{item.pattern.replaceAll("_", " ")}</p>
+                    <p className="text-sm font-medium text-ink">{item.issue.replaceAll("_", " ")}</p>
                     <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${tone(item.risk_level)}`}>
                       {item.risk_level.toUpperCase()}
                     </span>
                   </div>
                   <p className="mt-2 text-xs uppercase tracking-[0.14em] text-steel">
-                    {pct(item.confidence)} confidence · {item.traces.toLocaleString()} traces
+                    {item.model_family} · {item.trace_count.toLocaleString()} traces · {item.organizations_affected} orgs
+                  </p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.14em] text-steel">
+                    {pct(item.confidence)} confidence · first seen {item.first_seen ? new Date(item.first_seen).toLocaleDateString() : "n/a"}
                   </p>
                 </div>
               ))}

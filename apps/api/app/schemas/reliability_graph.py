@@ -52,9 +52,13 @@ class ReliabilityGraphPatternRead(BaseModel):
     risk_level: str
     traces: int
     confidence: float
-    source_node_id: UUID
-    target_node_id: UUID
+    source_node_id: str
+    target_node_id: str
     relationship_type: str
+    source_type: str | None = None
+    source_key: str | None = None
+    target_type: str | None = None
+    target_key: str | None = None
 
 
 class ReliabilityGraphPatternListResponse(BaseModel):
@@ -67,10 +71,34 @@ class GraphGuardrailRecommendationRead(BaseModel):
     title: str
     description: str
     confidence: float
+    pattern: str | None = None
+    model_family: str | None = None
 
 
 class GraphGuardrailRecommendationListResponse(BaseModel):
     items: list[GraphGuardrailRecommendationRead]
+
+
+class GlobalReliabilityPatternRead(BaseModel):
+    pattern_id: str
+    pattern_type: str
+    description: str
+    impact: str
+    recommended_guardrails: list[str]
+    impact_metrics_json: dict | None = None
+    model_family: str
+    issue: str
+    risk_level: str
+    organizations_affected: int
+    trace_count: int
+    first_seen: datetime | None = None
+    recommended_guardrail: str
+    confidence: float
+    pattern: str
+
+
+class GlobalReliabilityPatternListResponse(BaseModel):
+    patterns: list[GlobalReliabilityPatternRead]
 
 
 class GraphTraceEvaluationRead(APIModel):

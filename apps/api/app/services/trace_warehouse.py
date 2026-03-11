@@ -1,15 +1,25 @@
+"""
+INTERNAL SERVICE
+
+The warehouse must only be accessed via trace_query_router.
+
+Direct access bypasses rollup safety guarantees.
+"""
+
 from __future__ import annotations
 
 import json
 import logging
+from contextvars import ContextVar
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import hashlib
 from typing import Any
 from uuid import UUID
 
 import httpx
+from fastapi import HTTPException, status
 
 from app.events import build_trace_event_payload, validate_trace_event
 from app.core.settings import get_settings
@@ -19,7 +29,11 @@ from app.services.clickhouse_migrations import apply_migrations
 logger = logging.getLogger(__name__)
 
 TRACE_WAREHOUSE_TABLE = "trace_warehouse"
+TRACE_METRICS_HOURLY_TABLE = "trace_metrics_hourly"
+TRACE_METRICS_DAILY_TABLE = "trace_metrics_daily"
 STRUCTURED_VALIDITY_EVAL_TYPE = "structured_validity"
+MAX_EVENT_WINDOW = timedelta(hours=24)
+contextvar_router_active: ContextVar[bool] = ContextVar("trace_warehouse_router_active", default=False)
 
 
 def _ensure_utc(value: datetime) -> datetime:
@@ -88,13 +102,30 @@ class TraceWarehouseAggregateQuery:
 
 
 @dataclass(frozen=True)
+class TraceWarehouseRollupRow:
+    time_bucket: datetime
+    project_id: UUID | None
+    environment_id: UUID | None
+    model_family: str | None
+    trace_count: int
+    success_rate: float | None
+    latency_avg: float | None
+    token_count: int
+    cost_usd: float
+
+
+@dataclass(frozen=True)
 class TraceWarehouseEventRow:
     timestamp: datetime
     organization_id: UUID
     project_id: UUID
     environment_id: UUID | None
-    trace_id: UUID
+    storage_trace_id: UUID
+    trace_id: str | None
     success: bool
+    span_id: str | None = None
+    parent_span_id: str | None = None
+    span_name: str | None = None
     deployment_id: UUID | None = None
     event_version: int = 1
     model_provider: str | None = None
@@ -109,6 +140,8 @@ class TraceWarehouseEventRow:
     output_tokens: int | None = None
     cost_usd: Decimal | None = None
     structured_output_valid: bool | None = None
+    guardrail_policy: str | None = None
+    guardrail_action: str | None = None
     guardrail_triggered: bool = False
     retrieval_latency_ms: int | None = None
     retrieval_chunks: int | None = None
@@ -140,6 +173,26 @@ class TraceWarehouseClient:
         raise NotImplementedError
 
     def aggregate_trace_metrics(self, query: TraceWarehouseAggregateQuery) -> dict[str, Any]:  # pragma: no cover
+        raise NotImplementedError
+
+    def query_hourly_metrics(
+        self,
+        *,
+        project_id: UUID | None,
+        environment_id: UUID | None,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[TraceWarehouseRollupRow]:  # pragma: no cover
+        raise NotImplementedError
+
+    def query_daily_metrics(
+        self,
+        *,
+        project_id: UUID | None,
+        environment_id: UUID | None,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[TraceWarehouseRollupRow]:  # pragma: no cover
         raise NotImplementedError
 
     def get_warehouse_stats(
@@ -179,6 +232,28 @@ class NullTraceWarehouseClient(TraceWarehouseClient):
             "structured_output_validity_rate": None,
             "average_cost_usd": None,
         }
+
+    def query_hourly_metrics(
+        self,
+        *,
+        project_id: UUID | None,
+        environment_id: UUID | None,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[TraceWarehouseRollupRow]:
+        del project_id, environment_id, start_time, end_time
+        return []
+
+    def query_daily_metrics(
+        self,
+        *,
+        project_id: UUID | None,
+        environment_id: UUID | None,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[TraceWarehouseRollupRow]:
+        del project_id, environment_id, start_time, end_time
+        return []
 
     def get_warehouse_stats(self, *, window_start: datetime, window_end: datetime) -> dict[str, Any]:
         return {
@@ -227,7 +302,11 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     "organization_id": str(row.organization_id),
                     "project_id": str(row.project_id),
                     "environment_id": str(row.environment_id) if row.environment_id is not None else None,
-                    "trace_id": str(row.trace_id),
+                    "storage_trace_id": str(row.storage_trace_id),
+                    "trace_id": row.trace_id,
+                    "span_id": row.span_id,
+                    "parent_span_id": row.parent_span_id,
+                    "span_name": row.span_name,
                     "deployment_id": str(row.deployment_id) if row.deployment_id is not None else None,
                     "model_provider": row.model_provider,
                     "model_family": row.model_family,
@@ -242,6 +321,8 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     "output_tokens": row.output_tokens,
                     "cost_usd": _decimal_to_float(row.cost_usd),
                     "structured_output_valid": row.structured_output_valid,
+                    "guardrail_policy": row.guardrail_policy,
+                    "guardrail_action": row.guardrail_action,
                     "guardrail_triggered": row.guardrail_triggered,
                     "retrieval_latency_ms": row.retrieval_latency_ms,
                     "retrieval_chunks": row.retrieval_chunks,
@@ -308,7 +389,11 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             organization_id,
             project_id,
             environment_id,
+            storage_trace_id,
             trace_id,
+            span_id,
+            parent_span_id,
+            span_name,
             deployment_id,
             model_provider,
             model_family,
@@ -323,6 +408,8 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             output_tokens,
             cost_usd,
             structured_output_valid,
+            guardrail_policy,
+            guardrail_action,
             guardrail_triggered,
             retrieval_latency_ms,
             retrieval_chunks,
@@ -330,7 +417,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             metadata_json
         FROM {TRACE_WAREHOUSE_TABLE}
         WHERE {' AND '.join(clauses)}
-        ORDER BY timestamp DESC, trace_id DESC
+        ORDER BY timestamp DESC, storage_trace_id DESC
         {limit_clause}
         FORMAT JSONEachRow
         """
@@ -347,7 +434,11 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     organization_id=UUID(payload["organization_id"]),
                     project_id=UUID(payload["project_id"]),
                     environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
-                    trace_id=UUID(payload["trace_id"]),
+                    storage_trace_id=UUID(payload["storage_trace_id"]),
+                    trace_id=payload.get("trace_id"),
+                    span_id=payload.get("span_id"),
+                    parent_span_id=payload.get("parent_span_id"),
+                    span_name=payload.get("span_name"),
                     deployment_id=UUID(payload["deployment_id"]) if payload.get("deployment_id") else None,
                     model_provider=payload.get("model_provider"),
                     model_family=payload.get("model_family"),
@@ -362,11 +453,75 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     output_tokens=payload.get("output_tokens"),
                     cost_usd=Decimal(str(payload["cost_usd"])) if payload.get("cost_usd") is not None else None,
                     structured_output_valid=payload.get("structured_output_valid"),
+                    guardrail_policy=payload.get("guardrail_policy"),
+                    guardrail_action=payload.get("guardrail_action"),
                     guardrail_triggered=bool(payload.get("guardrail_triggered", False)),
                     retrieval_latency_ms=payload.get("retrieval_latency_ms"),
                     retrieval_chunks=payload.get("retrieval_chunks"),
                     incident_flag=bool(payload.get("incident_flag", False)),
                     metadata_json=json.loads(payload["metadata_json"]) if payload.get("metadata_json") else {},
+                )
+            )
+        return rows
+
+    def _query_rollups(
+        self,
+        *,
+        table_name: str,
+        project_id: UUID | None,
+        environment_id: UUID | None,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[TraceWarehouseRollupRow]:
+        self.ensure_schema()
+        bucket_cast = "toDateTime(time_bucket, 'UTC')" if table_name == TRACE_METRICS_DAILY_TABLE else "time_bucket"
+        clauses = [
+            f"{bucket_cast} >= parseDateTime64BestEffort({{start_time:String}})",
+            f"{bucket_cast} < parseDateTime64BestEffort({{end_time:String}})",
+        ]
+        params: dict[str, Any] = {
+            "start_time": _ensure_utc(start_time).isoformat(),
+            "end_time": _ensure_utc(end_time).isoformat(),
+        }
+        if project_id is not None:
+            clauses.append("project_id = toUUID({project_id:String})")
+            params["project_id"] = str(project_id)
+        if environment_id is not None:
+            clauses.append("environment_id = toUUID({environment_id:String})")
+            params["environment_id"] = str(environment_id)
+        sql = f"""
+        SELECT
+            {bucket_cast} AS time_bucket,
+            project_id,
+            environment_id,
+            model_family,
+            trace_count,
+            success_rate,
+            latency_avg,
+            token_count,
+            cost_usd
+        FROM {table_name}
+        WHERE {' AND '.join(clauses)}
+        ORDER BY time_bucket ASC, project_id ASC
+        FORMAT JSONEachRow
+        """
+        response = self._post(sql, params=params)
+        rows: list[TraceWarehouseRollupRow] = []
+        for line in response.text.splitlines():
+            if not line.strip():
+                continue
+            payload = json.loads(line)
+            rows.append(
+                TraceWarehouseRollupRow(
+                    time_bucket=_ensure_utc(datetime.fromisoformat(payload["time_bucket"])),
+                    project_id=UUID(payload["project_id"]) if payload.get("project_id") else None,
+                    environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
+                    model_family=payload.get("model_family"),
+                    trace_count=int(payload.get("trace_count", 0)),
+                    success_rate=payload.get("success_rate"),
+                    latency_avg=payload.get("latency_avg"),
+                    token_count=int(payload.get("token_count", 0)),
+                    cost_usd=float(payload.get("cost_usd", 0.0) or 0.0),
                 )
             )
         return rows
@@ -447,6 +602,38 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             "average_cost_usd": payload.get("average_cost_usd"),
         }
 
+    def query_hourly_metrics(
+        self,
+        *,
+        project_id: UUID | None,
+        environment_id: UUID | None,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[TraceWarehouseRollupRow]:
+        return self._query_rollups(
+            table_name=TRACE_METRICS_HOURLY_TABLE,
+            project_id=project_id,
+            environment_id=environment_id,
+            start_time=start_time,
+            end_time=end_time,
+        )
+
+    def query_daily_metrics(
+        self,
+        *,
+        project_id: UUID | None,
+        environment_id: UUID | None,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[TraceWarehouseRollupRow]:
+        return self._query_rollups(
+            table_name=TRACE_METRICS_DAILY_TABLE,
+            project_id=project_id,
+            environment_id=environment_id,
+            start_time=start_time,
+            end_time=end_time,
+        )
+
     def query_all_trace_events(
         self,
         *,
@@ -467,7 +654,11 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             organization_id,
             project_id,
             environment_id,
+            storage_trace_id,
             trace_id,
+            span_id,
+            parent_span_id,
+            span_name,
             deployment_id,
             model_provider,
             model_family,
@@ -482,6 +673,8 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             output_tokens,
             cost_usd,
             structured_output_valid,
+            guardrail_policy,
+            guardrail_action,
             guardrail_triggered,
             retrieval_latency_ms,
             retrieval_chunks,
@@ -490,7 +683,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         FROM {TRACE_WAREHOUSE_TABLE}
         WHERE timestamp >= parseDateTime64BestEffort({{window_start:String}})
           AND timestamp < parseDateTime64BestEffort({{window_end:String}})
-        ORDER BY timestamp DESC, trace_id DESC
+        ORDER BY timestamp DESC, storage_trace_id DESC
         {limit_clause}
         FORMAT JSONEachRow
         """
@@ -507,7 +700,11 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     organization_id=UUID(payload["organization_id"]),
                     project_id=UUID(payload["project_id"]),
                     environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
-                    trace_id=UUID(payload["trace_id"]),
+                    storage_trace_id=UUID(payload["storage_trace_id"]),
+                    trace_id=payload.get("trace_id"),
+                    span_id=payload.get("span_id"),
+                    parent_span_id=payload.get("parent_span_id"),
+                    span_name=payload.get("span_name"),
                     deployment_id=UUID(payload["deployment_id"]) if payload.get("deployment_id") else None,
                     model_provider=payload.get("model_provider"),
                     model_family=payload.get("model_family"),
@@ -522,6 +719,8 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     output_tokens=payload.get("output_tokens"),
                     cost_usd=Decimal(str(payload["cost_usd"])) if payload.get("cost_usd") is not None else None,
                     structured_output_valid=payload.get("structured_output_valid"),
+                    guardrail_policy=payload.get("guardrail_policy"),
+                    guardrail_action=payload.get("guardrail_action"),
                     guardrail_triggered=bool(payload.get("guardrail_triggered", False)),
                     retrieval_latency_ms=payload.get("retrieval_latency_ms"),
                     retrieval_chunks=payload.get("retrieval_chunks"),
@@ -538,6 +737,49 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         window_end: datetime,
     ) -> dict[str, Any]:
         self.ensure_schema()
+        try:
+            parts_sql = f"""
+            SELECT
+                sum(rows) AS warehouse_rows,
+                countDistinct(partition) AS active_partitions
+            FROM system.parts
+            WHERE database = {{database:String}}
+              AND table = '{TRACE_WAREHOUSE_TABLE}'
+              AND active = 1
+            FORMAT JSONEachRow
+            """
+            parts_response = self._post(parts_sql, params={"database": self.database})
+            parts_line = next((item for item in parts_response.text.splitlines() if item.strip()), "")
+            query_log_sql = """
+            SELECT
+                avg(query_duration_ms) AS avg_query_latency,
+                sum(read_rows) / greatest(dateDiff('second', min(event_time), max(event_time)), 1) AS scan_rate
+            FROM system.query_log
+            WHERE event_time >= parseDateTime64BestEffort({window_start:String})
+              AND event_time < parseDateTime64BestEffort({window_end:String})
+              AND type = 'QueryFinish'
+              AND lower(query) LIKE '%trace_warehouse%'
+            FORMAT JSONEachRow
+            """
+            query_response = self._post(
+                query_log_sql,
+                params={
+                    "window_start": _ensure_utc(window_start).isoformat(),
+                    "window_end": _ensure_utc(window_end).isoformat(),
+                },
+            )
+            query_line = next((item for item in query_response.text.splitlines() if item.strip()), "")
+            if parts_line:
+                parts_payload = json.loads(parts_line)
+                query_payload = json.loads(query_line) if query_line else {}
+                return {
+                    "warehouse_rows": int(parts_payload.get("warehouse_rows", 0) or 0),
+                    "active_partitions": int(parts_payload.get("active_partitions", 0) or 0),
+                    "scan_rate": float(query_payload.get("scan_rate", 0.0) or 0.0),
+                    "avg_query_latency": float(query_payload.get("avg_query_latency", 0.0) or 0.0),
+                }
+        except Exception:
+            logger.debug("falling back to adapter warehouse metrics", exc_info=True)
         params = {
             "window_start": _ensure_utc(window_start).isoformat(),
             "window_end": _ensure_utc(window_end).isoformat(),
@@ -569,6 +811,23 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
         }
 
 
+class WarehouseQueryViolation(HTTPException):
+    def __init__(self, detail: str = "Warehouse-backed query required for this time window") -> None:
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
+def _enforce_event_window(window_start: datetime, window_end: datetime) -> None:
+    if _ensure_utc(window_end) - _ensure_utc(window_start) > MAX_EVENT_WINDOW:
+        raise WarehouseQueryViolation("Long-window analytics must use rollup tables.")
+
+
+def _assert_router_context() -> None:
+    if not contextvar_router_active.get():
+        raise RuntimeError("trace_warehouse accessed outside router")
+
+
+
+
 def get_trace_warehouse_client() -> TraceWarehouseClient:
     settings = get_settings()
     if not settings.trace_warehouse_url:
@@ -591,7 +850,11 @@ def build_trace_event_row_from_payload(payload: dict[str, Any]) -> TraceWarehous
         organization_id=UUID(event["organization_id"]),
         project_id=UUID(event["project_id"]),
         environment_id=UUID(event["environment_id"]) if event.get("environment_id") else None,
-        trace_id=UUID(event["trace_id"]),
+        storage_trace_id=UUID(event["trace_id"]),
+        trace_id=_metadata_trace_field(event.get("metadata") or {}, "trace_id", "reliai_trace_id") or event["trace_id"],
+        span_id=_metadata_trace_field(event.get("metadata") or {}, "span_id", "reliai_span_id") or event["trace_id"],
+        parent_span_id=_metadata_trace_field(event.get("metadata") or {}, "parent_span_id", "reliai_parent_span_id"),
+        span_name=_metadata_trace_field(event.get("metadata") or {}, "span_name"),
         deployment_id=UUID(str((event.get("metadata") or {}).get("deployment_id")))
         if (event.get("metadata") or {}).get("deployment_id")
         else None,
@@ -608,7 +871,9 @@ def build_trace_event_row_from_payload(payload: dict[str, Any]) -> TraceWarehous
         output_tokens=(event.get("tokens") or {}).get("output"),
         cost_usd=Decimal(str(event["cost_usd"])) if event.get("cost_usd") is not None else None,
         structured_output_valid=(event.get("evaluation") or {}).get("structured_output_valid"),
-        guardrail_triggered=bool((event.get("metadata") or {}).get("policy_type")),
+        guardrail_policy=_metadata_trace_field(event.get("metadata") or {}, "guardrail_policy", "policy_type"),
+        guardrail_action=_metadata_trace_field(event.get("metadata") or {}, "guardrail_action"),
+        guardrail_triggered=bool(_metadata_trace_field(event.get("metadata") or {}, "guardrail_policy", "policy_type")),
         retrieval_latency_ms=(event.get("retrieval") or {}).get("latency_ms"),
         retrieval_chunks=(event.get("retrieval") or {}).get("chunks"),
         incident_flag=bool((event.get("metadata") or {}).get("incident_flag", False)),
@@ -648,16 +913,20 @@ def ingest_trace_event_payload(payload: dict[str, Any]) -> None:
         )
 
 
-def query_traces(filters: TraceWarehouseQuery) -> list[TraceWarehouseEventRow]:
+def _query_traces(filters: TraceWarehouseQuery) -> list[TraceWarehouseEventRow]:
+    _assert_router_context()
+    _enforce_event_window(filters.window_start, filters.window_end)
     return get_trace_warehouse_client().query_trace_events(filters)
 
 
-def query_all_traces(
+def _query_all_traces(
     *,
     window_start: datetime,
     window_end: datetime,
     limit: int | None = None,
 ) -> list[TraceWarehouseEventRow]:
+    _assert_router_context()
+    _enforce_event_window(window_start, window_end)
     return get_trace_warehouse_client().query_all_trace_events(
         window_start=window_start,
         window_end=window_end,
@@ -665,8 +934,47 @@ def query_all_traces(
     )
 
 
-def aggregate_trace_metrics(query: TraceWarehouseAggregateQuery) -> dict[str, Any]:
+def _aggregate_trace_metrics(query: TraceWarehouseAggregateQuery) -> dict[str, Any]:
+    """Deprecated for long-window analytics.
+
+    Use rollup queries through the trace query router for any analytics window
+    greater than ``MAX_EVENT_WINDOW``.
+    """
+    _assert_router_context()
+    _enforce_event_window(query.window_start, query.window_end)
     return get_trace_warehouse_client().aggregate_trace_metrics(query)
+
+
+def _query_hourly_metrics(
+    *,
+    project_id: UUID | None,
+    environment_id: UUID | None,
+    start_time: datetime,
+    end_time: datetime,
+) -> list[TraceWarehouseRollupRow]:
+    _assert_router_context()
+    return get_trace_warehouse_client().query_hourly_metrics(
+        project_id=project_id,
+        environment_id=environment_id,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+
+def _query_daily_metrics(
+    *,
+    project_id: UUID | None,
+    environment_id: UUID | None,
+    start_time: datetime,
+    end_time: datetime,
+) -> list[TraceWarehouseRollupRow]:
+    _assert_router_context()
+    return get_trace_warehouse_client().query_daily_metrics(
+        project_id=project_id,
+        environment_id=environment_id,
+        start_time=start_time,
+        end_time=end_time,
+    )
 
 
 def get_warehouse_stats(*, window_start: datetime, window_end: datetime) -> dict[str, Any]:
@@ -674,3 +982,12 @@ def get_warehouse_stats(*, window_start: datetime, window_end: datetime) -> dict
         window_start=window_start,
         window_end=window_end,
     )
+def _metadata_trace_field(metadata: dict[str, Any], *keys: str) -> str | None:
+    for key in keys:
+        value = metadata.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return None

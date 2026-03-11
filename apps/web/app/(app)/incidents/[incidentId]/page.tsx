@@ -12,6 +12,7 @@ import {
   RotateCcw,
   ScanSearch,
   ShieldCheck,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ import {
   acknowledgeIncident,
   assignIncidentOwner,
   getIncidentAlerts,
+  getIncidentCommandCenter,
   getIncidentDetail,
   reopenIncident,
   resolveIncident,
@@ -108,6 +110,11 @@ function renderEventSummary(event: IncidentEventRead) {
   return event.actor_operator_user_email ?? "Operator action";
 }
 
+function percent(value: number | null | undefined) {
+  if (value === null || value === undefined) return "n/a";
+  return `${Math.round(value * 100)}%`;
+}
+
 export default async function IncidentDetailPage({
   params
 }: {
@@ -115,9 +122,10 @@ export default async function IncidentDetailPage({
 }) {
   const session = await requireOperatorSession();
   const { incidentId } = await params;
-  const [incident, alerts] = await Promise.all([
+  const [incident, alerts, command] = await Promise.all([
     getIncidentDetail(incidentId).catch(() => null),
-    getIncidentAlerts(incidentId).catch(() => ({ items: [] }))
+    getIncidentAlerts(incidentId).catch(() => ({ items: [] })),
+    getIncidentCommandCenter(incidentId).catch(() => null)
   ]);
 
   if (!incident) {
@@ -234,6 +242,125 @@ export default async function IncidentDetailPage({
         </Card>
       </section>
 
+      {command ? (
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]">
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-steel" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Likely root cause</p>
+                <h2 className="mt-2 text-2xl font-semibold text-ink">What probably broke</h2>
+              </div>
+            </div>
+            <div className="mt-5 space-y-4">
+              <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-4 py-4">
+                <p className="text-sm font-medium text-ink">
+                  {command.root_cause.root_cause_probabilities[0]?.label ?? "No dominant root-cause signal yet"}
+                </p>
+                <p className="mt-1 text-sm text-steel">
+                  Confidence {percent(command.root_cause.root_cause_probabilities[0]?.probability)}
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-steel">Graph related patterns</p>
+                  <div className="mt-3 space-y-2 text-sm text-steel">
+                    {command.possible_root_causes.length > 0 ? (
+                      command.possible_root_causes.slice(0, 3).map((item, index) => (
+                        <p key={`${String(item.pattern ?? index)}-${index}`}>
+                          {String(item.pattern ?? "Unknown pattern")}
+                        </p>
+                      ))
+                    ) : (
+                      <p>No graph-linked pattern concentrated yet.</p>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-steel">Global platform failures</p>
+                  <div className="mt-3 space-y-2 text-sm text-steel">
+                    {command.root_cause.root_cause_probabilities.slice(0, 3).map((item) => (
+                      <p key={item.cause_type}>
+                        {item.label} · {percent(item.probability)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-steel">Deployment changes</p>
+                  <div className="mt-3 space-y-2 text-sm text-steel">
+                    {command.deployment_context ? (
+                      <>
+                        <p>{command.deployment_context.model_version?.model_name ?? "Model n/a"}</p>
+                        <p>{command.deployment_context.prompt_version?.version ?? "Prompt n/a"}</p>
+                        <p>{command.deployment_context.time_since_deployment_minutes} min before incident</p>
+                      </>
+                    ) : (
+                      <p>No deployment linked to this incident window.</p>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-steel">Guardrail triggers</p>
+                  <div className="mt-3 space-y-2 text-sm text-steel">
+                    {command.guardrail_activity.length > 0 ? (
+                      command.guardrail_activity.slice(0, 3).map((item) => (
+                        <p key={item.policy_type}>
+                          {item.policy_type} · {item.trigger_count} triggers
+                        </p>
+                      ))
+                    ) : (
+                      <p>No recent runtime guardrail signal.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-5 w-5 text-steel" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Recommended mitigation</p>
+                <h2 className="mt-2 text-2xl font-semibold text-ink">What the operator should do next</h2>
+              </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
+                <p className="text-sm font-medium text-ink">{command.root_cause.recommended_fix.summary}</p>
+              </div>
+              <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-steel">Recommended guardrails</p>
+                <div className="mt-3 space-y-2 text-sm text-steel">
+                  {command.recommended_mitigations.length > 0 ? (
+                    command.recommended_mitigations.slice(0, 4).map((item) => <p key={item}>{item}</p>)
+                  ) : (
+                    <p>No guardrail recommendation attached yet.</p>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-zinc-200 px-4 py-4 text-sm text-steel">
+                <p className="text-xs uppercase tracking-[0.18em] text-steel">Rollback suggestion</p>
+                <p className="mt-3">
+                  {command.deployment_context
+                    ? "Investigate the linked deployment first. This incident clustered soon after a release."
+                    : "No rollback signal is attached because no deployment was linked to the incident window."}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-zinc-200 px-4 py-4 text-sm text-steel">
+                <p className="text-xs uppercase tracking-[0.18em] text-steel">Model change risk</p>
+                <p className="mt-3">
+                  {command.deployment_context?.model_version
+                    ? `${command.deployment_context.model_version.model_name} is part of the current deployment context and should be treated as a candidate change vector.`
+                    : "No model-version rollout was tied directly to this incident."}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </section>
+      ) : null}
+
       <Card className="rounded-[28px] border-zinc-300 p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -334,6 +461,59 @@ export default async function IncidentDetailPage({
             </div>
           </div>
         </div>
+      </Card>
+
+      <Card className="rounded-[28px] border-zinc-300 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">AI investigation insights</p>
+            <h2 className="mt-2 text-2xl font-semibold text-ink">Remediation signals</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
+              Graph-backed causes and mitigation suggestions surfaced directly in the remediation flow.
+            </p>
+          </div>
+          {command ? (
+            <Link
+              href={`/incidents/${incident.id}/command`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-ink underline-offset-4 hover:underline"
+            >
+              Open command center
+            </Link>
+          ) : null}
+        </div>
+
+        {command && (command.possible_root_causes.length > 0 || command.recommended_mitigations.length > 0) ? (
+          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="rounded-[24px] border border-zinc-200 p-4">
+              <p className="text-sm font-medium text-ink">Possible causes</p>
+              <div className="mt-4 space-y-3">
+                {command.possible_root_causes.map((item, index) => (
+                  <div key={`${String(item.pattern ?? index)}-${index}`} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                    <p className="text-sm font-medium text-ink">{String(item.pattern ?? "Unknown pattern")}</p>
+                    <p className="mt-1 text-sm text-steel">
+                      {String(item.type ?? "pattern").replaceAll("_", " ")}
+                      {typeof item.confidence === "number" ? ` · ${Math.round(item.confidence * 100)}% confidence` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[24px] border border-zinc-200 p-4">
+              <p className="text-sm font-medium text-ink">Recommended mitigations</p>
+              <div className="mt-4 space-y-3">
+                {command.recommended_mitigations.map((item) => (
+                  <div key={item} className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-steel">
+                    <p className="font-medium text-ink">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-5 text-sm leading-6 text-steel">
+            No graph-backed mitigation suggestions are currently attached to this incident.
+          </p>
+        )}
       </Card>
 
       <section className="grid gap-4 xl:grid-cols-2">

@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.model_version import ModelVersion
 from app.models.prompt_version import PromptVersion
 from app.models.trace import Trace
-from app.services.trace_warehouse import TraceWarehouseEventRow, TraceWarehouseQuery, query_traces
+from app.services.trace_query_router import query_recent_traces
+from app.services.trace_warehouse import TraceWarehouseEventRow, TraceWarehouseQuery
 
 TRACE_WAREHOUSE_RECENT_WINDOW = timedelta(days=7)
 STRUCTURED_VALIDITY_EVAL_TYPE = "structured_validity"
@@ -145,7 +146,7 @@ def _warehouse_trace_view(
 ):
     metadata = row.metadata_json or {}
     evaluations, graph_evaluations = _structured_evaluations(
-        row.trace_id,
+        row.storage_trace_id,
         row.timestamp,
         row.structured_output_valid,
     )
@@ -160,8 +161,8 @@ def _warehouse_trace_view(
             retrieved_chunks_json=None,
         )
         graph_retrieval_span = SimpleNamespace(
-            id=uuid5(NAMESPACE_URL, f"{row.trace_id}:retrieval"),
-            trace_id=row.trace_id,
+            id=uuid5(NAMESPACE_URL, f"{row.storage_trace_id}:retrieval"),
+            trace_id=row.storage_trace_id,
             retrieval_provider=metadata.get("retrieval_provider"),
             latency_ms=row.retrieval_latency_ms,
             chunk_count=row.retrieval_chunks,
@@ -169,14 +170,18 @@ def _warehouse_trace_view(
             created_at=row.timestamp,
         )
     return SimpleNamespace(
-        id=row.trace_id,
+        id=row.storage_trace_id,
         organization_id=row.organization_id,
         project_id=row.project_id,
         environment_id=row.environment_id,
         environment=metadata.get("environment", "warehouse"),
         timestamp=row.timestamp,
         created_at=row.timestamp,
-        request_id=metadata.get("request_id", str(row.trace_id)),
+        request_id=metadata.get("request_id", str(row.storage_trace_id)),
+        trace_id=row.trace_id or str(row.storage_trace_id),
+        span_id=row.span_id or str(row.storage_trace_id),
+        parent_span_id=row.parent_span_id,
+        span_name=row.span_name,
         user_id=None,
         session_id=None,
         model_name=(model_version_record.model_name if model_version_record is not None else metadata.get("__model_name")) or "unknown",
@@ -192,6 +197,8 @@ def _warehouse_trace_view(
         total_cost_usd=row.cost,
         success=row.success,
         error_type=row.error_type,
+        guardrail_policy=row.guardrail_policy,
+        guardrail_action=row.guardrail_action,
         metadata_json=metadata,
         prompt_version_record_id=_maybe_uuid(row.prompt_version_id),
         model_version_record_id=row.model_version_id,
@@ -205,7 +212,7 @@ def _warehouse_trace_view(
 
 
 def _warehouse_trace_window(db: Session, query: TraceWindowQuery):
-    rows = query_traces(
+    rows = query_recent_traces(
         TraceWarehouseQuery(
             organization_id=query.organization_id,
             project_id=query.project_id,

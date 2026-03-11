@@ -18,11 +18,13 @@ from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.models.project import Project
 from app.services.audit_log import log_action
-from app.services.trace_warehouse import TraceWarehouseQuery, query_traces
+from app.services.trace_query_router import query_recent_traces
+from app.services.trace_warehouse import MAX_EVENT_WINDOW, TraceWarehouseQuery
 
 EXPORT_STATUS_QUEUED = "queued"
 EXPORT_STATUS_COMPLETED = "completed"
 EXPORT_STATUS_FAILED = "failed"
+EXPORT_MAX_TRACE_ROWS = 2000
 
 
 def create_customer_export(
@@ -103,15 +105,7 @@ def run_customer_export_for_session(db: Session, *, export_id: UUID) -> Customer
     project = db.get(Project, export.project_id)
     assert project is not None
     try:
-        traces = query_traces(
-            TraceWarehouseQuery(
-                organization_id=project.organization_id,
-                project_id=project.id,
-                window_start=datetime(1970, 1, 1, tzinfo=timezone.utc),
-                window_end=datetime.now(timezone.utc),
-                limit=2000,
-            )
-        )
+        traces = _load_export_traces(project_id=project.id, organization_id=project.organization_id)
         incidents = db.scalars(
             select(Incident).where(Incident.project_id == project.id).order_by(Incident.created_at.desc())
         ).all()
@@ -191,3 +185,33 @@ def run_customer_export_for_session(db: Session, *, export_id: UUID) -> Customer
     db.commit()
     db.refresh(export)
     return export
+
+
+def _load_export_traces(*, project_id: UUID, organization_id: UUID) -> list:
+    now = datetime.now(timezone.utc)
+    cursor = now
+    rows: list = []
+    while len(rows) < EXPORT_MAX_TRACE_ROWS:
+        window_start = max(datetime(1970, 1, 1, tzinfo=timezone.utc), cursor - MAX_EVENT_WINDOW)
+        batch = query_recent_traces(
+            TraceWarehouseQuery(
+                organization_id=organization_id,
+                project_id=project_id,
+                window_start=window_start,
+                window_end=cursor,
+                limit=EXPORT_MAX_TRACE_ROWS - len(rows),
+            )
+        )
+        if not batch:
+            if window_start.year == 1970 and window_start.month == 1 and window_start.day == 1:
+                break
+            cursor = window_start
+            continue
+        rows.extend(batch)
+        if len(rows) >= EXPORT_MAX_TRACE_ROWS or window_start.year == 1970 and window_start.month == 1 and window_start.day == 1:
+            break
+        next_cursor = min(row.timestamp for row in batch)
+        if next_cursor <= window_start:
+            break
+        cursor = next_cursor
+    return rows[:EXPORT_MAX_TRACE_ROWS]

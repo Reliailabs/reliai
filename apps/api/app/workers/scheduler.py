@@ -7,6 +7,7 @@ from typing import Callable
 from app.core.settings import get_settings
 from app.db.session import get_queue
 from app.workers.data_retention_worker import run_data_retention
+from app.workers.global_pattern_mining import run_global_pattern_mining
 from app.workers.platform_monitor import run_platform_monitor
 from app.workers.reliability_graph_mining import run_reliability_graph_mining
 from app.workers.reliability_pattern_mining import run_reliability_pattern_mining
@@ -68,6 +69,11 @@ def _register_default_jobs() -> dict[str, SchedulerJobState]:
             job_name="reliability_graph_mining",
             interval=timedelta(hours=1),
             enqueue=lambda: _enqueue_callable(run_reliability_graph_mining),
+        ),
+        "global_pattern_mining": SchedulerJobState(
+            job_name="global_pattern_mining",
+            interval=timedelta(hours=1),
+            enqueue=lambda: _enqueue_callable(run_global_pattern_mining),
         ),
         "platform_monitor": SchedulerJobState(
             job_name="platform_monitor",

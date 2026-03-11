@@ -5,6 +5,11 @@
   "scripts": {
     "dev:web": "pnpm --filter web dev",
     "lint:web": "pnpm --filter web lint",
-    "format:web": "pnpm --filter web format"
+    "format:web": "pnpm --filter web format",
+    "screenshots:marketing": "pnpm exec tsx scripts/generate_screenshots.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "tsx": "^4.20.5"
   }
 }

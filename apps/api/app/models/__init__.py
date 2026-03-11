@@ -11,12 +11,14 @@ from app.models.deployment_rollback import DeploymentRollback
 from app.models.environment import Environment
 from app.models.evaluation import Evaluation
 from app.models.evaluation_rollup import EvaluationRollup
+from app.models.event_log import EventLog
 from app.models.event_processing_metric import EventProcessingMetric
 from app.models.external_processor import ExternalProcessor
 from app.models.guardrail_effectiveness import GuardrailEffectiveness
 from app.models.guardrail_event import GuardrailEvent
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
+from app.models.global_reliability_pattern import GlobalReliabilityPattern
 from app.models.global_model_reliability import GlobalModelReliability
 from app.models.reliability_graph_edge import ReliabilityGraphEdge
 from app.models.reliability_graph_node import ReliabilityGraphNode
@@ -28,6 +30,7 @@ from app.models.model_version import ModelVersion
 from app.models.model_reliability_pattern import ModelReliabilityPattern
 from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
+from app.models.organization_guardrail_policy import OrganizationGuardrailPolicy
 from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
 from app.models.operator_session import OperatorSession
@@ -67,12 +70,14 @@ __all__ = [
     "Environment",
     "Evaluation",
     "EvaluationRollup",
+    "EventLog",
     "EventProcessingMetric",
     "ExternalProcessor",
     "GuardrailEffectiveness",
     "GuardrailEvent",
     "GuardrailPolicy",
     "GuardrailRuntimeEvent",
+    "GlobalReliabilityPattern",
     "GlobalModelReliability",
     "ReliabilityGraphEdge",
     "ReliabilityGraphNode",
@@ -84,6 +89,7 @@ __all__ = [
     "ModelReliabilityPattern",
     "OnboardingChecklist",
     "Organization",
+    "OrganizationGuardrailPolicy",
     "OrganizationAlertTarget",
     "OrganizationMember",
     "OperatorSession",

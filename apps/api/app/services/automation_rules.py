@@ -26,6 +26,7 @@ from app.services.incidents import (
     INCIDENT_EVENT_REOPENED,
     append_incident_event,
 )
+from app.services.reliability_graph import get_graph_guardrail_recommendations
 from app.services.reliability_actions import (
     ACTION_STATUS_DRY_RUN,
     ACTION_STATUS_SKIPPED_COOLDOWN,
@@ -38,6 +39,10 @@ from app.services.reliability_actions import (
     rollback_deployment,
 )
 
+RULE_SOURCE_MANUAL = "manual"
+RULE_SOURCE_SYSTEM = "system"
+RULE_SOURCE_GRAPH_INTELLIGENCE = "graph_intelligence"
+
 ACTION_CREATE_INCIDENT = "create_incident"
 ACTION_SEND_WEBHOOK = "send_webhook"
 ACTION_SEND_SLACK_ALERT = "send_slack_alert"
@@ -46,6 +51,7 @@ ACTION_ROLLBACK_DEPLOYMENT = "rollback_deployment"
 ACTION_ENABLE_GUARDRAIL = "enable_guardrail"
 ACTION_INCREASE_SAMPLING = "increase_sampling"
 ACTION_DISABLE_PROCESSOR = "disable_processor"
+ACTION_RECOMMEND_GUARDRAIL = "recommend_guardrail"
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -367,6 +373,22 @@ def _should_skip_for_safety(db: Session, *, rule: AutomationRule, event: EventMe
 
 def _execute_reliability_action(db: Session, *, rule: AutomationRule, project: Project, event: EventMessage) -> None:
     action_config = rule.action_config or {}
+    if rule.action_type == ACTION_RECOMMEND_GUARDRAIL:
+        policy_type = str(action_config.get("policy_type") or event.payload.get("recommended_guardrail") or "structured_output")
+        log_reliability_action(
+            db,
+            project_id=project.id,
+            rule_id=rule.id,
+            action_type=ACTION_RECOMMEND_GUARDRAIL,
+            target=f"guardrail:{policy_type}",
+            status=ACTION_STATUS_SUCCESS if not rule.dry_run else ACTION_STATUS_DRY_RUN,
+            detail_json={
+                "rule_source": rule.rule_source,
+                "graph_pattern_confidence": event.payload.get("graph_pattern_confidence"),
+                "pattern": event.payload.get("pattern"),
+            },
+        )
+        return
     if rule.action_type == ACTION_ROLLBACK_DEPLOYMENT:
         deployment_id = action_config.get("deployment_id") or event.payload.get("deployment_id")
         if deployment_id is None:
@@ -431,6 +453,7 @@ def evaluate_automation_rules(db: Session, event: EventMessage) -> list[str]:
             ACTION_ENABLE_GUARDRAIL,
             ACTION_INCREASE_SAMPLING,
             ACTION_DISABLE_PROCESSOR,
+            ACTION_RECOMMEND_GUARDRAIL,
         } and _should_skip_for_safety(db, rule=rule, event=event):
             continue
         try:
@@ -447,6 +470,7 @@ def evaluate_automation_rules(db: Session, event: EventMessage) -> list[str]:
                 ACTION_ENABLE_GUARDRAIL,
                 ACTION_INCREASE_SAMPLING,
                 ACTION_DISABLE_PROCESSOR,
+                ACTION_RECOMMEND_GUARDRAIL,
             }:
                 _execute_reliability_action(db, rule=rule, project=project, event=event)
             else:
@@ -457,6 +481,7 @@ def evaluate_automation_rules(db: Session, event: EventMessage) -> list[str]:
                 ACTION_ENABLE_GUARDRAIL,
                 ACTION_INCREASE_SAMPLING,
                 ACTION_DISABLE_PROCESSOR,
+                ACTION_RECOMMEND_GUARDRAIL,
             }:
                 log_reliability_action(
                     db,
@@ -474,3 +499,52 @@ def evaluate_automation_rules(db: Session, event: EventMessage) -> list[str]:
     for rule in triggered:
         publish_event(get_settings().event_stream_topic_traces, _trigger_record_payload(rule, event))
     return [str(rule.id) for rule in triggered]
+
+
+def run_graph_intelligence_automation(db: Session, *, project_id: UUID) -> list[str]:
+    project = db.get(Project, project_id)
+    if project is None:
+        return []
+    recommendations = get_graph_guardrail_recommendations(
+        db,
+        organization_ids=[project.organization_id],
+        project_id=project.id,
+    )
+    if not recommendations:
+        return []
+    from app.models.guardrail_policy import GuardrailPolicy
+
+    active_guardrails = {
+        policy.policy_type
+        for policy in db.scalars(
+            select(GuardrailPolicy).where(
+                GuardrailPolicy.project_id == project.id,
+                GuardrailPolicy.is_active.is_(True),
+            )
+        ).all()
+    }
+    triggered: list[str] = []
+    now = datetime.now(timezone.utc)
+    for recommendation in recommendations:
+        if float(recommendation["confidence"]) < 0.8:
+            continue
+        if recommendation["policy_type"] in active_guardrails:
+            continue
+        event = EventMessage(
+            topic=get_settings().event_stream_topic_traces,
+            key=str(project.id),
+            partition=0,
+            event_type=RULE_SOURCE_GRAPH_INTELLIGENCE,
+            payload={
+                "project_id": str(project.id),
+                "timestamp": now.isoformat(),
+                "pattern": recommendation.get("pattern"),
+                "graph_pattern_confidence": recommendation["confidence"],
+                "guardrail_missing": True,
+                "recommended_guardrail": recommendation["policy_type"],
+            },
+            offset=0,
+            published_at=now,
+        )
+        triggered.extend(evaluate_automation_rules(db, event))
+    return triggered

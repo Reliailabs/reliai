@@ -16,7 +16,8 @@ from app.models.model_reliability_pattern import ModelReliabilityPattern
 from app.models.prompt_failure_pattern import PromptFailurePattern
 from app.models.trace import Trace
 from app.services.reliability_pattern_mining import build_prompt_pattern_hash, get_pattern_risk
-from app.services.trace_warehouse import TraceWarehouseEventRow, query_all_traces
+from app.services.trace_query_router import query_all_traces_via_router
+from app.services.trace_warehouse import MAX_EVENT_WINDOW, TraceWarehouseEventRow
 
 INTELLIGENCE_LOOKBACK_DAYS = 30
 
@@ -98,7 +99,13 @@ def _failure_modes(rows: list[TraceWarehouseEventRow]) -> dict[str, Any]:
 def aggregate_reliability_intelligence(db: Session, *, computed_at: datetime | None = None) -> None:
     anchor = computed_at or _utcnow()
     window_start = anchor - timedelta(days=INTELLIGENCE_LOOKBACK_DAYS)
-    rows = query_all_traces(window_start=window_start, window_end=anchor)
+    rows: list[TraceWarehouseEventRow] = []
+    cursor = window_start
+    while cursor < anchor:
+        window_end = min(cursor + MAX_EVENT_WINDOW, anchor)
+        _, batch = query_all_traces_via_router(window_start=cursor, window_end=window_end)
+        rows.extend(batch)
+        cursor = window_end
 
     db.execute(delete(ModelReliabilityPattern))
     db.execute(delete(PromptFailurePattern))

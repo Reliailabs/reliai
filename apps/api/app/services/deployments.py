@@ -15,9 +15,16 @@ from app.models.prompt_version import PromptVersion
 from app.services.audit_log import log_action
 from app.services.auth import OperatorContext
 from app.services.authorization import require_project_access
+from app.services.deployment_gate import evaluate_deployment
 from app.services.deployment_risk_engine import get_deployment_risk_score
 from app.services.environments import normalize_environment_name, resolve_project_environment
 from app.services.event_stream import DeploymentCreatedEventPayload, publish_event
+from app.services.global_reliability_patterns import get_global_reliability_patterns
+from app.services.reliability_graph import (
+    get_graph_guardrail_recommendations,
+    get_high_risk_patterns,
+    get_model_failure_graph,
+)
 from app.workers.deployment_risk_analysis import enqueue_deployment_risk_analysis
 from app.core.settings import get_settings
 
@@ -144,6 +151,7 @@ def get_deployment_by_id(db: Session, *, deployment_id: UUID) -> Deployment | No
     return db.scalar(
         select(Deployment)
         .options(
+            selectinload(Deployment.project),
             selectinload(Deployment.prompt_version),
             selectinload(Deployment.model_version),
             selectinload(Deployment.events),
@@ -169,6 +177,78 @@ def get_deployment_detail_with_risk(db: Session, *, operator: OperatorContext, d
         return deployment
     deployment.risk_score = get_deployment_risk_score(db, deployment_id=deployment.id)
     return deployment
+
+
+def get_deployment_intelligence(
+    db: Session,
+    *,
+    operator: OperatorContext,
+    deployment_id: UUID,
+) -> dict:
+    deployment = get_deployment_detail_with_risk(db, operator=operator, deployment_id=deployment_id)
+    organization_ids = operator.organization_ids or [deployment.project.organization_id]
+    model_family = deployment.model_version.model_name if deployment.model_version is not None else None
+    risk_score = deployment.risk_score.risk_score if deployment.risk_score is not None else None
+    analysis_json = deployment.risk_score.analysis_json if deployment.risk_score is not None else {}
+    project_patterns = get_high_risk_patterns(
+        db,
+        organization_ids=organization_ids,
+        project_id=deployment.project_id,
+        limit=6,
+    )
+    if project_patterns:
+        graph_patterns = project_patterns[:3]
+    else:
+        graph_patterns = [
+            {
+                "pattern": item["pattern"],
+                "risk": item["risk_level"],
+                "trace_count": item["trace_count"],
+            }
+            for item in get_global_reliability_patterns(db)[:3]
+        ]
+    recommendations = get_graph_guardrail_recommendations(
+        db,
+        organization_ids=organization_ids,
+        project_id=deployment.project_id,
+    )
+    model_failure_signals = get_model_failure_graph(
+        db,
+        model_family=model_family,
+        organization_ids=organization_ids,
+        project_id=deployment.project_id,
+    )
+    risk_explanations = list(analysis_json.get("deployment_risk_explanations") or [])
+    if not risk_explanations:
+        risk_explanations = [
+            f"{item['pattern']} detected"
+            for item in model_failure_signals.get("patterns", [])[:2]
+            if item.get("pattern")
+        ]
+    return {
+        "deployment_id": deployment.id,
+        "risk_score": risk_score,
+        "risk_explanations": risk_explanations,
+        "graph_risk_patterns": [
+            {
+                "pattern": str(item["pattern"]),
+                "risk": str(item.get("risk") or item.get("risk_level") or "medium"),
+                "trace_count": int(item.get("trace_count") or item.get("traces") or 0),
+            }
+            for item in graph_patterns
+        ],
+        "recommended_guardrails": [str(item["policy_type"]) for item in recommendations],
+    }
+
+
+def get_deployment_gate_result(
+    db: Session,
+    *,
+    operator: OperatorContext,
+    deployment_id: UUID,
+) -> dict:
+    deployment = get_deployment_detail(db, operator=operator, deployment_id=deployment_id)
+    return evaluate_deployment(db, deployment.project_id, deployment.id)
 
 
 def most_recent_project_deployment(

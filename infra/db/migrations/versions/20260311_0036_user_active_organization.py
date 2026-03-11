@@ -1,7 +1,7 @@
 """user active organization
 
-Revision ID: 20260310_0031
-Revises: 20260310_0030
+Revision ID: 20260311_0036
+Revises: 20260311_0035
 Create Date: 2026-03-10 23:40:00.000000
 """
 
@@ -10,8 +10,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "20260310_0031"
-down_revision: str | Sequence[str] | None = "20260310_0030"
+revision: str = "20260311_0036"
+down_revision: str | Sequence[str] | None = "20260311_0035"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

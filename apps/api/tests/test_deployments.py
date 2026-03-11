@@ -92,6 +92,35 @@ def test_create_list_and_get_deployments(client, db_session):
     assert payload["prompt_version"]["id"] == prompt_version["id"]
     assert payload["model_version"]["id"] == model_version["id"]
     assert payload["events"][0]["event_type"] == "created"
+    assert payload["gate"]["decision"] in {"ALLOW", "WARN", "BLOCK"}
+    assert isinstance(payload["gate"]["risk_score"], int)
+    assert isinstance(payload["gate"]["explanations"], list)
+    assert isinstance(payload["gate"]["recommended_guardrails"], list)
+
+
+def test_get_deployment_gate_returns_safety_decision(client, db_session):
+    session_payload, _, project, _, prompt_version, model_version = _seed_project_with_versions(client, db_session)
+    created = _create_deployment(
+        client,
+        session_payload,
+        project["id"],
+        prompt_version_id=prompt_version["id"],
+        model_version_id=model_version["id"],
+        deployed_at=datetime(2026, 3, 9, 11, 30, tzinfo=timezone.utc),
+    )
+
+    response = client.get(
+        f"/api/v1/deployments/{created['id']}/gate",
+        headers=auth_headers(session_payload),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["decision"] in {"ALLOW", "WARN", "BLOCK"}
+    assert isinstance(payload["risk_score"], int)
+    assert payload["risk_score"] >= 0
+    assert isinstance(payload["explanations"], list)
+    assert isinstance(payload["recommended_guardrails"], list)
 
 
 def test_deployment_endpoints_are_tenant_safe(client, db_session):

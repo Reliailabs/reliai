@@ -99,6 +99,16 @@ def build_trace_event_payload(
     metadata.setdefault("__prompt_version", trace.prompt_version)
     metadata.setdefault("request_id", trace.request_id)
     metadata.setdefault("environment", trace.environment)
+    metadata.setdefault("trace_id", trace.trace_id)
+    metadata.setdefault("span_id", trace.span_id)
+    if trace.parent_span_id is not None:
+        metadata.setdefault("parent_span_id", trace.parent_span_id)
+    if trace.span_name is not None:
+        metadata.setdefault("span_name", trace.span_name)
+    if trace.guardrail_policy is not None:
+        metadata.setdefault("guardrail_policy", trace.guardrail_policy)
+    if trace.guardrail_action is not None:
+        metadata.setdefault("guardrail_action", trace.guardrail_action)
     if metadata_overrides:
         metadata.update(metadata_overrides)
 

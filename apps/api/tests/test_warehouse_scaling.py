@@ -1,12 +1,30 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+import pytest
 from fastapi import HTTPException, status
 
 from app.models.environment import Environment
 from app.models.trace import Trace
 from app.services.clickhouse_migrations import apply_migrations, get_current_version
-from app.services.trace_query_router import TraceQueryRequest, route_trace_query
+from app.services.cost_intelligence import get_project_cost_intelligence
+from app.services.growth_metrics import get_growth_metrics
+from app.services.trace_query_router import (
+    TraceQueryRequest,
+    query_daily_metrics,
+    query_hourly_metrics,
+    query_recent_traces,
+    query_rollups_via_router,
+    route_trace_query,
+)
+from app.services.trace_warehouse import (
+    _aggregate_trace_metrics,
+    TraceWarehouseAggregateQuery,
+    TraceWarehouseEventRow,
+    TraceWarehouseQuery,
+    WarehouseQueryViolation,
+    contextvar_router_active,
+)
 from app.workers.warehouse_archiver import run_warehouse_archiver
 
 from .test_api import auth_headers, create_api_key, create_operator, create_organization, create_project, ingest_trace, sign_in
@@ -50,11 +68,164 @@ def test_query_router_prefers_rollups_and_archive():
     )
     assert (
         route_trace_query(
-            TraceQueryRequest(window_start=now - timedelta(days=10), window_end=now, aggregated=True)
+            TraceQueryRequest(window_start=now - timedelta(days=45), window_end=now, aggregated=True)
         )
         == "rollup_daily"
     )
     assert route_trace_query(TraceQueryRequest(window_start=now - timedelta(days=45), window_end=now)) == "archive"
+
+
+def test_router_uses_hourly_rollups(fake_trace_warehouse):
+    now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+    route, rows = query_rollups_via_router(
+        project_id=None,
+        environment_id=None,
+        window_start=now - timedelta(days=7),
+        window_end=now,
+    )
+
+    assert route == "rollup_hourly"
+    assert rows == []
+
+
+def test_router_uses_daily_rollups(fake_trace_warehouse):
+    now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+    route, rows = query_rollups_via_router(
+        project_id=None,
+        environment_id=None,
+        window_start=now - timedelta(days=60),
+        window_end=now,
+    )
+
+    assert route == "rollup_daily"
+    assert rows == []
+
+
+def test_event_scan_guard(client, db_session, fake_queue, fake_trace_warehouse):
+    operator = create_operator(db_session, email="warehouse-guard@acme.test")
+    session_payload = sign_in(client, email=operator.email)
+    organization = create_organization(client, session_payload, name="Warehouse Guard Org", slug="warehouse-guard-org")
+    project = create_project(client, session_payload, organization["id"])
+
+    with pytest.raises(WarehouseQueryViolation):
+        query_recent_traces(
+            TraceWarehouseQuery(
+                organization_id=UUID(organization["id"]),
+                project_id=UUID(project["id"]),
+                window_start=datetime.now(timezone.utc) - timedelta(days=2),
+                window_end=datetime.now(timezone.utc),
+            )
+        )
+
+
+def test_aggregate_trace_metrics_guard(client, db_session):
+    operator = create_operator(db_session, email="warehouse-aggregate-guard@acme.test")
+    session_payload = sign_in(client, email=operator.email)
+    organization = create_organization(client, session_payload, name="Warehouse Aggregate Org", slug="warehouse-aggregate-org")
+    project = create_project(client, session_payload, organization["id"])
+
+    token = contextvar_router_active.set(True)
+    try:
+        with pytest.raises(WarehouseQueryViolation):
+            _aggregate_trace_metrics(
+                TraceWarehouseAggregateQuery(
+                    organization_id=UUID(organization["id"]),
+                    project_id=UUID(project["id"]),
+                    window_start=datetime.now(timezone.utc) - timedelta(days=2),
+                    window_end=datetime.now(timezone.utc),
+                )
+            )
+    finally:
+        contextvar_router_active.reset(token)
+
+
+def test_router_rollup_boundary():
+    now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+    assert route_trace_query(
+        TraceQueryRequest(window_start=now - timedelta(hours=24), window_end=now, aggregated=True)
+    ) == "warehouse"
+    assert route_trace_query(
+        TraceQueryRequest(window_start=now - timedelta(hours=25), window_end=now, aggregated=True)
+    ) == "rollup_hourly"
+
+
+def test_hourly_rollup_query(fake_trace_warehouse):
+    project_id = UUID("00000000-0000-0000-0000-000000000101")
+    environment_id = UUID("00000000-0000-0000-0000-000000000202")
+    now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+    fake_trace_warehouse.insert_trace_events(
+        [
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(days=3, minutes=15),
+                organization_id=UUID("00000000-0000-0000-0000-000000000001"),
+                project_id=project_id,
+                environment_id=environment_id,
+                trace_id=UUID("00000000-0000-0000-0000-000000000301"),
+                model_family="gpt-4.1",
+                latency_ms=320,
+                success=True,
+                input_tokens=20,
+                output_tokens=10,
+                metadata_json={},
+            ),
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(days=3, minutes=5),
+                organization_id=UUID("00000000-0000-0000-0000-000000000001"),
+                project_id=project_id,
+                environment_id=environment_id,
+                trace_id=UUID("00000000-0000-0000-0000-000000000302"),
+                model_family="gpt-4.1",
+                latency_ms=280,
+                success=False,
+                input_tokens=10,
+                output_tokens=10,
+                metadata_json={},
+            ),
+        ]
+    )
+
+    rows = query_hourly_metrics(
+        project_id=project_id,
+        environment_id=environment_id,
+        start_time=now - timedelta(days=7),
+        end_time=now,
+    )
+
+    assert rows
+    assert rows[0].trace_count == 2
+
+
+def test_daily_rollup_query(fake_trace_warehouse):
+    project_id = UUID("00000000-0000-0000-0000-000000000111")
+    environment_id = UUID("00000000-0000-0000-0000-000000000222")
+    now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+    fake_trace_warehouse.insert_trace_events(
+        [
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(days=40),
+                organization_id=UUID("00000000-0000-0000-0000-000000000001"),
+                project_id=project_id,
+                environment_id=environment_id,
+                trace_id=UUID("00000000-0000-0000-0000-000000000311"),
+                model_family="gpt-4.1",
+                latency_ms=500,
+                success=True,
+                input_tokens=15,
+                output_tokens=15,
+                metadata_json={},
+            )
+        ]
+    )
+
+    rows = query_daily_metrics(
+        project_id=project_id,
+        environment_id=environment_id,
+        start_time=now - timedelta(days=60),
+        end_time=now,
+    )
+
+    assert rows
+    assert rows[0].trace_count == 1
 
 
 def test_scheduler_status_endpoint_requires_admin(client, db_session):
@@ -194,3 +365,51 @@ def test_membership_admin_endpoints_require_org_admin(client, db_session):
     assert create_response.status_code == 201
     assert forbidden.status_code == 403
     assert project_member.status_code == 201
+
+
+def test_growth_metrics_rollup_only(client, db_session, monkeypatch):
+    monkeypatch.setattr(
+        "app.services.growth_metrics.query_daily_metrics",
+        lambda **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app.services.growth_metrics._utc_now",
+        lambda: datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc),
+    )
+    monkeypatch.setattr(
+        "app.services.growth_metrics.query_all_traces_via_router",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("raw warehouse routing should not be used")),
+        raising=False,
+    )
+
+    metrics = get_growth_metrics(db_session)
+
+    assert metrics["trace_volume"]["today"] == 0
+
+
+def test_cost_metrics_rollup_only(client, db_session, monkeypatch):
+    operator = create_operator(db_session, email="cost-rollup@acme.test")
+    session_payload = sign_in(client, email=operator.email)
+    organization = create_organization(client, session_payload, name="Cost Rollup Org", slug="cost-rollup-org")
+    project = create_project(client, session_payload, organization["id"])
+
+    monkeypatch.setattr(
+        "app.services.cost_intelligence.query_hourly_metrics",
+        lambda **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app.services.cost_intelligence._utcnow",
+        lambda: datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc),
+    )
+    monkeypatch.setattr(
+        "app.services.cost_intelligence.query_all_traces_via_router",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("raw warehouse routing should not be used")),
+        raising=False,
+    )
+
+    metrics = get_project_cost_intelligence(
+        organization_id=UUID(organization["id"]),
+        project_id=UUID(project["id"]),
+    )
+
+    assert metrics["cost_per_trace"] == 0.0

@@ -24,6 +24,12 @@ class GuardrailRuntimeEventSummaryRead(APIModel):
     trace_available: bool
 
 
+class GuardrailTracePolicyCountRead(APIModel):
+    policy_type: str
+    trigger_count: int
+
+
 class GuardrailMetricsRead(BaseModel):
     policies: list[GuardrailPolicyMetricsRead]
     recent_events: list[GuardrailRuntimeEventSummaryRead]
+    trace_policy_counts: list[GuardrailTracePolicyCountRead] = []
