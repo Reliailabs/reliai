@@ -64,10 +64,44 @@ class OperatorContext:
     expires_at: datetime
     auth_source: str
     session_token: str | None = None
+    active_organization_id: UUID | None = None
 
     @property
     def organization_ids(self) -> list[UUID]:
         return [membership.organization_id for membership in self.memberships]
+
+
+def _resolve_active_organization_id(
+    db: Session,
+    *,
+    user: User,
+    memberships: list[OrganizationMember],
+) -> UUID | None:
+    membership_ids = [membership.organization_id for membership in memberships]
+    if user.active_organization_id in membership_ids:
+        return user.active_organization_id
+    active = membership_ids[0] if membership_ids else None
+    if user.active_organization_id != active:
+        user.active_organization_id = active
+        db.add(user)
+        db.flush()
+    return active
+
+
+def set_active_organization(
+    db: Session,
+    *,
+    user: User,
+    organization_id: UUID,
+) -> User:
+    memberships = get_operator_memberships(db, user.id)
+    if organization_id not in [membership.organization_id for membership in memberships]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    user.active_organization_id = organization_id
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def _dev_auth_enabled() -> bool:
@@ -162,6 +196,8 @@ def sign_in_operator(db: Session, payload: AuthSignInRequest) -> tuple[User, Ope
         expires_at=expires_at,
     )
     db.add(session)
+    memberships = get_operator_memberships(db, app_user.id)
+    _resolve_active_organization_id(db, user=app_user, memberships=memberships)
     db.commit()
     db.refresh(app_user)
     db.refresh(session)
@@ -206,6 +242,7 @@ def get_legacy_operator_context(db: Session, token: str) -> OperatorContext:
         is_active=operator.is_active,
     )
     memberships = get_operator_memberships(db, app_user.id)
+    active_organization_id = _resolve_active_organization_id(db, user=app_user, memberships=memberships)
     session.last_used_at = datetime.now(timezone.utc)
     db.add(session)
     db.commit()
@@ -215,6 +252,7 @@ def get_legacy_operator_context(db: Session, token: str) -> OperatorContext:
         expires_at=session.expires_at,
         auth_source="legacy",
         session_token=token,
+        active_organization_id=active_organization_id,
     )
 
 
@@ -235,3 +273,28 @@ def revoke_session(db: Session, token: str) -> None:
         session.revoked_at = datetime.now(timezone.utc)
         db.add(session)
         db.commit()
+
+
+def switch_active_organization(
+    db: Session,
+    *,
+    operator: OperatorContext,
+    organization_id: UUID,
+) -> OperatorContext:
+    if organization_id not in operator.organization_ids:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    user = db.get(User, operator.operator.id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user.active_organization_id = organization_id
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return OperatorContext(
+        operator=user,
+        memberships=operator.memberships,
+        expires_at=operator.expires_at,
+        auth_source=operator.auth_source,
+        session_token=operator.session_token,
+        active_organization_id=organization_id,
+    )

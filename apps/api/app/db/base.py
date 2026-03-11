@@ -19,6 +19,8 @@ from app.models.guardrail_event import GuardrailEvent
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.global_model_reliability import GlobalModelReliability
+from app.models.reliability_graph_edge import ReliabilityGraphEdge
+from app.models.reliability_graph_node import ReliabilityGraphNode
 from app.models.incident import Incident
 from app.models.incident_root_cause import IncidentRootCause
 from app.models.incident_event import IncidentEvent
@@ -73,6 +75,8 @@ __all__ = [
     "GuardrailPolicy",
     "GuardrailRuntimeEvent",
     "GlobalModelReliability",
+    "ReliabilityGraphEdge",
+    "ReliabilityGraphNode",
     "Incident",
     "IncidentRootCause",
     "IncidentEvent",

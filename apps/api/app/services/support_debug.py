@@ -10,11 +10,11 @@ from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.processor_failure import ProcessorFailure
 from app.models.trace import Trace
 from app.services.event_processing_metrics import get_event_pipeline_status
-from app.services.trace_ingestion_control import get_or_create_trace_ingestion_policy
+from app.services.trace_ingestion_control import get_effective_ingestion_policy
 
 
 def get_support_debug_snapshot(db: Session, *, project_id: UUID) -> dict:
-    policy = get_or_create_trace_ingestion_policy(db, project_id=project_id)
+    policy = get_effective_ingestion_policy(db, project_id=project_id)
     pipeline = get_event_pipeline_status(db)
     failures = db.execute(
         select(ProcessorFailure,).where(ProcessorFailure.project_id == project_id).order_by(ProcessorFailure.created_at.desc()).limit(10)
@@ -26,7 +26,12 @@ def get_support_debug_snapshot(db: Session, *, project_id: UUID) -> dict:
         .limit(10)
     ).all()
     guardrails = db.execute(
-        select(GuardrailPolicy.policy_type, GuardrailRuntimeEvent.action_taken, GuardrailRuntimeEvent.created_at, GuardrailPolicy.environment)
+        select(
+            GuardrailPolicy.policy_type,
+            GuardrailRuntimeEvent.action_taken,
+            GuardrailRuntimeEvent.created_at,
+            GuardrailPolicy.environment_id,
+        )
         .join(GuardrailRuntimeEvent, GuardrailRuntimeEvent.policy_id == GuardrailPolicy.id)
         .where(GuardrailPolicy.project_id == project_id)
         .order_by(GuardrailRuntimeEvent.created_at.desc())
@@ -74,7 +79,7 @@ def get_support_debug_snapshot(db: Session, *, project_id: UUID) -> dict:
                 "policy_type": policy_type,
                 "action_taken": action_taken,
                 "created_at": created_at.isoformat(),
-                "environment": environment,
+                "environment": str(environment) if environment is not None else None,
             }
             for policy_type, action_taken, created_at, environment in guardrails
         ],

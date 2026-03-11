@@ -17,7 +17,7 @@ from app.models.trace import Trace
 from app.schemas.trace import TraceIngestRequest, TraceListQuery
 from app.services.auth import OperatorContext
 from app.services.authorization import authorized_project_ids, require_project_access, require_trace_access
-from app.services.event_stream import TRACE_INGESTED_EVENT, publish_event
+from app.services.event_stream import PIPELINE_BACKPRESSURE_EVENT, TRACE_INGESTED_EVENT, publish_event
 from app.services.environments import normalize_environment_name, resolve_project_environment
 from app.services.guardrails import evaluate_trace_guardrails
 from app.services.incidents import _structured_output_label
@@ -26,10 +26,14 @@ from app.services.reliability_graph import sync_trace_retrieval_span
 from app.services.registry import link_trace_registry_records
 from app.services.trace_ingestion_control import apply_trace_ingestion_controls
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
+from app.services.trace_query_router import WarehouseQueryViolation
 from app.core.settings import get_settings
+from app.services.rate_limiter import enforce_rate_limit
+from app.services.usage_quotas import enforce_daily_trace_quota
 
 logger = logging.getLogger(__name__)
 PREVIEW_LENGTH = 240
+MAX_RELATIONAL_TRACE_SCAN_WINDOW = timedelta(hours=24)
 
 
 @dataclass
@@ -174,14 +178,51 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
     project = db.get(Project, api_key.project_id)
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    enforce_daily_trace_quota(db, organization_id=project.organization_id)
+    publish_event_after_commit = True
+    settings = get_settings()
+    now = datetime.now(trace_timezone.utc)
+    try:
+        enforce_rate_limit(
+            scope="trace_ingest_global",
+            key=now.strftime("%Y%m%d%H%M%S"),
+            limit=settings.max_traces_per_second,
+            window_seconds=1,
+        )
+        enforce_rate_limit(
+            scope="trace_ingest_project",
+            key=f"{project.id}:{now.strftime('%Y%m%d%H%M%S')}",
+            limit=settings.max_project_ingest_rate,
+            window_seconds=1,
+        )
+    except HTTPException:
+        publish_event_after_commit = False
     controlled = apply_trace_ingestion_controls(db, project=project, payload=payload)
     trace = create_trace(db, project, controlled.payload)
-    if controlled.publish_event:
+    if publish_event_after_commit and controlled.publish_event:
         publish_trace_ingested_event(trace)
+    elif not publish_event_after_commit:
+        publish_event(
+            settings.event_stream_topic_traces,
+            {
+                "event_type": PIPELINE_BACKPRESSURE_EVENT,
+                "project_id": str(project.id),
+                "environment_id": str(trace.environment_id) if trace.environment_id is not None else None,
+                "timestamp": datetime.now(trace_timezone.utc).isoformat(),
+                "metadata": {
+                    "trace_id": str(trace.id),
+                    "sampled": True,
+                },
+            },
+        )
     return trace
 
 
 def list_traces(db: Session, operator: OperatorContext, filters: TraceListQuery) -> TraceListResult:
+    if filters.date_from is not None and filters.date_to is not None:
+        window = filters.date_to - filters.date_from
+        if window > MAX_RELATIONAL_TRACE_SCAN_WINDOW:
+            raise WarehouseQueryViolation()
     if filters.project_id is not None:
         require_project_access(db, operator, filters.project_id)
         allowed_project_ids = [filters.project_id]

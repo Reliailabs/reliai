@@ -77,6 +77,24 @@ def upgrade() -> None:
             """
         )
     )
+    op.execute(
+        sa.text(
+            """
+            UPDATE organization_members AS membership
+            SET user_id = owner_members.user_id
+            FROM (
+                SELECT DISTINCT ON (organization_id)
+                    organization_id,
+                    user_id
+                FROM organization_members
+                WHERE user_id IS NOT NULL
+                ORDER BY organization_id, created_at ASC
+            ) AS owner_members
+            WHERE membership.user_id IS NULL
+              AND membership.organization_id = owner_members.organization_id
+            """
+        )
+    )
     op.alter_column("organization_members", "auth_user_id", existing_type=sa.String(length=255), nullable=True)
     op.alter_column("organization_members", "user_id", existing_type=sa.Uuid(), nullable=False)
     op.create_foreign_key(

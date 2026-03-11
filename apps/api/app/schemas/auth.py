@@ -16,7 +16,12 @@ class AuthSignInRequest(BaseModel):
 
 class OperatorMembershipRead(BaseModel):
     organization_id: UUID
+    organization_name: str | None = None
     role: str
+
+
+class AuthSwitchOrganizationRequest(BaseModel):
+    organization_id: UUID
 
 
 class OperatorRead(BaseModel):
@@ -29,4 +34,5 @@ class AuthSessionResponse(BaseModel):
     session_token: str | None = None
     operator: OperatorRead
     memberships: list[OperatorMembershipRead]
+    active_organization_id: UUID | None = None
     expires_at: datetime

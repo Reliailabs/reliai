@@ -62,6 +62,7 @@ def get_processor_registry() -> ProcessorRegistry:
         from app.processors.automation_processor import AutomationProcessor
         from app.processors.evaluation_processor import EvaluationProcessor
         from app.processors.regression_processor import RegressionProcessor
+        from app.processors.reliability_graph_processor import ReliabilityGraphProcessor
         from app.processors.reliability_metrics_processor import ReliabilityMetricsProcessor
         from app.processors.sdk_metrics_processor import SDKMetricsProcessor
         from app.processors.warehouse_processor import WarehouseProcessor
@@ -70,6 +71,7 @@ def get_processor_registry() -> ProcessorRegistry:
             AutomationProcessor,
             EvaluationProcessor,
             RegressionProcessor,
+            ReliabilityGraphProcessor,
             ReliabilityMetricsProcessor,
             SDKMetricsProcessor,
             WarehouseProcessor,

@@ -14,6 +14,11 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ForeignKey("operator_users.id"), unique=True, index=True
     )
     workos_user_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    active_organization_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("organizations.id"),
+        nullable=True,
+        index=True,
+    )
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_system_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

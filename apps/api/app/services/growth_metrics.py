@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.models.project import Project
-from app.services.trace_warehouse import query_all_traces
+from app.services.trace_query_router import query_all_traces_via_router
 
 USAGE_TIER_UNDER_1M = 1_000_000
 USAGE_TIER_1M_10M = 10_000_000
@@ -65,7 +65,11 @@ def get_growth_metrics(db: Session) -> dict:
     chart_start = today_start - timedelta(days=TREND_WINDOW_DAYS - 1)
     usage_start = today_start - timedelta(days=USAGE_WINDOW_DAYS - 1)
 
-    trace_rows = query_all_traces(window_start=prior_week_start, window_end=tomorrow_start)
+    _, trace_rows = query_all_traces_via_router(
+        window_start=prior_week_start,
+        window_end=tomorrow_start,
+        aggregated=True,
+    )
     trace_counts_by_day: Counter[str] = Counter()
     for row in trace_rows:
         trace_counts_by_day[_as_utc(row.timestamp).date().isoformat()] += 1
@@ -113,7 +117,11 @@ def get_growth_metrics(db: Session) -> dict:
     ).all():
         guardrail_action_counts[action] = int(count)
 
-    usage_rows = query_all_traces(window_start=usage_start, window_end=tomorrow_start)
+    _, usage_rows = query_all_traces_via_router(
+        window_start=usage_start,
+        window_end=tomorrow_start,
+        aggregated=True,
+    )
     trace_count_by_project = Counter(str(row.project_id) for row in usage_rows)
     active_project_ids = [
         str(project_id)

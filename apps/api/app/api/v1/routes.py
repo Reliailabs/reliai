@@ -1,15 +1,35 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import require_operator
+from app.core.settings import get_settings
 from app.db.session import get_db
+from app.models.organization import Organization
 from app.models.project import Project
+from app.models.reliability_graph_edge import ReliabilityGraphEdge
+from app.models.reliability_graph_node import ReliabilityGraphNode
+from app.models.trace import Trace
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
-from app.schemas.auth import AuthSessionResponse, AuthSignInRequest, OperatorMembershipRead, OperatorRead
+from app.schemas.archive_status import ArchiveStatusRead
+from app.schemas.auth import (
+    AuthSessionResponse,
+    AuthSignInRequest,
+    AuthSwitchOrganizationRequest,
+    OperatorMembershipRead,
+    OperatorRead,
+)
+from app.schemas.cost_intelligence import (
+    CostAnomalyRead,
+    CostByModelRead,
+    DailyCostPointRead,
+    ProjectCostRead,
+)
+from app.schemas.customer_export import CustomerExportCreate, CustomerExportRead
 from app.schemas.customer_reliability import (
     CustomerReliabilityDetailRead,
     CustomerReliabilityListRead,
@@ -45,6 +65,22 @@ from app.schemas.global_metrics import (
     GlobalModelReliabilityRead,
 )
 from app.schemas.growth_metrics import SystemGrowthRead
+from app.schemas.platform_extension import (
+    PlatformExtensionCreate,
+    PlatformExtensionListResponse,
+    PlatformExtensionRead,
+)
+from app.schemas.platform_metrics import PlatformMetricsRead
+from app.schemas.public_api_key import (
+    PublicAPIKeyCreate,
+    PublicAPIKeyCreateResponse,
+    PublicAPIKeyListResponse,
+    PublicAPIKeyRead,
+)
+from app.schemas.sdk_metric import SDKTelemetryEventCreate
+from app.schemas.scheduler import SchedulerJobRead, SchedulerStatusResponse
+from app.schemas.support_debug import SupportDebugRead
+from app.schemas.usage_quota import UsageQuotaRead, UsageQuotaUpsert
 from app.schemas.guardrail_metrics import (
     GuardrailMetricsRead,
     GuardrailPolicyMetricsRead,
@@ -91,6 +127,14 @@ from app.schemas.investigation import (
     TraceDiffBlockRead,
 )
 from app.schemas.incident_event import IncidentEventListResponse, IncidentEventRead
+from app.schemas.membership import (
+    OrganizationMemberCreate,
+    OrganizationMemberListResponse,
+    OrganizationMemberRead,
+    ProjectMemberCreate,
+    ProjectMemberListResponse,
+    ProjectMemberRead,
+)
 from app.schemas.organization import OrganizationCreate, OrganizationRead
 from app.schemas.organization_alert_target import (
     OrganizationAlertTargetRead,
@@ -128,6 +172,15 @@ from app.schemas.reliability_intelligence import (
 )
 from app.schemas.reliability_pattern import ReliabilityPatternListResponse, ReliabilityPatternRead
 from app.schemas.reliability_graph import (
+    GraphGuardrailRecommendationListResponse,
+    GraphGuardrailRecommendationRead,
+    ReliabilityGraphEdgeRead,
+    ReliabilityGraphNodeDetailRead,
+    ReliabilityGraphNodeRead,
+    ReliabilityGraphOverviewRead,
+    ReliabilityGraphPatternListResponse,
+    ReliabilityGraphPatternRead,
+    ReliabilityGraphRelatedNodeRead,
     GraphIncidentRootCauseRead,
     GraphTraceEvaluationRead,
     GraphTraceRead,
@@ -171,6 +224,8 @@ from app.schemas.trace_ingestion_policy import (
 )
 from app.services.api_keys import authenticate_api_key, create_api_key
 from app.services.cohort_queries import aggregate_cohort_metrics, query_trace_cohort
+from app.services.cost_intelligence import get_project_cost_intelligence
+from app.services.customer_exports import create_customer_export, get_customer_export
 from app.services.customer_reliability_metrics import (
     get_customer_reliability_project_detail,
     list_customer_reliability_projects,
@@ -188,6 +243,7 @@ from app.services.external_processors import (
     processor_read_model,
     update_external_processor,
 )
+from app.services.platform_extensions import create_platform_extension, list_platform_extensions
 from app.services.deployment_simulation_engine import create_deployment_simulation
 from app.services.deployment_risk_engine import calculate_deployment_risk
 from app.services.global_metrics import list_global_model_reliability
@@ -204,7 +260,13 @@ from app.services.auth import (
     get_operator_context,
     get_operator_memberships,
     revoke_session,
+    set_active_organization,
     sign_in_operator,
+)
+from app.services.auth_workos import (
+    handle_scim_group_updated,
+    handle_scim_user_deprovisioned,
+    handle_scim_user_provisioned,
 )
 from app.services.incident_command_center import get_incident_command_center
 from app.services.incident_investigation import get_incident_investigation
@@ -247,7 +309,14 @@ from app.services.organization_alert_targets import (
     upsert_org_alert_target,
 )
 from app.services.projects import create_project, list_projects
+from app.services.public_api import (
+    authenticate_public_api_key,
+    create_public_api_key,
+    list_public_api_keys,
+    revoke_public_api_key,
+)
 from app.services.prompt_versions import get_prompt_version_detail
+from app.services.rate_limiter import enforce_rate_limit
 from app.services.reliability_metrics import (
     METRIC_ALERT_DELIVERY_SUCCESS_RATE,
     METRIC_DETECTION_COVERAGE,
@@ -266,9 +335,15 @@ from app.services.reliability_metrics import (
     project_reliability_trends,
 )
 from app.services.reliability_graph import get_incident_graph
+from app.services.reliability_graph import (
+    get_graph_guardrail_recommendations,
+    get_high_risk_patterns,
+    get_related_nodes,
+)
 from app.services.reliability_control_panel import get_project_reliability_control_panel
 from app.services.reliability_actions import list_project_reliability_actions
 from app.services.reliability_pattern_mining import get_reliability_pattern, list_reliability_patterns
+from app.services.global_reliability_patterns import get_global_reliability_patterns
 from app.services.reliability_recommendations import (
     generate_recommendations,
     get_active_recommendations,
@@ -278,6 +353,9 @@ from app.services.reliability_intelligence import (
     get_model_insights,
     get_prompt_risk_scores,
 )
+from app.services.sdk_metrics import record_sdk_event
+from app.services.support_debug import get_support_debug_snapshot
+from app.services.platform_metrics import get_platform_metrics
 from app.services.registry import (
     build_model_version_path,
     build_prompt_version_path,
@@ -285,6 +363,14 @@ from app.services.registry import (
     list_project_prompt_versions,
 )
 from app.services.model_versions import get_model_version_detail
+from app.services.memberships import (
+    add_organization_member,
+    add_project_member,
+    list_organization_members,
+    list_project_members,
+    remove_organization_member,
+    remove_project_member,
+)
 from app.services.trace_ingestion_control import (
     DEFAULT_SENSITIVE_FIELD_PATTERNS,
     get_effective_ingestion_policy,
@@ -294,7 +380,14 @@ from app.services.trace_ingestion_control import (
 )
 from app.services.traces import get_trace_compare, get_trace_detail, ingest_trace, list_traces
 from app.services.timeline import get_project_timeline
+from app.services.event_stream import publish_event
+from app.services.usage_quotas import (
+    enforce_daily_api_quota,
+    get_or_create_usage_quota,
+)
+from app.services.warehouse_archiver import get_archive_status
 from app.workers.deployment_simulation import enqueue_deployment_simulation
+from app.workers.scheduler import get_scheduler_status
 
 router = APIRouter()
 
@@ -303,6 +396,24 @@ def _read_datetime(value):
     if value is None or isinstance(value, datetime):
         return value
     return datetime.fromisoformat(value)
+
+
+def _membership_items(db: Session, memberships) -> list[OperatorMembershipRead]:
+    organization_names: dict[UUID, str] = {}
+    for membership in memberships:
+        if membership.organization_id in organization_names:
+            continue
+        organization = db.get(Organization, membership.organization_id)
+        if organization is not None:
+            organization_names[membership.organization_id] = organization.name
+    return [
+        OperatorMembershipRead(
+            organization_id=membership.organization_id,
+            organization_name=organization_names.get(membership.organization_id),
+            role=membership.role,
+        )
+        for membership in memberships
+    ]
 
 
 def _incident_list_item(incident) -> IncidentListItemRead:
@@ -359,6 +470,18 @@ def _guardrail_effectiveness_item(item) -> GuardrailEffectivenessRead:
 
 def _reliability_pattern_item(item) -> ReliabilityPatternRead:
     return ReliabilityPatternRead.model_validate(item)
+
+
+def _graph_node_item(item) -> ReliabilityGraphNodeRead:
+    return ReliabilityGraphNodeRead.model_validate(item)
+
+
+def _graph_edge_item(item) -> ReliabilityGraphEdgeRead:
+    return ReliabilityGraphEdgeRead.model_validate(item)
+
+
+def _graph_pattern_item(item: dict) -> ReliabilityGraphPatternRead:
+    return ReliabilityGraphPatternRead.model_validate(item)
 
 
 def _deployment_item(deployment) -> DeploymentRead:
@@ -457,6 +580,14 @@ def _reliability_action_log_item(item) -> ReliabilityActionLogRead:
     return ReliabilityActionLogRead.model_validate(item)
 
 
+def _public_api_key_item(item) -> PublicAPIKeyRead:
+    return PublicAPIKeyRead.model_validate(item)
+
+
+def _platform_extension_item(item) -> PlatformExtensionRead:
+    return PlatformExtensionRead.model_validate(item)
+
+
 def _project_from_session_or_api_key(
     *,
     db: Session,
@@ -466,14 +597,30 @@ def _project_from_session_or_api_key(
 ):
     if x_api_key:
         api_key = authenticate_api_key(db, x_api_key)
-        if api_key is None:
+        if api_key is not None:
+            if api_key.project_id != project_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+            project = db.get(Project, project_id)
+            if project is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+            return project
+
+        public_key = authenticate_public_api_key(db, x_api_key)
+        if public_key is None:
             db.rollback()
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
-        if api_key.project_id != project_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
         project = db.get(Project, project_id)
         if project is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        if project.organization_id != public_key.organization_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        enforce_rate_limit(
+            scope="public_api",
+            key=str(public_key.organization_id),
+            limit=get_settings().public_api_rate_limit_per_minute,
+            window_seconds=60,
+        )
+        enforce_daily_api_quota(db, organization_id=public_key.organization_id)
         return project
 
     if authorization and authorization.lower().startswith("bearer "):
@@ -481,6 +628,33 @@ def _project_from_session_or_api_key(
         return require_project_access(db, operator, project_id)
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+
+
+def _public_api_key_from_headers(
+    *,
+    db: Session,
+    x_api_key: str | None,
+    authorization: str | None,
+):
+    provided_key = x_api_key
+    if provided_key is None and authorization and authorization.lower().startswith("bearer "):
+        provided_key = authorization[7:]
+    if not provided_key:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key is required")
+    key = authenticate_public_api_key(db, provided_key)
+    if key is None:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    return key
+
+
+def _operator_context_for_public_project(project: Project):
+    membership = SimpleNamespace(organization_id=project.organization_id, role="org_admin")
+    return SimpleNamespace(
+        operator=SimpleNamespace(id=UUID(int=0), is_system_admin=False),
+        memberships=[membership],
+        organization_ids=[project.organization_id],
+    )
 
 
 def _trace_list_item(trace) -> TraceListItemRead:
@@ -942,6 +1116,56 @@ def get_system_growth_endpoint(
     return SystemGrowthRead.model_validate(get_growth_metrics(db))
 
 
+@router.get("/system/platform", response_model=PlatformMetricsRead)
+def get_system_platform_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> PlatformMetricsRead:
+    require_system_admin(operator)
+    return PlatformMetricsRead.model_validate(get_platform_metrics(db))
+
+
+@router.get("/system/scheduler", response_model=SchedulerStatusResponse)
+def get_system_scheduler_endpoint(
+    operator: OperatorContext = Depends(require_operator),
+) -> SchedulerStatusResponse:
+    require_system_admin(operator)
+    return SchedulerStatusResponse(
+        jobs=[SchedulerJobRead.model_validate(item) for item in get_scheduler_status()]
+    )
+
+
+@router.get("/system/archive-status", response_model=ArchiveStatusRead)
+def get_system_archive_status_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ArchiveStatusRead:
+    require_system_admin(operator)
+    return ArchiveStatusRead.model_validate(get_archive_status(db))
+
+
+@router.get("/system/global-intelligence", response_model=ReliabilityGraphPatternListResponse)
+def get_system_global_intelligence_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ReliabilityGraphPatternListResponse:
+    require_system_admin(operator)
+    return ReliabilityGraphPatternListResponse(
+        items=[_graph_pattern_item(item) for item in get_global_reliability_patterns(db)]
+    )
+
+
+@router.get("/system/debug/{project_id}", response_model=SupportDebugRead)
+def get_system_debug_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> SupportDebugRead:
+    require_system_admin(operator)
+    require_project_access(db, operator, project_id)
+    return SupportDebugRead.model_validate(get_support_debug_snapshot(db, project_id=project_id))
+
+
 @router.get("/models/reliability", response_model=GlobalModelReliabilityListResponse)
 def list_global_model_reliability_endpoint(
     db: Session = Depends(get_db),
@@ -976,6 +1200,85 @@ def list_guardrail_intelligence_endpoint(
 ) -> GuardrailEffectivenessListResponse:
     return GuardrailEffectivenessListResponse(
         items=[_guardrail_effectiveness_item(item) for item in get_guardrail_recommendations(db)]
+    )
+
+
+@router.get("/intelligence/graph", response_model=ReliabilityGraphOverviewRead)
+def get_reliability_graph_overview_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ReliabilityGraphOverviewRead:
+    patterns = get_high_risk_patterns(db, organization_ids=operator.organization_ids, limit=20)
+    node_ids = {item["source_node_id"] for item in patterns} | {item["target_node_id"] for item in patterns}
+    graph_nodes: list[ReliabilityGraphNode] = []
+    for node_id in node_ids:
+        node, _ = get_related_nodes(db, node_id=node_id, organization_ids=operator.organization_ids)
+        if node is not None:
+            graph_nodes.append(node)
+    edge_ids: set[UUID] = set()
+    edges: list[ReliabilityGraphEdge] = []
+    for item in patterns:
+        _, related = get_related_nodes(
+            db,
+            node_id=item["source_node_id"],
+            organization_ids=operator.organization_ids,
+        )
+        for _, edge in related:
+            if edge.id in edge_ids:
+                continue
+            if edge.source_id == item["source_node_id"] and edge.target_id == item["target_node_id"]:
+                edge_ids.add(edge.id)
+                edges.append(edge)
+    return ReliabilityGraphOverviewRead(
+        nodes=[_graph_node_item(node) for node in graph_nodes],
+        edges=[_graph_edge_item(edge) for edge in edges],
+    )
+
+
+@router.get("/intelligence/node/{node_id}", response_model=ReliabilityGraphNodeDetailRead)
+def get_reliability_graph_node_endpoint(
+    node_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ReliabilityGraphNodeDetailRead:
+    node, related = get_related_nodes(db, node_id=node_id, organization_ids=operator.organization_ids)
+    if node is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Graph node not found")
+    return ReliabilityGraphNodeDetailRead(
+        node=_graph_node_item(node),
+        related=[
+            ReliabilityGraphRelatedNodeRead(
+                node=_graph_node_item(related_node),
+                edge=_graph_edge_item(edge),
+            )
+            for related_node, edge in related
+        ],
+    )
+
+
+@router.get("/intelligence/high-risk-patterns", response_model=ReliabilityGraphPatternListResponse)
+def list_graph_high_risk_patterns_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ReliabilityGraphPatternListResponse:
+    return ReliabilityGraphPatternListResponse(
+        items=[
+            _graph_pattern_item(item)
+            for item in get_high_risk_patterns(db, organization_ids=operator.organization_ids, limit=25)
+        ]
+    )
+
+
+@router.get("/intelligence/guardrail-recommendations", response_model=GraphGuardrailRecommendationListResponse)
+def list_graph_guardrail_recommendations_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> GraphGuardrailRecommendationListResponse:
+    return GraphGuardrailRecommendationListResponse(
+        items=[
+            GraphGuardrailRecommendationRead.model_validate(item)
+            for item in get_graph_guardrail_recommendations(db, organization_ids=operator.organization_ids)
+        ]
     )
 
 
@@ -1026,10 +1329,8 @@ def sign_in_operator_endpoint(
             email=operator.email,
             is_system_admin=operator.is_system_admin,
         ),
-        memberships=[
-            OperatorMembershipRead(organization_id=membership.organization_id, role=membership.role)
-            for membership in get_operator_memberships(db, operator.id)
-        ],
+        memberships=_membership_items(db, get_operator_memberships(db, operator.id)),
+        active_organization_id=operator.active_organization_id,
         expires_at=session.expires_at,
     )
 
@@ -1037,6 +1338,7 @@ def sign_in_operator_endpoint(
 @router.get("/auth/session", response_model=AuthSessionResponse)
 def auth_session_endpoint(
     operator: OperatorContext = Depends(require_operator),
+    db: Session = Depends(get_db),
 ) -> AuthSessionResponse:
     return AuthSessionResponse(
         operator=OperatorRead(
@@ -1044,11 +1346,34 @@ def auth_session_endpoint(
             email=operator.operator.email,
             is_system_admin=operator.operator.is_system_admin,
         ),
-        memberships=[
-            OperatorMembershipRead(organization_id=membership.organization_id, role=membership.role)
-            for membership in operator.memberships
-        ],
+        memberships=_membership_items(db, operator.memberships),
+        active_organization_id=operator.active_organization_id,
         expires_at=operator.expires_at,
+    )
+
+
+@router.post("/auth/switch-organization", response_model=AuthSessionResponse)
+def switch_organization_endpoint(
+    payload: AuthSwitchOrganizationRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuthSessionResponse:
+    user = set_active_organization(
+        db,
+        user=operator.operator,
+        organization_id=payload.organization_id,
+    )
+    memberships = get_operator_memberships(db, user.id)
+    return AuthSessionResponse(
+        operator=OperatorRead(
+            id=user.id,
+            email=user.email,
+            is_system_admin=user.is_system_admin,
+        ),
+        memberships=_membership_items(db, memberships),
+        active_organization_id=user.active_organization_id,
+        expires_at=operator.expires_at,
+        session_token=operator.session_token,
     )
 
 
@@ -1065,6 +1390,83 @@ def sign_out_operator_endpoint(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.post("/auth/workos/scim", status_code=status.HTTP_204_NO_CONTENT)
+def handle_workos_scim_event_endpoint(
+    payload: dict,
+    authorization: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> Response:
+    secret = authorization[7:] if authorization and authorization.lower().startswith("bearer ") else payload.get("secret")
+    if secret != get_settings().workos_scim_webhook_secret:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid SCIM secret")
+    event_type = str(payload.get("event_type") or "")
+    if event_type == "user_provisioned":
+        handle_scim_user_provisioned(
+            db,
+            email=str(payload["email"]),
+            workos_user_id=str(payload["workos_user_id"]),
+            groups=list(payload.get("groups") or []),
+            organization_ids=list(payload.get("organization_ids") or []),
+        )
+    elif event_type == "user_deprovisioned":
+        handle_scim_user_deprovisioned(db, workos_user_id=str(payload["workos_user_id"]))
+    elif event_type == "group_updated":
+        handle_scim_group_updated(
+            db,
+            workos_user_id=str(payload["workos_user_id"]),
+            groups=list(payload.get("groups") or []),
+            organization_ids=list(payload.get("organization_ids") or []),
+        )
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported SCIM event")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/api-keys", response_model=PublicAPIKeyCreateResponse, status_code=status.HTTP_201_CREATED)
+def create_public_api_key_endpoint(
+    payload: PublicAPIKeyCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> PublicAPIKeyCreateResponse:
+    require_org_role(operator, payload.organization_id, "org_admin")
+    record, plaintext = create_public_api_key(
+        db,
+        organization_id=payload.organization_id,
+        name=payload.name,
+        actor_user_id=operator.operator.id,
+    )
+    return PublicAPIKeyCreateResponse(api_key=plaintext, api_key_record=_public_api_key_item(record))
+
+
+@router.get("/api-keys", response_model=PublicAPIKeyListResponse)
+def list_public_api_keys_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> PublicAPIKeyListResponse:
+    require_org_role(operator, organization_id, "viewer")
+    return PublicAPIKeyListResponse(
+        items=[_public_api_key_item(item) for item in list_public_api_keys(db, organization_id=organization_id)]
+    )
+
+
+@router.delete("/api-keys/{key_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_public_api_key_endpoint(
+    key_id: UUID,
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> Response:
+    require_org_role(operator, organization_id, "org_admin")
+    revoke_public_api_key(
+        db,
+        organization_id=organization_id,
+        key_id=key_id,
+        actor_user_id=operator.operator.id,
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/organizations/{organization_id}", response_model=OrganizationRead)
 def get_organization_endpoint(
     organization_id: UUID,
@@ -1073,6 +1475,69 @@ def get_organization_endpoint(
 ) -> OrganizationRead:
     require_organization_membership(operator, organization_id)
     return get_organization(db, organization_id)
+
+
+@router.get("/organizations/{organization_id}/members", response_model=OrganizationMemberListResponse)
+def list_organization_members_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationMemberListResponse:
+    require_org_role(operator, organization_id, "org_admin")
+    items = list_organization_members(db, organization_id=organization_id)
+    return OrganizationMemberListResponse(
+        items=[
+            OrganizationMemberRead(
+                user_id=item.user_id,
+                organization_id=item.organization_id,
+                role=item.role,
+                email=item.user.email if getattr(item, "user", None) is not None else None,
+                created_at=item.created_at,
+            )
+            for item in items
+        ]
+    )
+
+
+@router.post("/organizations/{organization_id}/members", response_model=OrganizationMemberRead, status_code=status.HTTP_201_CREATED)
+def add_organization_member_endpoint(
+    organization_id: UUID,
+    payload: OrganizationMemberCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationMemberRead:
+    require_org_role(operator, organization_id, "org_admin")
+    item = add_organization_member(
+        db,
+        organization_id=organization_id,
+        user_id=payload.user_id,
+        role=payload.role,
+        actor_user_id=operator.operator.id,
+    )
+    return OrganizationMemberRead(
+        user_id=item.user_id,
+        organization_id=item.organization_id,
+        role=item.role,
+        email=item.user.email if getattr(item, "user", None) is not None else None,
+        created_at=item.created_at,
+    )
+
+
+@router.delete("/organizations/{organization_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_organization_member_endpoint(
+    organization_id: UUID,
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> Response:
+    require_org_role(operator, organization_id, "org_admin")
+    remove_organization_member(
+        db,
+        organization_id=organization_id,
+        user_id=user_id,
+        actor_user_id=operator.operator.id,
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(
@@ -1150,6 +1615,64 @@ def test_org_alert_target_endpoint(
     )
 
 
+@router.get("/organizations/{organization_id}/usage-quota", response_model=UsageQuotaRead)
+def get_org_usage_quota_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> UsageQuotaRead:
+    require_org_role(operator, organization_id, "viewer")
+    return UsageQuotaRead.model_validate(get_or_create_usage_quota(db, organization_id=organization_id))
+
+
+@router.put("/organizations/{organization_id}/usage-quota", response_model=UsageQuotaRead)
+def upsert_org_usage_quota_endpoint(
+    organization_id: UUID,
+    payload: UsageQuotaUpsert,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> UsageQuotaRead:
+    require_org_role(operator, organization_id, "org_admin")
+    quota = get_or_create_usage_quota(db, organization_id=organization_id)
+    quota.max_traces_per_day = payload.max_traces_per_day
+    quota.max_processors = payload.max_processors
+    quota.max_api_requests = payload.max_api_requests
+    db.add(quota)
+    db.commit()
+    db.refresh(quota)
+    return UsageQuotaRead.model_validate(quota)
+
+
+@router.get("/organizations/{organization_id}/extensions", response_model=PlatformExtensionListResponse)
+def list_platform_extensions_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> PlatformExtensionListResponse:
+    require_org_role(operator, organization_id, "viewer")
+    return PlatformExtensionListResponse(
+        items=[_platform_extension_item(item) for item in list_platform_extensions(db, organization_id=organization_id)]
+    )
+
+
+@router.post(
+    "/organizations/{organization_id}/extensions",
+    response_model=PlatformExtensionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_platform_extension_endpoint(
+    organization_id: UUID,
+    payload: PlatformExtensionCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> PlatformExtensionRead:
+    require_org_role(operator, organization_id, "org_admin")
+    if payload.organization_id != organization_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization mismatch")
+    extension = create_platform_extension(db, payload=payload, actor_user_id=operator.operator.id)
+    return _platform_extension_item(extension)
+
+
 @router.post(
     "/organizations/{organization_id}/projects",
     response_model=ProjectRead,
@@ -1182,6 +1705,72 @@ def get_project_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> ProjectRead:
     return require_project_access(db, operator, project_id)
+
+
+@router.get("/projects/{project_id}/members", response_model=ProjectMemberListResponse)
+def list_project_members_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectMemberListResponse:
+    project = require_project_access(db, operator, project_id)
+    require_org_role(operator, project.organization_id, "org_admin")
+    items = list_project_members(db, project_id=project_id)
+    return ProjectMemberListResponse(
+        items=[
+            ProjectMemberRead(
+                user_id=item.user_id,
+                project_id=item.project_id,
+                role=item.role,
+                email=item.user.email if getattr(item, "user", None) is not None else None,
+                created_at=item.created_at,
+            )
+            for item in items
+        ]
+    )
+
+
+@router.post("/projects/{project_id}/members", response_model=ProjectMemberRead, status_code=status.HTTP_201_CREATED)
+def add_project_member_endpoint(
+    project_id: UUID,
+    payload: ProjectMemberCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectMemberRead:
+    project = require_project_access(db, operator, project_id)
+    require_org_role(operator, project.organization_id, "org_admin")
+    item = add_project_member(
+        db,
+        project_id=project_id,
+        user_id=payload.user_id,
+        role=payload.role,
+        actor_user_id=operator.operator.id,
+    )
+    return ProjectMemberRead(
+        user_id=item.user_id,
+        project_id=item.project_id,
+        role=item.role,
+        email=item.user.email if getattr(item, "user", None) is not None else None,
+        created_at=item.created_at,
+    )
+
+
+@router.delete("/projects/{project_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_project_member_endpoint(
+    project_id: UUID,
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> Response:
+    project = require_project_access(db, operator, project_id)
+    require_org_role(operator, project.organization_id, "org_admin")
+    remove_project_member(
+        db,
+        project_id=project_id,
+        user_id=user_id,
+        actor_user_id=operator.operator.id,
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/projects/{project_id}/environments", response_model=EnvironmentListResponse)
@@ -1396,9 +1985,20 @@ def create_deployment_simulation_endpoint(
     project_id: UUID,
     payload: DeploymentSimulationCreate,
     db: Session = Depends(get_db),
-    operator: OperatorContext = Depends(require_operator),
+    authorization: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None),
 ) -> DeploymentSimulationRead:
-    project = require_project_role(db, operator, project_id, "engineer")
+    project = _project_from_session_or_api_key(
+        db=db,
+        project_id=project_id,
+        x_api_key=x_api_key,
+        authorization=authorization,
+    )
+    if not x_api_key:
+        operator = get_operator_context(db, authorization[7:]) if authorization and authorization.lower().startswith("bearer ") else None
+        if operator is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        project = require_project_role(db, operator, project_id, "engineer")
     simulation = create_deployment_simulation(
         db,
         organization_id=project.organization_id,
@@ -1574,6 +2174,64 @@ def get_project_reliability_control_panel_endpoint(
     return ProjectReliabilityControlPanelRead.model_validate(
         get_project_reliability_control_panel(db, project_id, environment)
     )
+
+
+@router.get("/projects/{project_id}/cost", response_model=ProjectCostRead)
+def get_project_cost_endpoint(
+    project_id: UUID,
+    environment: str | None = None,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectCostRead:
+    project = require_project_access(db, operator, project_id)
+    environment_ref = (
+        require_environment_access(db, operator, project_id, environment) if environment is not None else None
+    )
+    result = get_project_cost_intelligence(
+        organization_id=project.organization_id,
+        project_id=project.id,
+        environment_id=environment_ref.id if environment_ref is not None else None,
+    )
+    return ProjectCostRead(
+        cost_per_trace=result["cost_per_trace"],
+        daily_cost=[DailyCostPointRead.model_validate(item) for item in result["daily_cost"]],
+        cost_per_model=[CostByModelRead.model_validate(item) for item in result["cost_per_model"]],
+        cost_anomalies=[CostAnomalyRead.model_validate(item) for item in result["cost_anomalies"]],
+    )
+
+
+@router.post(
+    "/projects/{project_id}/export",
+    response_model=CustomerExportRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def create_project_export_endpoint(
+    project_id: UUID,
+    payload: CustomerExportCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> CustomerExportRead:
+    require_project_access(db, operator, project_id)
+    export = create_customer_export(
+        db,
+        project_id=project_id,
+        export_format=payload.export_format,
+        actor_user_id=operator.operator.id,
+    )
+    return CustomerExportRead.model_validate(export)
+
+
+@router.get("/exports/{export_id}", response_model=CustomerExportRead)
+def get_export_endpoint(
+    export_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> CustomerExportRead:
+    export = get_customer_export(db, export_id=export_id)
+    if export is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export not found")
+    require_org_role(operator, export.organization_id, "viewer")
+    return CustomerExportRead.model_validate(export)
 
 
 @router.get(
@@ -2134,8 +2792,24 @@ def get_regression_compare_endpoint(
 def list_traces_endpoint(
     filters: TraceListQuery = Depends(),
     db: Session = Depends(get_db),
-    operator: OperatorContext = Depends(require_operator),
+    authorization: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None),
 ) -> TraceListResponse:
+    if x_api_key is not None:
+        if filters.project_id is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="project_id is required for API-key trace queries")
+        project = _project_from_session_or_api_key(
+            db=db,
+            project_id=filters.project_id,
+            x_api_key=x_api_key,
+            authorization=authorization,
+        )
+        if filters.environment is not None:
+            resolve_project_environment(db, project=project, name=filters.environment)
+        result = list_traces(db, _operator_context_for_public_project(project), filters)
+        return TraceListResponse(items=result.items, next_cursor=result.next_cursor)
+
+    operator = require_operator(authorization=authorization, db=db)
     if filters.project_id is not None:
         require_project_access(db, operator, filters.project_id)
         if filters.environment is not None:
@@ -2149,16 +2823,30 @@ def list_project_traces_endpoint(
     project_id: UUID,
     filters: TraceListQuery = Depends(),
     db: Session = Depends(get_db),
-    operator: OperatorContext = Depends(require_operator),
+    authorization: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None),
 ) -> TraceListResponse:
+    if x_api_key is not None:
+        project = _project_from_session_or_api_key(
+            db=db,
+            project_id=project_id,
+            x_api_key=x_api_key,
+            authorization=authorization,
+        )
+        if filters.environment is not None:
+            resolve_project_environment(db, project=project, name=filters.environment)
+        result = list_traces(
+            db,
+            _operator_context_for_public_project(project),
+            filters.model_copy(update={"project_id": project_id}),
+        )
+        return TraceListResponse(items=result.items, next_cursor=result.next_cursor)
+
+    operator = require_operator(authorization=authorization, db=db)
     require_project_access(db, operator, project_id)
     if filters.environment is not None:
         require_environment_access(db, operator, project_id, filters.environment)
-    result = list_traces(
-        db,
-        operator,
-        filters.model_copy(update={"project_id": project_id}),
-    )
+    result = list_traces(db, operator, filters.model_copy(update={"project_id": project_id}))
     return TraceListResponse(items=result.items, next_cursor=result.next_cursor)
 
 
@@ -2199,9 +2887,22 @@ def query_trace_cohort_endpoint(
 def get_trace_detail_endpoint(
     trace_id: UUID,
     db: Session = Depends(get_db),
-    operator: OperatorContext = Depends(require_operator),
+    authorization: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None),
 ) -> TraceDetailRead:
-    trace = get_trace_detail(db, operator, trace_id)
+    if x_api_key is not None:
+        public_key = _public_api_key_from_headers(db=db, x_api_key=x_api_key, authorization=authorization)
+        trace = db.get(Trace, trace_id)
+        if trace is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
+        if trace.organization_id != public_key.organization_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        project = db.get(Project, trace.project_id)
+        assert project is not None
+        trace = get_trace_detail(db, _operator_context_for_public_project(project), trace_id)
+    else:
+        operator = require_operator(authorization=authorization, db=db)
+        trace = get_trace_detail(db, operator, trace_id)
     registry_pivots = []
     if trace.prompt_version_record is not None:
         traces_path, regressions_path, incidents_path = build_prompt_version_path(
@@ -2313,6 +3014,34 @@ def create_api_key_endpoint(
 
 
 @router.post(
+    "/projects/{project_id}/ingest/traces",
+    response_model=TraceAcceptedResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def ingest_project_trace_endpoint(
+    project_id: UUID,
+    payload: TraceIngestRequest,
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> TraceAcceptedResponse:
+    project = _project_from_session_or_api_key(
+        db=db,
+        project_id=project_id,
+        x_api_key=x_api_key,
+        authorization=authorization,
+    )
+    enforce_rate_limit(
+        scope="trace_ingest",
+        key=str(project.organization_id),
+        limit=get_settings().ingest_rate_limit_per_minute,
+        window_seconds=60,
+    )
+    trace = ingest_trace(db, SimpleNamespace(project_id=project.id), payload)
+    return TraceAcceptedResponse(trace_id=trace.id)
+
+
+@router.post(
     "/ingest/traces",
     response_model=TraceAcceptedResponse,
     status_code=status.HTTP_202_ACCEPTED,
@@ -2334,8 +3063,58 @@ def ingest_trace_endpoint(
     if api_key is None:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    project = db.get(Project, api_key.project_id)
+    assert project is not None
+    enforce_rate_limit(
+        scope="trace_ingest",
+        key=str(project.organization_id),
+        limit=get_settings().ingest_rate_limit_per_minute,
+        window_seconds=60,
+    )
     trace = ingest_trace(db, api_key, payload)
     return TraceAcceptedResponse(trace_id=trace.id)
+
+
+@router.post(
+    "/projects/{project_id}/sdk-events",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def create_sdk_event_endpoint(
+    project_id: UUID,
+    payload: SDKTelemetryEventCreate,
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> Response:
+    project = _project_from_session_or_api_key(
+        db=db,
+        project_id=project_id,
+        x_api_key=x_api_key,
+        authorization=authorization,
+    )
+    environment = resolve_project_environment(db, project=project, name=payload.environment or project.environment)
+    event_type = "sdk_request"
+    if payload.error:
+        event_type = "sdk_error"
+    elif payload.retry:
+        event_type = "sdk_retry"
+    elif payload.latency_ms is not None:
+        event_type = "sdk_latency"
+    sdk_payload = {
+        "event_type": event_type,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "organization_id": str(project.organization_id),
+        "project_id": str(project.id),
+        "environment_id": str(environment.id),
+        "sdk_version": payload.sdk_version,
+        "language": payload.language,
+        "latency_ms": payload.latency_ms,
+        "error": payload.error,
+        "retry": payload.retry,
+    }
+    publish_event(get_settings().event_stream_topic_traces, sdk_payload)
+    record_sdk_event(db, sdk_payload)
+    return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
 @router.post(
@@ -2365,6 +3144,41 @@ def create_runtime_guardrail_event_endpoint(
         event = record_runtime_guardrail_event(
             db,
             project_id=api_key.project_id,
+            trace_id=payload.trace_id,
+            policy_id=payload.policy_id,
+            action_taken=payload.action_taken,
+            provider_model=payload.provider_model,
+            latency_ms=payload.latency_ms,
+            metadata_json=payload.metadata_json,
+        )
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return _runtime_guardrail_event_item(event)
+
+
+@router.post(
+    "/projects/{project_id}/runtime/guardrail-events",
+    response_model=RuntimeGuardrailEventRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_project_runtime_guardrail_event_endpoint(
+    project_id: UUID,
+    payload: RuntimeGuardrailEventCreate,
+    db: Session = Depends(get_db),
+    x_api_key: str | None = Header(default=None),
+    authorization: str | None = Header(default=None),
+) -> RuntimeGuardrailEventRead:
+    _project_from_session_or_api_key(
+        db=db,
+        project_id=project_id,
+        x_api_key=x_api_key,
+        authorization=authorization,
+    )
+    try:
+        event = record_runtime_guardrail_event(
+            db,
+            project_id=project_id,
             trace_id=payload.trace_id,
             policy_id=payload.policy_id,
             action_taken=payload.action_taken,

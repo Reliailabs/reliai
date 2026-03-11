@@ -18,11 +18,12 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     trace_warehouse_url: str | None = None
     clickhouse_database: str = "reliai"
+    clickhouse_migrations_dir: str = str(ROOT_DIR / "infra" / "clickhouse" / "migrations")
     event_stream_brokers: str | None = None
     event_stream_topic_traces: str = "trace_events"
     event_stream_topic_traces_dlq: str | None = "trace_events_dlq"
     event_stream_consumer_timeout_ms: int = 1000
-    enabled_processors: str = "evaluation,warehouse,reliability_metrics,regression,automation"
+    enabled_processors: str = "evaluation,warehouse,reliability_metrics,regression,automation,reliability_graph"
     slack_webhook_default: str | None = None
     alert_delivery_cooldown_minutes: int = 60
     slack_alert_max_attempts: int = 3
@@ -41,6 +42,11 @@ class Settings(BaseSettings):
     public_api_rate_limit_per_minute: int = 120
     ingest_rate_limit_per_minute: int = 600
     processor_dispatch_rate_limit_per_minute: int = 300
+    max_traces_per_second: int = 250
+    max_project_ingest_rate: int = 120
+    scheduler_enabled: bool = True
+    scheduler_timezone: str = "UTC"
+    warehouse_archive_dir: str = str(ROOT_DIR / "data" / "warehouse-archive")
     trace_input_text_max_chars: int = 20000
     trace_output_text_max_chars: int = 20000
     trace_metadata_max_bytes: int = 16384

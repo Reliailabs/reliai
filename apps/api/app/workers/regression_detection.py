@@ -8,7 +8,11 @@ from app.db.session import SessionLocal
 from app.models.project import Project
 from app.models.trace import Trace
 from app.services.alerts import ALERT_STATUS_PENDING, create_alert_deliveries_for_open_incidents
-from app.services.event_stream import RegressionDetectedEventPayload, publish_event
+from app.services.event_stream import (
+    INCIDENT_CREATED_EVENT,
+    RegressionDetectedEventPayload,
+    publish_event,
+)
 from app.services.incidents import sync_incidents_for_scope
 from app.services.regressions import compute_regressions_for_scope
 from app.services.rollups import build_scopes
@@ -70,6 +74,22 @@ def run_trace_regression_detection(trace_id: str) -> None:
         db.commit()
         for payload in regression_events:
             publish_event(get_settings().event_stream_topic_traces, payload)
+        for incident in opened_incidents:
+            publish_event(
+                get_settings().event_stream_topic_traces,
+                {
+                    "event_type": INCIDENT_CREATED_EVENT,
+                    "incident_id": str(incident.id),
+                    "project_id": str(incident.project_id),
+                    "organization_id": str(incident.organization_id),
+                    "environment_id": str(incident.environment_id) if incident.environment_id is not None else None,
+                    "deployment_id": str(incident.deployment_id) if incident.deployment_id is not None else None,
+                    "incident_type": incident.incident_type,
+                    "severity": incident.severity,
+                    "started_at": incident.started_at.isoformat(),
+                    "metadata": incident.summary_json or {},
+                },
+            )
         for delivery_id in delivery_ids:
             enqueue_alert_delivery_job(delivery_id)
     finally:

@@ -25,7 +25,11 @@ import type {
   ProjectReliabilityControlPanel,
   ProjectReliabilityRead,
   ProjectRead,
+  PlatformMetricsRead,
+  GraphGuardrailRecommendationListResponse,
   ReliabilityActionLogListResponse,
+  ReliabilityGraphOverviewRead,
+  ReliabilityGraphPatternListResponse,
   ReliabilityPatternListResponse,
   ReliabilityPatternRead,
   ReliabilityRecommendation,
@@ -186,6 +190,10 @@ export async function getSystemGrowth() {
   return request<SystemGrowthRead>(`/api/v1/system/growth`);
 }
 
+export async function getSystemPlatform() {
+  return request<PlatformMetricsRead>(`/api/v1/system/platform`);
+}
+
 export async function getSystemCustomers() {
   return request<CustomerReliabilityListRead>(`/api/v1/system/customers`);
 }
@@ -196,6 +204,22 @@ export async function getSystemCustomerDetail(projectId: string) {
 
 export async function getReliabilityPatterns() {
   return request<ReliabilityPatternListResponse>(`/api/v1/intelligence/patterns`);
+}
+
+export async function getReliabilityGraphOverview() {
+  return request<ReliabilityGraphOverviewRead>(`/api/v1/intelligence/graph`);
+}
+
+export async function getReliabilityGraphHighRiskPatterns() {
+  return request<ReliabilityGraphPatternListResponse>(`/api/v1/intelligence/high-risk-patterns`);
+}
+
+export async function getReliabilityGraphGuardrailRecommendations() {
+  return request<GraphGuardrailRecommendationListResponse>(`/api/v1/intelligence/guardrail-recommendations`);
+}
+
+export async function getSystemGlobalIntelligence() {
+  return request<ReliabilityGraphPatternListResponse>(`/api/v1/system/global-intelligence`);
 }
 
 export async function getReliabilityPattern(patternId: string) {

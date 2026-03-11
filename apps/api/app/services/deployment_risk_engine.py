@@ -16,6 +16,7 @@ from app.models.evaluation_rollup import EvaluationRollup
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
+from app.services.reliability_graph import get_model_failure_graph
 from app.services.reliability_pattern_mining import build_prompt_pattern_hash, get_pattern_risk
 
 RISK_LEVEL_LOW = "low"
@@ -251,6 +252,7 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
     deployment = db.scalar(
         select(Deployment)
         .options(
+            selectinload(Deployment.project),
             selectinload(Deployment.prompt_version),
             selectinload(Deployment.model_version),
             selectinload(Deployment.incidents),
@@ -285,6 +287,11 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
         prompt_pattern_hash=build_prompt_pattern_hash(
             str(deployment.prompt_version_id) if deployment.prompt_version_id is not None else None
         ),
+    )
+    graph_risk = get_model_failure_graph(
+        db,
+        model_family=deployment.model_version.model_family if deployment.model_version is not None else None,
+        organization_ids=[deployment.project.organization_id] if deployment.project is not None else None,
     )
 
     structured_output_delta = _clamp(
@@ -321,7 +328,12 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
             }
         )
 
-    risk_score = round(sum(item["weighted_value"] for item in signals) + float(pattern_risk["value"]), 4)
+    risk_score = round(
+        sum(item["weighted_value"] for item in signals)
+        + float(pattern_risk["value"])
+        + float(graph_risk["risk_score"]),
+        4,
+    )
     analysis_json = {
         "window_minutes": WINDOW_MINUTES,
         "baseline_window_start": baseline_start.isoformat(),
@@ -339,6 +351,7 @@ def calculate_deployment_risk(db: Session, *, deployment_id: UUID) -> Deployment
         "current_p95_latency_ms": round(current_stats.p95_latency_ms, 2),
         "matched_regression_metrics": regression_metrics,
         "pattern_risk": pattern_risk,
+        "graph_risk": graph_risk,
         "latest_success_rate": _latest_quality_metric(
             db, deployment=deployment, metric_name="quality_pass_rate"
         ),

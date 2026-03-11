@@ -21,6 +21,7 @@ TRACE_INGESTED_EVENT = "trace_ingested"
 TRACE_EVALUATED_EVENT = "trace_evaluated"
 REGRESSION_DETECTED_EVENT = "regression_detected"
 DEPLOYMENT_CREATED_EVENT = "deployment_created"
+INCIDENT_CREATED_EVENT = "incident_created"
 AUTOMATION_TRIGGERED_EVENT = "automation_triggered"
 SDK_REQUEST_EVENT = "sdk_request"
 SDK_ERROR_EVENT = "sdk_error"
@@ -28,6 +29,7 @@ SDK_LATENCY_EVENT = "sdk_latency"
 SDK_RETRY_EVENT = "sdk_retry"
 PLATFORM_DEGRADED_EVENT = "platform_degraded"
 PLATFORM_RECOVERED_EVENT = "platform_recovered"
+PIPELINE_BACKPRESSURE_EVENT = "pipeline_backpressure"
 SDK_EVENT_TYPES = {
     SDK_REQUEST_EVENT,
     SDK_ERROR_EVENT,
@@ -112,6 +114,21 @@ class AutomationTriggeredEventPayload(BaseModel):
     rule_id: str
     source_event_type: str
     action_type: str
+    metadata: dict[str, Any] | None = None
+
+
+class IncidentCreatedEventPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_type: str = INCIDENT_CREATED_EVENT
+    incident_id: str
+    project_id: str
+    organization_id: str
+    environment_id: str | None = None
+    deployment_id: str | None = None
+    incident_type: str
+    severity: str
+    started_at: datetime
     metadata: dict[str, Any] | None = None
 
 

@@ -82,7 +82,7 @@ def _upsert_workos_user(db: Session, *, claims: dict[str, Any]) -> User:
 
 
 def authenticate_workos_token(db: Session, token: str):
-    from app.services.auth import OperatorContext
+    from app.services.auth import OperatorContext, _resolve_active_organization_id
 
     claims = _decode_token(token)
     user = _upsert_workos_user(db, claims=claims)
@@ -92,6 +92,7 @@ def authenticate_workos_token(db: Session, token: str):
         select(OrganizationMember).where(OrganizationMember.user_id == user.id)
     ).all()
     memberships = apply_workos_group_roles(db, user=user, claims=claims, memberships=list(memberships))
+    active_organization_id = _resolve_active_organization_id(db, user=user, memberships=memberships)
     db.commit()
     return OperatorContext(
         operator=user,
@@ -99,6 +100,7 @@ def authenticate_workos_token(db: Session, token: str):
         expires_at=_utc_from_epoch(claims.get("exp")),
         auth_source="workos",
         session_token=None,
+        active_organization_id=active_organization_id,
     )
 
 

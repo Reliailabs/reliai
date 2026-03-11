@@ -169,6 +169,21 @@ class FakeTraceWarehouseClient:
             return matches[:limit]
         return matches
 
+    def get_warehouse_stats(self, *, window_start, window_end):
+        rows = self.query_all_trace_events(window_start=window_start, window_end=window_end)
+        partitions = {
+            (
+                row.timestamp if row.timestamp.tzinfo is not None else row.timestamp.replace(tzinfo=timezone.utc)
+            ).date().isoformat()
+            for row in rows
+        }
+        return {
+            "warehouse_rows": len(rows),
+            "active_partitions": len(partitions),
+            "scan_rate": float(len(rows)),
+            "avg_query_latency": 0.0,
+        }
+
 
 @pytest.fixture
 def fake_event_stream(monkeypatch: pytest.MonkeyPatch) -> event_stream_service.InMemoryEventStreamClient:

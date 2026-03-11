@@ -68,6 +68,7 @@ def authorized_project_ids(
     *,
     organization_id: UUID | None = None,
 ) -> list[UUID]:
+    organization_id = organization_id or operator.active_organization_id
     statement = select(Project).where(Project.organization_id.in_(operator.organization_ids))
     if organization_id is not None:
         statement = statement.where(Project.organization_id == organization_id)

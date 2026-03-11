@@ -19,5 +19,5 @@ class PlatformExtension(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     organization = relationship("Organization", back_populates="platform_extensions")
-    project = relationship("Project")
+    project = relationship("Project", back_populates="platform_extensions")
     processor = relationship("ExternalProcessor")

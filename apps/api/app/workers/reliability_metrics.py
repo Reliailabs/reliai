@@ -2,10 +2,12 @@ import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
+from app.core.settings import get_settings
 from app.db.session import SessionLocal, get_queue
 from app.models.project import Project
 from app.services.alerts import ALERT_STATUS_PENDING, create_alert_deliveries_for_open_incidents
 from app.services.deployments import most_recent_project_deployment
+from app.services.event_stream import INCIDENT_CREATED_EVENT, publish_event
 from app.services.incidents import sync_telemetry_freshness_incident
 from app.services.reliability_metrics import compute_project_reliability_metrics
 from app.workers.alerts import run_alert_delivery
@@ -90,6 +92,22 @@ def run_project_reliability_metrics(
             delivery.id for delivery in deliveries if delivery.delivery_status == ALERT_STATUS_PENDING
         ]
         db.commit()
+        for incident in incident_result.opened_incidents + incident_result.reopened_incidents:
+            publish_event(
+                get_settings().event_stream_topic_traces,
+                {
+                    "event_type": INCIDENT_CREATED_EVENT,
+                    "incident_id": str(incident.id),
+                    "project_id": str(incident.project_id),
+                    "organization_id": str(incident.organization_id),
+                    "environment_id": str(incident.environment_id) if incident.environment_id is not None else None,
+                    "deployment_id": str(incident.deployment_id) if incident.deployment_id is not None else None,
+                    "incident_type": incident.incident_type,
+                    "severity": incident.severity,
+                    "started_at": incident.started_at.isoformat(),
+                    "metadata": incident.summary_json or {},
+                },
+            )
         if delivery_ids:
             enqueue_alert_delivery_jobs(delivery_ids)
         deployment = most_recent_project_deployment(

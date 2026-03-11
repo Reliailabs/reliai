@@ -6,7 +6,6 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.external_processor import ExternalProcessor
 from app.models.platform_extension import PlatformExtension
 from app.models.project import Project
 from app.schemas.platform_extension import PlatformExtensionCreate

@@ -20,6 +20,9 @@ from app.models.project import Project
 from app.services.audit_log import log_action
 from app.schemas.external_processor import ExternalProcessorCreate, ExternalProcessorUpdate
 from app.services.event_stream import EventMessage
+from app.services.rate_limiter import enforce_rate_limit
+from app.services.usage_quotas import enforce_processor_quota
+from app.core.settings import get_settings
 
 EXTERNAL_PROCESSOR_MAX_RETRIES = 3
 RECENT_FAILURE_WINDOW_HOURS = 24
@@ -49,6 +52,13 @@ def create_external_processor(
     payload: ExternalProcessorCreate,
     actor_user_id: UUID | None = None,
 ) -> ExternalProcessor:
+    current_count = int(
+        db.scalar(
+            select(func.count(ExternalProcessor.id)).where(ExternalProcessor.project_id == project.id)
+        )
+        or 0
+    )
+    enforce_processor_quota(db, organization_id=project.organization_id, current_count=current_count)
     processor = ExternalProcessor(
         project_id=project.id,
         name=payload.name.strip(),
@@ -230,6 +240,12 @@ def dispatch_external_processors(event: EventMessage) -> list[ExternalProcessorD
         payload = _request_payload(event)
         results: list[ExternalProcessorDispatchResult] = []
         for processor in processors:
+            enforce_rate_limit(
+                scope="processor_dispatch",
+                key=f"{parsed_project_id}:{processor.id}",
+                limit=get_settings().processor_dispatch_rate_limit_per_minute,
+                window_seconds=60,
+            )
             attempts = 0
             last_error: str | None = None
             max_attempts = EXTERNAL_PROCESSOR_MAX_RETRIES + 1

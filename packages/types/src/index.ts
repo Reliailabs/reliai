@@ -228,6 +228,19 @@ export interface EventPipelineRead {
   consumers: EventPipelineConsumerRead[];
 }
 
+export interface PlatformMetricsRead {
+  trace_ingest_rate: number;
+  pipeline_latency: number | null;
+  processor_failure_rate: number;
+  warehouse_lag: number;
+  warehouse_rows: number;
+  active_partitions: number;
+  scan_rate: number;
+  avg_query_latency: number;
+  archive_backlog: number;
+  customer_overload_risk: string;
+}
+
 export interface ExternalProcessorRead {
   id: string;
   project_id: string;
@@ -381,6 +394,71 @@ export interface ReliabilityPatternRead {
 
 export interface ReliabilityPatternListResponse {
   items: ReliabilityPatternRead[];
+}
+
+export interface ReliabilityGraphNodeRead {
+  id: string;
+  node_type: string;
+  node_key: string;
+  metadata_json: Record<string, unknown> | null;
+  trace_count: number;
+  first_seen: string;
+  last_seen: string;
+}
+
+export interface ReliabilityGraphEdgeRead {
+  id: string;
+  source_type: string;
+  source_id: string;
+  target_type: string;
+  target_id: string;
+  relationship_type: string;
+  weight: number;
+  confidence: number;
+  trace_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReliabilityGraphRelatedNodeRead {
+  node: ReliabilityGraphNodeRead;
+  edge: ReliabilityGraphEdgeRead;
+}
+
+export interface ReliabilityGraphOverviewRead {
+  nodes: ReliabilityGraphNodeRead[];
+  edges: ReliabilityGraphEdgeRead[];
+}
+
+export interface ReliabilityGraphNodeDetailRead {
+  node: ReliabilityGraphNodeRead;
+  related: ReliabilityGraphRelatedNodeRead[];
+}
+
+export interface ReliabilityGraphPatternRead {
+  pattern: string;
+  risk_level: string;
+  traces: number;
+  confidence: number;
+  source_node_id: string;
+  target_node_id: string;
+  relationship_type: string;
+}
+
+export interface ReliabilityGraphPatternListResponse {
+  items: ReliabilityGraphPatternRead[];
+}
+
+export interface GraphGuardrailRecommendationRead {
+  policy_type: string;
+  recommended_action: string;
+  title: string;
+  description: string;
+  confidence: number;
+}
+
+export interface GraphGuardrailRecommendationListResponse {
+  items: GraphGuardrailRecommendationRead[];
 }
 
 export interface ReliabilityRecommendation {

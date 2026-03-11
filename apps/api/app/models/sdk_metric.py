@@ -39,5 +39,5 @@ class SDKMetric(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     error_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     organization = relationship("Organization")
-    project = relationship("Project")
+    project = relationship("Project", back_populates="sdk_metrics")
     environment = relationship("Environment")

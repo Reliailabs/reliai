@@ -7,7 +7,7 @@ from sqlalchemy import delete, or_, select
 from app.db.session import SessionLocal
 from app.models.project import Project
 from app.models.trace import Trace
-from app.services.trace_ingestion_control import get_or_create_trace_ingestion_policy
+from app.services.trace_ingestion_control import get_effective_ingestion_policy
 
 
 def run_data_retention() -> dict[str, int]:
@@ -17,7 +17,7 @@ def run_data_retention() -> dict[str, int]:
         projects = db.scalars(select(Project).where(Project.is_active.is_(True))).all()
         now = datetime.now(timezone.utc)
         for project in projects:
-            policy = get_or_create_trace_ingestion_policy(db, project_id=project.id)
+            policy = get_effective_ingestion_policy(db, project_id=project.id)
             success_cutoff = now - timedelta(days=policy.retention_days_success)
             error_cutoff = now - timedelta(days=policy.retention_days_error)
             result = db.execute(

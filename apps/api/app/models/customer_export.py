@@ -28,5 +28,5 @@ class CustomerExport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     organization = relationship("Organization")
-    project = relationship("Project")
+    project = relationship("Project", back_populates="customer_exports")
     requested_by = relationship("User")

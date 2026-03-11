@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Activity, KeyRound, ScanSearch, Settings2, ShieldAlert } from "lucide-react";
 
 import { signOut } from "@/lib/auth";
+import { OrgSwitcher } from "@/components/org-switcher";
 
 const navItems = [
   { href: "/dashboard" as Route, label: "Overview", icon: Activity },
@@ -16,10 +17,14 @@ const navItems = [
 
 export async function AppShell({
   children,
-  operatorEmail
+  operatorEmail,
+  memberships,
+  activeOrganizationId
 }: {
   children: ReactNode;
   operatorEmail: string;
+  memberships: Array<{ organization_id: string; organization_name?: string | null; role: string }>;
+  activeOrganizationId?: string | null;
 }) {
   async function signOutAction() {
     "use server";
@@ -52,6 +57,7 @@ export async function AppShell({
           </nav>
           <div className="mt-8 rounded-lg border border-line bg-surface px-3 py-3 text-sm text-steel">
             <p className="font-medium text-ink">{operatorEmail}</p>
+            <OrgSwitcher memberships={memberships} activeOrganizationId={activeOrganizationId} />
             <form action={signOutAction} className="mt-3">
               <button className="text-sm text-steel underline-offset-4 hover:text-ink hover:underline">
                 Sign out

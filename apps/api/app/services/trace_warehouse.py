@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
+import hashlib
 from typing import Any
 from uuid import UUID
 
@@ -13,10 +14,11 @@ import httpx
 from app.events import build_trace_event_payload, validate_trace_event
 from app.core.settings import get_settings
 from app.models.trace import Trace
+from app.services.clickhouse_migrations import apply_migrations
 
 logger = logging.getLogger(__name__)
 
-TRACE_WAREHOUSE_TABLE = "trace_events"
+TRACE_WAREHOUSE_TABLE = "trace_warehouse"
 STRUCTURED_VALIDITY_EVAL_TYPE = "structured_validity"
 
 
@@ -30,6 +32,13 @@ def _decimal_to_float(value: Decimal | None) -> float | None:
     if value is None:
         return None
     return float(value)
+
+
+def _prompt_hash(prompt_version_id: str | None, metadata: dict[str, Any] | None) -> str | None:
+    prompt_value = prompt_version_id or str((metadata or {}).get("__prompt_version") or "").strip()
+    if not prompt_value:
+        return None
+    return hashlib.sha256(prompt_value.encode("utf-8")).hexdigest()[:24]
 
 
 def _structured_output_valid(trace: Trace) -> bool | None:
@@ -86,11 +95,13 @@ class TraceWarehouseEventRow:
     environment_id: UUID | None
     trace_id: UUID
     success: bool
+    deployment_id: UUID | None = None
     event_version: int = 1
     model_provider: str | None = None
     model_family: str | None = None
     model_revision: str | None = None
     prompt_version_id: str | None = None
+    prompt_hash: str | None = None
     model_version_id: UUID | None = None
     latency_ms: int | None = None
     error_type: str | None = None
@@ -98,8 +109,10 @@ class TraceWarehouseEventRow:
     output_tokens: int | None = None
     cost_usd: Decimal | None = None
     structured_output_valid: bool | None = None
+    guardrail_triggered: bool = False
     retrieval_latency_ms: int | None = None
     retrieval_chunks: int | None = None
+    incident_flag: bool = False
     metadata_json: dict[str, Any] | None = None
 
     @property
@@ -127,6 +140,14 @@ class TraceWarehouseClient:
         raise NotImplementedError
 
     def aggregate_trace_metrics(self, query: TraceWarehouseAggregateQuery) -> dict[str, Any]:  # pragma: no cover
+        raise NotImplementedError
+
+    def get_warehouse_stats(
+        self,
+        *,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> dict[str, Any]:  # pragma: no cover
         raise NotImplementedError
 
 
@@ -159,6 +180,14 @@ class NullTraceWarehouseClient(TraceWarehouseClient):
             "average_cost_usd": None,
         }
 
+    def get_warehouse_stats(self, *, window_start: datetime, window_end: datetime) -> dict[str, Any]:
+        return {
+            "warehouse_rows": 0,
+            "active_partitions": 0,
+            "scan_rate": 0.0,
+            "avg_query_latency": 0.0,
+        }
+
 
 class HttpTraceWarehouseClient(TraceWarehouseClient):
     def __init__(self, *, base_url: str, database: str) -> None:
@@ -183,37 +212,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
     def ensure_schema(self) -> None:
         if self._schema_ready:
             return
-        create_sql = f"""
-        CREATE TABLE IF NOT EXISTS {TRACE_WAREHOUSE_TABLE}
-        (
-            event_version UInt16,
-            timestamp DateTime64(3, 'UTC'),
-            organization_id UUID,
-            project_id UUID,
-            environment_id Nullable(UUID),
-            trace_id UUID,
-            model_provider Nullable(String),
-            model_family Nullable(String),
-            model_revision Nullable(String),
-            prompt_version_id Nullable(String),
-            model_version_id Nullable(UUID),
-            latency_ms Nullable(Int32),
-            success Bool,
-            error_type Nullable(String),
-            input_tokens Nullable(Int32),
-            output_tokens Nullable(Int32),
-            cost_usd Nullable(Float64),
-            structured_output_valid Nullable(Bool),
-            retrieval_latency_ms Nullable(Int32),
-            retrieval_chunks Nullable(Int32),
-            metadata_json String
-        )
-        ENGINE = MergeTree
-        PARTITION BY toDate(timestamp)
-        PRIMARY KEY (project_id, timestamp)
-        ORDER BY (project_id, timestamp, trace_id)
-        """
-        self._post(create_sql)
+        apply_migrations()
         self._schema_ready = True
 
     def insert_trace_events(self, rows: list[TraceWarehouseEventRow]) -> None:
@@ -229,10 +228,12 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     "project_id": str(row.project_id),
                     "environment_id": str(row.environment_id) if row.environment_id is not None else None,
                     "trace_id": str(row.trace_id),
+                    "deployment_id": str(row.deployment_id) if row.deployment_id is not None else None,
                     "model_provider": row.model_provider,
                     "model_family": row.model_family,
                     "model_revision": row.model_revision,
                     "prompt_version_id": row.prompt_version_id,
+                    "prompt_hash": row.prompt_hash,
                     "model_version_id": str(row.model_version_id) if row.model_version_id is not None else None,
                     "latency_ms": row.latency_ms,
                     "success": row.success,
@@ -241,9 +242,12 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     "output_tokens": row.output_tokens,
                     "cost_usd": _decimal_to_float(row.cost_usd),
                     "structured_output_valid": row.structured_output_valid,
+                    "guardrail_triggered": row.guardrail_triggered,
                     "retrieval_latency_ms": row.retrieval_latency_ms,
                     "retrieval_chunks": row.retrieval_chunks,
+                    "incident_flag": row.incident_flag,
                     "metadata_json": json.dumps(row.metadata_json or {}, sort_keys=True, separators=(",", ":")),
+                    "retention_days": int((row.metadata_json or {}).get("retention_days", 30)),
                 },
                 sort_keys=True,
                 separators=(",", ":"),
@@ -305,10 +309,12 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             project_id,
             environment_id,
             trace_id,
+            deployment_id,
             model_provider,
             model_family,
             model_revision,
             prompt_version_id,
+            prompt_hash,
             model_version_id,
             latency_ms,
             success,
@@ -317,8 +323,10 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             output_tokens,
             cost_usd,
             structured_output_valid,
+            guardrail_triggered,
             retrieval_latency_ms,
             retrieval_chunks,
+            incident_flag,
             metadata_json
         FROM {TRACE_WAREHOUSE_TABLE}
         WHERE {' AND '.join(clauses)}
@@ -340,10 +348,12 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     project_id=UUID(payload["project_id"]),
                     environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
                     trace_id=UUID(payload["trace_id"]),
+                    deployment_id=UUID(payload["deployment_id"]) if payload.get("deployment_id") else None,
                     model_provider=payload.get("model_provider"),
                     model_family=payload.get("model_family"),
                     model_revision=payload.get("model_revision"),
                     prompt_version_id=payload.get("prompt_version_id"),
+                    prompt_hash=payload.get("prompt_hash"),
                     model_version_id=UUID(payload["model_version_id"]) if payload.get("model_version_id") else None,
                     latency_ms=payload.get("latency_ms"),
                     success=bool(payload["success"]),
@@ -352,8 +362,10 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     output_tokens=payload.get("output_tokens"),
                     cost_usd=Decimal(str(payload["cost_usd"])) if payload.get("cost_usd") is not None else None,
                     structured_output_valid=payload.get("structured_output_valid"),
+                    guardrail_triggered=bool(payload.get("guardrail_triggered", False)),
                     retrieval_latency_ms=payload.get("retrieval_latency_ms"),
                     retrieval_chunks=payload.get("retrieval_chunks"),
+                    incident_flag=bool(payload.get("incident_flag", False)),
                     metadata_json=json.loads(payload["metadata_json"]) if payload.get("metadata_json") else {},
                 )
             )
@@ -454,11 +466,14 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             timestamp,
             organization_id,
             project_id,
+            environment_id,
             trace_id,
+            deployment_id,
             model_provider,
             model_family,
             model_revision,
             prompt_version_id,
+            prompt_hash,
             model_version_id,
             latency_ms,
             success,
@@ -467,8 +482,10 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             output_tokens,
             cost_usd,
             structured_output_valid,
+            guardrail_triggered,
             retrieval_latency_ms,
             retrieval_chunks,
+            incident_flag,
             metadata_json
         FROM {TRACE_WAREHOUSE_TABLE}
         WHERE timestamp >= parseDateTime64BestEffort({{window_start:String}})
@@ -489,11 +506,14 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     timestamp=_ensure_utc(datetime.fromisoformat(payload["timestamp"])),
                     organization_id=UUID(payload["organization_id"]),
                     project_id=UUID(payload["project_id"]),
+                    environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
                     trace_id=UUID(payload["trace_id"]),
+                    deployment_id=UUID(payload["deployment_id"]) if payload.get("deployment_id") else None,
                     model_provider=payload.get("model_provider"),
                     model_family=payload.get("model_family"),
                     model_revision=payload.get("model_revision"),
                     prompt_version_id=payload.get("prompt_version_id"),
+                    prompt_hash=payload.get("prompt_hash"),
                     model_version_id=UUID(payload["model_version_id"]) if payload.get("model_version_id") else None,
                     latency_ms=payload.get("latency_ms"),
                     success=bool(payload.get("success")),
@@ -502,12 +522,51 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     output_tokens=payload.get("output_tokens"),
                     cost_usd=Decimal(str(payload["cost_usd"])) if payload.get("cost_usd") is not None else None,
                     structured_output_valid=payload.get("structured_output_valid"),
+                    guardrail_triggered=bool(payload.get("guardrail_triggered", False)),
                     retrieval_latency_ms=payload.get("retrieval_latency_ms"),
                     retrieval_chunks=payload.get("retrieval_chunks"),
+                    incident_flag=bool(payload.get("incident_flag", False)),
                     metadata_json=json.loads(payload.get("metadata_json") or "{}"),
                 )
             )
         return rows
+
+    def get_warehouse_stats(
+        self,
+        *,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> dict[str, Any]:
+        self.ensure_schema()
+        params = {
+            "window_start": _ensure_utc(window_start).isoformat(),
+            "window_end": _ensure_utc(window_end).isoformat(),
+        }
+        sql = f"""
+        SELECT
+            count() AS warehouse_rows,
+            uniq(toDate(timestamp)) AS active_partitions
+        FROM {TRACE_WAREHOUSE_TABLE}
+        WHERE timestamp >= parseDateTime64BestEffort({{window_start:String}})
+          AND timestamp < parseDateTime64BestEffort({{window_end:String}})
+        FORMAT JSONEachRow
+        """
+        response = self._post(sql, params=params)
+        line = next((item for item in response.text.splitlines() if item.strip()), "")
+        if not line:
+            return {
+                "warehouse_rows": 0,
+                "active_partitions": 0,
+                "scan_rate": 0.0,
+                "avg_query_latency": 0.0,
+            }
+        payload = json.loads(line)
+        return {
+            "warehouse_rows": int(payload.get("warehouse_rows", 0)),
+            "active_partitions": int(payload.get("active_partitions", 0)),
+            "scan_rate": 0.0,
+            "avg_query_latency": 0.0,
+        }
 
 
 def get_trace_warehouse_client() -> TraceWarehouseClient:
@@ -533,10 +592,14 @@ def build_trace_event_row_from_payload(payload: dict[str, Any]) -> TraceWarehous
         project_id=UUID(event["project_id"]),
         environment_id=UUID(event["environment_id"]) if event.get("environment_id") else None,
         trace_id=UUID(event["trace_id"]),
+        deployment_id=UUID(str((event.get("metadata") or {}).get("deployment_id")))
+        if (event.get("metadata") or {}).get("deployment_id")
+        else None,
         model_provider=(event.get("model") or {}).get("provider"),
         model_family=(event.get("model") or {}).get("family"),
         model_revision=(event.get("model") or {}).get("revision"),
         prompt_version_id=event.get("prompt_version_id"),
+        prompt_hash=_prompt_hash(event.get("prompt_version_id"), event.get("metadata") or {}),
         model_version_id=UUID(event["model_version_id"]) if event.get("model_version_id") else None,
         latency_ms=event.get("latency_ms"),
         success=bool(event["success"]),
@@ -545,8 +608,10 @@ def build_trace_event_row_from_payload(payload: dict[str, Any]) -> TraceWarehous
         output_tokens=(event.get("tokens") or {}).get("output"),
         cost_usd=Decimal(str(event["cost_usd"])) if event.get("cost_usd") is not None else None,
         structured_output_valid=(event.get("evaluation") or {}).get("structured_output_valid"),
+        guardrail_triggered=bool((event.get("metadata") or {}).get("policy_type")),
         retrieval_latency_ms=(event.get("retrieval") or {}).get("latency_ms"),
         retrieval_chunks=(event.get("retrieval") or {}).get("chunks"),
+        incident_flag=bool((event.get("metadata") or {}).get("incident_flag", False)),
         metadata_json=event.get("metadata") or {},
     )
 
@@ -602,3 +667,10 @@ def query_all_traces(
 
 def aggregate_trace_metrics(query: TraceWarehouseAggregateQuery) -> dict[str, Any]:
     return get_trace_warehouse_client().aggregate_trace_metrics(query)
+
+
+def get_warehouse_stats(*, window_start: datetime, window_end: datetime) -> dict[str, Any]:
+    return get_trace_warehouse_client().get_warehouse_stats(
+        window_start=window_start,
+        window_end=window_end,
+    )

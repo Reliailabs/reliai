@@ -1,4 +1,4 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 export const SESSION_COOKIE_NAME = "reliai_session";
 
 export function devAuthEnabled() {
@@ -15,5 +15,5 @@ export function workosConfigured() {
 }
 
 export function workosLogoutRedirectUri() {
-  return process.env.WORKOS_LOGOUT_REDIRECT_URI ?? `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/sign-in`;
+  return process.env.WORKOS_LOGOUT_REDIRECT_URI ?? `${process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000"}/sign-in`;
 }

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from statistics import mean
 from uuid import UUID
 
-from app.services.trace_warehouse import TraceWarehouseQuery, query_traces
+from app.services.trace_query_router import query_all_traces_via_router
 
 
 def _utcnow() -> datetime:
@@ -15,16 +15,19 @@ def _utcnow() -> datetime:
 def get_project_cost_intelligence(*, organization_id: UUID, project_id: UUID, environment_id: UUID | None = None) -> dict:
     anchor = _utcnow()
     window_start = anchor - timedelta(days=7)
-    rows = query_traces(
-        TraceWarehouseQuery(
-            organization_id=organization_id,
-            project_id=project_id,
-            environment_id=environment_id,
-            window_start=window_start,
-            window_end=anchor,
-            limit=5000,
-        )
+    _, all_rows = query_all_traces_via_router(
+        window_start=window_start,
+        window_end=anchor,
+        aggregated=True,
+        limit=5000,
     )
+    rows = [
+        row
+        for row in all_rows
+        if row.organization_id == organization_id
+        and row.project_id == project_id
+        and (environment_id is None or row.environment_id == environment_id)
+    ]
     total_cost = sum(float(row.cost or 0) for row in rows)
     cost_per_trace = round(total_cost / len(rows), 6) if rows else 0.0
 

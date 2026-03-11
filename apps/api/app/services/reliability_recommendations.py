@@ -10,8 +10,10 @@ from app.models.deployment import Deployment
 from app.models.deployment_simulation import DeploymentSimulation
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
+from app.models.project import Project
 from app.models.reliability_recommendation import ReliabilityRecommendation
 from app.services.guardrail_recommendations import recommend_guardrails_from_patterns
+from app.services.reliability_graph import get_graph_guardrail_recommendations
 from app.services.reliability_pattern_mining import build_prompt_pattern_hash, get_pattern_risk
 from app.services.reliability_metrics import (
     METRIC_QUALITY_PASS_RATE,
@@ -63,6 +65,9 @@ def generate_recommendations(db: Session, project_id: UUID) -> list[ReliabilityR
     db.execute(
         delete(ReliabilityRecommendation).where(ReliabilityRecommendation.project_id == project_id)
     )
+    project = db.get(Project, project_id)
+    if project is None:
+        return []
 
     latest_metrics = latest_project_reliability_metrics(db, project_id=project_id)
     latest_deployment = db.scalar(
@@ -315,7 +320,14 @@ def generate_recommendations(db: Session, project_id: UUID) -> list[ReliabilityR
             )
         )
 
-    for recommendation in recommend_guardrails_from_patterns(pattern_risk=pattern_risk):
+    graph_recommendations = get_graph_guardrail_recommendations(
+        db,
+        organization_ids=[project.organization_id],
+    )
+    for recommendation in recommend_guardrails_from_patterns(
+        pattern_risk=pattern_risk,
+        graph_recommendations=graph_recommendations,
+    ):
         items.append(
             _create_recommendation(
                 db,

@@ -20,8 +20,10 @@ export interface OperatorSession {
   };
   memberships: Array<{
     organization_id: string;
+    organization_name?: string | null;
     role: string;
   }>;
+  active_organization_id?: string | null;
   expires_at: string;
 }
 
@@ -99,6 +101,17 @@ export async function getOperatorSession(): Promise<OperatorSession | null> {
   } catch {
     return null;
   }
+}
+
+export async function switchOrganization(organizationId: string): Promise<OperatorSession> {
+  const token = await getApiAccessToken();
+  if (!token) {
+    throw new Error("No session");
+  }
+  return authRequest<OperatorSession>("/api/v1/auth/switch-organization", token, {
+    method: "POST",
+    body: JSON.stringify({ organization_id: organizationId })
+  });
 }
 
 export async function requireOperatorSession(): Promise<OperatorSession> {
