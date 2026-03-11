@@ -17,15 +17,27 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("active_organization_id", sa.Uuid(), nullable=True))
-    op.create_index(op.f("ix_users_active_organization_id"), "users", ["active_organization_id"], unique=False)
-    op.create_foreign_key(
-        op.f("fk_users_active_organization_id_organizations"),
-        "users",
-        "organizations",
-        ["active_organization_id"],
-        ["id"],
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    indexes = {index["name"] for index in inspector.get_indexes("users")}
+    foreign_keys = {foreign_key["name"] for foreign_key in inspector.get_foreign_keys("users")}
+
+    if "active_organization_id" not in columns:
+        op.add_column("users", sa.Column("active_organization_id", sa.Uuid(), nullable=True))
+
+    if op.f("ix_users_active_organization_id") not in indexes:
+        op.create_index(op.f("ix_users_active_organization_id"), "users", ["active_organization_id"], unique=False)
+
+    if op.f("fk_users_active_organization_id_organizations") not in foreign_keys:
+        op.create_foreign_key(
+            op.f("fk_users_active_organization_id_organizations"),
+            "users",
+            "organizations",
+            ["active_organization_id"],
+            ["id"],
+        )
+
     op.execute(
         sa.text(
             """
@@ -47,6 +59,17 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint(op.f("fk_users_active_organization_id_organizations"), "users", type_="foreignkey")
-    op.drop_index(op.f("ix_users_active_organization_id"), table_name="users")
-    op.drop_column("users", "active_organization_id")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    indexes = {index["name"] for index in inspector.get_indexes("users")}
+    foreign_keys = {foreign_key["name"] for foreign_key in inspector.get_foreign_keys("users")}
+
+    if op.f("fk_users_active_organization_id_organizations") in foreign_keys:
+        op.drop_constraint(op.f("fk_users_active_organization_id_organizations"), "users", type_="foreignkey")
+
+    if op.f("ix_users_active_organization_id") in indexes:
+        op.drop_index(op.f("ix_users_active_organization_id"), table_name="users")
+
+    if "active_organization_id" in columns:
+        op.drop_column("users", "active_organization_id")

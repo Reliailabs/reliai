@@ -8,8 +8,16 @@ import type {
 
 export const demoProject = {
   id: "proj_demo_reliai",
-  name: "Acme Support Agent",
+  name: "AI Support Copilot",
   environment: "production",
+};
+
+export const demoProjectSummary = {
+  name: demoProject.name,
+  reliability_score: 92,
+  active_incidents: 1,
+  deployment_risk: "LOW",
+  guardrail_compliance: 98,
 };
 
 export const demoControlPanel: ProjectReliabilityControlPanel = {
@@ -254,6 +262,12 @@ export const demoTraceAnalysis: TraceGraphAnalysisRead = {
     guardrail_policy: "structured_output",
     retry_count: 1,
   },
+};
+
+export const demoTrace = {
+  slowest_span: "retrieval",
+  token_heavy_span: "llm_call",
+  guardrail_retries: 3,
 };
 
 export const demoIncidentCommand: IncidentCommandCenterRead = {
@@ -510,6 +524,12 @@ export const demoIncidentCommand: IncidentCommandCenterRead = {
       metadata: { path: "/guardrails" },
     },
   ],
+};
+
+export const demoIncident = {
+  title: "Hallucination spike detected",
+  impact: "Responses referencing non-existent documentation",
+  root_cause: "Prompt update deployed earlier today",
 };
 
 export const demoDeploymentDetail: DeploymentDetailRead = {

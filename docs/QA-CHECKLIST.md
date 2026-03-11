@@ -23,6 +23,18 @@ make qa
 
 That target mirrors the backend and frontend automated checks below.
 
+For stabilization and verification passes, also use:
+
+- `/Users/robert/Documents/Reliai/docs/stabilization-runbook.md`
+- `/Users/robert/Documents/Reliai/docs/validation-matrix.md`
+
+Those docs extend the base QA gate with:
+- local stack refresh commands
+- local dev auth and WorkOS validation paths
+- SDK verification
+- marketing and screenshot truth checks
+- event replay verification
+
 ### Backend
 
 ```bash

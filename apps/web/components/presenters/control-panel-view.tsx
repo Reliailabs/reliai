@@ -80,6 +80,8 @@ interface ControlPanelViewProps {
   panel: ProjectReliabilityControlPanel;
   environment?: string;
   screenshotMode?: boolean;
+  screenshotWidth?: number;
+  highlightedMetrics?: Array<"reliability_score" | "active_incidents" | "recommended_guardrail">;
 }
 
 export function ControlPanelView({
@@ -88,6 +90,8 @@ export function ControlPanelView({
   panel,
   environment,
   screenshotMode = false,
+  screenshotWidth = 1600,
+  highlightedMetrics = [],
 }: ControlPanelViewProps) {
   const status = statusSummary(panel);
   const StatusIcon = status.icon;
@@ -117,7 +121,10 @@ export function ControlPanelView({
   ];
 
   return (
-    <div className={cn("space-y-6", screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8")}>
+    <div
+      className={cn("space-y-6", screenshotMode && "mx-auto space-y-5 overflow-hidden bg-white p-8")}
+      style={screenshotMode ? { width: screenshotWidth, maxWidth: screenshotWidth } : undefined}
+    >
       <header className="overflow-hidden rounded-[32px] border border-zinc-300 bg-white shadow-sm">
         <div className="border-b border-zinc-200 bg-[linear-gradient(135deg,rgba(248,250,252,0.98),rgba(255,255,255,1)_55%,rgba(244,244,245,0.9))] px-6 py-6">
           {!screenshotMode ? (
@@ -175,13 +182,30 @@ export function ControlPanelView({
         <div className="grid gap-4 px-6 py-5 lg:grid-cols-5">
           <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Reliability score</p>
-            <p className={`mt-3 text-3xl font-semibold ${scoreTone(panel.reliability_score)}`}>
+            <p
+              className={cn(
+                "mt-3 text-3xl font-semibold",
+                scoreTone(panel.reliability_score),
+                highlightedMetrics.includes("reliability_score") &&
+                  "rounded-2xl px-3 py-2 ring-2 ring-sky-300 ring-offset-2 ring-offset-white",
+              )}
+              data-tour-id="metric-reliability-score"
+            >
               {panel.reliability_score}
             </p>
           </div>
           <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Active incidents</p>
-            <p className="mt-3 text-3xl font-semibold text-ink">{panel.active_incidents}</p>
+            <p
+              className={cn(
+                "mt-3 text-3xl font-semibold text-ink",
+                highlightedMetrics.includes("active_incidents") &&
+                  "rounded-2xl px-3 py-2 ring-2 ring-amber-300 ring-offset-2 ring-offset-white",
+              )}
+              data-tour-id="metric-active-incidents"
+            >
+              {panel.active_incidents}
+            </p>
           </div>
           <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Deployment risk</p>
@@ -350,7 +374,16 @@ export function ControlPanelView({
             <div className="mt-5 space-y-3">
               {panel.recommended_guardrails.length > 0 ? (
                 panel.recommended_guardrails.slice(0, 3).map((item) => (
-                  <div key={`${item.policy_type}-${item.title}`} className="rounded-[24px] border border-zinc-200 px-4 py-4">
+                  <div
+                    key={`${item.policy_type}-${item.title}`}
+                    className={cn(
+                      "rounded-[24px] border border-zinc-200 px-4 py-4",
+                      highlightedMetrics.includes("recommended_guardrail") &&
+                        item === panel.recommended_guardrails[0] &&
+                        "ring-2 ring-emerald-300 ring-offset-2 ring-offset-white",
+                    )}
+                    data-tour-id={item === panel.recommended_guardrails[0] ? "metric-recommended-guardrail" : undefined}
+                  >
                     <p className="text-sm font-medium text-ink">{item.title}</p>
                     <p className="mt-2 text-sm text-steel">
                       {item.policy_type} {"->"} {item.recommended_action}

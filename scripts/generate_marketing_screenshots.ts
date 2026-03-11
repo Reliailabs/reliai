@@ -12,9 +12,8 @@ const baseUrl = "http://127.0.0.1:3000";
 
 const shots = [
   { route: "/marketing/screenshot/control-panel", file: "control-panel.png" },
-  { route: "/marketing/screenshot/trace-graph", file: "trace-graph.png" },
   { route: "/marketing/screenshot/incident", file: "incident.png" },
-  { route: "/marketing/screenshot/deployment", file: "deployment.png" },
+  { route: "/marketing/screenshot/trace-graph", file: "trace-graph.png" },
 ];
 
 async function isReady(url: string) {

@@ -2,6 +2,12 @@
 
 Reliai is an AI reliability platform for LLM, RAG, and agentic applications. The current foundation covers operator auth, tenant-scoped org/project access, project API keys, trace ingestion, a trace explorer, retrieval span persistence, and a first structured-output evaluation scaffold.
 
+SDKs currently live in:
+- `packages/reliai-python`
+- `packages/reliai-node`
+
+Both package names are currently `reliai`.
+
 ## Local setup
 
 1. Copy `.env.example` to `.env`.
@@ -75,6 +81,49 @@ This keeps the auth boundary explicit without committing the repo to Clerk or Wo
 - `make worker` runs the RQ worker for evaluation jobs.
 - `curl http://localhost:8000/health` verifies the API is up.
 - `curl http://localhost:3000` verifies the web shell is up.
+
+## Stabilization and verification
+
+Use this sequence before a manual product validation pass:
+
+```bash
+cp .env.example .env
+make install
+make db-up
+make db-migrate
+make seed
+```
+
+Run the app in three terminals:
+
+Terminal 1:
+
+```bash
+make dev
+```
+
+Terminal 2:
+
+```bash
+pnpm --filter web dev --port 3000
+```
+
+Terminal 3:
+
+```bash
+make worker
+```
+
+Then verify the stack:
+
+```bash
+curl -s http://127.0.0.1:8000/api/v1/health
+curl -I http://127.0.0.1:3000
+```
+
+Reference docs:
+- `/Users/robert/Documents/Reliai/docs/stabilization-runbook.md`
+- `/Users/robert/Documents/Reliai/docs/validation-matrix.md`
 
 ## Trace payload policy
 

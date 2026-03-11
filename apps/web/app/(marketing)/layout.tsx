@@ -25,14 +25,23 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             </div>
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
+            <Link href="/#product" className="text-sm font-medium text-steel transition hover:text-ink">
+              Product
+            </Link>
+            <Link href="/docs" className="text-sm font-medium text-steel transition hover:text-ink">
+              Docs
+            </Link>
             <Link href="/demo" className="text-sm font-medium text-steel transition hover:text-ink">
               Demo
             </Link>
-            <Link href="/signup" className="text-sm font-medium text-steel transition hover:text-ink">
-              Get Started
+            <Link href="/pricing" className="text-sm font-medium text-steel transition hover:text-ink">
+              Pricing
             </Link>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/sign-in">Sign In</Link>
+            <Link href="/login" className="text-sm font-medium text-steel transition hover:text-ink">
+              Sign In
+            </Link>
+            <Button asChild size="sm">
+              <Link href="/signup">Get Started</Link>
             </Button>
           </nav>
         </div>

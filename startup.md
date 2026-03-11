@@ -91,3 +91,7 @@ Related internal pages:
 - Customer reliability ops: [http://127.0.0.1:3000/system/customers](http://127.0.0.1:3000/system/customers)
 
 If you want, I can add a direct navigation link from [apps/web/app/(app)/system/growth/page.tsx](</Users/robert/Documents/Reliai/apps/web/app/(app)/system/growth/page.tsx>) to the new customer dashboard so the internal surfaces are connected.
+
+make dev
+make test
+make run

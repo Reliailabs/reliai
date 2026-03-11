@@ -374,6 +374,68 @@ The most recent implementation wave added:
 - Organization-level guardrail policies with SDK sync and policy-violation events
 - Guardrail compliance on the control panel
 - Canonical append-only event log and historical replay path for processors
+- Public marketing homepage with failure-led product story
+- Interactive public demo and failure playground
+- Frontend-only marketing screenshot routes and screenshot generators
+- SDK install section for Python and Node directly on the homepage
+
+## Marketing and developer onboarding
+
+Reliai now includes a public developer onboarding surface designed to reduce friction for first-time evaluation.
+
+### Marketing homepage
+
+The marketing homepage now follows a failure-led infrastructure narrative:
+
+- Hero
+- Failure timeline
+- Interactive demo
+- Playground
+- Product loop
+- SDK install
+- Architecture
+- Final CTA
+
+### Developer onboarding section
+
+The homepage now includes an SDK install block directly below the hero:
+
+`Install Reliai in 60 seconds`
+
+Features highlighted:
+
+- Auto instrumentation
+- Distributed tracing
+- Runtime guardrails
+- Incident detection
+
+Supported SDKs:
+
+- Python
+- Node
+
+Each SDK tab includes:
+
+- install command
+- minimal example
+- copy-to-clipboard support
+
+This allows engineers to immediately see how to integrate Reliai without navigating to documentation.
+
+### Playground
+
+A public interactive playground allows visitors to simulate AI failures and observe how Reliai detects and mitigates them.
+
+Supported failure scenarios:
+
+- hallucination
+- latency spike
+- model regression
+- retrieval failure
+
+Each simulation walks through the Reliai reliability loop:
+
+`failure -> incident -> trace analysis -> guardrail recommendation`
 
 ## Recommended demo flow
 
