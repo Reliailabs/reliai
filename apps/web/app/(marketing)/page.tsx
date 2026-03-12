@@ -75,6 +75,25 @@ const demoFlow = [
   },
 ];
 
+const productionSignals = [
+  {
+    label: "Reliability score",
+    value: "92 / 100",
+  },
+  {
+    label: "Active incidents detected",
+    value: "1",
+  },
+  {
+    label: "Guardrails protecting pipelines",
+    value: "17",
+  },
+  {
+    label: "Traces analyzed this week",
+    value: "2.3M",
+  },
+];
+
 interface MarketingHomePageProps {
   searchParams?: Promise<{ visual?: string }>;
 }
@@ -126,19 +145,16 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
             </div>
             <div className="mt-8">
               <p className="text-sm font-medium text-ink">Used to protect production AI systems</p>
-              <div className="mt-3 grid gap-3 text-sm text-steel sm:grid-cols-3">
-                <p className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-                  Detect regressions automatically
-                </p>
-                <p className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-                  Trace every AI request
-                </p>
-                <p className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-                  Apply runtime guardrails
-                </p>
+              <div className="mt-3 grid grid-cols-2 gap-6 md:grid-cols-4">
+                {productionSignals.map((signal) => (
+                  <div
+                    key={signal.label}
+                    className="flex flex-col items-start gap-1 rounded-lg border border-zinc-200 bg-white p-4"
+                  >
+                    <p className="text-sm text-zinc-500">{signal.label}</p>
+                    <p className="text-2xl font-mono font-semibold text-ink">{signal.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
