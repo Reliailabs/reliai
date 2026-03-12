@@ -11,6 +11,19 @@ Run this checklist immediately before:
 
 Expected time: about 5 minutes
 
+## Pre-Demo State Rule
+
+Do not rely on live system state.
+
+Before the call, confirm the seeded or demo project has:
+
+- at least one visible incident or warning state
+- populated traces
+- at least one deployment
+- at least one visible mitigation or guardrail signal
+
+If the main control panel is empty, reseed before presenting.
+
 ## 1. Homepage Loads
 
 Open:

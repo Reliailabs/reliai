@@ -20,11 +20,13 @@ import { PlaygroundTraceGraph } from "./playground-trace-graph";
 interface PlaygroundExperienceProps {
   screenshotMode?: boolean;
   initialFailure?: PlaygroundFailureType;
+  disableAnimation?: boolean;
 }
 
 export function PlaygroundExperience({
   screenshotMode = false,
   initialFailure = "hallucination",
+  disableAnimation = false,
 }: PlaygroundExperienceProps) {
   const {
     selectedFailure,
@@ -35,16 +37,17 @@ export function PlaygroundExperience({
     applyGuardrail,
   } = usePlaygroundSimulation({
     initialFailure,
-    disableAnimation: screenshotMode,
+    disableAnimation: screenshotMode || disableAnimation,
   });
 
   const traceRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (screenshotMode || disableAnimation) return;
     if (simulationStage === "trace_analysis") {
       traceRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [simulationStage]);
+  }, [disableAnimation, screenshotMode, simulationStage]);
 
   return (
     <main className="bg-[#f7f8fa]">

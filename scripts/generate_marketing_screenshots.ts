@@ -9,11 +9,30 @@ import { chromium } from "@playwright/test";
 const root = process.cwd();
 const outputDir = path.join(root, "apps/web/public/screenshots");
 const baseUrl = "http://127.0.0.1:3000";
+const viewport = {
+  width: 1600,
+  height: 1000,
+} as const;
 
 const shots = [
-  { route: "/marketing/screenshot/control-panel", file: "control-panel.png" },
-  { route: "/marketing/screenshot/incident", file: "incident.png" },
-  { route: "/marketing/screenshot/trace-graph", file: "trace-graph.png" },
+  {
+    route: "/marketing/screenshot/control-panel",
+    file: "control-panel.png",
+    signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
+    scrollY: 160,
+  },
+  {
+    route: "/marketing/screenshot/incident",
+    file: "incident.png",
+    signals: ["text=Likely root cause", "text=Recommended mitigation"],
+    scrollY: 80,
+  },
+  {
+    route: "/marketing/screenshot/trace-graph",
+    file: "trace-graph.png",
+    signals: ["text=Trace Analysis", "text=Slowest step", "text=Largest token consumer"],
+    scrollY: 120,
+  },
 ];
 
 async function isReady(url: string) {
@@ -45,6 +64,28 @@ function startWebServer() {
   });
 }
 
+async function captureShot(
+  page: import("@playwright/test").Page,
+  shot: (typeof shots)[number],
+) {
+  const url = `${baseUrl}${shot.route}`;
+  await page.goto(url, { waitUntil: "networkidle" });
+
+  for (const signal of shot.signals) {
+    await page.waitForSelector(signal);
+  }
+
+  await page.evaluate((scrollY) => {
+    window.scrollTo({ top: scrollY, left: 0, behavior: "instant" });
+  }, shot.scrollY);
+  await page.waitForTimeout(250);
+
+  await page.screenshot({
+    path: path.join(outputDir, shot.file),
+    type: "png",
+  });
+}
+
 async function main() {
   await mkdir(outputDir, { recursive: true });
 
@@ -57,21 +98,13 @@ async function main() {
 
   const browser = await chromium.launch();
   const page = await browser.newPage({
-    viewport: {
-      width: 3200,
-      height: 2000,
-    },
-    deviceScaleFactor: 1,
+    viewport,
+    deviceScaleFactor: 2,
   });
 
   try {
     for (const shot of shots) {
-      const url = `${baseUrl}${shot.route}`;
-      await page.goto(url, { waitUntil: "networkidle" });
-      await page.screenshot({
-        path: path.join(outputDir, shot.file),
-        type: "png",
-      });
+      await captureShot(page, shot);
       const outputPath = path.join(outputDir, shot.file);
       if (!existsSync(outputPath)) {
         throw new Error(`Expected screenshot was not written: ${outputPath}`);

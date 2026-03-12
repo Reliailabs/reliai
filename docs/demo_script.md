@@ -9,12 +9,80 @@ Show a first-time engineer what Reliai does in under 3 minutes:
 - what Reliai recommends
 - what the operator should do next
 
+## Most Important Demo Rule
+
+Do not rely on live system state during a demo.
+
+Use a deterministic demo scenario instead:
+
+- seeded traces
+- at least one visible incident
+- at least one deployment
+- at least one visible guardrail or mitigation signal
+
+If the dashboard is empty, the product story collapses even when the system is functioning correctly.
+
+Before starting any demo:
+
+1. run `make seed`
+2. open the seeded project control panel
+3. confirm one incident or warning state is visible
+4. confirm the trace list is populated
+
+The safest demo project remains the seeded project:
+
+- `cb2dfd2d-69af-4545-a2e8-131bf6e491b8`
+
+## 30-Second Control Panel Explanation
+
+Use this when you want the product value to land before any clicks.
+
+### Step 1 — Start with the operator question
+
+Say:
+
+"The control panel answers one question: is my AI system safe right now?"
+
+### Step 2 — Show the system status
+
+Point to:
+
+- reliability score
+- active incidents
+- guardrail activity
+
+Say:
+
+"This reliability score summarizes system health. If something breaks, Reliai automatically detects the regression and opens an incident."
+
+### Step 3 — Show the current problem
+
+Point to the incident or high-risk pattern.
+
+Say:
+
+"Here the system detected a regression in production. Instead of engineers discovering it from user reports, Reliai flags it immediately."
+
+### Step 4 — Show the suggested fix
+
+Point to the recommended guardrail or mitigation.
+
+Say:
+
+"Reliai then analyzes traces and patterns across the system and recommends a guardrail or mitigation before the issue spreads."
+
+## One-Sentence Summary
+
+Use this when you need an even faster setup line:
+
+"Reliai is the control plane for AI reliability. It detects regressions, explains why they happened, and recommends guardrails before users see the failure."
+
 ## Demo path
 
 1. Control panel
 2. Incident
 3. Trace graph
-4. Replay
+4. Recommended guardrail
 5. Deployment safety gate
 
 ## Script
@@ -27,69 +95,66 @@ Open:
 
 Say:
 
-"This is the system status page for one AI system. The first question Reliai answers is: is this system safe right now?"
+"Reliai is the reliability control plane for AI systems. The control panel answers one question: is my AI system safe right now?"
 
 Point to:
 
 - reliability score
-- active incidents
-- deployment risk
 - guardrail activity
-- policy compliance
+- active incidents
 
 Then say:
 
-"From one screen, the operator can see whether the system is stable, whether a deployment is risky, and whether runtime protection is actually covering production."
+"If something breaks in production, such as hallucinations, latency spikes, or model regressions, Reliai detects it automatically and opens an incident."
 
 ### 2. Open an incident
 
 Say:
 
-"If something regresses, Reliai opens an incident and summarizes what probably broke."
+"Here the system detected a regression after a prompt or runtime change. Instead of users reporting bad responses, Reliai flagged it immediately."
 
 Point to:
 
+- incident summary
 - likely root cause
-- deployment changes
-- guardrail triggers
+- affected traces
 - recommended mitigation
 
 Then say:
 
-"The point is not just to detect a regression. It is to explain what changed and what the operator should do next."
+"The platform analyzes production traces to determine what changed and where the failure occurred."
 
 ### 3. Open the trace graph
 
 Say:
 
-"From the incident, we can pivot into a single request and inspect the execution graph."
+"Every AI request is traced across retrieval, prompt construction, model calls, and guardrails."
 
 Point to:
 
 - span legend
+- latency per span
 - slowest span
 - largest token span
-- guardrail retry span
 
 Then say:
 
-"This is the debugging view. It breaks one AI request into retrieval, prompt build, model call, tools, guardrails, and post-processing so the operator can see where the request degraded."
+"Here you can see exactly where the pipeline failed."
 
-### 4. Show replay
+### 4. Show the recommended guardrail
 
 Say:
 
-"If an engineer wants to reproduce the issue locally, Reliai gives them replay snippets directly from the trace."
+"Reliai does not just detect problems. It recommends mitigations."
 
 Point to:
 
-- Python replay example
-- Node replay example
-- copy buttons
+- recommended guardrail
+- explanation
 
 Then say:
 
-"This makes the handoff from operator to engineer much faster. You are not just looking at telemetry, you can replay the request locally."
+"In this case the system suggests enabling structured output validation or another targeted guardrail to stop the failure from spreading."
 
 ### 5. Show deployment safety gate
 
@@ -102,16 +167,17 @@ Say:
 Point to:
 
 - SAFE / WARNING / BLOCKED badge
-- risk score
 - deployment risk factors
 - recommended guardrails
 
 Close with:
 
-"That is the full loop: system status, incident detection, request-level debugging, replay, and deployment safety. Reliai is an AI reliability control plane, not just another dashboard."
+"That is the full loop: system status, incident detection, trace-level debugging, guardrail recommendation, and deployment safety. Reliai is an AI reliability control plane, not just another dashboard."
 
 ## Demo tips
 
+- Never start with SDK install, settings, or configuration screens.
+- Start with the control panel because it answers the production-state question immediately.
 - Keep the control panel on screen long enough for the viewer to orient.
 - Do not start with trace detail. Start with operator context.
 - Use one incident and one trace so the flow feels connected.

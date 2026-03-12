@@ -28,6 +28,10 @@ import {
 } from "@/components/presenters/ops-format";
 import { cn } from "@/lib/utils";
 
+const panelCardClass =
+  "rounded-[24px] border border-zinc-200/90 bg-white/92 p-5 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur-sm";
+const metricValueClass = "font-mono tracking-[-0.03em]";
+
 function statusSummary(panel: ProjectReliabilityControlPanel) {
   const highRisk =
     panel.reliability_score <= 50 ||
@@ -170,7 +174,7 @@ export function ControlPanelView({
                   <StatusIcon className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium uppercase tracking-[0.18em]">Answer: {status.label}</p>
+                  <p className={`text-sm font-medium uppercase tracking-[0.18em] ${metricValueClass}`}>Answer: {status.label}</p>
                   <p className="mt-2 text-2xl font-semibold">{status.summary}</p>
                   <p className="mt-2 text-sm leading-6 opacity-90">{status.detail}</p>
                 </div>
@@ -184,7 +188,7 @@ export function ControlPanelView({
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Reliability score</p>
             <p
               className={cn(
-                "mt-3 text-3xl font-semibold",
+                `mt-3 text-3xl font-semibold ${metricValueClass}`,
                 scoreTone(panel.reliability_score),
                 highlightedMetrics.includes("reliability_score") &&
                   "rounded-2xl px-3 py-2 ring-2 ring-sky-300 ring-offset-2 ring-offset-white",
@@ -198,7 +202,7 @@ export function ControlPanelView({
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Active incidents</p>
             <p
               className={cn(
-                "mt-3 text-3xl font-semibold text-ink",
+                `mt-3 text-3xl font-semibold text-ink ${metricValueClass}`,
                 highlightedMetrics.includes("active_incidents") &&
                   "rounded-2xl px-3 py-2 ring-2 ring-amber-300 ring-offset-2 ring-offset-white",
               )}
@@ -209,17 +213,17 @@ export function ControlPanelView({
           </div>
           <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Deployment risk</p>
-            <p className={`mt-3 text-3xl font-semibold ${riskTone(panel.deployment_risk.risk_level)}`}>
+            <p className={`mt-3 text-3xl font-semibold ${metricValueClass} ${riskTone(panel.deployment_risk.risk_level)}`}>
               {(panel.deployment_risk.risk_level ?? "n/a").toUpperCase()}
             </p>
           </div>
           <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Guardrail activity</p>
-            <p className="mt-3 text-3xl font-semibold text-ink">{panel.guardrails.trigger_rate_last_24h}</p>
+            <p className={`mt-3 text-3xl font-semibold text-ink ${metricValueClass}`}>{panel.guardrails.trigger_rate_last_24h}</p>
           </div>
           <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-steel">Policy compliance</p>
-            <p className={`mt-3 text-3xl font-semibold ${coverageTone(averageCompliance)}`}>
+            <p className={`mt-3 text-3xl font-semibold ${metricValueClass} ${coverageTone(averageCompliance)}`}>
               {averageCompliance.toFixed(0)}%
             </p>
           </div>
@@ -228,7 +232,7 @@ export function ControlPanelView({
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
         <div className="space-y-6">
-          <Card className="rounded-[28px] border-zinc-300 p-6">
+          <Card className={panelCardClass}>
             <div className="flex items-center gap-3">
               <Activity className="h-5 w-5 text-steel" />
               <div>
@@ -264,7 +268,7 @@ export function ControlPanelView({
           </Card>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="rounded-[28px] border-zinc-300 p-6">
+            <Card className={panelCardClass}>
               <div className="flex items-center gap-3">
                 <Cable className="h-5 w-5 text-steel" />
                 <div>
@@ -301,7 +305,7 @@ export function ControlPanelView({
               ) : null}
             </Card>
 
-            <Card className="rounded-[28px] border-zinc-300 p-6">
+            <Card className={panelCardClass}>
               <div className="flex items-center gap-3">
                 <BellElectric className="h-5 w-5 text-steel" />
                 <div>
@@ -328,7 +332,7 @@ export function ControlPanelView({
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-[28px] border-zinc-300 p-6">
+          <Card className={panelCardClass}>
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-steel" />
               <div>
@@ -363,7 +367,7 @@ export function ControlPanelView({
             )}
           </Card>
 
-          <Card className="rounded-[28px] border-zinc-300 p-6">
+          <Card className={panelCardClass}>
             <div className="flex items-center gap-3">
               <Sparkles className="h-5 w-5 text-steel" />
               <div>
@@ -401,7 +405,7 @@ export function ControlPanelView({
 
           {!screenshotMode ? (
             <>
-              <Card className="rounded-[28px] border-zinc-300 p-6">
+              <Card className={panelCardClass}>
                 <div className="flex items-center gap-3">
                   <Bot className="h-5 w-5 text-steel" />
                   <div>
@@ -431,7 +435,7 @@ export function ControlPanelView({
                 </div>
               </Card>
 
-              <Card className="rounded-[28px] border-zinc-300 p-6">
+              <Card className={panelCardClass}>
                 <div className="flex items-center gap-3">
                   <Radar className="h-5 w-5 text-steel" />
                   <div>

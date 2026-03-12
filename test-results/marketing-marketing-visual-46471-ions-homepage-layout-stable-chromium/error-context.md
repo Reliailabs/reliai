@@ -1,0 +1,398 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "R Reliai Production AI reliability" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: R
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: Reliai
+          - paragraph [ref=e9]: Production AI reliability
+      - navigation [ref=e10]:
+        - link "Product" [ref=e11] [cursor=pointer]:
+          - /url: /#product
+        - link "Docs" [ref=e12] [cursor=pointer]:
+          - /url: /docs
+        - link "Demo" [ref=e13] [cursor=pointer]:
+          - /url: /demo
+        - link "Pricing" [ref=e14] [cursor=pointer]:
+          - /url: /pricing
+        - link "Sign In" [ref=e15] [cursor=pointer]:
+          - /url: /login
+        - link "Get Started" [ref=e16] [cursor=pointer]:
+          - /url: /signup
+  - main [ref=e17]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - paragraph [ref=e21]: AI reliability control plane
+        - heading "Know when your AI breaks—before your users do." [level=1] [ref=e22]
+        - paragraph [ref=e23]: Reliai detects AI regressions, explains root causes, and applies guardrails to protect production systems.
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - paragraph [ref=e27]: Install
+              - code [ref=e28]: pip install reliai
+            - button "Copy" [ref=e29]:
+              - img [ref=e30]
+              - text: Copy
+          - generic [ref=e33]:
+            - link "Try Playground" [ref=e34] [cursor=pointer]:
+              - /url: /playground
+              - text: Try Playground
+              - img [ref=e35]
+            - link "View Demo" [ref=e37] [cursor=pointer]:
+              - /url: /demo
+            - link "Get Started" [ref=e38] [cursor=pointer]:
+              - /url: /signup
+        - generic [ref=e39]:
+          - paragraph [ref=e40]: Used to protect production AI systems
+          - generic [ref=e41]:
+            - paragraph [ref=e42]:
+              - img [ref=e43]
+              - text: Detect regressions automatically
+            - paragraph [ref=e46]:
+              - img [ref=e47]
+              - text: Trace every AI request
+            - paragraph [ref=e50]:
+              - img [ref=e51]
+              - text: Apply runtime guardrails
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - paragraph [ref=e57]: System health
+            - paragraph [ref=e58]: 92 / 100
+            - paragraph [ref=e59]: Reliability score with one active incident under control.
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: Incident detection
+            - paragraph [ref=e62]: "1"
+            - paragraph [ref=e63]: Retrieval latency regression opened automatically.
+          - generic [ref=e64]:
+            - paragraph [ref=e65]: Recommended action
+            - paragraph [ref=e66]: Enable retry policy
+            - paragraph [ref=e67]: Suggested guardrail for the retrieval stage.
+        - generic [ref=e69]:
+          - generic [ref=e70]: Reliai control panel
+          - img "Reliai control panel showing reliability score, incident detection, and recommended guardrails" [ref=e73]
+    - generic [ref=e76]:
+      - generic [ref=e78]:
+        - paragraph [ref=e79]: Failure story
+        - heading "AI systems fail in ways traditional observability tools cannot detect." [level=2] [ref=e80]
+        - paragraph [ref=e81]: A prompt update introduced hallucinated responses. Reliai detected the regression, opened an incident, explained the likely cause, and recommended a guardrail before users noticed.
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - img [ref=e87]
+            - paragraph [ref=e89]: Prompt update deployed
+            - paragraph [ref=e90]: A new support prompt expanded context and changed response behavior.
+          - generic [ref=e91]:
+            - img [ref=e93]
+            - paragraph [ref=e96]: Hallucination spike detected
+            - paragraph [ref=e97]: Reliability signals caught an increase in unsupported policy references.
+          - generic [ref=e98]:
+            - img [ref=e100]
+            - paragraph [ref=e105]: Incident opened automatically
+            - paragraph [ref=e106]: Reliai grouped the regression, linked traces, and attached the likely change window.
+          - generic [ref=e107]:
+            - img [ref=e109]
+            - paragraph [ref=e112]: Guardrail recommended
+            - paragraph [ref=e113]: Structured output validation was recommended before the issue reached users.
+      - generic [ref=e115]:
+        - paragraph [ref=e116]: What the operator sees
+        - heading "Reliability score, active incident, and recommended guardrail in one view." [level=3] [ref=e117]
+        - paragraph [ref=e118]: "The screenshot stays focused on the signals that matter first: system health, detected failure, and the next mitigation step."
+        - generic [ref=e120]:
+          - generic [ref=e122]: Reliai control panel
+          - generic [ref=e125]:
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - paragraph [ref=e128]: Reliai system status page
+                - generic [ref=e129]:
+                  - generic [ref=e130]:
+                    - paragraph [ref=e131]: AI reliability control panel
+                    - heading "AI Support Copilot" [level=1] [ref=e132]
+                    - paragraph [ref=e133]: Default status page for this AI system. It answers what is happening, whether it is safe, and where an operator should click next.
+                  - generic [ref=e134]:
+                    - paragraph [ref=e135]: Is this system safe right now?
+                    - generic [ref=e136]:
+                      - img [ref=e138]
+                      - generic [ref=e140]:
+                        - paragraph [ref=e141]: "Answer: MAYBE"
+                        - paragraph [ref=e142]: This AI system needs review before the next change.
+                        - paragraph [ref=e143]: The system is stable enough to operate, but current signals show elevated reliability risk.
+              - generic [ref=e144]:
+                - generic [ref=e145]:
+                  - paragraph [ref=e146]: Reliability score
+                  - paragraph [ref=e147]: "92"
+                - generic [ref=e148]:
+                  - paragraph [ref=e149]: Active incidents
+                  - paragraph [ref=e150]: "1"
+                - generic [ref=e151]:
+                  - paragraph [ref=e152]: Deployment risk
+                  - paragraph [ref=e153]: LOW
+                - generic [ref=e154]:
+                  - paragraph [ref=e155]: Guardrail activity
+                  - paragraph [ref=e156]: "17"
+                - generic [ref=e157]:
+                  - paragraph [ref=e158]: Policy compliance
+                  - paragraph [ref=e159]: 96%
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - generic [ref=e162]:
+                  - generic [ref=e163]:
+                    - img [ref=e164]
+                    - generic [ref=e166]:
+                      - paragraph [ref=e167]: System status
+                      - heading "What needs attention next" [level=2] [ref=e168]
+                  - generic [ref=e169]:
+                    - generic [ref=e170]:
+                      - paragraph [ref=e171]: Latest deployment
+                      - paragraph [ref=e172]: Today
+                      - paragraph [ref=e173]: Risk score 0.24
+                    - generic [ref=e174]:
+                      - paragraph [ref=e175]: Incident pressure
+                      - paragraph [ref=e176]: 1 incidents / 24h
+                      - paragraph [ref=e177]: "Latest: Retrieval latency regression after prompt rollout"
+                    - generic [ref=e178]:
+                      - paragraph [ref=e179]: Guardrail pressure
+                      - paragraph [ref=e180]: 17 triggers / 24h
+                      - paragraph [ref=e181]: "Top policy: structured_output"
+                - generic [ref=e182]:
+                  - generic [ref=e183]:
+                    - generic [ref=e184]:
+                      - img [ref=e185]
+                      - generic [ref=e191]:
+                        - paragraph [ref=e192]: Deployment risk
+                        - heading "Safety before the next rollout" [level=2] [ref=e193]
+                    - generic [ref=e194]:
+                      - generic [ref=e195]: Risk levellow
+                      - generic [ref=e196]: Risk score0.24
+                      - generic [ref=e197]: Simulation riskmedium
+                  - generic [ref=e198]:
+                    - generic [ref=e199]:
+                      - img [ref=e200]
+                      - generic [ref=e206]:
+                        - paragraph [ref=e207]: Guardrail activity
+                        - heading "Runtime protection coverage" [level=2] [ref=e208]
+                    - generic [ref=e209]:
+                      - generic [ref=e210]: structured output11
+                      - generic [ref=e211]: latency retry4
+                      - generic [ref=e212]: cost budget2
+              - generic [ref=e213]:
+                - generic [ref=e214]:
+                  - generic [ref=e215]:
+                    - img [ref=e216]
+                    - generic [ref=e219]:
+                      - paragraph [ref=e220]: Policy compliance
+                      - heading "Organization guardrail coverage" [level=2] [ref=e221]
+                  - generic [ref=e222]:
+                    - generic [ref=e223]:
+                      - generic [ref=e224]:
+                        - generic [ref=e225]:
+                          - paragraph [ref=e226]: structured output
+                          - paragraph [ref=e227]: "Mode: enforce"
+                        - paragraph [ref=e228]: 98.0%
+                      - generic [ref=e229]: Violations last 24h3
+                    - generic [ref=e230]:
+                      - generic [ref=e231]:
+                        - generic [ref=e232]:
+                          - paragraph [ref=e233]: cost budget
+                          - paragraph [ref=e234]: "Mode: warn"
+                        - paragraph [ref=e235]: 96.0%
+                      - generic [ref=e236]: Violations last 24h5
+                    - generic [ref=e237]:
+                      - generic [ref=e238]:
+                        - generic [ref=e239]:
+                          - paragraph [ref=e240]: latency retry
+                          - paragraph [ref=e241]: "Mode: enforce"
+                        - paragraph [ref=e242]: 94.0%
+                      - generic [ref=e243]: Violations last 24h2
+                - generic [ref=e244]:
+                  - generic [ref=e245]:
+                    - img [ref=e246]
+                    - generic [ref=e248]:
+                      - paragraph [ref=e249]: Recommended next step
+                      - heading "Operator guidance" [level=2] [ref=e250]
+                  - generic [ref=e251]:
+                    - generic [ref=e252]:
+                      - paragraph [ref=e253]: Enable structured output validation
+                      - paragraph [ref=e254]: structured_output -> Enable schema validation and retries for gpt-4.1
+                    - generic [ref=e255]:
+                      - paragraph [ref=e256]: Add retry policy for retrieval failures
+                      - paragraph [ref=e257]: latency_retry -> Retry retrieval failures once before fallback
+    - generic [ref=e259]:
+      - generic [ref=e260]:
+        - paragraph [ref=e261]: Interactive demo
+        - heading "Walk the operator workflow in under five minutes." [level=2] [ref=e262]
+        - paragraph [ref=e263]: Start at system status, open the incident, inspect the trace graph, and finish at the mitigation point.
+        - generic [ref=e264]:
+          - generic [ref=e265]:
+            - paragraph [ref=e266]: "01"
+            - paragraph [ref=e267]: Start at the control panel
+            - paragraph [ref=e268]: "Operators answer the first question immediately: Is my AI system safe right now?"
+          - generic [ref=e269]:
+            - paragraph [ref=e270]: "02"
+            - paragraph [ref=e271]: Open the incident
+            - paragraph [ref=e272]: Reliai turns regressions into incidents with linked traces, deployment windows, and candidate causes.
+          - generic [ref=e273]:
+            - paragraph [ref=e274]: "03"
+            - paragraph [ref=e275]: Inspect the trace graph
+            - paragraph [ref=e276]: Execution graphs make the failing stage visible across retrieval, prompt build, model, tool, and guardrail spans.
+          - generic [ref=e277]:
+            - paragraph [ref=e278]: "04"
+            - paragraph [ref=e279]: Mitigate before blast radius expands
+            - paragraph [ref=e280]: Recommended guardrails and deployment gates give the operator a concrete next action.
+        - link "View Demo" [ref=e282] [cursor=pointer]:
+          - /url: /demo
+          - text: View Demo
+          - img [ref=e283]
+      - generic [ref=e285]:
+        - generic [ref=e286]:
+          - generic [ref=e287]:
+            - paragraph [ref=e288]: Incident Command Center
+            - paragraph [ref=e289]: Root-cause signals, mitigation guidance, and remediation context for live incident response.
+          - img "Incident Command Center" [ref=e292]
+        - generic [ref=e293]:
+          - generic [ref=e294]:
+            - paragraph [ref=e295]: Trace Graph
+            - paragraph [ref=e296]: Execution graph for retrieval, prompt build, model call, tool execution, and post-processing spans.
+          - img "Trace Graph" [ref=e299]
+    - generic [ref=e302]:
+      - generic [ref=e303]:
+        - paragraph [ref=e304]: Playground
+        - heading "Paste a prompt. See the execution path immediately." [level=2] [ref=e305]
+        - paragraph [ref=e306]: The playground is the fastest way to understand Reliai. Run a request, inspect the trace graph, and see how the control plane would analyze the system.
+        - generic [ref=e307]:
+          - link "Try Playground" [ref=e308] [cursor=pointer]:
+            - /url: /playground
+            - text: Try Playground
+            - img [ref=e309]
+          - link "See full operator flow" [ref=e311] [cursor=pointer]:
+            - /url: /demo
+      - generic [ref=e312]:
+        - paragraph [ref=e313]: What engineers see
+        - generic [ref=e314]:
+          - paragraph [ref=e315]:
+            - img [ref=e316]
+            - text: Prompt input
+          - paragraph [ref=e319]:
+            - img [ref=e320]
+            - text: Trace graph
+          - paragraph [ref=e323]:
+            - img [ref=e324]
+            - text: Reliability signals
+        - paragraph [ref=e328]: The playground is the fastest path to product understanding for engineers evaluating the control plane.
+    - generic [ref=e329]:
+      - generic [ref=e330]:
+        - paragraph [ref=e331]: The Reliai loop
+        - heading "Reliai runs a continuous reliability loop around production AI systems." [level=2] [ref=e332]
+      - generic [ref=e333]:
+        - generic [ref=e334]:
+          - generic [ref=e335]:
+            - paragraph [ref=e336]: Step 1
+            - paragraph [ref=e337]: Trace
+          - img [ref=e338]
+        - generic [ref=e340]:
+          - generic [ref=e341]:
+            - paragraph [ref=e342]: Step 2
+            - paragraph [ref=e343]: Detect
+          - img [ref=e344]
+        - generic [ref=e346]:
+          - generic [ref=e347]:
+            - paragraph [ref=e348]: Step 3
+            - paragraph [ref=e349]: Investigate
+          - img [ref=e350]
+        - generic [ref=e352]:
+          - generic [ref=e353]:
+            - paragraph [ref=e354]: Step 4
+            - paragraph [ref=e355]: Mitigate
+          - img [ref=e356]
+        - generic [ref=e359]:
+          - paragraph [ref=e360]: Step 5
+          - paragraph [ref=e361]: Prevent
+    - generic [ref=e363]:
+      - generic [ref=e364]:
+        - paragraph [ref=e365]: Architecture in motion
+        - heading "Four operator workflows take the system from telemetry to protection." [level=2] [ref=e366]
+      - generic [ref=e367]:
+        - generic [ref=e369]:
+          - img [ref=e370]
+          - heading "Instrument" [level=3] [ref=e377]
+          - paragraph [ref=e378]: SDKs capture traces and pipeline spans across retrieval, prompt construction, model calls, and guardrails.
+        - generic [ref=e380]:
+          - img [ref=e381]
+          - heading "Detect" [level=3] [ref=e383]
+          - paragraph [ref=e384]: Reliai identifies reliability regressions, runtime failures, and risky deployment changes before users notice them.
+        - generic [ref=e386]:
+          - img [ref=e387]
+          - heading "Investigate" [level=3] [ref=e390]
+          - paragraph [ref=e391]: Trace graphs, incident analysis, and replay flows reveal what changed, where the system failed, and why.
+        - generic [ref=e393]:
+          - img [ref=e394]
+          - heading "Protect" [level=3] [ref=e397]
+          - paragraph [ref=e398]: Guardrails and deployment gates keep known failure modes from reaching production users.
+    - generic [ref=e400]:
+      - generic [ref=e401]:
+        - generic [ref=e402]:
+          - paragraph [ref=e403]: Install Reliai in 60 seconds
+          - heading "Install Reliai in 60 seconds" [level=2] [ref=e404]
+          - paragraph [ref=e405]: Add reliability protection to your AI system with one SDK.
+          - generic [ref=e406]:
+            - button "Python" [ref=e407]
+            - button "Node" [ref=e408]
+        - generic [ref=e409]:
+          - generic [ref=e410]:
+            - img [ref=e411]
+            - text: Auto instrumentation
+          - generic [ref=e413]:
+            - img [ref=e414]
+            - text: Distributed tracing
+          - generic [ref=e421]:
+            - img [ref=e422]
+            - text: Runtime guardrails
+          - generic [ref=e425]:
+            - img [ref=e426]
+            - text: Incident detection
+      - generic [ref=e430]:
+        - generic [ref=e431]:
+          - generic [ref=e432]: pip install reliai
+          - button "Copy Code" [ref=e433]:
+            - img [ref=e434]
+            - text: Copy Code
+        - code [ref=e438]: "pip install reliai import reliai reliai.init( api_key=\"YOUR_API_KEY\" ) with reliai.span(\"llm_call\"): response = client.chat.completions.create(...)"
+    - generic [ref=e439]:
+      - generic [ref=e440]:
+        - paragraph [ref=e441]: Architecture
+        - heading "The control plane sits between the AI system and the production operator." [level=2] [ref=e442]
+      - generic [ref=e444]:
+        - generic [ref=e445]:
+          - paragraph [ref=e446]: Stage 1
+          - img [ref=e447]
+          - paragraph [ref=e450]: AI Application
+        - generic [ref=e451]: →
+        - generic [ref=e452]:
+          - paragraph [ref=e453]: Stage 2
+          - img [ref=e454]
+          - paragraph [ref=e461]: Reliai SDK
+        - generic [ref=e462]: →
+        - generic [ref=e463]:
+          - paragraph [ref=e464]: Stage 3
+          - img [ref=e465]
+          - paragraph [ref=e469]: Reliai Control Plane
+        - generic [ref=e470]: →
+        - generic [ref=e471]:
+          - paragraph [ref=e472]: Stage 4
+          - img [ref=e473]
+          - paragraph [ref=e478]: Operators
+    - generic [ref=e481]:
+      - paragraph [ref=e482]: Run your AI systems with reliability
+      - heading "Make reliability visible before failures hit users." [level=2] [ref=e483]
+      - paragraph [ref=e484]: Reliai gives operators one control plane for tracing, detection, investigation, deployment safety, and runtime protection.
+      - generic [ref=e485]:
+        - link "Start Free" [ref=e486] [cursor=pointer]:
+          - /url: /signup
+        - link "View Demo" [ref=e487] [cursor=pointer]:
+          - /url: /demo
+          - text: View Demo
+          - img [ref=e488]
+```

@@ -6,6 +6,9 @@
     "dev:web": "pnpm --filter web dev",
     "lint:web": "pnpm --filter web lint",
     "format:web": "pnpm --filter web format",
+    "layout:audit": "pnpm exec tsx scripts/layout_audit.ts",
+    "test:visual": "playwright test tests/visual",
+    "audit:screenshots": "pnpm exec tsx scripts/screenshot_audit.ts",
     "screenshots:marketing": "pnpm exec tsx scripts/generate_screenshots.ts",
     "screenshots:marketing:core": "pnpm exec tsx scripts/generate_marketing_screenshots.ts",
     "screenshots:playground": "pnpm exec tsx scripts/generate_playground_screenshots.ts"

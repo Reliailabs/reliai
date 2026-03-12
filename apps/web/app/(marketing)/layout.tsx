@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-ink">
       <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-[#f7f8fa]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <Container className="flex items-center justify-between py-4">
           <Link href="/" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-300 bg-white text-sm font-semibold text-ink shadow-sm">
               R
@@ -44,7 +45,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
               <Link href="/signup">Get Started</Link>
             </Button>
           </nav>
-        </div>
+        </Container>
       </header>
       {children}
     </div>

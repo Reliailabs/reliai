@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Activity, Radar, ShieldCheck, Workflow } from "lucide-react";
 
 import { CopyButton } from "@/components/copy-button";
+import { Container } from "@/components/layout/container";
+import { Section } from "@/components/layout/section";
+import { marketingCardClass } from "@/components/marketing/spatial-system";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +43,22 @@ await reliai.span("llm_call", async () => {
 } as const;
 
 const badges = [
-  "Auto instrumentation",
-  "Distributed tracing",
-  "Runtime guardrails",
-  "Incident detection",
+  {
+    label: "Auto instrumentation",
+    icon: Activity,
+  },
+  {
+    label: "Distributed tracing",
+    icon: Radar,
+  },
+  {
+    label: "Runtime guardrails",
+    icon: ShieldCheck,
+  },
+  {
+    label: "Incident detection",
+    icon: Workflow,
+  },
 ];
 
 export function SdkInstallSection() {
@@ -50,9 +66,9 @@ export function SdkInstallSection() {
   const example = examples[activeTab];
 
   return (
-    <section className="border-b border-zinc-200 bg-white">
-      <div className="mx-auto max-w-7xl px-6 py-14">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(320px,0.52fr)]">
+    <Section className="border-b border-zinc-200 bg-white">
+      <Container className="py-16">
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-steel">Install Reliai in 60 seconds</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
@@ -83,16 +99,17 @@ export function SdkInstallSection() {
           <div className="flex flex-wrap gap-2 lg:justify-end">
             {badges.map((badge) => (
               <span
-                key={badge}
-                className="inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-ink"
+                key={badge.label}
+                className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-ink"
               >
-                {badge}
+                <badge.icon className="h-3.5 w-3.5 text-steel" />
+                {badge.label}
               </span>
             ))}
           </div>
         </div>
 
-        <Card className="mt-8 overflow-hidden rounded-[30px] border-zinc-300">
+        <Card className={cn(marketingCardClass, "mt-12 overflow-hidden p-0")}>
           <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-5 py-4">
             <div className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800">
               {example.install}
@@ -103,7 +120,7 @@ export function SdkInstallSection() {
             <code>{example.code}</code>
           </pre>
         </Card>
-      </div>
-    </section>
+      </Container>
+    </Section>
   );
 }

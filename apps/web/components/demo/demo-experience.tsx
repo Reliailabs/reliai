@@ -76,15 +76,19 @@ const tourSteps: DemoTourStep[] = [
 
 interface DemoExperienceProps {
   screenshotMode?: boolean;
+  visualTestMode?: boolean;
 }
 
-export function DemoExperience({ screenshotMode = false }: DemoExperienceProps) {
+export function DemoExperience({ screenshotMode = false, visualTestMode = false }: DemoExperienceProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useState(false);
-  const [entered, setEntered] = useState(screenshotMode);
+  const [entered, setEntered] = useState(screenshotMode || visualTestMode);
 
   useEffect(() => {
-    if (screenshotMode) return;
+    if (screenshotMode || visualTestMode) {
+      setEntered(true);
+      return;
+    }
 
     const enterTimer = window.setTimeout(() => setEntered(true), 80);
     const tourTimer = window.setTimeout(() => setShowTour(true), 520);
@@ -92,22 +96,22 @@ export function DemoExperience({ screenshotMode = false }: DemoExperienceProps) 
       window.clearTimeout(enterTimer);
       window.clearTimeout(tourTimer);
     };
-  }, [screenshotMode]);
+  }, [screenshotMode, visualTestMode]);
 
   useEffect(() => {
-    if (screenshotMode) return;
+    if (screenshotMode || visualTestMode) return;
     const tourIndex = Math.max(currentStep - 1, 0);
     const target = document.querySelector<HTMLElement>(`[data-tour-id="${tourSteps[tourIndex]?.targetId}"]`);
     target?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [currentStep, screenshotMode]);
+  }, [currentStep, screenshotMode, visualTestMode]);
 
   const sectionTone = useMemo(
     () => (stepIndex: number) =>
       cn(
         "rounded-[34px] border border-transparent transition-all duration-300",
-        currentStep === stepIndex && !screenshotMode && "border-sky-300 bg-sky-50/35",
+        currentStep === stepIndex && !screenshotMode && !visualTestMode && "border-sky-300 bg-sky-50/35",
       ),
-    [currentStep, screenshotMode],
+    [currentStep, screenshotMode, visualTestMode],
   );
 
   return (
@@ -318,7 +322,7 @@ export function DemoExperience({ screenshotMode = false }: DemoExperienceProps) 
         </section>
       </div>
 
-      {showTour && !screenshotMode ? (
+      {showTour && !screenshotMode && !visualTestMode ? (
         <DemoTour
           steps={tourSteps}
           currentStep={Math.max(currentStep - 1, 0)}
