@@ -87,7 +87,7 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
     <main className="overflow-x-hidden bg-[#f7f8fa]">
       <section className="relative overflow-hidden border-b border-zinc-200">
         <div className="absolute inset-x-0 top-0 h-[40rem] bg-[radial-gradient(circle_at_65%_16%,rgba(255,255,255,0.78),transparent_24%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,248,250,1))]" />
-        <div className={`${marketingContainerClass} relative pb-8 pt-16 lg:pt-20`}>
+        <div className={`${marketingContainerClass} relative pb-8 pt-24 lg:pt-28`}>
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.32em] text-steel">AI reliability control plane</p>
             <h1 className="mt-5 text-5xl font-semibold tracking-tight text-ink lg:text-6xl">
@@ -260,11 +260,25 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
             </div>
           </Card>
 
-          <div className="grid gap-6">
-            <Card className={`${marketingCardClass} flex h-full flex-col overflow-hidden p-0`}>
-              <div className="border-b border-zinc-200 bg-white px-6 py-5">
+          <div className="grid justify-start gap-6">
+            <Card className={`${marketingCardClass} flex w-full max-w-[478px] flex-col overflow-hidden p-0`}>
+              <div className="border-b border-zinc-200 bg-white px-5 py-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Control Panel</p>
+                <p className="mt-1.5 text-sm leading-6 text-steel">
+                  Reliability score, active incident load, and the next operator action in one surface.
+                </p>
+              </div>
+              <MarketingScreenshotCard
+                alt="Control Panel"
+                src="/screenshots/control-panel.png"
+                className="flex-1 rounded-none border-0 shadow-none"
+                viewportClassName="bg-white"
+              />
+            </Card>
+            <Card className={`${marketingCardClass} flex w-full max-w-[478px] flex-col overflow-hidden p-0`}>
+              <div className="border-b border-zinc-200 bg-white px-5 py-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-steel">Incident Command Center</p>
-                <p className="mt-2 text-sm leading-7 text-steel">
+                <p className="mt-1.5 text-sm leading-6 text-steel">
                   Root-cause signals, mitigation guidance, and remediation context for live incident response.
                 </p>
               </div>
@@ -272,13 +286,13 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
                 alt="Incident Command Center"
                 src="/screenshots/incident.png"
                 className="flex-1 rounded-none border-0 shadow-none"
-                viewportClassName="h-full min-h-[24rem] aspect-auto"
+                viewportClassName="bg-white"
               />
             </Card>
-            <Card className={`${marketingCardClass} flex h-full flex-col overflow-hidden p-0`}>
-              <div className="border-b border-zinc-200 bg-white px-6 py-5">
+            <Card className={`${marketingCardClass} flex w-full max-w-[478px] flex-col overflow-hidden p-0`}>
+              <div className="border-b border-zinc-200 bg-white px-5 py-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-steel">Trace Graph</p>
-                <p className="mt-2 text-sm leading-7 text-steel">
+                <p className="mt-1.5 text-sm leading-6 text-steel">
                   Execution graph for retrieval, prompt build, model call, tool execution, and post-processing spans.
                 </p>
               </div>
@@ -286,7 +300,7 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
                 alt="Trace Graph"
                 src="/screenshots/trace-graph.png"
                 className="flex-1 rounded-none border-0 shadow-none"
-                viewportClassName="h-full min-h-[24rem] aspect-auto"
+                viewportClassName="bg-white"
               />
             </Card>
           </div>
@@ -333,7 +347,13 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
                   Reliability signals
                 </p>
               </div>
-              <div className="mt-12 rounded-xl border border-zinc-200 bg-zinc-50 p-6">
+              <MarketingScreenshotCard
+                alt="Playground"
+                src="/screenshots/playground.png"
+                className="mt-12"
+                viewportClassName="bg-white"
+              />
+              <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-6">
                 <p className="text-sm leading-7 text-steel">
                   The playground is the fastest path to product understanding for engineers evaluating the control plane.
                 </p>
@@ -387,14 +407,14 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
 
       <SdkInstallSection />
 
-      <section className={`${marketingContainerClass} ${marketingSectionClass} overflow-x-hidden py-16`}>
+      <section className={`${marketingContainerClass} ${marketingSectionClass} overflow-x-hidden py-12`}>
         <div className="max-w-3xl">
           <p className="text-xs uppercase tracking-[0.28em] text-steel">Architecture</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
             The control plane sits between the AI system and the production operator.
           </h2>
         </div>
-        <div className="mx-auto mt-12 max-w-[900px]">
+        <div className="mx-auto mt-16 max-w-[900px]">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             {[
               { label: "AI Application", icon: Bot },
@@ -432,7 +452,7 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
         </div>
       </section>
 
-      <section className={`${marketingContainerClass} ${marketingSectionLargeClass} py-16`}>
+      <section className={`${marketingContainerClass} ${marketingSectionClass} py-12`}>
         <div className="mx-auto max-w-4xl">
           <Card className={`${marketingCardClass} bg-[linear-gradient(180deg,#ffffff,#f5f6f8)]`}>
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Run your AI systems with reliability</p>

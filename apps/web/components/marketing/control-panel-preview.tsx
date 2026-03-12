@@ -1,30 +1,43 @@
-import { ControlPanelView } from "@/components/presenters/control-panel-view";
-import { demoControlPanel, demoProject } from "@/lib/demoData";
+import Image from "next/image";
+
+const previewScreens = [
+  {
+    title: "System Status",
+    body: "The primary control surface for reliability score, incidents, and operator next steps.",
+    src: "/screenshots/control-panel.png",
+    alt: "Reliai control panel",
+  },
+  {
+    title: "Incident Command Center",
+    body: "Root-cause signals, mitigation guidance, and response context for live incidents.",
+    src: "/screenshots/incident.png",
+    alt: "Reliai incident command center",
+  },
+] as const;
 
 export function ControlPanelPreview() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="border-b border-zinc-200 bg-[linear-gradient(180deg,#fbfbfc,#f1f3f6)] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-rose-400" />
-          <span className="h-3 w-3 rounded-full bg-amber-400" />
-          <span className="h-3 w-3 rounded-full bg-emerald-400" />
-          <span className="ml-3 text-[11px] uppercase tracking-[0.18em] text-steel">Reliai control panel</span>
+    <div className="grid gap-4">
+      {previewScreens.map((screen) => (
+        <div
+          key={screen.title}
+          className="overflow-hidden rounded-[24px] border border-zinc-200 bg-white shadow-sm"
+        >
+          <div className="border-b border-zinc-200 bg-[linear-gradient(180deg,#fbfbfc,#f1f3f6)] px-5 py-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">{screen.title}</p>
+            <p className="mt-2 text-sm leading-6 text-steel">{screen.body}</p>
+          </div>
+          <div className="flex h-[320px] items-center justify-center bg-zinc-50 px-4 py-4">
+            <Image
+              src={screen.src}
+              alt={screen.alt}
+              width={3200}
+              height={2000}
+              className="h-full w-full object-contain object-center"
+            />
+          </div>
         </div>
-      </div>
-      <div className="aspect-video overflow-hidden bg-zinc-100">
-        <div className="h-full w-[133.333%] origin-top-left scale-[0.75]">
-          <ControlPanelView
-            projectId={demoProject.id}
-            projectName={demoProject.name}
-            environment={demoProject.environment}
-            panel={demoControlPanel}
-            screenshotMode
-            screenshotWidth={1200}
-            highlightedMetrics={["reliability_score", "active_incidents", "recommended_guardrail"]}
-          />
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
