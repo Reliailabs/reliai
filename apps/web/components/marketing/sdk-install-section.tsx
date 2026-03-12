@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Activity, Radar, ShieldCheck, Workflow } from "lucide-react";
 
 import { CopyButton } from "@/components/copy-button";
-import { Container } from "@/components/layout/container";
-import { Section } from "@/components/layout/section";
-import { marketingCardClass } from "@/components/marketing/spatial-system";
+import {
+  marketingCardClass,
+  marketingContainerClass,
+  marketingSectionClass,
+} from "@/components/marketing/spatial-system";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -66,8 +68,8 @@ export function SdkInstallSection() {
   const example = examples[activeTab];
 
   return (
-    <Section className="border-b border-zinc-200 bg-white">
-      <Container className="py-16">
+    <section className={cn("border-b border-zinc-200 bg-white", marketingSectionClass)}>
+      <div className={cn(marketingContainerClass, "py-16")}>
         <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-steel">Install Reliai in 60 seconds</p>
@@ -120,7 +122,7 @@ export function SdkInstallSection() {
             <code>{example.code}</code>
           </pre>
         </Card>
-      </Container>
-    </Section>
+      </div>
+    </section>
   );
 }

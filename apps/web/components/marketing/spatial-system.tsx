@@ -2,6 +2,9 @@ import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
+export const marketingContainerClass = "mx-auto w-full max-w-[1200px] px-6";
+export const marketingSectionClass = "mt-24";
+export const marketingSectionLargeClass = "mt-32";
 export const marketingCardClass = "rounded-xl border border-zinc-200 bg-white p-6 shadow-sm";
 export const marketingMetricClass = "font-mono tracking-[-0.03em]";
 

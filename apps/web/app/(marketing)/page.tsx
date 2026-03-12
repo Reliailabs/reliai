@@ -12,13 +12,14 @@ import {
   Workflow,
 } from "lucide-react";
 
-import { Container } from "@/components/layout/container";
-import { Section } from "@/components/layout/section";
 import { ControlPanelPreview } from "@/components/marketing/control-panel-preview";
 import { FailureTimeline } from "@/components/marketing/failure-timeline";
 import {
   marketingCardClass,
+  marketingContainerClass,
   marketingMetricClass,
+  marketingSectionClass,
+  marketingSectionLargeClass,
   MarketingScreenshotCard,
 } from "@/components/marketing/spatial-system";
 import { SdkInstallSection } from "@/components/marketing/sdk-install-section";
@@ -84,9 +85,9 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
 
   return (
     <main className="overflow-x-hidden bg-[#f7f8fa]">
-      <Section size="large" className="relative overflow-hidden border-b border-zinc-200">
+      <section className="relative overflow-hidden border-b border-zinc-200">
         <div className="absolute inset-x-0 top-0 h-[40rem] bg-[radial-gradient(circle_at_65%_16%,rgba(255,255,255,0.78),transparent_24%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,248,250,1))]" />
-        <Container className="relative pb-8 pt-16 lg:pt-20">
+        <div className={`${marketingContainerClass} relative pb-8 pt-16 lg:pt-20`}>
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.32em] text-steel">AI reliability control plane</p>
             <h1 className="mt-5 text-5xl font-semibold tracking-tight text-ink lg:text-6xl">
@@ -189,11 +190,11 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
               </div>
             </div>
           </div>
-        </Container>
-      </Section>
+        </div>
+      </section>
 
-      <Section size="large" className="border-b border-zinc-200 bg-white">
-        <Container className="py-16">
+      <section className={`border-b border-zinc-200 bg-white ${marketingSectionLargeClass}`}>
+        <div className={`${marketingContainerClass} py-16`}>
           <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
             <div className="flex h-full flex-col">
               <Card className={`${marketingCardClass} h-full flex flex-col`}>
@@ -227,11 +228,10 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
               </Card>
             </div>
           </div>
-        </Container>
-      </Section>
+        </div>
+      </section>
 
-      <Section>
-        <Container className="py-16">
+      <section className={`${marketingContainerClass} ${marketingSectionClass} py-16`}>
         <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <Card className={`${marketingCardClass} h-full`}>
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Interactive demo</p>
@@ -291,11 +291,10 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
             </Card>
           </div>
         </div>
-        </Container>
-      </Section>
+      </section>
 
-      <Section className="border-y border-zinc-200 bg-white">
-        <Container className="py-16">
+      <section className={`border-y border-zinc-200 bg-white ${marketingSectionClass}`}>
+        <div className={`${marketingContainerClass} py-16`}>
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-steel">Playground</p>
@@ -341,11 +340,10 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
               </div>
             </Card>
           </div>
-        </Container>
-      </Section>
+        </div>
+      </section>
 
-      <Section>
-        <Container className="py-16">
+      <section className={`${marketingContainerClass} ${marketingSectionClass} py-16`}>
         <div className="max-w-3xl">
           <p className="text-xs uppercase tracking-[0.28em] text-steel">The Reliai loop</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
@@ -360,11 +358,10 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
             </Card>
           ))}
         </div>
-        </Container>
-      </Section>
+      </section>
 
-      <Section className="border-y border-zinc-200 bg-white">
-        <Container className="py-16">
+      <section className={`border-y border-zinc-200 bg-white ${marketingSectionClass}`}>
+        <div className={`${marketingContainerClass} py-16`}>
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.28em] text-steel">Architecture in motion</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
@@ -385,13 +382,12 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
               );
             })}
           </div>
-        </Container>
-      </Section>
+        </div>
+      </section>
 
       <SdkInstallSection />
 
-      <Section>
-        <Container className="overflow-x-hidden py-16">
+      <section className={`${marketingContainerClass} ${marketingSectionClass} overflow-x-hidden py-16`}>
         <div className="max-w-3xl">
           <p className="text-xs uppercase tracking-[0.28em] text-steel">Architecture</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
@@ -434,11 +430,9 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
             })}
           </div>
         </div>
-        </Container>
-      </Section>
+      </section>
 
-      <Section size="large">
-        <Container className="py-16">
+      <section className={`${marketingContainerClass} ${marketingSectionLargeClass} py-16`}>
         <div className="mx-auto max-w-4xl">
           <Card className={`${marketingCardClass} bg-[linear-gradient(180deg,#ffffff,#f5f6f8)]`}>
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Run your AI systems with reliability</p>
@@ -462,8 +456,7 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
             </div>
           </Card>
         </div>
-        </Container>
-      </Section>
+      </section>
     </main>
   );
 }
