@@ -23,7 +23,9 @@ from app.services.reliability_graph import (
     get_model_failure_graph,
 )
 from app.services.trace_query_router import query_recent_traces
-from app.services.trace_warehouse import TraceWarehouseQuery
+from app.services.trace_query_router import aggregate_trace_metrics
+from app.services.trace_query_router import count_distinct_services
+from app.services.trace_warehouse import TraceWarehouseAggregateQuery, TraceWarehouseQuery
 from app.services.global_metrics import (
     METRIC_AVERAGE_LATENCY_MS,
     METRIC_STRUCTURED_OUTPUT_VALIDITY_RATE,
@@ -127,6 +129,15 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID, environ
             window_start=last_24h,
             window_end=now,
             limit=5000,
+        )
+    )
+    trace_summary = aggregate_trace_metrics(
+        TraceWarehouseAggregateQuery(
+            organization_id=project.organization_id,
+            project_id=project_id,
+            environment_id=environment_record.id if environment_record is not None else None,
+            window_start=last_24h,
+            window_end=now,
         )
     )
     guardrail_activity_counts: dict[str, int] = {}
@@ -244,10 +255,22 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID, environ
         incident_count=incident_rate_last_24h,
         guardrail_triggers=guardrail_trigger_rate_last_24h,
     )
+    traces_last_24h = int(trace_summary["trace_count"])
+    traces_per_second = round(traces_last_24h / 86400, 1) if traces_last_24h > 0 else 0.0
+    active_services = count_distinct_services(
+        organization_id=project.organization_id,
+        project_id=project_id,
+        environment_id=environment_record.id if environment_record is not None else None,
+        window_start=last_24h,
+        window_end=now,
+    )
 
     return {
         "reliability_score": reliability_score,
+        "traces_last_24h": traces_last_24h,
+        "traces_per_second": traces_per_second,
         "active_incidents": sum(1 for incident in recent_incidents if incident.status != "resolved"),
+        "active_services": active_services,
         "deployment_risk": {
             "latest_deployment_id": str(latest_deployment.id) if latest_deployment is not None else None,
             "deployed_at": latest_deployment.deployed_at if latest_deployment is not None else None,

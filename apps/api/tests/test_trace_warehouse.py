@@ -22,6 +22,7 @@ def test_trace_warehouse_ingest_persists_trace_event(client, db_session, fake_qu
         {
             "timestamp": "2026-03-01T12:00:00Z",
             "request_id": "warehouse-trace",
+            "service_name": "gateway",
             "model_name": "gpt-4.1-mini",
             "model_provider": "openai",
             "prompt_version": "v1",
@@ -45,6 +46,7 @@ def test_trace_warehouse_ingest_persists_trace_event(client, db_session, fake_qu
 
     row = fake_trace_warehouse.rows[str(trace_id)]
     assert row.project_id == UUID(project["id"])
+    assert row.service_name == "gateway"
     assert row.prompt_version_id is not None
     assert row.model_version_id is not None
     assert row.structured_output_valid is True

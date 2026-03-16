@@ -17,6 +17,9 @@ class CustomerExpansionOrganizationRead(APIModel):
 
 class SystemCustomerExpansionRead(APIModel):
     average_expansion_ratio: float
+    median_expansion_ratio: float
+    top_expansion_ratio: float
     total_platform_growth_pct: float
     breakout_customers: int
+    total_telemetry_30d: int
     organizations: list[CustomerExpansionOrganizationRead]

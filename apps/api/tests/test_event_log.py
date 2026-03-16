@@ -78,3 +78,27 @@ def test_reprocess_events_replays_historical_event(
 
     assert count == 1
     assert replayed == [("trace_events", "trace_ingested", "trace-replay-1")]
+
+
+def test_publish_event_supports_organization_scoped_partitioning(client, db_session, fake_event_stream):
+    operator = create_operator(db_session, email="event-org-only@acme.test")
+    session_payload = sign_in(client, email=operator.email)
+    organization = create_organization(client, session_payload, name="Org Only", slug="org-only")
+
+    message = publish_event(
+        "trace_events",
+        {
+            "event_type": "breakout_account_detected",
+            "organization_id": organization["id"],
+            "computed_at": "2026-03-12T02:00:00Z",
+            "expansion_ratio": 12.4,
+            "current_30_day_traces": 420000,
+            "first_30_day_traces": 34000,
+        },
+    )
+
+    row = db_session.query(EventLog).filter(EventLog.event_type == "breakout_account_detected").one()
+    assert row.organization_id == UUID(organization["id"])
+    assert row.project_id is None
+    assert row.payload_json["expansion_ratio"] == 12.4
+    assert message.key == organization["id"]

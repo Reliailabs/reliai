@@ -1,0 +1,74 @@
+name: Regenerate Marketing Screenshots
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/components/**"
+      - "apps/web/app/**"
+      - "apps/web/lib/demoData.ts"
+      - "scripts/generate_marketing_screenshots.ts"
+      - "scripts/generate_screenshots.ts"
+      - "tests/visual/**"
+      - ".github/workflows/regenerate_marketing_screenshots.yml"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "apps/web/components/**"
+      - "apps/web/app/**"
+      - "apps/web/lib/demoData.ts"
+      - "scripts/generate_marketing_screenshots.ts"
+      - "scripts/generate_screenshots.ts"
+      - "tests/visual/**"
+      - ".github/workflows/regenerate_marketing_screenshots.yml"
+
+jobs:
+  marketing-screenshots:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run marketing layout checks
+        run: pnpm exec playwright test tests/visual/layout_marketing.spec.ts
+
+      - name: Run screenshot readiness checks
+        run: pnpm exec playwright test tests/visual/screenshot_readiness.spec.ts
+
+      - name: Build web app
+        run: pnpm --filter web build
+
+      - name: Regenerate marketing screenshots
+        run: pnpm screenshots:marketing
+
+      - name: Check for screenshot drift
+        run: |
+          if ! git diff --exit-code -- apps/web/public/screenshots/; then
+            echo "Marketing screenshots are outdated."
+            echo ""
+            echo "Run locally:"
+            echo ""
+            echo "pnpm screenshots:marketing"
+            echo ""
+            echo "Then commit the updated files."
+            exit 1
+          fi

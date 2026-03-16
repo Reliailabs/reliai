@@ -1,6 +1,6 @@
 # Reliai Product Capabilities Index
 
-Last updated: March 11, 2026
+Last updated: March 13, 2026
 
 Maintenance rule:
 - This document must be updated whenever new platform capabilities, APIs, SDK functionality, or operator workflows are introduced.
@@ -24,6 +24,7 @@ Capabilities:
 - organization policy synchronization
 - trace replay helper
 - pipeline spans
+- auto-instrumentation helpers for OpenAI, Anthropic, LangChain, and LlamaIndex
 
 Supported span types:
 
@@ -48,6 +49,7 @@ Capabilities:
 - runtime guardrails
 - replay helpers
 - pipeline spans
+- auto-instrumentation helpers for OpenAI, Anthropic, LangChain, and LlamaIndex
 
 ## 2. Trace Infrastructure
 
@@ -180,6 +182,8 @@ Analytics capabilities:
 - daily rollups
 - customer expansion metrics
 - reliability metrics
+- breakout-account detection
+- cohort expansion analytics
 
 ## 10. Developer Experience
 
@@ -188,6 +192,7 @@ Public developer surfaces:
 - interactive demo
 - failure playground
 - SDK install section
+- screenshot routes
 
 Developer workflows:
 
@@ -202,6 +207,7 @@ Developer workflows:
 System surfaces include:
 
 - customer expansion dashboard
+- growth dashboard
 - platform health dashboard
 - pipeline observability
 - reliability patterns dashboard
@@ -219,6 +225,7 @@ Python SDK:
 - organization policy sync
 - trace replay helper
 - pipeline spans
+- auto-instrumentation helpers for OpenAI, Anthropic, LangChain, and LlamaIndex
 
 Node SDK:
 - async batching
@@ -227,6 +234,7 @@ Node SDK:
 - runtime guardrails
 - replay helpers
 - pipeline spans
+- auto-instrumentation helpers for OpenAI, Anthropic, LangChain, and LlamaIndex
 
 ### Trace infrastructure
 
@@ -259,6 +267,7 @@ Capabilities:
 - incident command center
 - root-cause hints
 - related regression linking
+- control-panel system health and traffic grouping
 
 ### Guardrails and runtime protection
 
@@ -347,6 +356,9 @@ Analytics:
 - customer expansion metrics
 - customer reliability metrics
 - growth metrics
+- breakout-account detection events
+- usage expansion cohort curves
+- customer usage distribution charts
 - warehouse query router
 - archive path
 - warehouse access control
@@ -359,6 +371,7 @@ Public surfaces:
 - failure playground
 - screenshot routes
 - SDK install section
+- screenshot stability CI protections
 
 Developer workflows:
 - SDK install
@@ -367,6 +380,7 @@ Developer workflows:
 - guardrail configuration
 - deployment safety checks
 - failure simulation in playground
+- screenshot regeneration and drift review
 
 ### Internal system dashboards
 
@@ -379,6 +393,38 @@ Internal operator surfaces:
 - intelligence dashboard
 - reliability patterns dashboard
 - extension operations dashboard
+
+### Control panel and growth surfaces
+
+Project control panel:
+- reliability score
+- active incidents
+- guardrails protecting
+- traces analyzed (24h)
+- traces per second
+- active services
+- recommended operator guidance
+
+Growth dashboard:
+- top expanding customers
+- median expansion ratio
+- top expansion ratio
+- breakout accounts detected
+- total telemetry (30d)
+- usage expansion cohort chart
+- customer usage distribution chart
+
+### Marketing screenshot stability
+
+Capabilities:
+- panel-first control-panel screenshot capture
+- screenshot-only control-panel compaction
+- hybrid fallback to full-page capture
+- Retina screenshot generation
+- deterministic mixed demo state for screenshots
+- Playwright layout regression check
+- Playwright readiness guard
+- CI screenshot drift detection for `apps/web/public/screenshots`
 
 ### Governance, auth, and tenancy
 

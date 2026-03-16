@@ -258,7 +258,10 @@ export interface ControlPanelRecentDeployment {
 
 export interface ProjectReliabilityControlPanel {
   reliability_score: number;
+  traces_last_24h: number;
+  traces_per_second?: number;
   active_incidents: number;
+  active_services: number;
   deployment_risk: ControlPanelDeploymentRisk;
   simulation: ControlPanelSimulation;
   incidents: ControlPanelIncidents;
@@ -408,6 +411,23 @@ export interface SystemGrowthRead {
   incident_metrics: SystemGrowthIncidentMetrics;
   guardrail_metrics: SystemGrowthGuardrailMetrics;
   usage_tiers: SystemGrowthUsageTiers;
+  expansion_metrics: {
+    median_expansion_ratio: number;
+    top_expansion_ratio: number;
+    breakout_accounts_detected: number;
+    total_telemetry_30d: number;
+  };
+  usage_expansion_cohort: Array<{
+    month_index: number;
+    usage_index: number;
+    organizations: number;
+  }>;
+  customer_usage_distribution: Array<{
+    rank: number;
+    organization_id: string;
+    organization_name: string;
+    traces_30d: number;
+  }>;
 }
 
 export interface CustomerExpansionOrganizationRead {
@@ -422,8 +442,11 @@ export interface CustomerExpansionOrganizationRead {
 
 export interface SystemCustomerExpansionRead {
   average_expansion_ratio: number;
+  median_expansion_ratio: number;
+  top_expansion_ratio: number;
   total_platform_growth_pct: number;
   breakout_customers: number;
+  total_telemetry_30d: number;
   organizations: CustomerExpansionOrganizationRead[];
 }
 

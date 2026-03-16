@@ -76,6 +76,7 @@ class TraceListQuery(BaseModel):
 class TraceIngestRequest(BaseModel):
     timestamp: datetime
     request_id: str = Field(min_length=2, max_length=255)
+    service_name: str | None = Field(default=None, max_length=120)
     trace_id: str | None = Field(default=None, max_length=255)
     span_id: str | None = Field(default=None, max_length=255)
     parent_span_id: str | None = Field(default=None, max_length=255)

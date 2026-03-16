@@ -20,9 +20,16 @@ export const demoProjectSummary = {
   guardrail_compliance: 98,
 };
 
-export const demoControlPanel: ProjectReliabilityControlPanel = {
+const MIN_TRACES_LAST_24H = 2_000_000;
+const MIN_ACTIVE_SERVICES = 3;
+const MIN_GUARDRAIL_ACTIVITY = 10;
+
+const baseDemoControlPanel: ProjectReliabilityControlPanel = {
   reliability_score: 92,
+  traces_last_24h: 2_300_000,
+  traces_per_second: 26.6,
   active_incidents: 1,
+  active_services: 6,
   deployment_risk: {
     latest_deployment_id: "dep_demo_v42",
     deployed_at: "2026-03-11T09:00:00Z",
@@ -40,7 +47,7 @@ export const demoControlPanel: ProjectReliabilityControlPanel = {
     recent_incidents: [
       {
         incident_id: "inc_demo_latency",
-        title: "Retrieval latency regression after prompt rollout",
+        title: "Hallucination spike after retriever prompt rollout",
         severity: "high",
         status: "open",
         started_at: "2026-03-11T10:22:00Z",
@@ -70,16 +77,16 @@ export const demoControlPanel: ProjectReliabilityControlPanel = {
   },
   high_risk_patterns: [
     { pattern: "Hallucination spike detected", risk_level: "medium", trace_count: 238, confidence: 0.81 },
-    { pattern: "Latency regression in retrieval stage", risk_level: "high", trace_count: 142, confidence: 0.88 },
+    { pattern: "Retriever prompt regression increased unsafe answers", risk_level: "high", trace_count: 142, confidence: 0.88 },
   ],
   graph_high_risk_patterns: [
-    { pattern: "Retrieval timeout under long-context prompts", risk_level: "high", trace_count: 142, confidence: 0.88 },
+    { pattern: "Hallucination cluster after retriever prompt change", risk_level: "high", trace_count: 142, confidence: 0.88 },
   ],
   recommended_guardrails: [
     {
       policy_type: "structured_output",
-      recommended_action: "Enable schema validation and retries",
-      title: "Enable structured output validation",
+      recommended_action: "Add hallucination guardrail to retriever prompt.",
+      title: "Add hallucination guardrail to retriever prompt",
       confidence: 0.91,
       model_family: "gpt-4.1",
     },
@@ -109,6 +116,58 @@ export const demoControlPanel: ProjectReliabilityControlPanel = {
     ],
   },
 };
+
+function normalizeDemoControlPanel(panel: ProjectReliabilityControlPanel): ProjectReliabilityControlPanel {
+  const tracesLast24h = Math.max(panel.traces_last_24h, MIN_TRACES_LAST_24H);
+  const activeServices = Math.max(panel.active_services ?? 0, MIN_ACTIVE_SERVICES);
+  const guardrailTriggers = Math.max(panel.guardrails.trigger_rate_last_24h, MIN_GUARDRAIL_ACTIVITY);
+  const activeIncidents = Math.max(panel.active_incidents, 1);
+  const recentIncidents =
+    panel.incidents.recent_incidents.length > 0
+      ? panel.incidents.recent_incidents
+      : [
+          {
+            incident_id: "inc_demo_hallucination",
+            title: "Hallucination spike after retriever prompt rollout",
+            severity: "high",
+            status: "open",
+            started_at: "2026-03-11T10:22:00Z",
+          },
+        ];
+  const incidentRate = Math.max(panel.incidents.incident_rate_last_24h, 1);
+  const tracesPerSecond = Math.round((tracesLast24h / 86400) * 10) / 10;
+  const currentGuardrailTotal = panel.guardrail_activity.reduce((sum, item) => sum + item.trigger_count, 0);
+  const guardrailActivity =
+    currentGuardrailTotal >= MIN_GUARDRAIL_ACTIVITY
+      ? panel.guardrail_activity
+      : [
+          ...panel.guardrail_activity,
+          {
+            policy_type: "hallucination_guard",
+            trigger_count: MIN_GUARDRAIL_ACTIVITY - currentGuardrailTotal,
+          },
+        ];
+
+  return {
+    ...panel,
+    traces_last_24h: tracesLast24h,
+    traces_per_second: tracesPerSecond,
+    active_incidents: activeIncidents,
+    active_services: activeServices,
+    incidents: {
+      ...panel.incidents,
+      recent_incidents: recentIncidents,
+      incident_rate_last_24h: incidentRate,
+    },
+    guardrails: {
+      ...panel.guardrails,
+      trigger_rate_last_24h: guardrailTriggers,
+    },
+    guardrail_activity: guardrailActivity,
+  };
+}
+
+export const demoControlPanel: ProjectReliabilityControlPanel = normalizeDemoControlPanel(baseDemoControlPanel);
 
 export const demoTraceGraph: TraceGraphRead = {
   trace_id: "trace_demo_agent_94f3",
@@ -149,7 +208,7 @@ export const demoTraceGraph: TraceGraphRead = {
       guardrail_policy: "latency_retry",
       guardrail_action: "retry",
       timestamp: "2026-03-11T10:24:00Z",
-      metadata_json: { chunks: 6, query: "refund eligibility for order cancellation" },
+      metadata_json: { chunks: 6, query: "refund eligibility for order cancellation", guardrail_retry: true },
     },
     {
       id: "node_prompt",
@@ -185,7 +244,7 @@ export const demoTraceGraph: TraceGraphRead = {
       guardrail_policy: "structured_output",
       guardrail_action: "retry",
       timestamp: "2026-03-11T10:24:01Z",
-      metadata_json: { temperature: 0.2 },
+      metadata_json: { temperature: 0.2, guardrail_retry: true },
     },
     {
       id: "node_tool",

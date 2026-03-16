@@ -24,7 +24,10 @@ function buildPanel(scenario: PlaygroundScenario, stage: PlaygroundSimulationSta
 
   return {
     reliability_score: reliabilityScore,
+    traces_last_24h: stage === "idle" ? 128_000 : 146_000,
+    traces_per_second: stage === "idle" ? 1.5 : 1.7,
     active_incidents: activeIncidents,
+    active_services: activeIncidents > 0 ? 6 : 4,
     deployment_risk: {
       latest_deployment_id: "dep_playground",
       deployed_at: "2026-03-11T09:00:00Z",

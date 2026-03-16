@@ -11,7 +11,7 @@ const outputDir = path.join(root, "apps/web/public/screenshots");
 const baseUrl = "http://127.0.0.1:3000";
 const viewport = {
   width: 1600,
-  height: 1000,
+  height: 1250,
 } as const;
 
 const shots = [
@@ -19,25 +19,30 @@ const shots = [
     route: "/marketing/screenshot/control-panel",
     file: "control-panel.png",
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
-    scrollY: 160,
+    readySelector: "[data-control-panel-ready], [data-tour-id='metric-reliability-score']",
+    elementSelector: "[data-control-panel]",
+    scrollY: 0,
   },
   {
     route: "/marketing/screenshot/trace-graph",
     file: "trace-graph.png",
     signals: ["text=Trace Analysis", "text=Slowest step", "text=Largest token consumer"],
-    scrollY: 120,
+    readySelector: "text=Trace Analysis",
+    scrollY: 0,
   },
   {
     route: "/marketing/screenshot/incident",
     file: "incident.png",
     signals: ["text=Likely root cause", "text=Recommended mitigation"],
-    scrollY: 80,
+    readySelector: "text=Recommended mitigation",
+    scrollY: 0,
   },
   {
     route: "/marketing/screenshot/deployment",
     file: "deployment.png",
     signals: ["text=Deployment safety check", "text=Deployment risk factors"],
-    scrollY: 120,
+    readySelector: "text=Deployment risk factors",
+    scrollY: 0,
   },
 ];
 
@@ -81,13 +86,35 @@ async function captureShot(
     await page.waitForSelector(signal);
   }
 
-  await page.evaluate((scrollY) => {
+  if ("readySelector" in shot && shot.readySelector) {
+    await page.waitForSelector(shot.readySelector);
+  }
+
+  await page.evaluate(({ scrollY }) => {
+    document.documentElement.style.zoom = "1";
+    document.body.style.zoom = "1";
     window.scrollTo({ top: scrollY, left: 0, behavior: "instant" });
-  }, shot.scrollY);
+  }, { scrollY: shot.scrollY });
   await page.waitForTimeout(250);
 
+  const outputPath = path.join(outputDir, shot.file);
+
+  if ("elementSelector" in shot && shot.elementSelector) {
+    const panel = page.locator(shot.elementSelector).first();
+    if (await panel.count()) {
+      const box = await panel.boundingBox();
+      if (box && box.width > 0 && box.height > 0) {
+        await panel.screenshot({
+          path: outputPath,
+          type: "png",
+        });
+        return;
+      }
+    }
+  }
+
   await page.screenshot({
-    path: path.join(outputDir, shot.file),
+    path: outputPath,
     type: "png",
   });
 }

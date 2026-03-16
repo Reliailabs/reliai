@@ -122,6 +122,7 @@ def create_trace(db: Session, project: Project, payload: TraceIngestRequest) -> 
             environment=environment.name,
             timestamp=payload.timestamp,
             request_id=payload.request_id,
+            service_name=payload.service_name,
             trace_id=trace_id or str(trace_row_id),
             span_id=span_id or str(trace_row_id),
             parent_span_id=parent_span_id,

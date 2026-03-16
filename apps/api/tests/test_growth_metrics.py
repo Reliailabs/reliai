@@ -6,6 +6,8 @@ from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.services.trace_warehouse import TraceWarehouseEventRow
+from app.workers.usage_expansion_metrics import run_usage_expansion_metrics
+from .conftest import BorrowedSession
 from .test_api import auth_headers, create_operator, create_organization, create_project, sign_in
 
 
@@ -27,6 +29,10 @@ def test_system_growth_endpoint_aggregates_warehouse_incident_and_guardrail_metr
 ):
     now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
     monkeypatch.setattr("app.services.growth_metrics._utc_now", lambda: now)
+    monkeypatch.setattr("app.services.customer_expansion_metrics._utc_now", lambda: now)
+    monkeypatch.setattr("app.workers.usage_expansion_metrics.SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr("app.services.customer_expansion_metrics.BREAKOUT_MIN_TRACES", 20)
+    monkeypatch.setattr("app.services.customer_expansion_metrics.EXPANSION_MIN_BASELINE_TRACES", 1)
     monkeypatch.setattr("app.services.growth_metrics.USAGE_TIER_UNDER_1M", 10)
     monkeypatch.setattr("app.services.growth_metrics.USAGE_TIER_1M_10M", 20)
     monkeypatch.setattr("app.services.growth_metrics.USAGE_TIER_10M_100M", 30)
@@ -49,6 +55,7 @@ def test_system_growth_endpoint_aggregates_warehouse_incident_and_guardrail_metr
                     organization_id=UUID(project["organization_id"]),
                     project_id=UUID(project["id"]),
                     environment_id=UUID(project["environments"][0]["id"]),
+                    storage_trace_id=uuid4(),
                     trace_id=uuid4(),
                     prompt_version_id=None,
                     model_version_id=None,
@@ -162,6 +169,7 @@ def test_system_growth_endpoint_aggregates_warehouse_incident_and_guardrail_metr
         ]
     )
     db_session.commit()
+    run_usage_expansion_metrics()
 
     response = client.get("/api/v1/system/growth", headers=auth_headers(session_payload))
 
@@ -180,6 +188,12 @@ def test_system_growth_endpoint_aggregates_warehouse_incident_and_guardrail_metr
         "10m_100m": 1,
         "100m_plus": 2,
     }
+    assert payload["expansion_metrics"]["median_expansion_ratio"] >= 1.0
+    assert payload["expansion_metrics"]["top_expansion_ratio"] == 1.0
+    assert payload["expansion_metrics"]["breakout_accounts_detected"] == 0
+    assert payload["expansion_metrics"]["total_telemetry_30d"] == 111
+    assert len(payload["usage_expansion_cohort"]) == 13
+    assert payload["customer_usage_distribution"][0]["traces_30d"] >= payload["customer_usage_distribution"][1]["traces_30d"]
 
 
 def test_system_growth_endpoint_requires_operator_auth(client):

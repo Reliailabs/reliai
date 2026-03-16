@@ -123,6 +123,7 @@ class TraceWarehouseEventRow:
     storage_trace_id: UUID
     trace_id: str | None
     success: bool
+    service_name: str | None = None
     span_id: str | None = None
     parent_span_id: str | None = None
     span_name: str | None = None
@@ -173,6 +174,17 @@ class TraceWarehouseClient:
         raise NotImplementedError
 
     def aggregate_trace_metrics(self, query: TraceWarehouseAggregateQuery) -> dict[str, Any]:  # pragma: no cover
+        raise NotImplementedError
+
+    def count_distinct_services(
+        self,
+        *,
+        organization_id: UUID,
+        project_id: UUID,
+        environment_id: UUID | None,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> int:  # pragma: no cover
         raise NotImplementedError
 
     def query_hourly_metrics(
@@ -232,6 +244,18 @@ class NullTraceWarehouseClient(TraceWarehouseClient):
             "structured_output_validity_rate": None,
             "average_cost_usd": None,
         }
+
+    def count_distinct_services(
+        self,
+        *,
+        organization_id: UUID,
+        project_id: UUID,
+        environment_id: UUID | None,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> int:
+        del organization_id, project_id, environment_id, window_start, window_end
+        return 0
 
     def query_hourly_metrics(
         self,
@@ -302,6 +326,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     "organization_id": str(row.organization_id),
                     "project_id": str(row.project_id),
                     "environment_id": str(row.environment_id) if row.environment_id is not None else None,
+                    "service_name": row.service_name,
                     "storage_trace_id": str(row.storage_trace_id),
                     "trace_id": row.trace_id,
                     "span_id": row.span_id,
@@ -389,6 +414,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             organization_id,
             project_id,
             environment_id,
+            service_name,
             storage_trace_id,
             trace_id,
             span_id,
@@ -434,6 +460,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     organization_id=UUID(payload["organization_id"]),
                     project_id=UUID(payload["project_id"]),
                     environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
+                    service_name=payload.get("service_name"),
                     storage_trace_id=UUID(payload["storage_trace_id"]),
                     trace_id=payload.get("trace_id"),
                     span_id=payload.get("span_id"),
@@ -602,6 +629,46 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             "average_cost_usd": payload.get("average_cost_usd"),
         }
 
+    def count_distinct_services(
+        self,
+        *,
+        organization_id: UUID,
+        project_id: UUID,
+        environment_id: UUID | None,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> int:
+        self.ensure_schema()
+        clauses = [
+            "organization_id = toUUID({organization_id:String})",
+            "project_id = toUUID({project_id:String})",
+            "timestamp >= parseDateTime64BestEffort({window_start:String})",
+            "timestamp < parseDateTime64BestEffort({window_end:String})",
+            "service_name IS NOT NULL",
+            "service_name != ''",
+        ]
+        params: dict[str, Any] = {
+            "organization_id": str(organization_id),
+            "project_id": str(project_id),
+            "window_start": _ensure_utc(window_start).isoformat(),
+            "window_end": _ensure_utc(window_end).isoformat(),
+        }
+        if environment_id is not None:
+            clauses.append("environment_id = toUUID({environment_id:String})")
+            params["environment_id"] = str(environment_id)
+        sql = f"""
+        SELECT uniqExact(service_name) AS active_services
+        FROM {TRACE_WAREHOUSE_TABLE}
+        WHERE {' AND '.join(clauses)}
+        FORMAT JSONEachRow
+        """
+        response = self._post(sql, params=params)
+        line = next((item for item in response.text.splitlines() if item.strip()), "")
+        if not line:
+            return 0
+        payload = json.loads(line)
+        return int(payload.get("active_services", 0) or 0)
+
     def query_hourly_metrics(
         self,
         *,
@@ -654,6 +721,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
             organization_id,
             project_id,
             environment_id,
+            service_name,
             storage_trace_id,
             trace_id,
             span_id,
@@ -700,6 +768,7 @@ class HttpTraceWarehouseClient(TraceWarehouseClient):
                     organization_id=UUID(payload["organization_id"]),
                     project_id=UUID(payload["project_id"]),
                     environment_id=UUID(payload["environment_id"]) if payload.get("environment_id") else None,
+                    service_name=payload.get("service_name"),
                     storage_trace_id=UUID(payload["storage_trace_id"]),
                     trace_id=payload.get("trace_id"),
                     span_id=payload.get("span_id"),
@@ -850,6 +919,7 @@ def build_trace_event_row_from_payload(payload: dict[str, Any]) -> TraceWarehous
         organization_id=UUID(event["organization_id"]),
         project_id=UUID(event["project_id"]),
         environment_id=UUID(event["environment_id"]) if event.get("environment_id") else None,
+        service_name=event.get("service_name"),
         storage_trace_id=UUID(event["trace_id"]),
         trace_id=_metadata_trace_field(event.get("metadata") or {}, "trace_id", "reliai_trace_id") or event["trace_id"],
         span_id=_metadata_trace_field(event.get("metadata") or {}, "span_id", "reliai_span_id") or event["trace_id"],
@@ -943,6 +1013,25 @@ def _aggregate_trace_metrics(query: TraceWarehouseAggregateQuery) -> dict[str, A
     _assert_router_context()
     _enforce_event_window(query.window_start, query.window_end)
     return get_trace_warehouse_client().aggregate_trace_metrics(query)
+
+
+def _count_distinct_services(
+    *,
+    organization_id: UUID,
+    project_id: UUID,
+    environment_id: UUID | None,
+    window_start: datetime,
+    window_end: datetime,
+) -> int:
+    _assert_router_context()
+    _enforce_event_window(window_start, window_end)
+    return get_trace_warehouse_client().count_distinct_services(
+        organization_id=organization_id,
+        project_id=project_id,
+        environment_id=environment_id,
+        window_start=window_start,
+        window_end=window_end,
+    )
 
 
 def _query_hourly_metrics(

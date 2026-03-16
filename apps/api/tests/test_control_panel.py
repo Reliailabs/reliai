@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+from decimal import Decimal
+from uuid import UUID, uuid4
 
 from app.models.deployment import Deployment
 from app.models.deployment_risk_score import DeploymentRiskScore
@@ -9,6 +10,7 @@ from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
 from app.models.incident import Incident
 from app.models.model_version import ModelVersion
+from app.services.trace_warehouse import TraceWarehouseEventRow
 from .test_api import auth_headers, create_operator, create_organization, create_project, sign_in
 
 
@@ -30,7 +32,7 @@ def _seed_control_panel_project(client, db_session, *, suffix: str):
     return session_payload, organization, project
 
 
-def test_control_panel_aggregates_existing_signals(client, db_session, monkeypatch):
+def test_control_panel_aggregates_existing_signals(client, db_session, fake_trace_warehouse, monkeypatch):
     now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
     monkeypatch.setattr("app.services.reliability_control_panel._utc_now", lambda: now)
     session_payload, organization, project = _seed_control_panel_project(
@@ -176,6 +178,32 @@ def test_control_panel_aggregates_existing_signals(client, db_session, monkeypat
             ),
         ]
     )
+    fake_trace_warehouse.insert_trace_events(
+        [
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(hours=4),
+                organization_id=UUID(organization["id"]),
+                project_id=UUID(project["id"]),
+                environment_id=UUID(project["environments"][0]["id"]),
+                service_name="gateway",
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
+                success=True,
+                model_provider="openai",
+                model_family="gpt-4.1",
+                model_revision="2026-03",
+                prompt_version_id="v1",
+                input_tokens=20,
+                output_tokens=10,
+                cost_usd=Decimal("0.01"),
+                structured_output_valid=True,
+                retrieval_latency_ms=30,
+                retrieval_chunks=3,
+                metadata_json={"__model_name": "gpt-4.1"},
+            )
+            for _ in range(12)
+        ]
+    )
     db_session.commit()
 
     response = client.get(
@@ -193,6 +221,9 @@ def test_control_panel_aggregates_existing_signals(client, db_session, monkeypat
     assert payload["simulation"]["risk_level"] == "high"
     assert payload["guardrails"]["trigger_rate_last_24h"] == 2
     assert payload["guardrails"]["top_triggered_policy"] == "structured_output"
+    assert payload["traces_last_24h"] == 12
+    assert payload["traces_per_second"] == 0.0
+    assert payload["active_services"] == 1
     assert payload["model_reliability"]["current_model"] == "gpt-4.1"
     assert payload["model_reliability"]["success_rate"] == 0.93
     assert payload["model_reliability"]["average_latency"] == 820.0
@@ -230,6 +261,9 @@ def test_control_panel_handles_missing_simulation_and_deployment(client, db_sess
     }
     assert payload["incidents"] == {"recent_incidents": [], "incident_rate_last_24h": 0}
     assert payload["guardrails"] == {"trigger_rate_last_24h": 0, "top_triggered_policy": None}
+    assert payload["traces_last_24h"] == 0
+    assert payload["traces_per_second"] == 0.0
+    assert payload["active_services"] == 0
     assert payload["model_reliability"] == {
         "current_model": None,
         "success_rate": None,
@@ -248,3 +282,148 @@ def test_control_panel_is_tenant_safe(client, db_session):
     )
 
     assert response.status_code == 403
+
+
+def test_control_panel_trace_count_is_environment_scoped(client, db_session, fake_trace_warehouse, monkeypatch):
+    now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("app.services.reliability_control_panel._utc_now", lambda: now)
+    session_payload, organization, project = _seed_control_panel_project(client, db_session, suffix="environment")
+
+    staging_response = client.post(
+        f"/api/v1/projects/{project['id']}/environments",
+        headers=auth_headers(session_payload),
+        json={"name": "staging", "type": "staging"},
+    )
+    assert staging_response.status_code == 201
+    staging = staging_response.json()
+
+    default_environment_id = UUID(project["environments"][0]["id"])
+    staging_environment_id = UUID(staging["id"])
+    rows = []
+    for index in range(7):
+        rows.append(
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(hours=2) + timedelta(minutes=index),
+                organization_id=UUID(organization["id"]),
+                project_id=UUID(project["id"]),
+                environment_id=default_environment_id,
+                service_name="gateway" if index < 4 else "retrieval",
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
+                success=True,
+                model_provider="openai",
+                model_family="gpt-4.1-mini",
+                model_revision="2026-03",
+                prompt_version_id="v1",
+                input_tokens=12,
+                output_tokens=8,
+                cost_usd=Decimal("0.01"),
+                structured_output_valid=True,
+                retrieval_latency_ms=25,
+                retrieval_chunks=2,
+                metadata_json={"__model_name": "gpt-4.1-mini"},
+            )
+        )
+    for index in range(3):
+        rows.append(
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(hours=1) + timedelta(minutes=index),
+                organization_id=UUID(organization["id"]),
+                project_id=UUID(project["id"]),
+                environment_id=staging_environment_id,
+                service_name="staging-gateway",
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
+                success=True,
+                model_provider="openai",
+                model_family="gpt-4.1-mini",
+                model_revision="2026-03",
+                prompt_version_id="v1",
+                input_tokens=12,
+                output_tokens=8,
+                cost_usd=Decimal("0.01"),
+                structured_output_valid=True,
+                retrieval_latency_ms=25,
+                retrieval_chunks=2,
+                metadata_json={"__model_name": "gpt-4.1-mini"},
+            )
+        )
+    fake_trace_warehouse.insert_trace_events(rows)
+
+    production_response = client.get(
+        f"/api/v1/projects/{project['id']}/control-panel",
+        headers=auth_headers(session_payload),
+    )
+    staging_panel_response = client.get(
+        f"/api/v1/projects/{project['id']}/control-panel?environment=staging",
+        headers=auth_headers(session_payload),
+    )
+
+    assert production_response.status_code == 200
+    assert staging_panel_response.status_code == 200
+    assert production_response.json()["traces_last_24h"] == 7
+    assert production_response.json()["active_services"] == 2
+    assert staging_panel_response.json()["traces_last_24h"] == 3
+    assert staging_panel_response.json()["active_services"] == 1
+
+
+def test_control_panel_active_services_ignores_legacy_rows_without_service_name(
+    client,
+    db_session,
+    fake_trace_warehouse,
+    monkeypatch,
+):
+    now = datetime(2026, 3, 10, 18, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr("app.services.reliability_control_panel._utc_now", lambda: now)
+    session_payload, organization, project = _seed_control_panel_project(client, db_session, suffix="legacy-services")
+
+    fake_trace_warehouse.insert_trace_events(
+        [
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(hours=2),
+                organization_id=UUID(organization["id"]),
+                project_id=UUID(project["id"]),
+                environment_id=UUID(project["environments"][0]["id"]),
+                service_name=None,
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
+                success=True,
+                model_provider="openai",
+                model_family="gpt-4.1-mini",
+                model_revision="2026-03",
+                prompt_version_id="v1",
+                input_tokens=12,
+                output_tokens=8,
+                cost_usd=Decimal("0.01"),
+                structured_output_valid=True,
+                metadata_json={"__model_name": "gpt-4.1-mini"},
+            ),
+            TraceWarehouseEventRow(
+                timestamp=now - timedelta(hours=1),
+                organization_id=UUID(organization["id"]),
+                project_id=UUID(project["id"]),
+                environment_id=UUID(project["environments"][0]["id"]),
+                service_name="gateway",
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
+                success=True,
+                model_provider="openai",
+                model_family="gpt-4.1-mini",
+                model_revision="2026-03",
+                prompt_version_id="v1",
+                input_tokens=12,
+                output_tokens=8,
+                cost_usd=Decimal("0.01"),
+                structured_output_valid=True,
+                metadata_json={"__model_name": "gpt-4.1-mini"},
+            ),
+        ]
+    )
+
+    response = client.get(
+        f"/api/v1/projects/{project['id']}/control-panel",
+        headers=auth_headers(session_payload),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["active_services"] == 1

@@ -34,8 +34,31 @@ class GrowthUsageTiersRead(APIModel):
     hundred_m_plus: int = Field(alias="100m_plus")
 
 
+class GrowthExpansionMetricsRead(APIModel):
+    median_expansion_ratio: float
+    top_expansion_ratio: float
+    breakout_accounts_detected: int
+    total_telemetry_30d: int
+
+
+class GrowthExpansionCohortPointRead(APIModel):
+    month_index: int
+    usage_index: float
+    organizations: int
+
+
+class GrowthUsageDistributionPointRead(APIModel):
+    rank: int
+    organization_id: str
+    organization_name: str
+    traces_30d: int
+
+
 class SystemGrowthRead(APIModel):
     trace_volume: GrowthTraceVolumeRead
     incident_metrics: GrowthIncidentMetricsRead
     guardrail_metrics: GrowthGuardrailMetricsRead
     usage_tiers: GrowthUsageTiersRead
+    expansion_metrics: GrowthExpansionMetricsRead
+    usage_expansion_cohort: list[GrowthExpansionCohortPointRead]
+    customer_usage_distribution: list[GrowthUsageDistributionPointRead]

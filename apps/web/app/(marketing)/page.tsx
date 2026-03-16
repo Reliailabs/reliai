@@ -77,20 +77,16 @@ const demoFlow = [
 
 const productionSignals = [
   {
-    label: "Reliability score",
-    value: "92 / 100",
+    text: "92/100 health",
   },
   {
-    label: "Active incidents detected",
-    value: "1",
+    text: "1 incident",
   },
   {
-    label: "Guardrails protecting pipelines",
-    value: "17",
+    text: "17 guardrails",
   },
   {
-    label: "Traces analyzed this week",
-    value: "2.3M",
+    text: "2.3M traces",
   },
 ];
 
@@ -106,7 +102,7 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
     <main className="overflow-x-hidden bg-[#f7f8fa]">
       <section className="relative overflow-hidden border-b border-zinc-200">
         <div className="absolute inset-x-0 top-0 h-[40rem] bg-[radial-gradient(circle_at_65%_16%,rgba(255,255,255,0.78),transparent_24%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,248,250,1))]" />
-        <div className={`${marketingContainerClass} relative pb-8 pt-24 lg:pt-28`}>
+        <div data-marketing-container="" className={`${marketingContainerClass} relative pb-8 pt-24 lg:pt-28`}>
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.32em] text-steel">AI reliability control plane</p>
             <h1 className="mt-5 text-5xl font-semibold tracking-tight text-ink lg:text-6xl">
@@ -145,14 +141,11 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
             </div>
             <div className="mt-8">
               <p className="text-sm font-medium text-ink">Used to protect production AI systems</p>
-              <div className="mt-3 grid grid-cols-2 gap-6 md:grid-cols-4">
-                {productionSignals.map((signal) => (
-                  <div
-                    key={signal.label}
-                    className="flex flex-col items-start gap-1 rounded-lg border border-zinc-200 bg-white p-4"
-                  >
-                    <p className="text-sm text-zinc-500">{signal.label}</p>
-                    <p className="text-2xl font-mono font-semibold text-ink">{signal.value}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-sm text-zinc-600">
+                {productionSignals.map((signal, index) => (
+                  <div key={signal.text} className="flex items-center gap-3">
+                    <span>{signal.text}</span>
+                    {index < productionSignals.length - 1 ? <span className="text-zinc-400">•</span> : null}
                   </div>
                 ))}
               </div>
@@ -178,29 +171,40 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
               </Card>
             </div>
 
-            <div className="relative -mb-20 mt-6 flex justify-center lg:-mb-24">
+            <div className="relative mb-0 mt-6 flex justify-center md:-mb-[120px]">
               <div className="absolute inset-x-24 top-4 -z-10 h-[86%] rounded-[999px] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.92),rgba(255,255,255,0.36)_38%,transparent_72%)] blur-3xl" />
-              <div
-                className="relative w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_40px_120px_rgba(15,23,42,0.22)]"
-                style={visualTestMode ? undefined : { transform: "perspective(1400px) rotateX(6deg)" }}
-              >
-                <div className="flex items-center gap-2 border-b border-zinc-200 bg-[linear-gradient(180deg,#fbfbfc,#f1f3f6)] px-5 py-3">
-                  <span className="h-3 w-3 rounded-full bg-rose-400" />
-                  <span className="h-3 w-3 rounded-full bg-amber-400" />
-                  <span className="h-3 w-3 rounded-full bg-emerald-400" />
-                  <span className="ml-3 text-[11px] uppercase tracking-[0.18em] text-steel">Reliai control panel</span>
-                </div>
-                <div className="aspect-video overflow-hidden bg-zinc-100">
-                  <div className="h-full w-full">
-                    <Image
-                      src="/screenshots/control-panel.png"
-                      alt="Reliai control panel showing reliability score, incident detection, and recommended guardrails"
-                      width={3200}
-                      height={2000}
-                      className="block h-full w-full object-cover object-top [image-rendering:-webkit-optimize-contrast]"
-                      style={{ objectPosition: "left top" }}
-                      priority
-                    />
+              <div className="w-full [perspective:2000px]">
+                <div
+                  className="relative mx-auto w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_40px_120px_rgba(0,0,0,0.25)] md:scale-[0.98]"
+                  style={
+                    visualTestMode
+                      ? undefined
+                      : {
+                          transform: "rotateX(3deg) rotateY(-5deg) scale(0.98)",
+                          transformStyle: "preserve-3d",
+                        }
+                  }
+                >
+                  <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2">
+                    <span className="h-3 w-3 rounded-full bg-red-400" />
+                    <span className="h-3 w-3 rounded-full bg-yellow-400" />
+                    <span className="h-3 w-3 rounded-full bg-green-400" />
+                    <div className="ml-3 flex-1 rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] text-steel">
+                      app.reliai.dev/control-panel
+                    </div>
+                  </div>
+                  <div className="aspect-video overflow-hidden bg-zinc-100">
+                    <div className="h-full w-full">
+                      <Image
+                        src="/screenshots/control-panel.png"
+                        alt="Reliai control panel showing reliability score, incident detection, and recommended guardrails"
+                        width={3200}
+                        height={2000}
+                        className="block h-full w-full object-cover object-top [image-rendering:-webkit-optimize-contrast]"
+                        style={{ objectPosition: "left top" }}
+                        priority
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -210,7 +214,7 @@ export default async function MarketingHomePage({ searchParams }: MarketingHomeP
       </section>
 
       <section className={`border-b border-zinc-200 bg-white ${marketingSectionLargeClass}`}>
-        <div className={`${marketingContainerClass} py-16`}>
+        <div className={`${marketingContainerClass} pb-16 pt-16 md:pt-40`}>
           <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
             <div className="flex h-full flex-col">
               <Card className={`${marketingCardClass} h-full flex flex-col`}>

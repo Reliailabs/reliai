@@ -123,6 +123,7 @@ class FakeTraceWarehouseClient:
                 project_id=query.project_id,
                 window_start=query.window_start,
                 window_end=query.window_end,
+                environment_id=query.environment_id,
                 prompt_version_id=query.prompt_version_id,
                 model_version_id=query.model_version_id,
                 prompt_version=query.prompt_version,
@@ -156,6 +157,26 @@ class FakeTraceWarehouseClient:
             ),
             "average_cost_usd": sum(costs) / len(costs) if costs else None,
         }
+
+    def count_distinct_services(
+        self,
+        *,
+        organization_id,
+        project_id,
+        environment_id,
+        window_start,
+        window_end,
+    ) -> int:
+        rows = self.query_trace_events(
+            TraceWarehouseQuery(
+                organization_id=organization_id,
+                project_id=project_id,
+                environment_id=environment_id,
+                window_start=window_start,
+                window_end=window_end,
+            )
+        )
+        return len({row.service_name for row in rows if row.service_name})
 
     def _rollup(self, *, start_time, end_time, project_id=None, environment_id=None, bucket: str) -> list[TraceWarehouseRollupRow]:
         rows = self.query_all_trace_events(window_start=start_time, window_end=end_time)

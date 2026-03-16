@@ -99,7 +99,10 @@ class ControlPanelRecentDeploymentRead(APIModel):
 
 class ProjectReliabilityControlPanelRead(APIModel):
     reliability_score: int
+    traces_last_24h: int
+    traces_per_second: float | None = None
     active_incidents: int
+    active_services: int
     deployment_risk: ControlPanelDeploymentRiskRead
     simulation: ControlPanelSimulationRead
     incidents: ControlPanelIncidentsRead

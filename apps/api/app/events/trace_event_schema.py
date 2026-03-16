@@ -65,6 +65,7 @@ class TraceEventV1(BaseModel):
     environment_id: str | None = None
     model: TraceEventModelInfoV1
     prompt_version_id: str | None = None
+    service_name: str | None = None
     latency_ms: int | None = Field(default=None, ge=0)
     success: bool
     tokens: TraceEventTokensV1
@@ -130,6 +131,7 @@ def build_trace_event_payload(
             if trace.prompt_version_record_id is not None
             else trace.prompt_version
         ),
+        service_name=trace.service_name,
         latency_ms=trace.latency_ms,
         success=trace.success,
         tokens=TraceEventTokensV1(

@@ -34,6 +34,7 @@ PLATFORM_DEGRADED_EVENT = "platform_degraded"
 PLATFORM_RECOVERED_EVENT = "platform_recovered"
 PIPELINE_BACKPRESSURE_EVENT = "pipeline_backpressure"
 POLICY_VIOLATION_EVENT = "policy_violation"
+BREAKOUT_ACCOUNT_DETECTED_EVENT = "breakout_account_detected"
 SDK_EVENT_TYPES = {
     SDK_REQUEST_EVENT,
     SDK_ERROR_EVENT,
@@ -318,9 +319,12 @@ def _partition_for_key(*, key: str, partitions: int) -> int:
 
 def _payload_key(payload: dict[str, Any]) -> str:
     project_id = payload.get("project_id")
-    if not project_id:
-        raise ValueError("event payload must include project_id for partitioning")
-    return str(project_id)
+    if project_id:
+        return str(project_id)
+    organization_id = payload.get("organization_id")
+    if organization_id:
+        return str(organization_id)
+    raise ValueError("event payload must include project_id or organization_id for partitioning")
 
 
 @lru_cache(maxsize=1)

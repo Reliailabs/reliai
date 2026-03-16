@@ -35,6 +35,7 @@ class Trace(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     environment: Mapped[str] = mapped_column(String(32), nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     request_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    service_name: Mapped[str | None] = mapped_column(String(120))
     trace_id: Mapped[str] = mapped_column(String(255), nullable=False)
     span_id: Mapped[str] = mapped_column(String(255), nullable=False)
     parent_span_id: Mapped[str | None] = mapped_column(String(255))

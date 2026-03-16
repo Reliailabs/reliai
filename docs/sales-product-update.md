@@ -1,6 +1,6 @@
 # Reliai Product Update for Sales
 
-Last updated: March 11, 2026
+Last updated: March 13, 2026
 
 Maintenance rule:
 - Update this file after each shipped milestone that changes product capabilities, operator workflows, SDK behavior, platform APIs, or enterprise controls.
@@ -234,7 +234,7 @@ Typical environments include:
 ### Project surfaces
 - Control Panel
   - answers: "Is this AI system safe right now?"
-  - includes reliability score, recent changes, guardrail activity, guardrail compliance, automatic actions, and high-risk patterns
+  - includes reliability score, active incidents, traces analyzed (24h), traces/sec, active services, guardrail activity, guardrail compliance, automatic actions, and high-risk patterns
 - Guardrail Dashboard
   - answers: "What is protecting production?"
 - Trace detail
@@ -275,6 +275,15 @@ This shows:
 - breakout-customer detection when expansion exceeds 5x
 
 This is an internal operating metric for identifying infrastructure-style account expansion from telemetry growth, not a customer-facing analytics feature.
+
+The internal growth dashboard now also includes:
+- top expanding customers
+- median expansion ratio
+- top expansion ratio
+- breakout accounts detected
+- total telemetry (30d)
+- usage expansion cohort chart
+- customer usage distribution chart
 
 ## Intelligence now visible in operator workflows
 
@@ -378,6 +387,15 @@ The most recent implementation wave added:
 - Interactive public demo and failure playground
 - Frontend-only marketing screenshot routes and screenshot generators
 - SDK install section for Python and Node directly on the homepage
+- First-party Python and Node SDK packages in-repo with provider/framework auto-instrumentation helpers
+- Control-panel traffic metrics for traces analyzed (24h), traces/sec, and active services
+- Screenshot stability protections:
+  - panel-first screenshot capture
+  - screenshot-only control-panel compaction
+  - hybrid fallback capture path
+  - deterministic mixed demo state
+  - layout/readiness Playwright checks
+  - CI screenshot drift detection that fails when committed assets are stale
 
 ## Marketing and developer onboarding
 

@@ -30,6 +30,7 @@ from app.models.model_version import ModelVersion
 from app.models.model_reliability_pattern import ModelReliabilityPattern
 from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
+from app.models.organization_usage_expansion import OrganizationUsageExpansion
 from app.models.organization_guardrail_policy import OrganizationGuardrailPolicy
 from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
@@ -89,6 +90,7 @@ __all__ = [
     "ModelReliabilityPattern",
     "OnboardingChecklist",
     "Organization",
+    "OrganizationUsageExpansion",
     "OrganizationGuardrailPolicy",
     "OrganizationAlertTarget",
     "OrganizationMember",

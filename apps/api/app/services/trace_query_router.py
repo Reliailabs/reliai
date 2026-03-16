@@ -11,6 +11,7 @@ from app.services.trace_warehouse import (
     TraceWarehouseRollupRow,
     WarehouseQueryViolation,
     _aggregate_trace_metrics,
+    _count_distinct_services,
     _query_all_traces,
     _query_daily_metrics,
     _query_hourly_metrics,
@@ -207,6 +208,36 @@ def query_daily_metrics(
 
 def aggregate_trace_metrics(query: TraceWarehouseAggregateQuery) -> dict[str, Any]:
     return aggregate_trace_metrics_via_router(query)[1]
+
+
+def count_distinct_services(
+    *,
+    organization_id,
+    project_id,
+    environment_id,
+    window_start: datetime,
+    window_end: datetime,
+) -> int:
+    route = route_trace_query(
+        TraceQueryRequest(
+            window_start=window_start,
+            window_end=window_end,
+            aggregated=False,
+        )
+    )
+    if route == "archive":
+        return 0
+    token = contextvar_router_active.set(True)
+    try:
+        return _count_distinct_services(
+            organization_id=organization_id,
+            project_id=project_id,
+            environment_id=environment_id,
+            window_start=window_start,
+            window_end=window_end,
+        )
+    finally:
+        contextvar_router_active.reset(token)
 
 
 def _aggregate_rollup_rows(rows: list[TraceWarehouseRollupRow]) -> dict[str, Any]:

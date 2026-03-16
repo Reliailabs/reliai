@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import HTTPException, status
@@ -52,8 +52,8 @@ def test_clickhouse_migrations_apply_in_order(monkeypatch):
 
     applied = apply_migrations()
 
-    assert applied == ["001", "002", "003"]
-    assert get_current_version() == "003"
+    assert applied == ["001", "002", "003", "004", "005"]
+    assert get_current_version() == "005"
     assert any("CREATE TABLE IF NOT EXISTS trace_warehouse" in sql for sql in executed)
 
 
@@ -160,7 +160,8 @@ def test_hourly_rollup_query(fake_trace_warehouse):
                 organization_id=UUID("00000000-0000-0000-0000-000000000001"),
                 project_id=project_id,
                 environment_id=environment_id,
-                trace_id=UUID("00000000-0000-0000-0000-000000000301"),
+                storage_trace_id=uuid4(),
+                trace_id=str(UUID("00000000-0000-0000-0000-000000000301")),
                 model_family="gpt-4.1",
                 latency_ms=320,
                 success=True,
@@ -173,7 +174,8 @@ def test_hourly_rollup_query(fake_trace_warehouse):
                 organization_id=UUID("00000000-0000-0000-0000-000000000001"),
                 project_id=project_id,
                 environment_id=environment_id,
-                trace_id=UUID("00000000-0000-0000-0000-000000000302"),
+                storage_trace_id=uuid4(),
+                trace_id=str(UUID("00000000-0000-0000-0000-000000000302")),
                 model_family="gpt-4.1",
                 latency_ms=280,
                 success=False,
@@ -206,7 +208,8 @@ def test_daily_rollup_query(fake_trace_warehouse):
                 organization_id=UUID("00000000-0000-0000-0000-000000000001"),
                 project_id=project_id,
                 environment_id=environment_id,
-                trace_id=UUID("00000000-0000-0000-0000-000000000311"),
+                storage_trace_id=uuid4(),
+                trace_id=str(UUID("00000000-0000-0000-0000-000000000311")),
                 model_family="gpt-4.1",
                 latency_ms=500,
                 success=True,
@@ -243,6 +246,7 @@ def test_scheduler_status_endpoint_requires_admin(client, db_session):
         "reliability_pattern_mining",
         "data_retention_worker",
         "platform_monitor",
+        "usage_expansion_metrics",
     }
 
 
@@ -273,6 +277,9 @@ def test_archive_worker_reports_status(client, db_session):
         environment="production",
         timestamp=datetime.now(timezone.utc) - timedelta(days=45),
         request_id="req-archive",
+        trace_id="trace-archive",
+        span_id="span-archive",
+        span_name="request",
         created_at=datetime.now(timezone.utc) - timedelta(days=45),
         model_name="gpt-4.1",
         success=True,
