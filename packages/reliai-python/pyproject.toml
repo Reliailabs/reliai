@@ -9,8 +9,12 @@ description = "Reliai Python SDK"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.scripts]
+reliai-run = "reliai.cli.run:main"
+
 [tool.setuptools]
 package-dir = {"" = "."}
+py-modules = ["sitecustomize"]
 
 [tool.setuptools.packages.find]
 where = ["."]

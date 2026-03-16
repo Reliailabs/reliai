@@ -6,7 +6,7 @@ from inspect import iscoroutinefunction
 from inspect import signature
 from typing import Any, Callable, TypeVar, cast
 
-from .client import ReliaiClient, get_default_client, initialize_default_client
+from .client import ReliaiClient, get_default_client, initialize_default_client, trace_url
 from .guardrails import (
     GuardrailAction,
     ReliaiGuardrailEvent,
@@ -14,6 +14,7 @@ from .guardrails import (
     latency_retry,
     structured_output,
 )
+from .instrumentation import auto_instrument
 from .pipeline import llm_call, postprocess, prompt_build, retrieval, tool_call
 from .replay import ReliaiReplayPipeline, replay
 from .tracing import ReliaiRetrievalSpan, ReliaiTraceEvent
@@ -150,6 +151,7 @@ __all__ = [
     "ReliaiReplayPipeline",
     "ReliaiTraceEvent",
     "cost_budget",
+    "auto_instrument",
     "latency_retry",
     "llm_call",
     "postprocess",
@@ -160,6 +162,7 @@ __all__ = [
     "span",
     "structured_output",
     "trace",
+    "trace_url",
     "tool_call",
     "__version__",
 ]

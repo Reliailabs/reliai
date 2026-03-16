@@ -52,6 +52,16 @@ class TraceCompareResult:
     baseline_window_end: datetime
 
 
+@dataclass(frozen=True)
+class TraceSummaryResult:
+    trace_id: str
+    service_name: str | None
+    model_name: str
+    latency_ms: int | None
+    guardrail_retries: int
+    error_summary: str | None
+
+
 def _build_preview(value: str | None) -> str | None:
     if value is None:
         return None
@@ -311,6 +321,91 @@ def get_trace_detail(db: Session, operator: OperatorContext, trace_id: UUID) -> 
     require_project_access(db, operator, trace.project_id)
     trace.evaluations.sort(key=lambda item: (item.eval_type, item.created_at))
     return trace
+
+
+def get_trace_detail_by_identifier(db: Session, operator: OperatorContext, trace_identifier: str) -> Trace:
+    trace = resolve_trace_identifier(db, trace_identifier)
+    if trace is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
+    require_project_access(db, operator, trace.project_id)
+    trace.evaluations.sort(key=lambda item: (item.eval_type, item.created_at))
+    return trace
+
+
+def get_trace_summary_by_identifier(db: Session, trace_identifier: str) -> dict[str, object]:
+    trace = resolve_trace_identifier(db, trace_identifier)
+    if trace is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
+
+    trace_group = list(
+        db.scalars(
+            select(Trace)
+            .where(Trace.trace_id == trace.trace_id)
+            .order_by(Trace.parent_span_id.isnot(None), Trace.created_at.asc())
+        ).all()
+    )
+    anchor = trace_group[0] if trace_group else trace
+    service_name = anchor.service_name or (anchor.metadata_json or {}).get("service_name")
+    summary = TraceSummaryResult(
+        trace_id=anchor.trace_id,
+        service_name=service_name if isinstance(service_name, str) else None,
+        model_name=anchor.model_name,
+        latency_ms=anchor.latency_ms,
+        guardrail_retries=sum(1 for item in trace_group if _trace_has_guardrail_retry(item)),
+        error_summary=_trace_error_summary(anchor),
+    )
+    return summary.__dict__
+
+
+def resolve_trace_identifier(db: Session, trace_identifier: str) -> Trace | None:
+    statement = (
+        select(Trace)
+        .options(
+            selectinload(Trace.retrieval_span),
+            selectinload(Trace.evaluations),
+            selectinload(Trace.prompt_version_record),
+            selectinload(Trace.model_version_record),
+        )
+    )
+
+    try:
+        trace_uuid = UUID(trace_identifier)
+    except ValueError:
+        trace_uuid = None
+
+    if trace_uuid is not None:
+        trace = db.scalar(statement.where(Trace.id == trace_uuid))
+        if trace is not None:
+            return trace
+
+    return db.scalars(
+        statement.where(Trace.trace_id == trace_identifier).order_by(Trace.parent_span_id.isnot(None), Trace.created_at.asc())
+    ).first()
+
+
+def _trace_has_guardrail_retry(trace: Trace) -> bool:
+    metadata = trace.metadata_json or {}
+    if metadata.get("guardrail_retry") is True:
+        return True
+    retries = metadata.get("guardrail_retries") or metadata.get("guardrail_retry_count") or metadata.get("retry_count")
+    return isinstance(retries, int) and retries > 0
+
+
+def _trace_error_summary(trace: Trace) -> str | None:
+    metadata = trace.metadata_json or {}
+    for key in ("error_summary", "incident_summary", "recommendation"):
+        value = metadata.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    if trace.error_type and trace.output_preview:
+        return f"{trace.error_type}: {trace.output_preview}"
+    if trace.error_type:
+        return trace.error_type
+    if trace.guardrail_policy and trace.guardrail_action:
+        return f"{trace.guardrail_policy} {trace.guardrail_action}"
+    if trace.output_preview:
+        return trace.output_preview
+    return None
 
 
 def _numeric_distance(left: int | Decimal | None, right: int | Decimal | None) -> float:

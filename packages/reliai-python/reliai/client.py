@@ -18,6 +18,8 @@ from .guardrails import ReliaiGuardrailEvent
 from .tracing import ReliaiRetrievalSpan, ReliaiTraceEvent
 
 _SPAN_CONTEXT: ContextVar[dict[str, Any] | None] = ContextVar("reliai_span_context", default=None)
+DEFAULT_DASHBOARD_URL = "https://app.reliai.dev"
+DEFAULT_SLOW_TRACE_MS = 3000
 
 
 class ReliaiClient:
@@ -245,6 +247,9 @@ class ReliaiClient:
         }
         print(f"RELIAI {json.dumps(fallback_payload, sort_keys=True)}", file=sys.stderr)
 
+    def trace_url(self, trace_id: str) -> str:
+        return trace_url(trace_id)
+
 
 class ReliaiSpan:
     def __init__(self, client: ReliaiClient, name: str, metadata: dict[str, Any]) -> None:
@@ -281,6 +286,10 @@ class ReliaiSpan:
         if self.started_at is None or self.trace_id is None or self.span_id is None:
             return
         duration_ms = int((datetime.now(timezone.utc) - self.started_at).total_seconds() * 1000)
+        emitted_metadata = {
+            **self.metadata,
+            **context.get("annotations", {}),
+        }
         self.client.trace(
             {
                 "model": self.trace_fields.get("model") or "span",
@@ -302,12 +311,16 @@ class ReliaiSpan:
                 "timestamp": self.started_at,
                 "duration_ms": duration_ms,
                 "environment": self.trace_fields.get("environment") or self.client.environment,
-                "metadata": {
-                    **self.metadata,
-                    **context.get("annotations", {}),
-                },
+                "metadata": emitted_metadata,
                 "retrieval": self.trace_fields.get("retrieval"),
             }
+        )
+        _maybe_print_trace_link(
+            client=self.client,
+            trace_id=self.trace_id,
+            duration_ms=duration_ms,
+            metadata=emitted_metadata,
+            is_error=exc_type is not None,
         )
 
     def set_metadata(self, metadata: dict[str, Any]) -> None:
@@ -393,3 +406,40 @@ def _request_headers(api_key: str | None) -> dict[str, str]:
     if api_key:
         headers["X-API-Key"] = api_key
     return headers
+
+
+def trace_url(trace_id: str) -> str:
+    base_url = os.getenv("RELIAI_DASHBOARD_URL", DEFAULT_DASHBOARD_URL).rstrip("/")
+    return f"{base_url}/traces/{trace_id}"
+
+
+def _maybe_print_trace_link(
+    *,
+    client: ReliaiClient,
+    trace_id: str,
+    duration_ms: int,
+    metadata: dict[str, Any],
+    is_error: bool,
+) -> None:
+    if not _should_print_trace_links(client):
+        return
+    url = trace_url(trace_id)
+    if bool(metadata.get("guardrail_retry")):
+        print(f"Guardrail retry detected\n\nTrace:\n{url}", file=sys.stderr)
+        return
+    if is_error or duration_ms > _slow_trace_threshold_ms():
+        print(f"Reliai trace captured\n\nInvestigate:\n{url}", file=sys.stderr)
+
+
+def _should_print_trace_links(client: ReliaiClient) -> bool:
+    explicit = os.getenv("RELIAI_PRINT_TRACE_LINKS")
+    if explicit is not None:
+        return explicit.lower() == "true"
+    return client.mode == "development"
+
+
+def _slow_trace_threshold_ms() -> int:
+    try:
+        return int(os.getenv("RELIAI_SLOW_TRACE_MS", str(DEFAULT_SLOW_TRACE_MS)))
+    except ValueError:
+        return DEFAULT_SLOW_TRACE_MS

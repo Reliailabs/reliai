@@ -526,6 +526,7 @@ def test_trace_detail_is_tenant_safe_and_includes_evaluations(client, db_session
 
     monkeypatch.setattr("app.workers.evaluations.SessionLocal", lambda: db_session)
     monkeypatch.setattr("app.processors.evaluation_processor.SessionLocal", lambda: db_session)
+    monkeypatch.setattr("app.processors.evaluation_processor.publish_event", lambda *_args, **_kwargs: None)
     run_trace_evaluations(trace_id)
 
     detail = client.get(f"/api/v1/traces/{trace_id}", headers=auth_headers(owner_one_session))
@@ -541,6 +542,57 @@ def test_trace_detail_is_tenant_safe_and_includes_evaluations(client, db_session
 
     stored_evaluation = db_session.query(Evaluation).filter(Evaluation.trace_id == UUID(trace_id)).one()
     assert stored_evaluation.label == "pass"
+
+
+def test_trace_summary_endpoint_supports_shareable_trace_ids(client, db_session):
+    owner = create_operator(db_session, email="owner@acme.test")
+    outsider = create_operator(db_session, email="owner@beta.test")
+    owner_session = sign_in(client, email=owner.email)
+    outsider_session = sign_in(client, email=outsider.email)
+
+    organization = create_organization(client, owner_session, name="Acme AI", slug="acme-ai")
+    project = create_project(client, owner_session, organization["id"])
+    api_key_response = create_api_key(client, owner_session, project["id"])
+
+    logical_trace_id = "trace-share-123"
+    ingest_trace(
+        client,
+        api_key_response["api_key"],
+        {
+            "timestamp": "2026-03-09T12:01:00Z",
+            "request_id": "req_shareable",
+            "trace_id": logical_trace_id,
+            "span_id": "root-span",
+            "service_name": "agent",
+            "model_name": "gpt-4.1-mini",
+            "latency_ms": 1200,
+            "success": False,
+            "error_type": "HallucinationError",
+            "metadata_json": {
+                "guardrail_retry": True,
+                "error_summary": "Hallucination spike after retriever rollout",
+            },
+        },
+    )
+
+    detail = client.get(f"/api/v1/traces/{logical_trace_id}", headers=auth_headers(owner_session))
+    assert detail.status_code == 200
+    assert detail.json()["trace_id"] == logical_trace_id
+
+    summary = client.get(f"/api/v1/traces/{logical_trace_id}/summary", headers=auth_headers(owner_session))
+    assert summary.status_code == 200
+    payload = summary.json()
+    assert payload == {
+        "trace_id": logical_trace_id,
+        "service_name": "agent",
+        "model_name": "gpt-4.1-mini",
+        "latency_ms": 1200,
+        "guardrail_retries": 1,
+        "error_summary": "Hallucination spike after retriever rollout",
+    }
+
+    forbidden = client.get(f"/api/v1/traces/{logical_trace_id}/summary", headers=auth_headers(outsider_session))
+    assert forbidden.status_code == 403
 
 
 def test_membership_row_created_for_operator_owned_organization(client, db_session):

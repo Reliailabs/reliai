@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import require_operator
@@ -68,6 +68,7 @@ from app.schemas.global_metrics import (
     GlobalModelReliabilityMetricRead,
     GlobalModelReliabilityRead,
 )
+from app.schemas.github_integration import GitHubCommentWebhookRead, GitHubWebhookProcessRead
 from app.schemas.growth_metrics import SystemGrowthRead
 from app.schemas.platform_extension import (
     PlatformExtensionCreate,
@@ -227,6 +228,7 @@ from app.schemas.trace import (
     TraceListResponse,
     TraceReplayRead,
     TraceReplayStepRead,
+    TraceSummaryRead,
 )
 from app.schemas.trace_cohort import (
     TraceCohortMetricsRead,
@@ -281,6 +283,7 @@ from app.services.guardrails import (
     list_guardrail_policies,
     record_runtime_guardrail_event,
 )
+from app.integrations.github_bot import process_github_comment_webhook, verify_github_signature
 from app.services.auth import (
     OperatorContext,
     get_operator_context,
@@ -410,7 +413,14 @@ from app.services.trace_ingestion_control import (
 )
 from app.services.trace_graph import get_trace_graph, get_trace_graph_analysis
 from app.services.trace_replay import get_trace_replay
-from app.services.traces import get_trace_compare, get_trace_detail, ingest_trace, list_traces
+from app.services.traces import (
+    get_trace_compare,
+    get_trace_detail_by_identifier,
+    get_trace_summary_by_identifier,
+    ingest_trace,
+    list_traces,
+    resolve_trace_identifier,
+)
 from app.services.timeline import get_project_timeline
 from app.services.event_stream import PolicyViolationEventPayload, publish_event
 from app.services.usage_quotas import (
@@ -3104,24 +3114,24 @@ def query_trace_cohort_endpoint(
 
 @router.get("/traces/{trace_id}", response_model=TraceDetailRead)
 def get_trace_detail_endpoint(
-    trace_id: UUID,
+    trace_id: str,
     db: Session = Depends(get_db),
     authorization: str | None = Header(default=None),
     x_api_key: str | None = Header(default=None),
 ) -> TraceDetailRead:
     if x_api_key is not None:
         public_key = _public_api_key_from_headers(db=db, x_api_key=x_api_key, authorization=authorization)
-        trace = db.get(Trace, trace_id)
+        trace = resolve_trace_identifier(db, trace_id)
         if trace is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
         if trace.organization_id != public_key.organization_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
         project = db.get(Project, trace.project_id)
         assert project is not None
-        trace = get_trace_detail(db, _operator_context_for_public_project(project), trace_id)
+        trace = get_trace_detail_by_identifier(db, _operator_context_for_public_project(project), trace_id)
     else:
         operator = require_operator(authorization=authorization, db=db)
-        trace = get_trace_detail(db, operator, trace_id)
+        trace = get_trace_detail_by_identifier(db, operator, trace_id)
     registry_pivots = []
     if trace.prompt_version_record is not None:
         traces_path, regressions_path, incidents_path = build_prompt_version_path(
@@ -3164,8 +3174,43 @@ def get_trace_detail_endpoint(
                 path=model_path,
                 query_params={"project_id": str(trace.project_id), "model_version_id": str(trace.model_version_record.id)},
             )
-        )
+    )
     return _trace_detail_item(trace, registry_pivots, f"/traces/{trace.id}/compare")
+
+
+@router.get("/traces/{trace_id}/summary", response_model=TraceSummaryRead)
+def get_trace_summary_endpoint(
+    trace_id: str,
+    db: Session = Depends(get_db),
+    authorization: str | None = Header(default=None),
+    x_api_key: str | None = Header(default=None),
+) -> TraceSummaryRead:
+    if x_api_key is not None:
+        public_key = _public_api_key_from_headers(db=db, x_api_key=x_api_key, authorization=authorization)
+        trace = resolve_trace_identifier(db, trace_id)
+        if trace is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
+        if trace.organization_id != public_key.organization_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    else:
+        operator = require_operator(authorization=authorization, db=db)
+        trace = resolve_trace_identifier(db, trace_id)
+        if trace is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
+        require_project_access(db, operator, trace.project_id)
+    return TraceSummaryRead.model_validate(get_trace_summary_by_identifier(db, trace_id))
+
+
+@router.post("/integrations/github/webhook", response_model=GitHubWebhookProcessRead)
+async def github_comment_webhook_endpoint(
+    payload: GitHubCommentWebhookRead,
+    request: Request,
+    db: Session = Depends(get_db),
+    x_hub_signature_256: str | None = Header(default=None, alias="X-Hub-Signature-256"),
+) -> GitHubWebhookProcessRead:
+    verify_github_signature(await request.body(), x_hub_signature_256)
+    posted_trace_ids = process_github_comment_webhook(db, payload.model_dump())
+    return GitHubWebhookProcessRead(status="ok", posted_trace_ids=posted_trace_ids)
 
 
 @router.get("/traces/{trace_id}/graph", response_model=TraceGraphRead)

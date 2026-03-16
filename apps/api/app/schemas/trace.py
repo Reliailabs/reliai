@@ -258,6 +258,15 @@ class TraceReplayRead(APIModel):
     steps: list[TraceReplayStepRead]
 
 
+class TraceSummaryRead(APIModel):
+    trace_id: str
+    service_name: str | None
+    model_name: str
+    latency_ms: int | None
+    guardrail_retries: int
+    error_summary: str | None
+
+
 class TraceCompareEvaluationRead(APIModel):
     label: str | None
     score: Decimal | None

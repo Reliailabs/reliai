@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     app_name: str = "Reliai API"
     app_version: str = "0.1.0"
     app_url: str = "http://localhost:3000"
+    canonical_dashboard_url: str = "https://app.reliai.dev"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "sqlite+pysqlite:///./reliai.db"
     redis_url: str = "redis://localhost:6379/0"
@@ -38,6 +39,9 @@ class Settings(BaseSettings):
     workos_logout_redirect_uri: str | None = None
     workos_cookie_password: str | None = None
     workos_scim_webhook_secret: str | None = None
+    github_webhook_secret: str | None = None
+    github_bot_token: str | None = None
+    github_api_url: str = "https://api.github.com"
     workos_dev_auth_enabled: bool = True
     public_api_rate_limit_per_minute: int = 120
     ingest_rate_limit_per_minute: int = 600

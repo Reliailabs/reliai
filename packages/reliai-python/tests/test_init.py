@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import io
 import json
+import time
 from contextlib import redirect_stderr
 from pathlib import Path
 from urllib.error import URLError
@@ -270,3 +271,79 @@ def test_trace_decorator_allows_manual_name_override(monkeypatch: pytest.MonkeyP
     assert answer() == "ok"
     get_default_client().flush()
     assert payloads[0]["metadata_json"]["span_name"] == "custom_span_name"
+
+
+def test_trace_url_defaults_to_canonical_host(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("RELIAI_DASHBOARD_URL", raising=False)
+    assert reliai.trace_url("abc123") == "https://app.reliai.dev/traces/abc123"
+
+
+def test_trace_url_respects_dashboard_override(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RELIAI_DASHBOARD_URL", "https://ops.example.com")
+    assert reliai.trace_url("abc123") == "https://ops.example.com/traces/abc123"
+
+
+def test_error_spans_print_investigation_link(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("urllib.request.urlopen", lambda *_args, **_kwargs: (_ for _ in ()).throw(URLError("offline")))
+    monkeypatch.setenv("RELIAI_PRINT_TRACE_LINKS", "true")
+    reliai.init(project="demo")
+
+    @reliai.trace
+    def explode() -> None:
+        raise RuntimeError("boom")
+
+    stderr = io.StringIO()
+    with redirect_stderr(stderr):
+        with pytest.raises(RuntimeError, match="boom"):
+            explode()
+        get_default_client().flush()
+
+    assert "Reliai trace captured" in stderr.getvalue()
+    assert "Investigate:" in stderr.getvalue()
+    assert "https://app.reliai.dev/traces/" in stderr.getvalue()
+
+
+def test_slow_spans_print_investigation_link(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("urllib.request.urlopen", lambda *_args, **_kwargs: (_ for _ in ()).throw(URLError("offline")))
+    monkeypatch.setenv("RELIAI_PRINT_TRACE_LINKS", "true")
+    monkeypatch.setenv("RELIAI_SLOW_TRACE_MS", "0")
+    reliai.init(project="demo")
+
+    stderr = io.StringIO()
+    with redirect_stderr(stderr):
+        with reliai.span("slow-span"):
+            time.sleep(0.01)
+        get_default_client().flush()
+
+    assert "Reliai trace captured" in stderr.getvalue()
+    assert "Investigate:" in stderr.getvalue()
+
+
+def test_guardrail_retry_prints_trace_link(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("urllib.request.urlopen", lambda *_args, **_kwargs: (_ for _ in ()).throw(URLError("offline")))
+    monkeypatch.setenv("RELIAI_PRINT_TRACE_LINKS", "true")
+    reliai.init(project="demo")
+
+    stderr = io.StringIO()
+    with redirect_stderr(stderr):
+        with reliai.span("retry-span", {"guardrail_retry": True}):
+            pass
+        get_default_client().flush()
+
+    assert "Guardrail retry detected" in stderr.getvalue()
+    assert "Trace:" in stderr.getvalue()
+
+
+def test_trace_link_printing_can_be_disabled(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("urllib.request.urlopen", lambda *_args, **_kwargs: (_ for _ in ()).throw(URLError("offline")))
+    monkeypatch.setenv("RELIAI_PRINT_TRACE_LINKS", "false")
+    monkeypatch.setenv("RELIAI_SLOW_TRACE_MS", "0")
+    reliai.init(project="demo")
+
+    stderr = io.StringIO()
+    with redirect_stderr(stderr):
+        with reliai.span("slow-span"):
+            pass
+        get_default_client().flush()
+
+    assert "Investigate:" not in stderr.getvalue()
