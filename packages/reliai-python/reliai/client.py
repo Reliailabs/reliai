@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 import time
 import urllib.request
@@ -12,6 +13,7 @@ from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from .defaults import resolve_runtime_config
 from .guardrails import ReliaiGuardrailEvent
 from .tracing import ReliaiRetrievalSpan, ReliaiTraceEvent
 
@@ -21,18 +23,26 @@ _SPAN_CONTEXT: ContextVar[dict[str, Any] | None] = ContextVar("reliai_span_conte
 class ReliaiClient:
     def __init__(
         self,
+        project: str | None = None,
         api_key: str | None = None,
         endpoint: str | None = None,
         environment: str | None = None,
         organization_id: str | None = None,
+        local_project_id: str | None = None,
+        mode: str | None = None,
+        console_fallback: bool = False,
         batch_size: int = 50,
         flush_interval: float = 2.0,
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
+        self.project = project or os.getenv("RELIAI_PROJECT", "default")
         self.api_key = api_key or os.getenv("RELIAI_API_KEY", "")
         self.endpoint = (endpoint or os.getenv("RELIAI_ENDPOINT", "https://api.reliai.ai")).rstrip("/")
         self.environment = environment or os.getenv("RELIAI_ENVIRONMENT")
         self.organization_id = organization_id or os.getenv("RELIAI_ORGANIZATION_ID")
+        self.local_project_id = local_project_id
+        self.mode = mode or ("cloud" if self.api_key else "development")
+        self.console_fallback = console_fallback
         self.batch_size = batch_size
         self.flush_interval = flush_interval
         self.on_error = on_error
@@ -42,8 +52,6 @@ class ReliaiClient:
         self._closed = False
         self._policy_cache: list[dict[str, Any]] = []
         self._policy_cache_at = 0.0
-        if not self.api_key:
-            raise ValueError("ReliaiClient requires api_key or RELIAI_API_KEY")
         self._worker = threading.Thread(target=self._run, name="reliai-flush", daemon=True)
         self._worker.start()
 
@@ -75,10 +83,7 @@ class ReliaiClient:
         request = urllib.request.Request(
             f"{self.endpoint}{path}",
             data=json.dumps(payload).encode("utf-8") if payload is not None else None,
-            headers={
-                "Content-Type": "application/json",
-                "X-API-Key": self.api_key,
-            },
+            headers=_request_headers(self.api_key),
             method=method,
         )
         with urllib.request.urlopen(request, timeout=10) as response:
@@ -184,6 +189,16 @@ class ReliaiClient:
             "error_type": payload.get("error_type"),
             "metadata_json": _merge_metadata(payload),
         }
+        if normalized["metadata_json"] is None:
+            normalized["metadata_json"] = {}
+        normalized["metadata_json"].update(
+            {
+                "configured_project": self.project,
+                "reliai_mode": self.mode,
+            }
+        )
+        if self.local_project_id:
+            normalized["metadata_json"]["local_project_id"] = self.local_project_id
         if retrieval:
             normalized["retrieval"] = {
                 "retrieval_latency_ms": retrieval.get("retrieval_latency_ms"),
@@ -210,7 +225,25 @@ class ReliaiClient:
         }
 
     def _post(self, path: str, payload: dict[str, Any]) -> None:
-        self.request_json(path, method="POST", payload=payload)
+        try:
+            self.request_json(path, method="POST", payload=payload)
+        except Exception as exc:
+            if self.mode == "development":
+                self._console_log(path, payload, exc)
+                return
+            raise
+
+    def _console_log(self, path: str, payload: dict[str, Any], exc: Exception | None = None) -> None:
+        fallback_payload = {
+            "mode": self.mode,
+            "endpoint": self.endpoint,
+            "path": path,
+            "project": self.project,
+            "environment": self.environment,
+            "error": str(exc) if exc else None,
+            "payload": payload,
+        }
+        print(f"RELIAI {json.dumps(fallback_payload, sort_keys=True)}", file=sys.stderr)
 
 
 class ReliaiSpan:
@@ -287,11 +320,40 @@ class ReliaiSpan:
 _DEFAULT_CLIENT: ReliaiClient | None = None
 
 
+def initialize_default_client(
+    project: str | None = None,
+    api_key: str | None = None,
+    environment: str | None = None,
+) -> ReliaiClient:
+    global _DEFAULT_CLIENT
+    config = resolve_runtime_config(project=project, api_key=api_key, environment=environment)
+    _DEFAULT_CLIENT = ReliaiClient(
+        project=config.project,
+        api_key=config.api_key,
+        endpoint=config.endpoint,
+        environment=config.environment,
+        organization_id=config.organization_id,
+        local_project_id=config.local_project_id,
+        mode=config.mode,
+        console_fallback=config.console_fallback,
+    )
+    if config.mode == "development" and config.first_run:
+        print("Reliai initialized in development mode.\n\nDashboard:\nhttp://localhost:3000", file=sys.stderr)
+    return _DEFAULT_CLIENT
+
+
 def get_default_client() -> ReliaiClient:
     global _DEFAULT_CLIENT
     if _DEFAULT_CLIENT is None:
-        _DEFAULT_CLIENT = ReliaiClient()
+        _DEFAULT_CLIENT = initialize_default_client()
     return _DEFAULT_CLIENT
+
+
+def reset_default_client() -> None:
+    global _DEFAULT_CLIENT
+    if _DEFAULT_CLIENT is not None:
+        _DEFAULT_CLIENT.close()
+    _DEFAULT_CLIENT = None
 
 
 def _coerce_dict(value: Any) -> dict[str, Any]:
@@ -324,3 +386,10 @@ def _merge_metadata(payload: dict[str, Any]) -> dict[str, Any] | None:
             }
         )
     return metadata or None
+
+
+def _request_headers(api_key: str | None) -> dict[str, str]:
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["X-API-Key"] = api_key
+    return headers

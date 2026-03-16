@@ -1,173 +1,146 @@
 # Reliai
 
-Reliai is an AI reliability platform for LLM, RAG, and agentic applications. The current foundation covers operator auth, tenant-scoped org/project access, project API keys, trace ingestion, a trace explorer, retrieval span persistence, and a first structured-output evaluation scaffold.
+AI observability and reliability control plane for tracing AI systems, detecting incidents, applying guardrails, and analyzing production failures.
 
-SDKs currently live in:
-- `packages/reliai-python`
-- `packages/reliai-node`
+![Build](https://img.shields.io/badge/build-local-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-0.1.0-black)
+![Stars](https://img.shields.io/badge/stars-GitHub-lightgrey)
 
-Both package names are currently `reliai`.
+---
 
-## Local setup
+## What is Reliai?
 
-1. Copy `.env.example` to `.env`.
-2. Install dependencies and create the Python virtualenv:
+Reliai is an AI observability platform for LLM tracing, RAG debugging, AI monitoring, LLM reliability, and agent tracing.
+
+It is built for teams that need to:
+
+- trace AI requests and pipeline spans
+- detect AI regressions before users do
+- investigate incidents with trace graphs and comparisons
+- apply runtime guardrails and deployment safety checks
+
+This repository is the core open platform repo. The Python SDK is being separated into its own public repository. The Node SDK currently remains in-tree and is planned for a later extraction.
+
+---
+
+## Quickstart (30 seconds)
+
+Start the local infrastructure:
 
 ```bash
-make install
+docker compose up -d
 ```
 
-3. Start local Postgres and Redis:
-
-```bash
-make db-up
-```
-
-4. Apply database migrations:
+Then run the platform:
 
 ```bash
 make db-migrate
-```
-
-5. Seed a local organization, project, and API key:
-
-```bash
 make seed
-```
-
-The seed prints a local operator account:
-
-- `owner@acme.test`
-- `reliai-dev-password`
-
-6. Run the API:
-
-```bash
 make dev
-```
-
-7. Run the web app in another terminal:
-
-```bash
-pnpm --filter web dev
-```
-
-8. Run the worker in another terminal when you want evaluation jobs processed from Redis:
-
-```bash
-make worker
-```
-
-The API runs on `http://localhost:8000`. The web shell runs on `http://localhost:3000`. The RQ worker consumes the `default` queue.
-
-## Auth approach
-
-Milestone 3 uses a lean first-party operator auth scaffold:
-
-- `operator_users` stores operator email and password hash.
-- `operator_sessions` stores opaque session token hashes plus expiry and revocation timestamps.
-- operator endpoints require `Authorization: Bearer <session_token>`.
-- trace ingest remains project-key authenticated and does not use operator sessions.
-
-This keeps the auth boundary explicit without committing the repo to Clerk or WorkOS internals. Replacing it later means swapping the session resolution path, not rewriting tenant authorization rules.
-
-## Core commands
-
-- `make test` runs the API test suite.
-- `make test-integration` runs the Postgres-backed migration/auth/trace query integration path.
-- `make lint` runs Ruff and Next.js linting.
-- `make format` formats Python and web files.
-- `make dev` runs the FastAPI service only.
-- `make worker` runs the RQ worker for evaluation jobs.
-- `curl http://localhost:8000/health` verifies the API is up.
-- `curl http://localhost:3000` verifies the web shell is up.
-
-## Stabilization and verification
-
-Use this sequence before a manual product validation pass:
-
-```bash
-cp .env.example .env
-make install
-make db-up
-make db-migrate
-make seed
-```
-
-Run the app in three terminals:
-
-Terminal 1:
-
-```bash
-make dev
-```
-
-Terminal 2:
-
-```bash
 pnpm --filter web dev --port 3000
 ```
 
-Terminal 3:
+The control panel appears at:
 
-```bash
-make worker
+`http://localhost:3000`
+
+---
+
+## What you see after installing Reliai
+
+As soon as your application starts sending traces, Reliai automatically gives operators a production view of:
+
+- AI trace graphs
+- retrieval spans
+- guardrail triggers
+- incident detection
+- deployment regression detection
+
+![Reliai control panel](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/control-panel.png)
+
+---
+
+## Example Output
+
+Control panel:
+
+![Reliai control panel](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/control-panel.png)
+
+Trace graph:
+
+![Reliai trace graph](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/trace-graph.png)
+
+Incident investigation:
+
+![Reliai incident investigation](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/incident.png)
+
+---
+
+## Features
+
+- AI observability and LLM tracing
+- RAG debugging and agent tracing
+- regression detection and incident management
+- runtime guardrails and deployment safety gates
+- operator control panel and trace investigation
+- internal growth and reliability analytics
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TD
+    A["AI application / SDK"] --> B["Reliai ingest API"]
+    B --> C["Postgres operational state"]
+    B --> D["Event pipeline"]
+    D --> E["Warehouse + rollups"]
+    C --> F["Operator control panel"]
+    E --> F
 ```
 
-Then verify the stack:
+Core directories:
 
-```bash
-curl -s http://127.0.0.1:8000/api/v1/health
-curl -I http://127.0.0.1:3000
-```
+- `/apps/web`
+- `/apps/api`
+- `/docs`
+- `/scripts`
+- `/infra`
 
-Reference docs:
-- `/Users/robert/Documents/Reliai/docs/stabilization-runbook.md`
-- `/Users/robert/Documents/Reliai/docs/validation-matrix.md`
+---
 
-## Trace payload policy
+## Examples
 
-- `input_text` is rejected above `TRACE_INPUT_TEXT_MAX_CHARS` and previewed to 240 compacted characters.
-- `output_text` is rejected above `TRACE_OUTPUT_TEXT_MAX_CHARS` and previewed to 240 compacted characters.
-- `metadata_json` is rejected above 50 top-level keys or `TRACE_METADATA_MAX_BYTES` serialized bytes.
-- retrieval metadata is optional and `retrieved_chunks_json` is capped at 100 entries.
+Planned public ecosystem:
 
-These rules keep ingestion inspectable, bounded, and safe for local Postgres storage.
+- `reliai-python`
+- `reliai-demo`
+- `reliai-examples`
+- `reliai-rag-starter`
+- `reliai-agent-starter`
 
-## First ingest check
+Local repo-split scaffolds live in:
 
-After `make seed`, use the printed API key with:
+- [`repo-templates/`](/Users/robert/Documents/Reliai/repo-templates)
 
-```bash
-curl -X POST http://localhost:8000/api/v1/ingest/traces \
-  -H "x-api-key: reliai_..." \
-  -H "content-type: application/json" \
-  -d '{
-    "timestamp": "2026-03-09T12:00:00Z",
-    "request_id": "req_123",
-    "model_name": "gpt-4.1-mini",
-    "success": true
-  }'
-```
+---
 
-## Milestone 1 endpoints
+## Documentation
 
-- `GET /health`
-- `GET /api/v1/health`
-- `POST /api/v1/organizations`
-- `GET /api/v1/organizations/{organization_id}`
-- `POST /api/v1/organizations/{organization_id}/projects`
-- `GET /api/v1/projects/{project_id}`
-- `POST /api/v1/projects/{project_id}/api-keys`
-- `POST /api/v1/ingest/traces`
+- [Current state](/Users/robert/Documents/Reliai/docs/04-current-state.md)
+- [Product capabilities](/Users/robert/Documents/Reliai/docs/product-capabilities.md)
+- [Repo separation plan](/Users/robert/Documents/Reliai/docs/repo-separation-plan.md)
 
-## Trace explorer endpoints
+---
 
-- `GET /api/v1/traces`
-- `GET /api/v1/traces/{trace_id}`
+## Community
 
-## Auth endpoints
+- [Contributing](/Users/robert/Documents/Reliai/CONTRIBUTING.md)
+- [Code of Conduct](/Users/robert/Documents/Reliai/CODE_OF_CONDUCT.md)
 
-- `POST /api/v1/auth/sign-in`
-- `GET /api/v1/auth/session`
-- `POST /api/v1/auth/sign-out`
+---
+
+## License
+
+MIT

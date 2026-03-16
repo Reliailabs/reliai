@@ -1,0 +1,58 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    environment:
+      RELIAI_ENDPOINT: http://host.docker.internal:8000
+      RELIAI_ENV: development
+      RELIAI_PROJECT: reliai-demo
+      RETRIEVER_URL: http://retriever:8011
+      TOOLS_URL: http://tools:8012
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8010:8010"
+    depends_on:
+      - retriever
+      - tools
+
+  retriever:
+    build:
+      context: .
+      dockerfile: services/retriever/Dockerfile
+    environment:
+      RELIAI_ENDPOINT: http://host.docker.internal:8000
+      RELIAI_ENV: development
+      RELIAI_PROJECT: reliai-demo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8011:8011"
+
+  tools:
+    build:
+      context: .
+      dockerfile: services/tools/Dockerfile
+    environment:
+      RELIAI_ENDPOINT: http://host.docker.internal:8000
+      RELIAI_ENV: development
+      RELIAI_PROJECT: reliai-demo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8012:8012"
+
+  traffic-generator:
+    build:
+      context: .
+      dockerfile: services/traffic-generator/Dockerfile
+    environment:
+      AGENT_URL: http://agent:8010
+      RELIAI_ENDPOINT: http://host.docker.internal:8000
+      RELIAI_ENV: development
+      RELIAI_PROJECT: reliai-demo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - agent
