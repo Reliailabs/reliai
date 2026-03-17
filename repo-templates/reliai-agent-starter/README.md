@@ -1,55 +1,46 @@
 # Reliai Agent Starter
 
-Production-style agent starter for AI observability, LLM tracing, AI monitoring, LLM reliability, and agent tracing.
-
-![Build](https://img.shields.io/badge/build-local-blue)
+![Docker](https://img.shields.io/badge/docker-ready-blue)
+![Demo](https://img.shields.io/badge/demo-included-green)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Version](https://img.shields.io/badge/version-0.1.0-black)
-![Stars](https://img.shields.io/badge/stars-GitHub-lightgrey)
+
+Production-ready agent template with full Reliai observability wired in from day one.
+
+![Reliai control panel](./assets/control-panel.png)
+
+> A production agent scaffold with Reliai tracing, tool spans, memory tracking, and guardrail hooks already wired in.
 
 ---
 
-## What is Reliai?
-
-This starter shows how to trace agent steps, tool execution, retries, and guardrail checks in a production-style agent app.
-
----
-
-## Quickstart (30 seconds)
+## Quickstart
 
 ```bash
 git clone https://github.com/reliai/reliai-agent-starter
+cd reliai-agent-starter
 docker compose up
 ```
 
----
-
-## What you see after installing Reliai
-
-The starter turns agent traffic into:
-
-- AI trace graphs
-- retrieval spans
-- guardrail triggers
-- incident detection
-- deployment regression detection
-
-![Reliai control panel](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/control-panel.png)
+Open **http://localhost:3000** to see agent traces appear.
 
 ---
 
-## Example Output
+## What's New
 
-![Reliai incident investigation](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/incident.png)
+- (2026-03-25) Added LangGraph agent example with guardrail tracing
+- (2026-03-17) Added guardrail hook examples with retry tracing
+- (2026-03-11) Launched one-command demo — `docker compose up` runs the full stack
 
 ---
 
-## Features
+## What You Will See
 
-- agent reasoning loops
-- tool calls
-- retries
-- guardrail checks
+**Agent trace graph** — every reasoning step, tool call, and memory read is a span. The trace graph shows the full decision path from query to response.
+
+**Tool execution spans** — each tool call is traced with latency, input, and output. Timeouts and retries are captured automatically.
+
+**Guardrail checks** — guardrail hooks fire after LLM completions and before responses are returned. Blocked outputs and retries both appear in the trace.
+
+**Incident detection** — repeated tool failures or guardrail blocks surface as incidents in the control panel with recommended actions.
 
 ---
 
@@ -59,26 +50,34 @@ The starter turns agent traffic into:
 flowchart TD
     A["agent"] --> B["tools"]
     A --> C["memory"]
-    A --> D["reliai-hooks"]
+    A --> D["LLM"]
+    B --> E["Reliai tracing"]
+    C --> E
+    D --> E
+    E --> F["guardrail hooks"]
+    F --> G["Reliai control panel"]
 ```
 
 ---
 
-## Examples
+## Structure
 
-See `agent/`, `tools/`, `memory/`, and `reliai-hooks/`.
+| Directory | Role |
+|---|---|
+| `agent/` | Agent orchestration logic |
+| `tools/` | Tool definitions and execution |
+| `memory/` | Memory read/write layer |
+| `reliai-hooks/` | Guardrail and tracing hooks |
 
 ---
 
-## Documentation
+## Next Steps
 
-See the platform repo and starter README.
-
----
-
-## Community
-
-See `CONTRIBUTING.md`.
+- [reliai-python](https://github.com/reliai/reliai-python) — SDK docs and advanced instrumentation
+- [reliai-demo](https://github.com/reliai/reliai-demo) — run the full Reliai platform locally in 60 seconds
+- [reliai-examples](https://github.com/reliai/reliai-examples) — copy-paste integration examples
+- [Documentation](https://reliai.dev/docs) — platform docs and API reference
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — how to contribute
 
 ---
 

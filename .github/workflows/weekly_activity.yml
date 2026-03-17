@@ -1,0 +1,110 @@
+name: Weekly activity refresh
+
+on:
+  schedule:
+    - cron: "0 15 * * 2"  # every Tuesday at 15:00 UTC
+  workflow_dispatch:        # allow manual trigger for testing
+
+jobs:
+  # ── Job 1: Update README sections ────────────────────────────────────────
+  readme-refresh:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run weekly refresh script
+        run: python scripts/weekly_refresh.py
+
+      - name: Check for changes
+        id: check
+        run: |
+          git diff --quiet \
+            && echo "changed=false" >> "$GITHUB_OUTPUT" \
+            || echo "changed=true"  >> "$GITHUB_OUTPUT"
+
+      - name: Commit README updates
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name  "reliai-bot"
+          git config user.email "bot@reliai.dev"
+          git add README.md repo-templates/
+          git commit -m "chore: weekly demo + README refresh"
+          git push
+
+  # ── Job 2: Regenerate marketing screenshots ───────────────────────────────
+  screenshot-refresh:
+    runs-on: ubuntu-latest
+    needs: readme-refresh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main  # pick up any commit from readme-refresh job
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.26.0"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build web app
+        run: pnpm --filter web build
+
+      - name: Start web server
+        run: pnpm --filter web start &
+
+      - name: Wait for server to be ready
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000 && break
+            echo "waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Regenerate marketing screenshots
+        run: pnpm screenshots:marketing
+
+      - name: Commit screenshots if changed
+        run: |
+          git config user.name  "reliai-bot"
+          git config user.email "bot@reliai.dev"
+          git add apps/web/public/screenshots/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: weekly demo + README refresh"
+            git push
+          fi
+
+  # ── Job 3: Create lightweight release ────────────────────────────────────
+  release:
+    runs-on: ubuntu-latest
+    needs: [readme-refresh, screenshot-refresh]
+    if: needs.readme-refresh.outputs.changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create weekly release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          gh release create "weekly-${DATE}" \
+            --title "Weekly update – ${DATE}" \
+            --notes "Automated weekly README and screenshot refresh." \
+            --prerelease

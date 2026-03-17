@@ -1,47 +1,142 @@
 services:
-  agent:
-    build:
-      context: .
-      dockerfile: services/agent/Dockerfile
+  # ── Infrastructure ─────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
     environment:
-      RELIAI_ENDPOINT: http://host.docker.internal:8000
-      RELIAI_ENV: development
-      RELIAI_PROJECT: reliai-demo
-      RETRIEVER_URL: http://retriever:8011
-      TOOLS_URL: http://tools:8012
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "8010:8010"
-    depends_on:
-      - retriever
-      - tools
+      POSTGRES_DB: reliai
+      POSTGRES_USER: reliai
+      POSTGRES_PASSWORD: reliai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reliai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Reliai platform ────────────────────────────────────────────────────────
+  api:
+    image: ghcr.io/reliai/api:latest
+    environment:
+      DATABASE_URL: postgresql://reliai:reliai@postgres:5432/reliai
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: demo-secret-key-change-in-production
+      RELIAI_ENV: development
+      SEED_ON_STARTUP: "true"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  worker:
+    image: ghcr.io/reliai/api:latest
+    command: ["python", "-m", "workers.main"]
+    environment:
+      DATABASE_URL: postgresql://reliai:reliai@postgres:5432/reliai
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: demo-secret-key-change-in-production
+      RELIAI_ENV: development
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/reliai/web:latest
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      API_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # ── Demo services ──────────────────────────────────────────────────────────
   retriever:
     build:
       context: .
       dockerfile: services/retriever/Dockerfile
     environment:
-      RELIAI_ENDPOINT: http://host.docker.internal:8000
+      RELIAI_ENDPOINT: http://api:8000
       RELIAI_ENV: development
       RELIAI_PROJECT: reliai-demo
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "8011:8011"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8011/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   tools:
     build:
       context: .
       dockerfile: services/tools/Dockerfile
     environment:
-      RELIAI_ENDPOINT: http://host.docker.internal:8000
+      RELIAI_ENDPOINT: http://api:8000
       RELIAI_ENV: development
       RELIAI_PROJECT: reliai-demo
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "8012:8012"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8012/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    environment:
+      RELIAI_ENDPOINT: http://api:8000
+      RELIAI_ENV: development
+      RELIAI_PROJECT: reliai-demo
+      RETRIEVER_URL: http://retriever:8011
+      TOOLS_URL: http://tools:8012
+    ports:
+      - "8010:8010"
+    depends_on:
+      retriever:
+        condition: service_healthy
+      tools:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8010/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   traffic-generator:
     build:
@@ -49,10 +144,13 @@ services:
       dockerfile: services/traffic-generator/Dockerfile
     environment:
       AGENT_URL: http://agent:8010
-      RELIAI_ENDPOINT: http://host.docker.internal:8000
+      RELIAI_ENDPOINT: http://api:8000
       RELIAI_ENV: development
       RELIAI_PROJECT: reliai-demo
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
-      - agent
+      agent:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

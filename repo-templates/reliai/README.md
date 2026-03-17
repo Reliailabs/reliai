@@ -1,59 +1,47 @@
 # Reliai
 
-AI observability platform for tracing AI systems, incident detection, guardrails, and reliability analysis.
+![Stars](https://img.shields.io/github/stars/reliai/reliai?style=social)
+![License](https://img.shields.io/github/license/reliai/reliai)
+![API](https://img.shields.io/badge/api-REST-blue)
+![Docker](https://img.shields.io/badge/docker-ready-blue)
 
-![Build](https://img.shields.io/badge/build-local-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Version](https://img.shields.io/badge/version-0.1.0-black)
-![Stars](https://img.shields.io/badge/stars-GitHub-lightgrey)
+Used in production to monitor real AI systems and detect failures before users do.
 
----
+![Reliai control panel](./assets/control-panel.png)
 
-## What is Reliai?
-
-Reliai is an AI observability and AI monitoring platform for LLM tracing, RAG debugging, LLM reliability, and agent tracing.
+> Detect, investigate, and prevent AI failures in production.
 
 ---
 
-## Quickstart (30 seconds)
+## Quickstart
 
 ```bash
+git clone https://github.com/reliai/reliai-demo
+cd reliai-demo
 docker compose up
 ```
 
-Then open:
-
-`http://localhost:3000`
+Open **http://localhost:3000**
 
 ---
 
-## What you see after installing Reliai
+## What's New
 
-Reliai automatically turns live traffic into an operator surface with:
-
-- AI trace graphs
-- retrieval spans
-- guardrail triggers
-- incident detection
-- deployment regression detection
-
-![Reliai control panel](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/control-panel.png)
+- (2026-03-25) Added LangGraph agent example with guardrail tracing
+- (2026-03-17) Added LangGraph agent example with guardrail tracing
+- (2026-03-11) Launched one-command demo — `docker compose up` runs the full stack
 
 ---
 
-## Example Output
+## What You Will See
 
-![Reliai control panel](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/control-panel.png)
+**AI trace graph** — every request rendered as a graph of spans across retrieval, tool calls, LLM, and guardrail layers. Click any node to inspect inputs, outputs, and latency.
 
----
+**Incident detection** — Reliai opens incidents automatically when failure patterns emerge. The incident command center shows affected traces, a severity score, and a recommended action.
 
-## Features
+**Guardrail triggers** — when a guardrail policy fires, the blocked span and the retry both appear in the trace so you can see exactly what changed.
 
-- AI trace ingestion
-- incident detection
-- runtime guardrails
-- trace graphs
-- reliability analysis
+**Deployment regressions** — the control panel scores each deployment against the prior baseline and flags output quality drops before they reach users.
 
 ---
 
@@ -63,28 +51,31 @@ Reliai automatically turns live traffic into an operator surface with:
 flowchart TD
     A["SDK / AI app"] --> B["Reliai API"]
     B --> C["Control panel"]
-    B --> D["Warehouse + analytics"]
+    B --> D["Incident engine"]
+    B --> E["Regression scorer"]
+    C --> F["Trace explorer"]
+    C --> G["Incident command center"]
 ```
 
 ---
 
 ## Examples
 
-- `reliai-examples`
-- `reliai-rag-starter`
-- `reliai-agent-starter`
+| Repo | What it shows |
+|---|---|
+| [reliai-demo](https://github.com/reliai/reliai-demo) | Full stack locally in 60 seconds |
+| [reliai-python](https://github.com/reliai/reliai-python) | Python SDK — pip install and instrument |
+| [reliai-examples](https://github.com/reliai/reliai-examples) | Copy-paste integrations for common stacks |
+| [reliai-rag-starter](https://github.com/reliai/reliai-rag-starter) | Production RAG template with tracing wired in |
+| [reliai-agent-starter](https://github.com/reliai/reliai-agent-starter) | Production agent template with tool tracing |
 
 ---
 
-## Documentation
+## Next Steps
 
-Platform docs live in `/docs`.
-
----
-
-## Community
-
-See `CONTRIBUTING.md`.
+- [reliai-python SDK](https://github.com/reliai/reliai-python) — instrument any Python LLM app in minutes
+- [Documentation](https://reliai.dev/docs) — platform docs, API reference, integration guides
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — how to contribute
 
 ---
 

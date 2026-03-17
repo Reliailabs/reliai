@@ -88,6 +88,20 @@ Incident investigation:
 
 ---
 
+## What's New
+
+- (2026-03-25) Added LangGraph agent example with guardrail tracing
+- (2026-03-17) Added LangGraph agent example with guardrail tracing
+- (2026-03-11) Launched one-command demo — `docker compose up` runs the full stack
+
+---
+
+## Featured Example
+
+**[fastapi-rag](./examples/fastapi-rag)** — FastAPI + retriever + LLM with retrieval spans and latency breakdown per step.
+
+---
+
 ## Architecture
 
 ```mermaid

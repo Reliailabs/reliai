@@ -1,21 +1,19 @@
 # Reliai Python
 
-Python instrumentation SDK for AI observability, LLM tracing, RAG debugging, AI monitoring, and LLM reliability.
+![PyPI](https://img.shields.io/badge/pypi-reliai-blue)
+![Python](https://img.shields.io/badge/python-3.9+-blue)
+![CI](https://img.shields.io/badge/build-passing-brightgreen)
+![License](https://img.shields.io/github/license/reliai/reliai-python)
 
-![Build](https://img.shields.io/badge/build-local-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Version](https://img.shields.io/badge/version-0.1.0-black)
-![Stars](https://img.shields.io/badge/stars-GitHub-lightgrey)
+Drop-in SDK for Python apps — instrument OpenAI, Anthropic, LangChain, or any LLM in minutes.
 
----
+![Reliai trace graph](./assets/trace-graph.png)
 
-## What is Reliai?
-
-Reliai helps developers trace AI systems, detect failures, and keep production AI systems reliable.
+> Instrument any Python LLM app in one import. See traces, incidents, and regressions in the Reliai control panel.
 
 ---
 
-## Quickstart (30 seconds)
+## Quickstart
 
 ```bash
 pip install reliai
@@ -35,25 +33,25 @@ async def call_llm(prompt: str) -> str:
     return f"Echo: {prompt}"
 ```
 
----
-
-## What you see after installing Reliai
-
-After installation, Reliai automatically gives you:
-
-- AI trace graphs
-- retrieval spans
-- guardrail triggers
-- incident detection
-- deployment regression detection
-
-![Reliai control panel](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/control-panel.png)
+Open **http://localhost:3000** to see traces appear.
 
 ---
 
-## Example Output
+## What's New
 
-![Reliai trace graph](https://raw.githubusercontent.com/reliai/reliai/main/apps/web/public/screenshots/trace-graph.png)
+- (2026-03-25) Added LangGraph agent example with guardrail tracing
+- (2026-03-17) Added zero-config auto-instrumentation for FastAPI and LangChain
+- (2026-03-11) Launched one-command demo — `docker compose up` runs the full stack
+
+---
+
+## What You Will See
+
+**Trace graph** — every decorated function becomes a span. Nested calls produce a graph: retriever → LLM → guardrail. Latency, inputs, and outputs are captured automatically.
+
+**Incident detection** — when failures cluster, Reliai opens an incident and links the relevant traces. No alert configuration required for the defaults.
+
+**Regression scoring** — each deployment is scored against the prior output baseline. Quality drops surface on the control panel before users notice.
 
 ---
 
@@ -66,14 +64,7 @@ reliai.init()
 reliai.auto_instrument()
 ```
 
-This automatically instruments:
-
-- FastAPI
-- OpenAI SDK
-- LangChain
-- agent frameworks built on traced tool and LLM calls
-
-No decorators required.
+Automatically instruments FastAPI, OpenAI SDK, Anthropic SDK, and LangChain — no decorators required.
 
 ```mermaid
 flowchart TD
@@ -87,97 +78,60 @@ flowchart TD
 
 ---
 
-## Zero-Code Application Instrumentation
+## Zero-Code CLI Instrumentation
 
 ```bash
 pip install reliai
 reliai-run uvicorn app:app
 ```
 
-Reliai will automatically trace:
-
-- FastAPI requests
-- LangChain chains
-- LLM calls
-- tool execution
-
-No code changes required.
+Traces FastAPI requests, LangChain chains, LLM calls, and tool execution without any code changes.
 
 ---
 
-## Automatic App Instrumentation
-
-You can also enable startup-time tracing with environment-only bootstrap:
+## Environment Bootstrap
 
 ```bash
 export RELIAI_AUTO_INSTRUMENT=true
 python app.py
 ```
 
-This loads Reliai during interpreter startup and applies `reliai.init()` plus `reliai.auto_instrument()` before your app code runs.
+Loads Reliai at interpreter startup — no import needed in your application code.
 
 ---
 
 ## Share Investigation Links
 
-When an error or slow trace is captured, Reliai prints a direct investigation link:
+When a slow trace or error is captured, Reliai prints a direct link:
 
-```text
+```
 Reliai trace captured
 
-Investigate:
-https://app.reliai.dev/traces/abc123
+Investigate: https://app.reliai.dev/traces/abc123
 ```
 
-Engineers often paste these links into Slack threads during incidents so the whole team lands on the same trace immediately.
-
----
-
-## Features
-
-- zero-config `@reliai.trace` decorator
-- automatic framework instrumentation
-- zero-code CLI instrumentation
-- tracing and spans
-- OpenAI instrumentation
-- Anthropic instrumentation
-- LangChain instrumentation
-- FastAPI integration
-
----
-
-## Architecture
-
-```mermaid
-flowchart TD
-    A["Python app"] --> B["reliai-python"]
-    B --> C["Reliai ingest API"]
-    C --> D["Control panel"]
-```
+Paste into a Slack thread and the whole team lands on the same trace.
 
 ---
 
 ## Examples
 
-- `examples/openai_basic.py`
-- `examples/anthropic_basic.py`
-- `examples/langchain_basic.py`
-- `examples/fastapi_app.py`
-- `examples/openai_auto.py`
-- `examples/langchain_auto.py`
-- `examples/fastapi_auto.py`
+- `examples/openai_basic.py` — manual span instrumentation
+- `examples/anthropic_basic.py` — Anthropic SDK tracing
+- `examples/langchain_basic.py` — LangChain chain tracing
+- `examples/fastapi_app.py` — FastAPI request tracing
+- `examples/openai_auto.py` — zero-config auto-instrument
+- `examples/langchain_auto.py` — LangChain auto-instrument
+- `examples/fastapi_auto.py` — FastAPI auto-instrument
 
 ---
 
-## Documentation
+## Next Steps
 
-See the core platform docs at `github.com/reliai/reliai`.
-
----
-
-## Community
-
-See `CONTRIBUTING.md`.
+- [reliai-demo](https://github.com/reliai/reliai-demo) — run the full Reliai stack locally in 60 seconds
+- [reliai-examples](https://github.com/reliai/reliai-examples) — copy-paste integrations for common stacks
+- [Documentation](https://reliai.dev/docs) — full SDK reference
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — how to contribute
 
 ---
 
