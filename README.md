@@ -77,6 +77,14 @@ Incident investigation:
 
 ---
 
+## Used By
+
+Used by engineers building AI systems in production.
+
+<!-- Add logos or company names here as adoption grows -->
+
+---
+
 ## Features
 
 - AI observability and LLM tracing
