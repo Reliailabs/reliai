@@ -1,0 +1,26 @@
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.venv
+**/venv
+**/.pytest_cache
+**/.ruff_cache
+
+# Node
+**/node_modules
+**/.next
+
+# Git + CI
+.git
+.github
+
+# Local dev
+**/.env
+**/.env.*
+!**/.env.example
+**/docker-compose.override.yml
+
+# OS
+**/.DS_Store
+**/Thumbs.db

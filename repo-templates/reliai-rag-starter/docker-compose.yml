@@ -1,4 +1,84 @@
 services:
-  app:
-    image: python:3.12-slim
-    command: ["python", "-m", "http.server", "8010"]
+  # ── Reliai platform ────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: reliai
+      POSTGRES_USER: reliai
+      POSTGRES_PASSWORD: reliai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reliai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: ghcr.io/reliai/api:latest
+    environment:
+      DATABASE_URL: postgresql://reliai:reliai@postgres:5432/reliai
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: change-in-production
+      RELIAI_ENV: development
+      SEED_ON_STARTUP: "true"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  worker:
+    image: ghcr.io/reliai/api:latest
+    command: ["python", "-m", "workers.main"]
+    environment:
+      DATABASE_URL: postgresql://reliai:reliai@postgres:5432/reliai
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: change-in-production
+      RELIAI_ENV: development
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/reliai/web:latest
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      API_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # ── Your RAG app (add your code to app/ and retriever/) ────────────────────
+  # app:
+  #   build: .
+  #   environment:
+  #     RELIAI_ENDPOINT: http://api:8000
+  #     RELIAI_PROJECT: my-rag-app
+  #   depends_on:
+  #     api:
+  #       condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

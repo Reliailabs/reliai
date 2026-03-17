@@ -1,20 +1,35 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "reliai"
 version = "0.1.0"
-description = "Reliai Python SDK"
-requires-python = ">=3.10"
+description = "Observability and reliability tooling for AI systems"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Reliai Labs" }]
+requires-python = ">=3.9"
 dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/reliai/reliai-python"
+Repository = "https://github.com/reliai/reliai-python"
+"Bug Tracker" = "https://github.com/reliai/reliai-python/issues"
 
 [project.scripts]
 reliai-run = "reliai.cli.run:main"
 
-[tool.setuptools]
-package-dir = {"" = "."}
-py-modules = ["sitecustomize"]
-
-[tool.setuptools.packages.find]
-where = ["."]
+[tool.hatch.build.targets.wheel]
+include = ["reliai/", "sitecustomize.py"]

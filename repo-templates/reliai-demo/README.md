@@ -146,7 +146,7 @@ An initial burst of 15 concurrent traces is sent on startup so the dashboard sho
 **Instrument your own app** — install the SDK and send real traces in minutes:
 
 ```bash
-pip install reliai-python
+pip install reliai
 ```
 
 ```python

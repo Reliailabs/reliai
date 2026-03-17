@@ -28,7 +28,7 @@ Open **http://localhost:3000** to see the trace appear.
 ## What's New
 
 - (2026-03-25) Added LangGraph agent example with guardrail tracing
-- (2026-03-17) Added LangGraph agent example with guardrail tracing
+- (2026-03-17) Improved trace visualization in the demo control panel
 - (2026-03-11) Added evaluation pipeline example with regression scoring
 
 ---

@@ -28,7 +28,7 @@ Open **http://localhost:3000**
 ## What's New
 
 - (2026-03-25) Added LangGraph agent example with guardrail tracing
-- (2026-03-17) Added LangGraph agent example with guardrail tracing
+- (2026-03-17) Added zero-config init with RELIAI_AUTO_INSTRUMENT environment variable support
 - (2026-03-11) Launched one-command demo — `docker compose up` runs the full stack
 
 ---

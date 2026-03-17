@@ -642,3 +642,101 @@ Apply to all replies across HN, Twitter, and Reddit:
 | Qualify down, not up | "revolutionary" |
 
 The most credible position is being willing to say: *"This might not be useful for you."* That's what makes people lean in.
+
+---
+
+## Distribution Readiness Gate
+
+**The rule: if "copy-paste → works" is broken, do not launch.**
+
+Devtools win or die in the first 5 minutes. A broken install experience on Day 0 kills trust faster than any amount of HN downvotes.
+
+### The 2 blockers that prevent launch
+
+Both of these must be resolved before any public post:
+
+**1. `reliai` not on PyPI**
+
+Until the package is published:
+
+```
+pip install reliai  →  ❌ fails
+```
+
+Anyone who sees the demo, reads the README, or tries an example hits this immediately.
+
+**2. Docker images not pushed to GHCR**
+
+Until `ghcr.io/reliai/api:latest` and `ghcr.io/reliai/web:latest` exist:
+
+```
+docker compose up  →  ❌ fails
+```
+
+Every repo that includes the full stack — `reliai-demo`, `reliai-agent-starter`, `reliai-rag-starter` — is dead on arrival.
+
+### What launching now looks like
+
+HN or Reddit traffic arrives → developer tries the quickstart → `pip install reliai` fails or `docker compose up` fails → they close the tab. Trust is gone. Re-posts don't recover from this.
+
+### What's already solid (do not re-do this work)
+
+The audit completed before launch resolved the harder issues:
+
+- SDK API consistent across all demo services
+- `reliai-python` template exposes the correct public API
+- Starter repos now start the full platform stack on `docker compose up`
+- Demo generates realistic traffic immediately on startup
+- README structure is visual-first with quickstart before explanation
+
+These are harder to get right than publishing a package. The remaining work is mechanical.
+
+### Launch-ready smoke tests (run all three before posting anywhere)
+
+**Test 1 — SDK installs and initializes**
+
+```bash
+pip install reliai
+python -c "import reliai; reliai.init(); print('ok')"
+```
+
+Expected: prints `ok`, no errors.
+
+**Test 2 — Demo runs end-to-end**
+
+```bash
+git clone https://github.com/reliai/reliai-demo
+cd reliai-demo
+docker compose up
+```
+
+Expected: dashboard live at `http://localhost:3000`, traces appearing within 60 seconds.
+
+**Test 3 — Simplest example runs**
+
+```bash
+git clone https://github.com/reliai/reliai-examples
+cd reliai-examples/examples/simple-llm
+pip install -r requirements.txt
+python app.py
+```
+
+Expected: runs without error, traces visible in the control panel.
+
+### Exact sequence before launch
+
+| Day | Action |
+|---|---|
+| Day -2 | Publish `reliai` to PyPI (`pip install reliai` works) |
+| Day -2 | Build and push `ghcr.io/reliai/api:latest` and `ghcr.io/reliai/web:latest` |
+| Day -1 | Run all three smoke tests end-to-end on a clean machine |
+| Day -1 | Re-run screenshot generator — screenshots must show live data |
+| Day 0 | Launch (HN + Twitter thread, coordinated with Tuesday 8–10 AM PST) |
+
+Do not compress Day -2 and Day -1 into a single day. The smoke test on a clean machine will find something.
+
+### What "do not launch yet" does not mean
+
+It does not mean the product isn't ready. The platform, SDK, demo, and distribution repos are in better shape than most devtool launches. The two blockers are operational tasks, not product problems.
+
+You are 1–2 days from a strong launch. Shipping 95% complete = 0% for a devtool.
