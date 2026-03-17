@@ -5,6 +5,9 @@ on:
     - cron: "0 15 * * 2"  # every Tuesday at 15:00 UTC
   workflow_dispatch:        # allow manual trigger for testing
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ── Job 1: Update README sections ────────────────────────────────────────
   readme-refresh:
