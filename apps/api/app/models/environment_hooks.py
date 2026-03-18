@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import event
 
 from app.models.deployment import Deployment
@@ -17,6 +19,14 @@ def _set_environment_id(mapper, connection, target) -> None:
         target.environment_id = environment_id
 
 
+def _set_trace_id(mapper, connection, target: Trace) -> None:
+    del mapper
+    del connection
+    if not target.trace_id:
+        fallback = target.span_id or target.id or uuid.uuid4()
+        target.trace_id = str(fallback)
+
+
 for _model in (
     Trace,
     Incident,
@@ -27,3 +37,5 @@ for _model in (
     DeploymentRiskScore,
 ):
     event.listen(_model, "before_insert", _set_environment_id)
+
+event.listen(Trace, "before_insert", _set_trace_id)
