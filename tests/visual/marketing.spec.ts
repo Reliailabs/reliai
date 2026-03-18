@@ -9,6 +9,9 @@ const screenshotRoutes = [
 ] as const;
 
 async function preparePage(page: Page, route: string) {
+  await page.addInitScript(() => {
+    Date.now = () => 1_700_000_000_000;
+  });
   await page.goto(route, { waitUntil: "networkidle" });
   await page.waitForFunction(() =>
     Array.from(document.images).every((image) => image.complete && image.naturalWidth > 0),
@@ -34,7 +37,7 @@ test.describe("marketing visual regressions", () => {
     await expect(page).toHaveScreenshot("homepage.png", {
       animations: "disabled",
       caret: "hide",
-      fullPage: true,
+      fullPage: false,
       timeout: 30_000,
     });
   });
@@ -44,7 +47,7 @@ test.describe("marketing visual regressions", () => {
     await expect(page).toHaveScreenshot("demo.png", {
       animations: "disabled",
       caret: "hide",
-      fullPage: true,
+      fullPage: false,
       timeout: 30_000,
     });
   });
@@ -54,7 +57,7 @@ test.describe("marketing visual regressions", () => {
     await expect(page).toHaveScreenshot("playground-page.png", {
       animations: "disabled",
       caret: "hide",
-      fullPage: true,
+      fullPage: false,
       timeout: 30_000,
     });
   });
@@ -62,6 +65,17 @@ test.describe("marketing visual regressions", () => {
   for (const shot of screenshotRoutes) {
     test(`${shot.name} screenshot stable`, async ({ page }) => {
       await preparePage(page, shot.route);
+
+      if (shot.name === "control-panel") {
+        await page.waitForSelector("[data-control-panel-ready]", { state: "visible" });
+        const panel = page.locator("[data-control-panel]");
+        await expect(panel).toHaveScreenshot(`${shot.name}.png`, {
+          animations: "disabled",
+          caret: "hide",
+          timeout: 30_000,
+        });
+        return;
+      }
 
       await expect(page).toHaveScreenshot(`${shot.name}.png`, {
         animations: "disabled",

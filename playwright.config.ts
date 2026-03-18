@@ -10,8 +10,8 @@ export default defineConfig({
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: "http://127.0.0.1:3000",
-    viewport: { width: 3200, height: 2000 },
-    deviceScaleFactor: 1,
+    viewport: { width: 1600, height: 1200 },
+    deviceScaleFactor: 2,
     trace: "on-first-retry",
   },
   projects: [
