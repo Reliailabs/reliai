@@ -120,7 +120,7 @@ def test_guardrail_metrics_endpoint_accepts_project_api_key(client, db_session):
     )
 
     assert response.status_code == 200
-    assert response.json() == {"policies": [], "recent_events": []}
+    assert response.json() == {"policies": [], "recent_events": [], "trace_policy_counts": []}
 
 
 def test_guardrail_metrics_are_tenant_safe(client, db_session):
@@ -151,4 +151,4 @@ def test_guardrail_metrics_empty_project_returns_deterministic_payload(client, d
     )
 
     assert response.status_code == 200
-    assert response.json() == {"policies": [], "recent_events": []}
+    assert response.json() == {"policies": [], "recent_events": [], "trace_policy_counts": []}

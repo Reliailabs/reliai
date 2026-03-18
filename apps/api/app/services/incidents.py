@@ -640,17 +640,23 @@ def list_incidents(db: Session, operator: OperatorContext, query: IncidentListQu
 
 def get_incident_detail(db: Session, operator: OperatorContext, incident_id: UUID) -> Incident:
     incident = db.scalar(
+    allowed_project_ids = authorized_project_ids(db, operator)
+    if not allowed_project_ids:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+    incident = db.scalar(
         select(Incident)
         .options(
             joinedload(Incident.project),
             joinedload(Incident.acknowledged_by_operator),
             joinedload(Incident.owner_operator),
         )
-        .where(Incident.id == incident_id)
+        .where(
+            Incident.id == incident_id,
+            Incident.project_id.in_(allowed_project_ids),
+        )
     )
     if incident is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
-    require_project_access(db, operator, incident.project_id)
     incident.latest_alert_delivery = _latest_alert_delivery(db, incident.id)
     return incident
 
