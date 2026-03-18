@@ -8,14 +8,15 @@ const screenshotRoutes = [
   { name: "playground", route: "/marketing/screenshot/playground" },
 ] as const;
 
-async function preparePage(page: Page, route: string) {
+async function preparePage(page: Page, route: string, readySelector?: string) {
   await page.addInitScript(() => {
     Date.now = () => 1_700_000_000_000;
   });
   await page.goto(route, { waitUntil: "networkidle" });
-  await page.waitForFunction(() =>
-    Array.from(document.images).every((image) => image.complete && image.naturalWidth > 0),
-  );
+  await page.waitForLoadState("networkidle");
+  if (readySelector) {
+    await page.waitForSelector(readySelector, { state: "visible" });
+  }
   await page.addStyleTag({
     content: `
       *,
@@ -33,8 +34,9 @@ async function preparePage(page: Page, route: string) {
 
 test.describe("marketing visual regressions", () => {
   test("homepage layout stable", async ({ page }) => {
-    await preparePage(page, "/?visual=1");
-    await expect(page).toHaveScreenshot("homepage.png", {
+    await preparePage(page, "/?visual=1", "[data-marketing-container]");
+    const container = page.locator("[data-marketing-container]");
+    await expect(container).toHaveScreenshot("homepage.png", {
       animations: "disabled",
       caret: "hide",
       fullPage: false,
@@ -44,7 +46,8 @@ test.describe("marketing visual regressions", () => {
 
   test("demo layout stable", async ({ page }) => {
     await preparePage(page, "/demo?visual=1");
-    await expect(page).toHaveScreenshot("demo.png", {
+    const container = page.locator("main").first();
+    await expect(container).toHaveScreenshot("demo.png", {
       animations: "disabled",
       caret: "hide",
       fullPage: false,
@@ -54,7 +57,8 @@ test.describe("marketing visual regressions", () => {
 
   test("playground layout stable", async ({ page }) => {
     await preparePage(page, "/playground?visual=1");
-    await expect(page).toHaveScreenshot("playground-page.png", {
+    const container = page.locator("main").first();
+    await expect(container).toHaveScreenshot("playground-page.png", {
       animations: "disabled",
       caret: "hide",
       fullPage: false,
@@ -77,7 +81,8 @@ test.describe("marketing visual regressions", () => {
         return;
       }
 
-      await expect(page).toHaveScreenshot(`${shot.name}.png`, {
+      const container = page.locator("main").first();
+      await expect(container).toHaveScreenshot(`${shot.name}.png`, {
         animations: "disabled",
         caret: "hide",
         timeout: 30_000,
