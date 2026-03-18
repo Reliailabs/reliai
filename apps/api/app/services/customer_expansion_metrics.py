@@ -49,7 +49,7 @@ def _is_breakout(*, expansion_ratio: float, current_30_day_traces: int) -> bool:
     return expansion_ratio >= BREAKOUT_EXPANSION_RATIO and current_30_day_traces >= BREAKOUT_MIN_TRACES
 
 
-def _organization_day_counts(db: Session) -> tuple[dict[UUID, Organization], dict[UUID, Counter[date]]]:
+def _organization_day_counts(db: Session, *, snapshot_time: datetime | None = None) -> tuple[dict[UUID, Organization], dict[UUID, Counter[date]]]:
     organizations = {
         organization.id: organization
         for organization in db.scalars(select(Organization).order_by(Organization.name.asc(), Organization.id.asc())).all()
@@ -63,7 +63,7 @@ def _organization_day_counts(db: Session) -> tuple[dict[UUID, Organization], dic
     if not projects:
         return organizations, {organization_id: Counter() for organization_id in organizations}
 
-    today_start = _start_of_day(_utc_now())
+    today_start = _start_of_day(snapshot_time or _utc_now())
     tomorrow_start = today_start + timedelta(days=1)
     earliest_rollup_start = today_start - timedelta(days=EXPANSION_LOOKBACK_DAYS)
     project_to_org = {project_id: organization_id for project_id, organization_id in projects}
@@ -84,8 +84,8 @@ def _organization_day_counts(db: Session) -> tuple[dict[UUID, Organization], dic
 
 
 def _build_snapshots(db: Session, *, computed_at: datetime | None = None) -> list[dict]:
-    organizations, counts_by_org = _organization_day_counts(db)
     snapshot_time = computed_at or _utc_now()
+    organizations, counts_by_org = _organization_day_counts(db, snapshot_time=snapshot_time)
     current_window_start = (_start_of_day(snapshot_time) - timedelta(days=EXPANSION_WINDOW_DAYS - 1)).date()
 
     items = []
@@ -96,6 +96,7 @@ def _build_snapshots(db: Session, *, computed_at: datetime | None = None) -> lis
         current_volume = _window_sum(day_counts, start_day=current_window_start, days=EXPANSION_WINDOW_DAYS)
         baseline_eligible = first_volume >= EXPANSION_MIN_BASELINE_TRACES
         expansion_ratio = _ratio(current_volume, first_volume) if baseline_eligible else 0.0
+        breakout = _is_breakout(expansion_ratio=expansion_ratio, current_30_day_traces=current_volume)
         items.append(
             {
                 "organization_id": organization_id,
@@ -104,10 +105,7 @@ def _build_snapshots(db: Session, *, computed_at: datetime | None = None) -> lis
                 "current_30_day_traces": current_volume,
                 "expansion_ratio": expansion_ratio,
                 "growth_rate": _growth_rate(current_volume, first_volume) if baseline_eligible else 0.0,
-                "breakout_account": _is_breakout(
-                    expansion_ratio=expansion_ratio,
-                    current_30_day_traces=current_volume,
-                ),
+                "breakout_account": breakout,
                 "computed_at": snapshot_time,
             }
         )

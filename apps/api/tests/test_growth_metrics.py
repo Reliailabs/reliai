@@ -56,7 +56,7 @@ def test_system_growth_endpoint_aggregates_warehouse_incident_and_guardrail_metr
                     project_id=UUID(project["id"]),
                     environment_id=UUID(project["environments"][0]["id"]),
                     storage_trace_id=uuid4(),
-                    trace_id=uuid4(),
+                    trace_id=str(uuid4()),
                     prompt_version_id=None,
                     model_version_id=None,
                     latency_ms=200 + index,

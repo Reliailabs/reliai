@@ -75,7 +75,8 @@ def test_reliability_pattern_mining_persists_rows_and_operator_endpoints(
                 organization_id=UUID(organization["id"]),
                 project_id=UUID(project["id"]),
                 environment_id=environment_id,
-                trace_id=uuid4(),
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
                 success=False,
                 model_provider="openai",
                 model_family="gpt-4.1-mini",
@@ -95,7 +96,8 @@ def test_reliability_pattern_mining_persists_rows_and_operator_endpoints(
                 organization_id=UUID(organization["id"]),
                 project_id=UUID(project["id"]),
                 environment_id=environment_id,
-                trace_id=uuid4(),
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
                 success=False,
                 model_provider="openai",
                 model_family="gpt-4.1-mini",
@@ -115,7 +117,8 @@ def test_reliability_pattern_mining_persists_rows_and_operator_endpoints(
                 organization_id=UUID(organization["id"]),
                 project_id=UUID(project["id"]),
                 environment_id=environment_id,
-                trace_id=uuid4(),
+                storage_trace_id=uuid4(),
+                trace_id=str(uuid4()),
                 success=True,
                 model_provider="openai",
                 model_family="gpt-4.1-mini",
@@ -153,7 +156,7 @@ def test_reliability_pattern_mining_persists_rows_and_operator_endpoints(
     assert detail.json()["id"] == first["id"]
 
 
-def test_deployment_risk_uses_reliability_pattern_risk(client, db_session):
+def test_deployment_risk_uses_reliability_pattern_risk(client, db_session, fake_event_stream):
     session_payload, _, project, prompt_version, model_version = _seed_pattern_project(
         client,
         db_session,
@@ -192,7 +195,7 @@ def test_deployment_risk_uses_reliability_pattern_risk(client, db_session):
     assert risk.analysis_json["pattern_risk"]["matched_patterns"][0]["failure_type"] == "structured_output_invalid"
 
 
-def test_reliability_recommendations_include_guardrail_intelligence(client, db_session):
+def test_reliability_recommendations_include_guardrail_intelligence(client, db_session, fake_event_stream):
     _, _, project, prompt_version, model_version = _seed_pattern_project(
         client,
         db_session,
