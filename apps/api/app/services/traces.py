@@ -327,7 +327,12 @@ def get_trace_detail_by_identifier(db: Session, operator: OperatorContext, trace
     trace = resolve_trace_identifier(db, trace_identifier)
     if trace is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found")
-    require_project_access(db, operator, trace.project_id)
+    try:
+        require_project_access(db, operator, trace.project_id)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_403_FORBIDDEN:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found") from exc
+        raise
     trace.evaluations.sort(key=lambda item: (item.eval_type, item.created_at))
     return trace
 

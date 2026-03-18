@@ -58,12 +58,13 @@ def guardrail_compliance_for_project(
     project_id: UUID,
     environment_id: UUID | None = None,
     window_hours: int = 24,
+    now: datetime | None = None,
 ) -> list[dict]:
     policies = list_active_organization_guardrail_policies(db, organization_id=organization_id)
     if not policies:
         return []
 
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
     window_start = now - timedelta(hours=window_hours)
     rows = query_recent_traces(
         TraceWarehouseQuery(

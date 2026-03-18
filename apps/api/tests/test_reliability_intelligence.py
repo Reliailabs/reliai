@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import desc, select
 
 from app.models.guardrail_effectiveness import GuardrailEffectiveness
 from app.models.model_reliability_pattern import ModelReliabilityPattern
@@ -120,7 +120,9 @@ def test_reliability_intelligence_aggregation_persists_patterns_and_effectivenes
             ModelReliabilityPattern.model_name == "gpt-4.1-mini",
         )
     )
-    prompt_pattern = db_session.scalars(select(PromptFailurePattern)).first()
+    prompt_pattern = db_session.scalars(
+        select(PromptFailurePattern).order_by(desc(PromptFailurePattern.failure_rate))
+    ).first()
     guardrail_effectiveness = db_session.scalar(select(GuardrailEffectiveness))
 
     assert model_pattern is not None

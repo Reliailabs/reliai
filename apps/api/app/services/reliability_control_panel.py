@@ -323,6 +323,7 @@ def get_project_reliability_control_panel(db: Session, project_id: UUID, environ
             organization_id=project.organization_id,
             project_id=project_id,
             environment_id=environment_record.id if environment_record is not None else None,
+            now=now,
         ),
         "model_reliability": {
             "current_model": current_model_name,
