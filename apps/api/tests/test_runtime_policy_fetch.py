@@ -74,10 +74,12 @@ def test_runtime_guardrail_policy_fetch_uses_api_key_and_filters_inactive(client
 
 
 def test_runtime_guardrail_sdk_fetches_and_caches_policies(tmp_path: Path):
+  repo_root = Path(__file__).resolve().parents[4]
+  runtime_guardrail_entry = repo_root / "packages/runtime-guardrail/src/index.ts"
     script_path = tmp_path / "runtime_policy_fetch_test.ts"
     script_path.write_text(
-        """
-import { clearReliaiGuardrailPolicyCache, reliaiLLM } from "/Users/robert/Documents/Reliai/packages/runtime-guardrail/src/index.ts";
+    f"""
+import {{ clearReliaiGuardrailPolicyCache, reliaiLLM }} from "{runtime_guardrail_entry.as_posix()}";
 
 async function main() {
   let fetchCount = 0;
@@ -142,7 +144,7 @@ main().then(() => process.exit(0)).catch((error) => {
 
     result = subprocess.run(
         ["node", str(script_path)],
-        cwd="/Users/robert/Documents/Reliai",
+        cwd=str(repo_root),
         check=True,
         capture_output=True,
         text=True,

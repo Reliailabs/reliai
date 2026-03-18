@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL: sqlite+pysqlite:///:memory:
+      DATABASE_URL: "sqlite+pysqlite:///:memory:"
       API_KEY_HASH_SECRET: test-secret
       AUTH_SESSION_HASH_SECRET: test-session-secret
       PYTHONPATH: ${{ github.workspace }}/apps/api

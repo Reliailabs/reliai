@@ -22,9 +22,11 @@ def _set_environment_id(mapper, connection, target) -> None:
 def _set_trace_id(mapper, connection, target: Trace) -> None:
     del mapper
     del connection
+    fallback = target.trace_id or target.span_id or target.id or uuid.uuid4()
     if not target.trace_id:
-        fallback = target.span_id or target.id or uuid.uuid4()
         target.trace_id = str(fallback)
+    if not target.span_id:
+        target.span_id = str(fallback)
 
 
 for _model in (

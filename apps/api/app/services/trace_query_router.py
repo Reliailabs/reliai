@@ -42,9 +42,57 @@ def route_trace_query(request: TraceQueryRequest) -> str:
     return "archive"
 
 
+def _split_event_windows(window_start: datetime, window_end: datetime) -> list[tuple[datetime, datetime]]:
+    windows: list[tuple[datetime, datetime]] = []
+    cursor = window_end
+    while cursor > window_start:
+        chunk_start = max(window_start, cursor - MAX_EVENT_WINDOW)
+        windows.append((chunk_start, cursor))
+        cursor = chunk_start
+    return windows
+
+
 def query_trace_rows_via_router(query: TraceWarehouseQuery) -> tuple[str, list]:
     if query.window_end - query.window_start > MAX_EVENT_WINDOW:
-        raise WarehouseQueryViolation("Raw trace queries cannot exceed 24 hours.")
+        route = route_trace_query(
+            TraceQueryRequest(
+                window_start=query.window_start,
+                window_end=query.window_end,
+                aggregated=False,
+            )
+        )
+        if route == "archive":
+            route = "warehouse"
+        token = contextvar_router_active.set(True)
+        try:
+            rows: list = []
+            remaining = query.limit
+            for window_start, window_end in _split_event_windows(query.window_start, query.window_end):
+                chunk_query = TraceWarehouseQuery(
+                    organization_id=query.organization_id,
+                    project_id=query.project_id,
+                    window_start=window_start,
+                    window_end=window_end,
+                    environment_id=query.environment_id,
+                    prompt_version_id=query.prompt_version_id,
+                    model_version_id=query.model_version_id,
+                    prompt_version=query.prompt_version,
+                    model_name=query.model_name,
+                    latency_min_ms=query.latency_min_ms,
+                    latency_max_ms=query.latency_max_ms,
+                    success=query.success,
+                    structured_output_valid=query.structured_output_valid,
+                    limit=remaining,
+                )
+                chunk_rows = _query_traces(chunk_query)
+                rows.extend(chunk_rows)
+                if remaining is not None:
+                    remaining -= len(chunk_rows)
+                    if remaining <= 0:
+                        break
+            return route, rows
+        finally:
+            contextvar_router_active.reset(token)
     route = route_trace_query(
         TraceQueryRequest(
             window_start=query.window_start,
@@ -110,7 +158,33 @@ def query_all_traces_via_router(
     limit: int | None = None,
 ) -> tuple[str, list]:
     if not aggregated and window_end - window_start > MAX_EVENT_WINDOW:
-        raise WarehouseQueryViolation("Raw trace queries cannot exceed 24 hours.")
+        route = route_trace_query(
+            TraceQueryRequest(
+                window_start=window_start,
+                window_end=window_end,
+                aggregated=False,
+            )
+        )
+        if route == "archive":
+            route = "warehouse"
+        token = contextvar_router_active.set(True)
+        try:
+            rows: list = []
+            remaining = limit
+            for chunk_start, chunk_end in _split_event_windows(window_start, window_end):
+                chunk_rows = _query_all_traces(
+                    window_start=chunk_start,
+                    window_end=chunk_end,
+                    limit=remaining,
+                )
+                rows.extend(chunk_rows)
+                if remaining is not None:
+                    remaining -= len(chunk_rows)
+                    if remaining <= 0:
+                        break
+            return route, rows
+        finally:
+            contextvar_router_active.reset(token)
     route = route_trace_query(
         TraceQueryRequest(
             window_start=window_start,
