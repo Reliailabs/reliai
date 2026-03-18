@@ -538,7 +538,7 @@ def test_trace_detail_is_tenant_safe_and_includes_evaluations(client, db_session
     assert payload["evaluations"][0]["label"] == "pass"
 
     forbidden = client.get(f"/api/v1/traces/{trace_id}", headers=auth_headers(owner_two_session))
-    assert forbidden.status_code == 403
+    assert forbidden.status_code == 404
 
     stored_evaluation = db_session.query(Evaluation).filter(Evaluation.trace_id == UUID(trace_id)).one()
     assert stored_evaluation.label == "pass"
