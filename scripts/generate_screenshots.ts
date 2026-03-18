@@ -65,14 +65,18 @@ async function waitFor(url: string, timeoutMs = 60_000) {
 }
 
 function startWebServer() {
-  return spawn("pnpm", ["--filter", "web", "dev", "--port", "3000"], {
+  return spawn(
+    "pnpm",
+    ["--filter", "web", "start", "--hostname", "127.0.0.1", "--port", "3000"],
+    {
     cwd: root,
     stdio: "inherit",
     env: {
       ...process.env,
       PORT: "3000",
     },
-  });
+    },
+  );
 }
 
 async function captureShot(
