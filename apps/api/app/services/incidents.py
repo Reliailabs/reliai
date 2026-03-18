@@ -639,7 +639,6 @@ def list_incidents(db: Session, operator: OperatorContext, query: IncidentListQu
 
 
 def get_incident_detail(db: Session, operator: OperatorContext, incident_id: UUID) -> Incident:
-    incident = db.scalar(
     allowed_project_ids = authorized_project_ids(db, operator)
     if not allowed_project_ids:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
