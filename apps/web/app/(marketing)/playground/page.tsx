@@ -6,5 +6,10 @@ interface PlaygroundPageProps {
 
 export default async function PlaygroundPage({ searchParams }: PlaygroundPageProps) {
   const params = await searchParams;
-  return <PlaygroundExperience disableAnimation={params?.visual === "1"} />;
+  const visualTestMode = params?.visual === "1";
+  return (
+    <div data-playground-container="" data-playground-container-ready={visualTestMode ? "" : undefined}>
+      <PlaygroundExperience disableAnimation={visualTestMode} />
+    </div>
+  );
 }

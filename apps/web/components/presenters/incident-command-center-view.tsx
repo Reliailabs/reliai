@@ -39,7 +39,11 @@ export function IncidentCommandCenterView({
   const incident = command.incident;
 
   return (
-    <div className={cn("space-y-6", screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8")}>
+    <div
+      className={cn("space-y-6", screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8")}
+      data-incident-command-center
+      data-incident-command-center-ready={screenshotMode ? "" : undefined}
+    >
       <header className="rounded-[28px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
         {!screenshotMode ? (
           <Link

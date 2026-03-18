@@ -6,5 +6,10 @@ interface DemoPageProps {
 
 export default async function DemoPage({ searchParams }: DemoPageProps) {
   const params = await searchParams;
-  return <DemoExperience visualTestMode={params?.visual === "1"} />;
+  const visualTestMode = params?.visual === "1";
+  return (
+    <div data-demo-container="" data-demo-container-ready={visualTestMode ? "" : undefined}>
+      <DemoExperience visualTestMode={visualTestMode} />
+    </div>
+  );
 }

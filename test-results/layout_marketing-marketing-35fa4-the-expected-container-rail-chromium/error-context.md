@@ -1,0 +1,283 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "R Reliai Production AI reliability" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: R
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: Reliai
+          - paragraph [ref=e9]: Production AI reliability
+      - navigation [ref=e10]:
+        - link "Product" [ref=e11] [cursor=pointer]:
+          - /url: /#product
+        - link "Docs" [ref=e12] [cursor=pointer]:
+          - /url: /docs
+        - link "Demo" [ref=e13] [cursor=pointer]:
+          - /url: /demo
+        - link "Pricing" [ref=e14] [cursor=pointer]:
+          - /url: /pricing
+        - link "Sign In" [ref=e15] [cursor=pointer]:
+          - /url: /login
+        - link "Get Started" [ref=e16] [cursor=pointer]:
+          - /url: /signup
+  - main [ref=e17]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - paragraph [ref=e21]: AI reliability control plane
+        - heading "Know when your AI breaks—before your users do." [level=1] [ref=e22]
+        - paragraph [ref=e23]: Reliai detects AI regressions, explains root causes, and applies guardrails to protect production systems.
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - paragraph [ref=e27]: Install
+              - code [ref=e28]: pip install reliai
+            - button "Copy" [ref=e29]:
+              - img [ref=e30]
+              - text: Copy
+          - generic [ref=e33]:
+            - link "Try Playground" [ref=e34] [cursor=pointer]:
+              - /url: /playground
+              - text: Try Playground
+              - img [ref=e35]
+            - link "View Demo" [ref=e37] [cursor=pointer]:
+              - /url: /demo
+            - link "Get Started" [ref=e38] [cursor=pointer]:
+              - /url: /signup
+        - generic [ref=e39]:
+          - paragraph [ref=e40]: Used to protect production AI systems
+          - generic [ref=e41]:
+            - generic [ref=e42]: 92/100 health•
+            - generic [ref=e43]: 1 incident•
+            - generic [ref=e44]: 17 guardrails•
+            - generic [ref=e45]: 2.3M traces
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - paragraph [ref=e49]: System health
+            - paragraph [ref=e50]: 92 / 100
+            - paragraph [ref=e51]: Reliability score with one active incident under control.
+          - generic [ref=e52]:
+            - paragraph [ref=e53]: Incident detection
+            - paragraph [ref=e54]: "1"
+            - paragraph [ref=e55]: Retrieval latency regression opened automatically.
+          - generic [ref=e56]:
+            - paragraph [ref=e57]: Recommended action
+            - paragraph [ref=e58]: Enable retry policy
+            - paragraph [ref=e59]: Suggested guardrail for the retrieval stage.
+        - generic [ref=e62]:
+          - generic [ref=e64]: app.reliai.dev/control-panel
+          - img "Reliai control panel showing reliability score, incident detection, and recommended guardrails" [ref=e67]
+    - generic [ref=e70]:
+      - generic [ref=e72]:
+        - paragraph [ref=e73]: Failure story
+        - heading "AI systems fail in ways traditional observability tools cannot detect." [level=2] [ref=e74]
+        - paragraph [ref=e75]: A prompt update introduced hallucinated responses. Reliai detected the regression, opened an incident, explained the likely cause, and recommended a guardrail before users noticed.
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - img [ref=e81]
+            - paragraph [ref=e83]: Prompt update deployed
+            - paragraph [ref=e84]: A new support prompt expanded context and changed response behavior.
+          - generic [ref=e85]:
+            - img [ref=e87]
+            - paragraph [ref=e90]: Hallucination spike detected
+            - paragraph [ref=e91]: Reliability signals caught an increase in unsupported policy references.
+          - generic [ref=e92]:
+            - img [ref=e94]
+            - paragraph [ref=e99]: Incident opened automatically
+            - paragraph [ref=e100]: Reliai grouped the regression, linked traces, and attached the likely change window.
+          - generic [ref=e101]:
+            - img [ref=e103]
+            - paragraph [ref=e106]: Guardrail recommended
+            - paragraph [ref=e107]: Structured output validation was recommended before the issue reached users.
+      - generic [ref=e109]:
+        - paragraph [ref=e110]: What the operator sees
+        - heading "Reliability score, active incident, and recommended guardrail in one view." [level=3] [ref=e111]
+        - paragraph [ref=e112]: "The screenshot stays focused on the signals that matter first: system health, detected failure, and the next mitigation step."
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - generic [ref=e116]:
+              - paragraph [ref=e117]: System Status
+              - paragraph [ref=e118]: The primary control surface for reliability score, incidents, and operator next steps.
+            - img "Reliai control panel" [ref=e120]
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - paragraph [ref=e123]: Incident Command Center
+              - paragraph [ref=e124]: Root-cause signals, mitigation guidance, and response context for live incidents.
+            - img "Reliai incident command center" [ref=e126]
+    - generic [ref=e128]:
+      - generic [ref=e129]:
+        - paragraph [ref=e130]: Interactive demo
+        - heading "Walk the operator workflow in under five minutes." [level=2] [ref=e131]
+        - paragraph [ref=e132]: Start at system status, open the incident, inspect the trace graph, and finish at the mitigation point.
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - paragraph [ref=e135]: "01"
+            - paragraph [ref=e136]: Start at the control panel
+            - paragraph [ref=e137]: "Operators answer the first question immediately: Is my AI system safe right now?"
+          - generic [ref=e138]:
+            - paragraph [ref=e139]: "02"
+            - paragraph [ref=e140]: Open the incident
+            - paragraph [ref=e141]: Reliai turns regressions into incidents with linked traces, deployment windows, and candidate causes.
+          - generic [ref=e142]:
+            - paragraph [ref=e143]: "03"
+            - paragraph [ref=e144]: Inspect the trace graph
+            - paragraph [ref=e145]: Execution graphs make the failing stage visible across retrieval, prompt build, model, tool, and guardrail spans.
+          - generic [ref=e146]:
+            - paragraph [ref=e147]: "04"
+            - paragraph [ref=e148]: Mitigate before blast radius expands
+            - paragraph [ref=e149]: Recommended guardrails and deployment gates give the operator a concrete next action.
+        - link "View Demo" [ref=e151] [cursor=pointer]:
+          - /url: /demo
+          - text: View Demo
+          - img [ref=e152]
+      - generic [ref=e154]:
+        - generic [ref=e155]:
+          - generic [ref=e156]:
+            - paragraph [ref=e157]: Control Panel
+            - paragraph [ref=e158]: Reliability score, active incident load, and the next operator action in one surface.
+          - img "Control Panel" [ref=e161]
+        - generic [ref=e162]:
+          - generic [ref=e163]:
+            - paragraph [ref=e164]: Incident Command Center
+            - paragraph [ref=e165]: Root-cause signals, mitigation guidance, and remediation context for live incident response.
+          - img "Incident Command Center" [ref=e168]
+        - generic [ref=e169]:
+          - generic [ref=e170]:
+            - paragraph [ref=e171]: Trace Graph
+            - paragraph [ref=e172]: Execution graph for retrieval, prompt build, model call, tool execution, and post-processing spans.
+          - img "Trace Graph" [ref=e175]
+    - generic [ref=e178]:
+      - generic [ref=e179]:
+        - paragraph [ref=e180]: Playground
+        - heading "Paste a prompt. See the execution path immediately." [level=2] [ref=e181]
+        - paragraph [ref=e182]: The playground is the fastest way to understand Reliai. Run a request, inspect the trace graph, and see how the control plane would analyze the system.
+        - generic [ref=e183]:
+          - link "Try Playground" [ref=e184] [cursor=pointer]:
+            - /url: /playground
+            - text: Try Playground
+            - img [ref=e185]
+          - link "See full operator flow" [ref=e187] [cursor=pointer]:
+            - /url: /demo
+      - generic [ref=e188]:
+        - paragraph [ref=e189]: What engineers see
+        - generic [ref=e190]:
+          - paragraph [ref=e191]:
+            - img [ref=e192]
+            - text: Prompt input
+          - paragraph [ref=e195]:
+            - img [ref=e196]
+            - text: Trace graph
+          - paragraph [ref=e199]:
+            - img [ref=e200]
+            - text: Reliability signals
+        - img "Playground" [ref=e205]
+        - paragraph [ref=e207]: The playground is the fastest path to product understanding for engineers evaluating the control plane.
+    - generic [ref=e208]:
+      - generic [ref=e209]:
+        - paragraph [ref=e210]: The Reliai loop
+        - heading "Reliai runs a continuous reliability loop around production AI systems." [level=2] [ref=e211]
+      - generic [ref=e212]:
+        - generic [ref=e213]:
+          - paragraph [ref=e214]: Step 1
+          - paragraph [ref=e215]: Trace
+        - generic [ref=e216]:
+          - paragraph [ref=e217]: Step 2
+          - paragraph [ref=e218]: Detect
+        - generic [ref=e219]:
+          - paragraph [ref=e220]: Step 3
+          - paragraph [ref=e221]: Investigate
+        - generic [ref=e222]:
+          - paragraph [ref=e223]: Step 4
+          - paragraph [ref=e224]: Mitigate
+        - generic [ref=e225]:
+          - paragraph [ref=e226]: Step 5
+          - paragraph [ref=e227]: Prevent
+    - generic [ref=e229]:
+      - generic [ref=e230]:
+        - paragraph [ref=e231]: Architecture in motion
+        - heading "Four operator workflows take the system from telemetry to protection." [level=2] [ref=e232]
+      - generic [ref=e233]:
+        - generic [ref=e235]:
+          - img [ref=e236]
+          - heading "Instrument" [level=3] [ref=e243]
+          - paragraph [ref=e244]: SDKs capture traces and pipeline spans across retrieval, prompt construction, model calls, and guardrails.
+        - generic [ref=e246]:
+          - img [ref=e247]
+          - heading "Detect" [level=3] [ref=e249]
+          - paragraph [ref=e250]: Reliai identifies reliability regressions, runtime failures, and risky deployment changes before users notice them.
+        - generic [ref=e252]:
+          - img [ref=e253]
+          - heading "Investigate" [level=3] [ref=e256]
+          - paragraph [ref=e257]: Trace graphs, incident analysis, and replay flows reveal what changed, where the system failed, and why.
+        - generic [ref=e259]:
+          - img [ref=e260]
+          - heading "Protect" [level=3] [ref=e263]
+          - paragraph [ref=e264]: Guardrails and deployment gates keep known failure modes from reaching production users.
+    - generic [ref=e266]:
+      - generic [ref=e267]:
+        - generic [ref=e268]:
+          - paragraph [ref=e269]: Install Reliai in 60 seconds
+          - heading "Install Reliai in 60 seconds" [level=2] [ref=e270]
+          - paragraph [ref=e271]: Add reliability protection to your AI system with one SDK.
+          - generic [ref=e272]:
+            - button "Python" [ref=e273]
+            - button "Node" [ref=e274]
+        - generic [ref=e275]:
+          - generic [ref=e276]:
+            - img [ref=e277]
+            - text: Auto instrumentation
+          - generic [ref=e279]:
+            - img [ref=e280]
+            - text: Distributed tracing
+          - generic [ref=e287]:
+            - img [ref=e288]
+            - text: Runtime guardrails
+          - generic [ref=e291]:
+            - img [ref=e292]
+            - text: Incident detection
+      - generic [ref=e296]:
+        - generic [ref=e297]:
+          - generic [ref=e298]: pip install reliai
+          - button "Copy Code" [ref=e299]:
+            - img [ref=e300]
+            - text: Copy Code
+        - code [ref=e304]: "pip install reliai import reliai reliai.init( api_key=\"YOUR_API_KEY\" ) with reliai.span(\"llm_call\"): response = client.chat.completions.create(...)"
+    - generic [ref=e305]:
+      - generic [ref=e306]:
+        - paragraph [ref=e307]: Architecture
+        - heading "The control plane sits between the AI system and the production operator." [level=2] [ref=e308]
+      - generic [ref=e310]:
+        - generic [ref=e311]:
+          - paragraph [ref=e312]: Stage 1
+          - img [ref=e313]
+          - paragraph [ref=e316]: AI Application
+        - generic [ref=e317]: →
+        - generic [ref=e318]:
+          - paragraph [ref=e319]: Stage 2
+          - img [ref=e320]
+          - paragraph [ref=e327]: Reliai SDK
+        - generic [ref=e328]: →
+        - generic [ref=e329]:
+          - paragraph [ref=e330]: Stage 3
+          - img [ref=e331]
+          - paragraph [ref=e335]: Reliai Control Plane
+        - generic [ref=e336]: →
+        - generic [ref=e337]:
+          - paragraph [ref=e338]: Stage 4
+          - img [ref=e339]
+          - paragraph [ref=e344]: Operators
+    - generic [ref=e347]:
+      - paragraph [ref=e348]: Run your AI systems with reliability
+      - heading "Make reliability visible before failures hit users." [level=2] [ref=e349]
+      - paragraph [ref=e350]: Reliai gives operators one control plane for tracing, detection, investigation, deployment safety, and runtime protection.
+      - generic [ref=e351]:
+        - link "Start Free" [ref=e352] [cursor=pointer]:
+          - /url: /signup
+        - link "View Demo" [ref=e353] [cursor=pointer]:
+          - /url: /demo
+          - text: View Demo
+          - img [ref=e354]
+```

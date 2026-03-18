@@ -108,7 +108,11 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
   ] as const;
 
   return (
-    <div className={cn("space-y-6", screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8")}>
+    <div
+      className={cn("space-y-6", screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8")}
+      data-trace-graph
+      data-trace-graph-ready={screenshotMode ? "" : undefined}
+    >
       <header className="rounded-[30px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
         {!screenshotMode ? (
           <Link href={`/traces/${graph.trace_id}`} className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink">

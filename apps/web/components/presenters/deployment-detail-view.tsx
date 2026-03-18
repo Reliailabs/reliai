@@ -17,7 +17,11 @@ export function DeploymentDetailView({ detail, screenshotMode = false }: Deploym
   const gate = detail.gate;
 
   return (
-    <div className={cn("space-y-6", screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8")}>
+    <div
+      className={cn("space-y-6", screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8")}
+      data-deployment-detail
+      data-deployment-detail-ready={screenshotMode ? "" : undefined}
+    >
       <header className="rounded-[28px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
         {!screenshotMode ? (
           <Link

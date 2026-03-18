@@ -1,11 +1,36 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const screenshotRoutes = [
-  { name: "control-panel", route: "/marketing/screenshot/control-panel" },
-  { name: "trace-graph", route: "/marketing/screenshot/trace-graph" },
-  { name: "incident", route: "/marketing/screenshot/incident" },
-  { name: "deployment", route: "/marketing/screenshot/deployment" },
-  { name: "playground", route: "/marketing/screenshot/playground" },
+  {
+    name: "control-panel",
+    route: "/marketing/screenshot/control-panel",
+    readySelector: "[data-control-panel-ready]",
+    containerSelector: "[data-control-panel]",
+  },
+  {
+    name: "trace-graph",
+    route: "/marketing/screenshot/trace-graph",
+    readySelector: "[data-trace-graph-ready]",
+    containerSelector: "[data-trace-graph]",
+  },
+  {
+    name: "incident",
+    route: "/marketing/screenshot/incident",
+    readySelector: "[data-incident-command-center-ready]",
+    containerSelector: "[data-incident-command-center]",
+  },
+  {
+    name: "deployment",
+    route: "/marketing/screenshot/deployment",
+    readySelector: "[data-deployment-detail-ready]",
+    containerSelector: "[data-deployment-detail]",
+  },
+  {
+    name: "playground",
+    route: "/marketing/screenshot/playground",
+    readySelector: "[data-playground-container-ready]",
+    containerSelector: "[data-playground-container]",
+  },
 ] as const;
 
 async function preparePage(page: Page, route: string, readySelector?: string) {
@@ -45,8 +70,8 @@ test.describe("marketing visual regressions", () => {
   });
 
   test("demo layout stable", async ({ page }) => {
-    await preparePage(page, "/demo?visual=1");
-    const container = page.locator("main").first();
+    await preparePage(page, "/demo?visual=1", "[data-demo-container-ready]");
+    const container = page.locator("[data-demo-container]").first();
     await expect(container).toHaveScreenshot("demo.png", {
       animations: "disabled",
       caret: "hide",
@@ -56,8 +81,8 @@ test.describe("marketing visual regressions", () => {
   });
 
   test("playground layout stable", async ({ page }) => {
-    await preparePage(page, "/playground?visual=1");
-    const container = page.locator("main").first();
+    await preparePage(page, "/playground?visual=1", "[data-playground-container-ready]");
+    const container = page.locator("[data-playground-container]").first();
     await expect(container).toHaveScreenshot("playground-page.png", {
       animations: "disabled",
       caret: "hide",
@@ -68,20 +93,9 @@ test.describe("marketing visual regressions", () => {
 
   for (const shot of screenshotRoutes) {
     test(`${shot.name} screenshot stable`, async ({ page }) => {
-      await preparePage(page, shot.route);
+      await preparePage(page, shot.route, shot.readySelector);
 
-      if (shot.name === "control-panel") {
-        await page.waitForSelector("[data-control-panel-ready]", { state: "visible" });
-        const panel = page.locator("[data-control-panel]");
-        await expect(panel).toHaveScreenshot(`${shot.name}.png`, {
-          animations: "disabled",
-          caret: "hide",
-          timeout: 30_000,
-        });
-        return;
-      }
-
-      const container = page.locator("main").first();
+      const container = page.locator(shot.containerSelector ?? "main").first();
       await expect(container).toHaveScreenshot(`${shot.name}.png`, {
         animations: "disabled",
         caret: "hide",
