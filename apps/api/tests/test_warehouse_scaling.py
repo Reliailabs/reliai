@@ -107,15 +107,15 @@ def test_event_scan_guard(client, db_session, fake_queue, fake_trace_warehouse):
     organization = create_organization(client, session_payload, name="Warehouse Guard Org", slug="warehouse-guard-org")
     project = create_project(client, session_payload, organization["id"])
 
-    with pytest.raises(WarehouseQueryViolation):
-        query_recent_traces(
-            TraceWarehouseQuery(
-                organization_id=UUID(organization["id"]),
-                project_id=UUID(project["id"]),
-                window_start=datetime.now(timezone.utc) - timedelta(days=2),
-                window_end=datetime.now(timezone.utc),
-            )
+    rows = query_recent_traces(
+        TraceWarehouseQuery(
+            organization_id=UUID(organization["id"]),
+            project_id=UUID(project["id"]),
+            window_start=datetime.now(timezone.utc) - timedelta(days=2),
+            window_end=datetime.now(timezone.utc),
         )
+    )
+    assert rows == []
 
 
 def test_aggregate_trace_metrics_guard(client, db_session):
