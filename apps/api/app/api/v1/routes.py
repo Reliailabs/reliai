@@ -12,7 +12,6 @@ from app.models.organization import Organization
 from app.models.project import Project
 from app.models.reliability_graph_edge import ReliabilityGraphEdge
 from app.models.reliability_graph_node import ReliabilityGraphNode
-from app.models.trace import Trace
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.archive_status import ArchiveStatusRead
