@@ -74,38 +74,38 @@ def test_runtime_guardrail_policy_fetch_uses_api_key_and_filters_inactive(client
 
 
 def test_runtime_guardrail_sdk_fetches_and_caches_policies(tmp_path: Path):
-    repo_root = Path(__file__).resolve().parents[4]
+    repo_root = Path(__file__).resolve().parents[3]
     runtime_guardrail_entry = repo_root / "packages/runtime-guardrail/src/index.ts"
     script_path = tmp_path / "runtime_policy_fetch_test.ts"
     script_path.write_text(
-        f"""
-import {{ clearReliaiGuardrailPolicyCache, reliaiLLM }} from "{runtime_guardrail_entry.as_posix()}";
+        """
+import {{ clearReliaiGuardrailPolicyCache, reliaiLLM }} from "{runtime_guardrail_entry}";
 
-async function main() {
+async function main() {{
   let fetchCount = 0;
-  const fetchImpl = async () => {
+  const fetchImpl = async () => {{
     fetchCount += 1;
-    return {
+    return {{
       ok: true,
       status: 200,
-      async json() {
-        return {
+      async json() {{
+        return {{
           policies: [
-            {
+            {{
               id: "policy-1",
               policy_type: "structured_output",
               action: "block",
-              config: { require_json: true }
-            }
+              config: {{ require_json: true }}
+            }}
           ]
-        };
-      }
-    };
-  };
+        }};
+      }}
+    }};
+  }};
 
   clearReliaiGuardrailPolicyCache();
 
-  const baseInput = {
+  const baseInput = {{
     projectId: "project-1",
     traceId: "trace-1",
     model: "gpt-4.1",
@@ -113,33 +113,33 @@ async function main() {
     reliaiApiBaseUrl: "https://reliai.test",
     apiKey: "reliai_test_key",
     fetchImpl,
-    providerExecutor: async (request) => ({
+    providerExecutor: async (request) => ({{
       model: request.model,
       outputText: "not-json",
       success: true,
       latencyMs: 250,
       totalCostUsd: 0.01,
-      metadata: {}
-    })
-  };
+      metadata: {{}}
+    }})
+  }};
 
   const first = await reliaiLLM(baseInput);
-  const second = await reliaiLLM({ ...baseInput, traceId: "trace-2" });
+  const second = await reliaiLLM({{ ...baseInput, traceId: "trace-2" }});
 
-  console.log(JSON.stringify({
+  console.log(JSON.stringify({{
     fetchCount,
     firstBlocked: first.blocked,
     secondBlocked: second.blocked,
     firstDecisions: first.decisions.length,
     secondDecisions: second.decisions.length
-  }));
-}
+  }}));
+}}
 
-main().then(() => process.exit(0)).catch((error) => {
+main().then(() => process.exit(0)).catch((error) => {{
   console.error(error);
   process.exit(1);
-});
-        """.strip()
+}});
+        """.strip().format(runtime_guardrail_entry=runtime_guardrail_entry.as_posix())
     )
 
     result = subprocess.run(
