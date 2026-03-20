@@ -159,6 +159,7 @@ def create_operator_user(
     is_system_admin: bool = False,
 ) -> OperatorUser:
     operator = OperatorUser(email=email.strip().lower(), password_hash=_hash_password(password))
+    operator.is_system_admin = is_system_admin
     db.add(operator)
     db.flush()
     user = _get_or_create_app_user(
@@ -241,6 +242,10 @@ def get_legacy_operator_context(db: Session, token: str) -> OperatorContext:
         legacy_operator_user_id=operator.id,
         is_active=operator.is_active,
     )
+    if operator.is_system_admin and not app_user.is_system_admin:
+        app_user.is_system_admin = True
+        db.add(app_user)
+        db.flush()
     memberships = get_operator_memberships(db, app_user.id)
     active_organization_id = _resolve_active_organization_id(db, user=app_user, memberships=memberships)
     session.last_used_at = datetime.now(timezone.utc)

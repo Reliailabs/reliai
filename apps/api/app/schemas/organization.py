@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.schemas.common import APIModel
 
-PlanType = Literal["free", "pilot", "growth", "enterprise"]
+PlanType = Literal["free", "team", "production", "enterprise", "pilot", "growth"]
 RoleType = Literal["owner", "admin", "member", "org_admin", "engineer", "viewer"]
 
 

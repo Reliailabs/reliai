@@ -6,23 +6,28 @@ from sqlalchemy.orm import Session
 
 from app.models.organization_member import OrganizationMember
 from app.models.user import User
+from app.services.rbac import has_required_role, normalize_role
 
 ORG_ROLE_VIEWER = "viewer"
-ORG_ROLE_ENGINEER = "engineer"
-ORG_ROLE_ADMIN = "org_admin"
+ORG_ROLE_MEMBER = "member"
+ORG_ROLE_ADMIN = "admin"
+ORG_ROLE_OWNER = "owner"
+ORG_ROLE_ENGINEER = "member"
 PROJECT_ROLE_VIEWER = "viewer"
 PROJECT_ROLE_ENGINEER = "engineer"
 
 GROUP_ROLE_MAP = {
     "Reliai-Admins": ORG_ROLE_ADMIN,
-    "Reliai-Engineers": ORG_ROLE_ENGINEER,
+    "Reliai-Engineers": ORG_ROLE_MEMBER,
     "Reliai-Viewers": ORG_ROLE_VIEWER,
 }
 
+# Future extensions: custom roles, permission-level RBAC, org-level policy enforcement, SSO/SCIM mapping.
 ORG_ROLE_RANK = {
     ORG_ROLE_VIEWER: 1,
-    ORG_ROLE_ENGINEER: 2,
+    ORG_ROLE_MEMBER: 2,
     ORG_ROLE_ADMIN: 3,
+    ORG_ROLE_OWNER: 4,
 }
 
 PROJECT_ROLE_RANK = {
@@ -32,12 +37,7 @@ PROJECT_ROLE_RANK = {
 
 
 def normalize_org_role(role: str | None) -> str:
-    normalized = (role or ORG_ROLE_VIEWER).strip().lower()
-    if normalized in {"owner", "admin", ORG_ROLE_ADMIN}:
-        return ORG_ROLE_ADMIN
-    if normalized in {"member", ORG_ROLE_ENGINEER}:
-        return ORG_ROLE_ENGINEER
-    return ORG_ROLE_VIEWER
+    return normalize_role(role)
 
 
 def normalize_project_role(role: str | None) -> str:
@@ -48,7 +48,7 @@ def normalize_project_role(role: str | None) -> str:
 
 
 def org_role_meets_requirement(actual_role: str | None, required_role: str) -> bool:
-    return ORG_ROLE_RANK[normalize_org_role(actual_role)] >= ORG_ROLE_RANK[normalize_org_role(required_role)]
+    return has_required_role(actual_role, required_role)
 
 
 def project_role_meets_requirement(actual_role: str | None, required_role: str) -> bool:

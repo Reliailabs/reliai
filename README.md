@@ -61,6 +61,22 @@ As soon as your application starts sending traces, Reliai automatically gives op
 
 ---
 
+## Admin Access (Internal)
+
+Reliai uses a gated CLI for system admin elevation. This path is disabled by default.
+
+```bash
+RELIAI_ADMIN_CLI_ENABLED=true \
+python -m reliai.cli admin grant \
+  --email user@company.com \
+  --confirm \
+  --reason "on-call escalation"
+```
+
+All actions are recorded in the `audit_events` table with actor attribution and reason.
+
+---
+
 ## Example Output
 
 Control panel:

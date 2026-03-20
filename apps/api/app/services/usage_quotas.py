@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.organization import Organization
 from app.models.usage_quota import UsageQuota
-from app.services.rate_limiter import day_bucket_key, increment_daily_usage
+from app.services.rate_limiter import day_bucket_key, get_daily_usage, increment_daily_usage
 
 
 def get_or_create_usage_quota(db: Session, *, organization_id: UUID) -> UsageQuota:
@@ -46,3 +46,26 @@ def enforce_processor_quota(db: Session, *, organization_id: UUID, current_count
     quota = get_or_create_usage_quota(db, organization_id=organization_id)
     if quota.max_processors is not None and current_count >= quota.max_processors:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Processor quota exceeded")
+
+
+def get_usage_status(db: Session, *, organization_id: UUID) -> dict[str, object]:
+    quota = get_or_create_usage_quota(db, organization_id=organization_id)
+    key = day_bucket_key(prefix="quota:traces", identifier=str(organization_id))
+    used = get_daily_usage(key=key)
+    limit = quota.max_traces_per_day
+    percent_used = 0.0
+    status_label = "ok"
+    if limit:
+        percent_used = used / limit
+        if percent_used >= 1.0:
+            status_label = "blocked"
+        elif percent_used >= 0.95:
+            status_label = "critical"
+        elif percent_used >= 0.8:
+            status_label = "warning"
+    return {
+        "used": used,
+        "limit": limit,
+        "percent_used": round(percent_used, 3),
+        "status": status_label,
+    }

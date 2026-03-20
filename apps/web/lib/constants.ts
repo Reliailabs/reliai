@@ -1,8 +1,16 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+export const API_URL =
+  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 export const SESSION_COOKIE_NAME = "reliai_session";
 
 export function devAuthEnabled() {
-  return process.env.NODE_ENV !== "production" && process.env.RELIAI_DEV_AUTH_ENABLED !== "false";
+  const explicit = process.env.RELIAI_DEV_AUTH_ENABLED;
+  if (explicit === "true") {
+    return true;
+  }
+  if (explicit === "false") {
+    return false;
+  }
+  return process.env.NODE_ENV !== "production";
 }
 
 export function workosConfigured() {

@@ -3,12 +3,29 @@ from __future__ import annotations
 import asyncio
 import os
 import random
+import time
 from itertools import cycle
 
 import httpx
 import reliai
 
-reliai.init(project=os.getenv("RELIAI_PROJECT", "reliai-demo"))
+def _load_api_key() -> None:
+    if os.getenv("RELIAI_API_KEY"):
+        return
+    path = os.getenv("RELIAI_API_KEY_PATH", "/shared/api_key")
+    for _ in range(60):
+        if os.path.exists(path):
+            key = open(path).read().strip()
+            if key:
+                os.environ["RELIAI_API_KEY"] = key
+                return
+        time.sleep(1)
+
+_load_api_key()
+reliai.init(
+    project=os.getenv("RELIAI_PROJECT", "reliai-demo"),
+    environment=os.getenv("RELIAI_ENV", "prod"),
+)
 
 AGENT_URL = os.getenv("AGENT_URL", "http://agent:8010")
 

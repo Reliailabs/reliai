@@ -9,6 +9,7 @@ from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
 from app.schemas.organization import OrganizationCreate
 from app.services.workos_roles import normalize_org_role
+from app.services.stripe_billing import ensure_stripe_customer
 
 
 def create_organization(db: Session, payload: OrganizationCreate) -> Organization:
@@ -16,7 +17,7 @@ def create_organization(db: Session, payload: OrganizationCreate) -> Organizatio
         organization = Organization(
             name=payload.name,
             slug=payload.slug,
-            plan=payload.plan,
+            plan="free",
         )
         db.add(organization)
         db.flush()
@@ -39,6 +40,7 @@ def create_organization(db: Session, payload: OrganizationCreate) -> Organizatio
         ) from exc
 
     db.refresh(organization)
+    ensure_stripe_customer(db, organization)
     return organization
 
 

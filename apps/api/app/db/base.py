@@ -1,4 +1,6 @@
 from app.models.audit_log import AuditLog
+from app.models.audit_event import AuditEvent
+from app.models.admin_event import AdminEvent
 from app.models.alert_delivery import AlertDelivery
 from app.models.automation_rule import AutomationRule
 from app.models.api_key import APIKey
@@ -59,7 +61,9 @@ from app.models.usage_quota import UsageQuota
 
 __all__ = [
     "AlertDelivery",
+    "AuditEvent",
     "AuditLog",
+    "AdminEvent",
     "AutomationRule",
     "APIKey",
     "CustomerExport",

@@ -11,5 +11,6 @@ redis==5.2.1
 rq==2.1.0
 ruff==0.9.7
 sqlalchemy==2.0.38
+stripe==11.5.0
 uvicorn==0.34.0
 workos==5.22.0

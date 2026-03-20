@@ -26,9 +26,12 @@ services:
 
   # ── Reliai platform ────────────────────────────────────────────────────────
   api:
-    image: ghcr.io/reliai/api:latest
+    image: reliai-demo-api
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
     environment:
-      DATABASE_URL: postgresql://reliai:reliai@postgres:5432/reliai
+      DATABASE_URL: postgresql+psycopg://reliai:reliai@postgres:5432/reliai
       REDIS_URL: redis://redis:6379
       SECRET_KEY: demo-secret-key-change-in-production
       RELIAI_ENV: development
@@ -40,6 +43,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      ]
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
       interval: 5s
@@ -48,29 +57,29 @@ services:
       start_period: 15s
 
   worker:
-    image: ghcr.io/reliai/api:latest
-    command: ["python", "-m", "workers.main"]
-    environment:
-      DATABASE_URL: postgresql://reliai:reliai@postgres:5432/reliai
-      REDIS_URL: redis://redis:6379
-      SECRET_KEY: demo-secret-key-change-in-production
-      RELIAI_ENV: development
-    depends_on:
-      api:
-        condition: service_healthy
+    image: reliai-demo-api
+    profiles: ["disabled"]
 
   web:
-    image: ghcr.io/reliai/web:latest
+    image: reliai-demo-web
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
       API_URL: http://api:8000
+      RELIAI_DEV_AUTH_ENABLED: "true"
     ports:
       - "3000:3000"
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3000 || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))\"",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -83,15 +92,24 @@ services:
       dockerfile: services/retriever/Dockerfile
     environment:
       RELIAI_ENDPOINT: http://api:8000
-      RELIAI_ENV: development
+      RELIAI_ENV: prod
       RELIAI_PROJECT: reliai-demo
+      RELIAI_API_KEY_PATH: /shared/api_key
+    volumes:
+      - demo_bootstrap:/shared
     ports:
       - "8011:8011"
     depends_on:
+      demo-seed:
+        condition: service_completed_successfully
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8011/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request as u; u.urlopen('http://localhost:8011/health').read()\"",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -102,15 +120,24 @@ services:
       dockerfile: services/tools/Dockerfile
     environment:
       RELIAI_ENDPOINT: http://api:8000
-      RELIAI_ENV: development
+      RELIAI_ENV: prod
       RELIAI_PROJECT: reliai-demo
+      RELIAI_API_KEY_PATH: /shared/api_key
+    volumes:
+      - demo_bootstrap:/shared
     ports:
       - "8012:8012"
     depends_on:
+      demo-seed:
+        condition: service_completed_successfully
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8012/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request as u; u.urlopen('http://localhost:8012/health').read()\"",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -121,19 +148,28 @@ services:
       dockerfile: services/agent/Dockerfile
     environment:
       RELIAI_ENDPOINT: http://api:8000
-      RELIAI_ENV: development
+      RELIAI_ENV: prod
       RELIAI_PROJECT: reliai-demo
+      RELIAI_API_KEY_PATH: /shared/api_key
       RETRIEVER_URL: http://retriever:8011
       TOOLS_URL: http://tools:8012
+    volumes:
+      - demo_bootstrap:/shared
     ports:
       - "8010:8010"
     depends_on:
+      demo-seed:
+        condition: service_completed_successfully
       retriever:
         condition: service_healthy
       tools:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8010/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request as u; u.urlopen('http://localhost:8010/health').read()\"",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -145,12 +181,52 @@ services:
     environment:
       AGENT_URL: http://agent:8010
       RELIAI_ENDPOINT: http://api:8000
-      RELIAI_ENV: development
+      RELIAI_ENV: prod
       RELIAI_PROJECT: reliai-demo
+      RELIAI_API_KEY_PATH: /shared/api_key
+    volumes:
+      - demo_bootstrap:/shared
+    restart: unless-stopped
     depends_on:
+      demo-seed:
+        condition: service_completed_successfully
       agent:
         condition: service_healthy
+      web:
+        condition: service_healthy
+
+  demo-seed:
+    image: reliai-demo-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://reliai:reliai@postgres:5432/reliai
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: demo-secret-key-change-in-production
+      RELIAI_ENV: development
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "python -m app.scripts.seed | tee /shared/seed.log; grep -m1 'API key=' /shared/seed.log | cut -d'=' -f2- | tr -d ' \\r' > /shared/api_key",
+      ]
+    volumes:
+      - demo_bootstrap:/shared
+    depends_on:
+      api:
+        condition: service_healthy
+
+  dashboard-banner:
+    image: alpine:3.20
+    depends_on:
+      web:
+        condition: service_healthy
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "until wget -qO- http://web:3000 >/dev/null 2>&1; do sleep 1; done; echo ''; echo 'Reliai demo running.'; echo 'Dashboard:'; echo 'http://localhost:3000'; echo '';",
+      ]
 
 volumes:
   postgres_data:
   redis_data:
+  demo_bootstrap:

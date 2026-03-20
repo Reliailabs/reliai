@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.models.environment import Environment
 from app.models.project_member import ProjectMember
+from app.models.organization_member import OrganizationMember
+from app.models.user import User
 from app.models.project import Project
 from app.models.trace import Trace
 from app.services.auth import OperatorContext
@@ -14,16 +16,18 @@ from app.services.environments import (
     normalize_environment_name,
     resolve_project_environment,
 )
+from app.services.rbac import has_required_role, normalize_role
 from app.services.workos_roles import (
     ORG_ROLE_ADMIN,
     ORG_ROLE_VIEWER,
     normalize_org_role,
-    org_role_meets_requirement,
     project_role_meets_requirement,
 )
 
 
 def require_organization_membership(operator: OperatorContext, organization_id: UUID) -> None:
+    if operator.operator.is_system_admin:
+        return
     if organization_id not in operator.organization_ids:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
@@ -36,10 +40,34 @@ def _org_membership_for(operator: OperatorContext, organization_id: UUID):
 
 
 def require_org_role(operator: OperatorContext, organization_id: UUID, minimum_role: str) -> None:
+    if operator.operator.is_system_admin:
+        return
     require_organization_membership(operator, organization_id)
     membership = _org_membership_for(operator, organization_id)
-    if membership is None or not org_role_meets_requirement(membership.role, minimum_role):
+    if membership is None or not has_required_role(membership.role, minimum_role):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
+def get_user_role(db: Session, *, operator_user_id: UUID, organization_id: UUID) -> str | None:
+    user = db.scalar(select(User).where(User.legacy_operator_user_id == operator_user_id))
+    if user is None:
+        return None
+    membership = db.scalar(
+        select(OrganizationMember).where(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.user_id == user.id,
+        )
+    )
+    if membership is None:
+        return None
+    role = (membership.role or "").strip().lower()
+    if role == "owner":
+        return "owner"
+    if role in {"admin", "org_admin"}:
+        return "admin"
+    if role in {"member", "engineer"}:
+        return "member"
+    return "viewer"
 
 
 def _project_membership_map(db: Session, *, project_ids: list[UUID], user_id: UUID) -> tuple[set[UUID], dict[UUID, ProjectMember]]:
@@ -85,9 +113,9 @@ def authorized_project_ids(
     allowed: list[UUID] = []
     for project in projects:
         org_membership = _org_membership_for(operator, project.organization_id)
-        if org_membership is None or not org_role_meets_requirement(org_membership.role, ORG_ROLE_VIEWER):
+        if org_membership is None or not has_required_role(org_membership.role, ORG_ROLE_VIEWER):
             continue
-        if normalize_org_role(org_membership.role) == ORG_ROLE_ADMIN:
+        if normalize_role(org_membership.role) in {"admin", "owner"}:
             allowed.append(project.id)
             continue
         if project.id in restricted_project_ids:
@@ -112,7 +140,7 @@ def require_project_access(db: Session, operator: OperatorContext, project_id: U
         user_id=operator.operator.id,
     )
     membership = _org_membership_for(operator, project.organization_id)
-    if membership is not None and normalize_org_role(membership.role) == ORG_ROLE_ADMIN:
+    if membership is not None and normalize_role(membership.role) in {"admin", "owner"}:
         return project
     if project.id in restricted_project_ids and project.id not in membership_by_project:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
@@ -147,7 +175,7 @@ def require_project_role(
 ) -> Project:
     project = require_project_access(db, operator, project_id)
     org_membership = _org_membership_for(operator, project.organization_id)
-    if org_membership is not None and normalize_org_role(org_membership.role) == ORG_ROLE_ADMIN:
+    if org_membership is not None and normalize_role(org_membership.role) in {"admin", "owner"}:
         return project
 
     restricted_project_ids, membership_by_project = _project_membership_map(
@@ -161,7 +189,7 @@ def require_project_role(
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
         return project
 
-    if org_membership is None or not org_role_meets_requirement(org_membership.role, required_role):
+    if org_membership is None or not has_required_role(org_membership.role, required_role):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return project
 

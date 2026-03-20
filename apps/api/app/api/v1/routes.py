@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import require_operator
@@ -22,6 +23,7 @@ from app.schemas.auth import (
     OperatorMembershipRead,
     OperatorRead,
 )
+from app.schemas.billing import BillingCheckoutRequest, BillingCheckoutResponse
 from app.schemas.cost_intelligence import (
     CostAnomalyRead,
     CostByModelRead,
@@ -84,7 +86,8 @@ from app.schemas.public_api_key import (
 from app.schemas.sdk_metric import SDKTelemetryEventCreate
 from app.schemas.scheduler import SchedulerJobRead, SchedulerStatusResponse
 from app.schemas.support_debug import SupportDebugRead
-from app.schemas.usage_quota import UsageQuotaRead, UsageQuotaUpsert
+from app.schemas.upgrade_prompt import UpgradeRequiredResponse
+from app.schemas.usage_quota import UsageQuotaRead, UsageQuotaStatusRead, UsageQuotaUpsert
 from app.schemas.guardrail_metrics import (
     GuardrailMetricsRead,
     GuardrailPolicyMetricsRead,
@@ -403,6 +406,7 @@ from app.services.memberships import (
     remove_organization_member,
     remove_project_member,
 )
+from app.services.workos_roles import normalize_org_role
 from app.services.trace_ingestion_control import (
     DEFAULT_SENSITIVE_FIELD_PATTERNS,
     get_effective_ingestion_policy,
@@ -422,9 +426,13 @@ from app.services.traces import (
 )
 from app.services.timeline import get_project_timeline
 from app.services.event_stream import PolicyViolationEventPayload, publish_event
+from app.services.entitlements import has_feature
+from app.services.stripe_billing import create_checkout_session, ensure_stripe_customer, handle_stripe_webhook
+from app.services.upgrade_prompts import get_upgrade_prompt
 from app.services.usage_quotas import (
     enforce_daily_api_quota,
     get_or_create_usage_quota,
+    get_usage_status,
 )
 from app.services.warehouse_archiver import get_archive_status
 from app.workers.deployment_simulation import enqueue_deployment_simulation
@@ -1494,6 +1502,36 @@ def create_organization_endpoint(
     return create_organization(db, payload)
 
 
+@router.post("/billing/checkout", response_model=BillingCheckoutResponse)
+def billing_checkout_endpoint(
+    payload: BillingCheckoutRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> BillingCheckoutResponse:
+    organization = get_organization(db, payload.organization_id)
+    require_org_role(operator, payload.organization_id, "admin")
+    ensure_stripe_customer(db, organization)
+    settings = get_settings()
+    checkout_url = create_checkout_session(
+        organization,
+        payload.plan.strip().lower(),
+        success_url=f"{settings.app_url}/settings?billing=success",
+        cancel_url=f"{settings.app_url}/settings?billing=cancel",
+    )
+    return BillingCheckoutResponse(checkout_url=checkout_url)
+
+
+@router.post("/billing/webhook", status_code=status.HTTP_204_NO_CONTENT)
+async def billing_webhook_endpoint(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Response:
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+    handle_stripe_webhook(db, payload, signature)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post("/auth/sign-in", response_model=AuthSessionResponse)
 def sign_in_operator_endpoint(
     payload: AuthSignInRequest, db: Session = Depends(get_db)
@@ -1688,7 +1726,7 @@ def list_organization_members_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OrganizationMemberListResponse:
-    require_org_role(operator, organization_id, "org_admin")
+    require_org_role(operator, organization_id, "admin")
     items = list_organization_members(db, organization_id=organization_id)
     return OrganizationMemberListResponse(
         items=[
@@ -1711,12 +1749,26 @@ def add_organization_member_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OrganizationMemberRead:
-    require_org_role(operator, organization_id, "org_admin")
+    require_org_role(operator, organization_id, "admin")
+    organization = get_organization(db, organization_id)
+    if not has_feature(organization.plan, "collaboration"):
+        prompt = get_upgrade_prompt("team_invite")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=UpgradeRequiredResponse(upgrade_prompt=prompt).model_dump(),
+        )
+    normalized_role = normalize_org_role(payload.role)
+    if normalized_role == "viewer" and not has_feature(organization.plan, "dashboards"):
+        prompt = get_upgrade_prompt("dashboard_share")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=UpgradeRequiredResponse(upgrade_prompt=prompt).model_dump(),
+        )
     item = add_organization_member(
         db,
         organization_id=organization_id,
         user_id=payload.user_id,
-        role=payload.role,
+        role=normalized_role,
         actor_user_id=operator.operator.id,
     )
     return OrganizationMemberRead(
@@ -1735,7 +1787,14 @@ def remove_organization_member_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> Response:
-    require_org_role(operator, organization_id, "org_admin")
+    require_org_role(operator, organization_id, "admin")
+    organization = get_organization(db, organization_id)
+    if not has_feature(organization.plan, "collaboration"):
+        prompt = get_upgrade_prompt("team_invite")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=UpgradeRequiredResponse(upgrade_prompt=prompt).model_dump(),
+        )
     remove_organization_member(
         db,
         organization_id=organization_id,
@@ -1820,14 +1879,25 @@ def test_org_alert_target_endpoint(
     )
 
 
-@router.get("/organizations/{organization_id}/usage-quota", response_model=UsageQuotaRead)
+@router.get("/organizations/{organization_id}/usage-quota", response_model=UsageQuotaStatusRead)
 def get_org_usage_quota_endpoint(
     organization_id: UUID,
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
-) -> UsageQuotaRead:
+) -> UsageQuotaStatusRead:
     require_org_role(operator, organization_id, "viewer")
-    return UsageQuotaRead.model_validate(get_or_create_usage_quota(db, organization_id=organization_id))
+    quota = get_or_create_usage_quota(db, organization_id=organization_id)
+    usage_status = get_usage_status(db, organization_id=organization_id)
+    upgrade_prompt = None
+    if usage_status["status"] == "warning":
+        upgrade_prompt = get_upgrade_prompt("usage_warning", usage_status)
+    elif usage_status["status"] in {"critical", "blocked"}:
+        upgrade_prompt = get_upgrade_prompt("usage_blocked", usage_status)
+    return UsageQuotaStatusRead(
+        **UsageQuotaRead.model_validate(quota).model_dump(),
+        usage_status=usage_status,
+        upgrade_prompt=upgrade_prompt,
+    )
 
 
 @router.put("/organizations/{organization_id}/usage-quota", response_model=UsageQuotaRead)

@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     github_webhook_secret: str | None = None
     github_bot_token: str | None = None
     github_api_url: str = "https://api.github.com"
+    stripe_secret_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_price_team: str | None = None
+    stripe_price_production: str | None = None
     workos_dev_auth_enabled: bool = True
     public_api_rate_limit_per_minute: int = 120
     ingest_rate_limit_per_minute: int = 600

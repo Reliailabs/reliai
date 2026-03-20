@@ -23,6 +23,7 @@ from app.services.api_keys import create_api_key
 from app.services.auth import create_operator_user
 from app.services.deployments import create_deployment
 from app.services.evaluations import run_structured_output_validity_evaluation
+from app.services.environments import ensure_project_bootstrap_environments
 from app.services.guardrails import (
     POLICY_COST_BUDGET,
     POLICY_HALLUCINATION,
@@ -619,6 +620,8 @@ def run() -> None:
             environment="prod",
             description="Seed project for stale telemetry and rollback testing",
         )
+        ensure_project_bootstrap_environments(db, project=project)
+        ensure_project_bootstrap_environments(db, project=stale_project)
 
         sample_summary = _seed_sample_dataset(db, project=project)
         stale_summary = _seed_stale_telemetry_scenario(db, project=stale_project)
