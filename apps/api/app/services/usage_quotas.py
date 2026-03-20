@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.organization import Organization
 from app.models.usage_quota import UsageQuota
+from app.services.plans import normalize_plan
 from datetime import datetime
 from calendar import monthrange
 
@@ -66,9 +67,12 @@ def get_usage_status(db: Session, *, organization_id: UUID) -> dict[str, object]
     redis_key = monthly_usage_key(str(organization_id), month_label)
     redis_used = get_monthly_usage(key=redis_key)
     used = max(int(organization.monthly_traces) if organization is not None else 0, redis_used)
-    limit = quota.max_traces_per_day * 30 if quota.max_traces_per_day else None
-    if limit is None and organization is not None:
-        limit = INCLUDED_MONTHLY_TRACES.get(organization.plan)
+    plan_limit = None
+    if organization is not None:
+        plan_limit = INCLUDED_MONTHLY_TRACES.get(normalize_plan(organization.plan))
+    limit = quota.max_traces_per_day * 30 if quota.max_traces_per_day else plan_limit
+    if plan_limit is not None and limit is not None:
+        limit = min(plan_limit, limit)
     percent_used = 0.0
     status_label = "normal"
     today = datetime.utcnow()

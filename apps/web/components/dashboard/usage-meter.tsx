@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { UpgradeSheet } from "@/components/billing/upgrade-sheet";
 import { Button } from "@/components/ui/button";
+import { normalizePlan } from "@/lib/plans";
 
 type UsageStatus = {
   used: number;
@@ -101,7 +102,8 @@ export function UsageMeter({
           ? "bg-amber-100 text-amber-800"
           : "bg-emerald-100 text-emerald-700";
 
-  const baseCost = basePlanCosts[plan] ?? null;
+  const normalizedPlan = normalizePlan(plan);
+  const baseCost = basePlanCosts[normalizedPlan] ?? null;
   const estimatedUsageCost = usageStatus.estimated_overage_cost ?? 0;
   const totalEstimated =
     baseCost === null ? null : Number.isFinite(baseCost) ? baseCost + estimatedUsageCost : null;
@@ -113,10 +115,10 @@ export function UsageMeter({
   const targetPlan = useMemo<"team" | "production" | null>(() => {
     const promptPlan = upgradePrompt?.plan;
     if (promptPlan === "team" || promptPlan === "production") return promptPlan;
-    if (plan === "free") return "team";
-    if (plan === "team") return "production";
+    if (normalizedPlan === "free") return "team";
+    if (normalizedPlan === "team") return "production";
     return null;
-  }, [plan, upgradePrompt?.plan]);
+  }, [normalizedPlan, upgradePrompt?.plan]);
 
   async function handleCheckout() {
     if (!targetPlan) return;
@@ -241,7 +243,7 @@ export function UsageMeter({
             </div>
           </div>
           {!targetPlan ? (
-            <Link href="/demo" className="text-xs text-ink underline underline-offset-4">
+            <Link href="mailto:billing@reliai.dev" className="text-xs text-ink underline underline-offset-4">
               Contact sales →
             </Link>
           ) : null}

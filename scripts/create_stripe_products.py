@@ -80,7 +80,38 @@ def create_base_price(product_id: str, plan: PlanConfig, version: str) -> stripe
     )
 
 
-def create_usage_price(product_id: str, plan: PlanConfig, version: str, meter_id: str | None) -> stripe.Price:
+def _meter_resource():
+    if hasattr(stripe, "Meter"):
+        return stripe.Meter
+    billing = getattr(stripe, "billing", None)
+    if billing and hasattr(billing, "Meter"):
+        return billing.Meter
+    return None
+
+
+def ensure_meter(name: str) -> str:
+    meter_resource = _meter_resource()
+    if meter_resource is None:
+        print(
+            "Stripe Meter API not available. Upgrade the stripe package to a version that supports meters.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    existing = meter_resource.list(limit=100).data
+    for item in existing:
+        if item.get("event_name") == "trace_count":
+            return item.id
+        if item.get("display_name") == name or item.get("name") == name:
+            return item.id
+    meter = meter_resource.create(
+        display_name=name,
+        event_name="trace_count",
+        default_aggregation={"formula": "sum"},
+    )
+    return meter.id
+
+
+def create_usage_price(product_id: str, plan: PlanConfig, version: str, meter_id: str) -> stripe.Price:
     lookup_key = f"price_reliai_{plan.key}_usage_{version}"
     prices = stripe.Price.search(query=f"lookup_key:'{lookup_key}'").data
     if prices:
@@ -90,15 +121,13 @@ def create_usage_price(product_id: str, plan: PlanConfig, version: str, meter_id
         product=product_id,
         unit_amount=amount_cents,
         currency="usd",
-        recurring={"interval": "month", "usage_type": "metered"},
+        recurring={"interval": "month", "usage_type": "metered", "meter": meter_id},
         billing_scheme="per_unit",
         transform_quantity={"divide_by": 1_000_000, "round": "up"},
         nickname=f"{plan.name} usage {version}",
         lookup_key=lookup_key,
         metadata={"plan_key": plan.key, "type": "usage", "version": version},
     )
-    if meter_id:
-        payload["meter"] = meter_id
     return stripe.Price.create(**payload)
 
 
@@ -109,8 +138,8 @@ def main() -> None:
     parser.add_argument("--team-usage", type=float, default=PLANS[0].usage_per_million_usd)
     parser.add_argument("--production-base", type=float, default=PLANS[1].base_monthly_usd)
     parser.add_argument("--production-usage", type=float, default=PLANS[1].usage_per_million_usd)
-    parser.add_argument("--team-meter", help="Stripe meter ID for team usage price")
-    parser.add_argument("--production-meter", help="Stripe meter ID for production usage price")
+    parser.add_argument("--team-meter-name", default="reliai_team_traces")
+    parser.add_argument("--production-meter-name", default="reliai_production_traces")
     args = parser.parse_args()
 
     stripe.api_key = require_env()
@@ -140,7 +169,8 @@ def main() -> None:
         config = plan_map[plan]
         product = upsert_product(config)
         base_price = create_base_price(product.id, config, args.version)
-        meter_id = args.team_meter if plan == "team" else args.production_meter
+        meter_name = args.team_meter_name if plan == "team" else args.production_meter_name
+        meter_id = ensure_meter(meter_name)
         usage_price = create_usage_price(product.id, config, args.version, meter_id)
         outputs[f"STRIPE_PRICE_{plan.upper()}_BASE"] = base_price.id
         outputs[f"STRIPE_PRICE_{plan.upper()}_USAGE"] = usage_price.id

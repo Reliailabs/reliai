@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getOrganization, getOrganizationUsageQuota } from "@/lib/api";
 import { requireOperatorSession } from "@/lib/auth";
+import { formatPlanLabel, normalizePlan } from "@/lib/plans";
 
 const planDetails = [
   {
@@ -50,8 +51,9 @@ export default async function BillingPage() {
   const usageStatus = usageQuota?.usage_status ?? null;
   const projected = usageStatus?.projected_usage ?? 0;
   const limit = usageStatus?.limit ?? 0;
-  const currentPlan = organization?.plan ?? "free";
-  const baseCost = planBaseCosts[currentPlan] ?? null;
+  const normalizedPlan = normalizePlan(organization?.plan ?? "free");
+  const currentPlanLabel = formatPlanLabel(normalizedPlan);
+  const baseCost = planBaseCosts[normalizedPlan] ?? null;
   const usageCost = usageStatus?.estimated_overage_cost ?? 0;
   const totalEstimated =
     baseCost === null ? null : Number.isFinite(baseCost) ? baseCost + usageCost : null;
@@ -78,7 +80,7 @@ export default async function BillingPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-steel">Current plan</p>
-              <p className="mt-2 text-2xl font-semibold text-ink">{currentPlan}</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{currentPlanLabel}</p>
             </div>
             <div className="text-right">
               <p className="text-xs uppercase tracking-[0.24em] text-steel">Est. monthly cost</p>
