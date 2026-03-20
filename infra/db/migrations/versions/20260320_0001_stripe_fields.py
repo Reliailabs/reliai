@@ -19,8 +19,16 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.add_column("organizations", sa.Column("stripe_customer_id", sa.String(length=128), nullable=True))
     op.add_column("organizations", sa.Column("stripe_subscription_id", sa.String(length=128), nullable=True))
+    op.add_column("organizations", sa.Column("monthly_traces", sa.Integer(), nullable=False, server_default="0"))
+    op.add_column("organizations", sa.Column("monthly_traces_reported", sa.Integer(), nullable=False, server_default="0"))
+    op.add_column("organizations", sa.Column("monthly_usage_month", sa.String(length=7), nullable=True))
+    op.alter_column("organizations", "monthly_traces", server_default=None)
+    op.alter_column("organizations", "monthly_traces_reported", server_default=None)
 
 
 def downgrade() -> None:
+    op.drop_column("organizations", "monthly_usage_month")
+    op.drop_column("organizations", "monthly_traces_reported")
+    op.drop_column("organizations", "monthly_traces")
     op.drop_column("organizations", "stripe_subscription_id")
     op.drop_column("organizations", "stripe_customer_id")

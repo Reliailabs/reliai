@@ -223,7 +223,7 @@ export default function PricingPage() {
           <Button asChild variant="subtle" className="bg-white text-ink hover:bg-white/90">
             <Link href="/signup">Start with Evaluate</Link>
           </Button>
-          <Button asChild variant="outline" className="border-white/60 text-white hover:bg-white/10">
+          <Button asChild variant="outline" className="border-white/60 bg-white text-ink hover:bg-white/90">
             <Link href="/demo">Tour the dashboard</Link>
           </Button>
         </div>

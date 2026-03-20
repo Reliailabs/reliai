@@ -47,11 +47,29 @@ def day_bucket_key(*, prefix: str, identifier: str, now: datetime | None = None)
     return f"{prefix}:{identifier}:{anchor.date().isoformat()}"
 
 
+def month_bucket_key(*, prefix: str, identifier: str, now: datetime | None = None) -> str:
+    anchor = now.astimezone(timezone.utc) if now is not None else datetime.now(timezone.utc)
+    return f"{prefix}:{identifier}:{anchor.strftime('%Y-%m')}"
+
+
 def increment_daily_usage(*, key: str, amount: int = 1) -> int:
     return _increment_with_fallback(key=key, amount=amount)
 
 
+def increment_monthly_usage(*, key: str, amount: int = 1) -> int:
+    return _increment_with_fallback(key=key, amount=amount, window_seconds=32 * 24 * 60 * 60)
+
+
 def get_daily_usage(*, key: str) -> int:
+    try:
+        redis = get_redis()
+        value = redis.get(key)
+        return int(value) if value is not None else 0
+    except RedisError:
+        return _fallback_counts.get(key, 0)
+
+
+def get_monthly_usage(*, key: str) -> int:
     try:
         redis = get_redis()
         value = redis.get(key)

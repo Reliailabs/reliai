@@ -11,6 +11,7 @@ from app.workers.global_pattern_mining import run_global_pattern_mining
 from app.workers.platform_monitor import run_platform_monitor
 from app.workers.reliability_graph_mining import run_reliability_graph_mining
 from app.workers.reliability_pattern_mining import run_reliability_pattern_mining
+from app.workers.stripe_usage_reporting import run_stripe_usage_reporting
 from app.workers.usage_expansion_metrics import run_usage_expansion_metrics
 from app.workers.reliability_sweep import run_reliability_sweep
 
@@ -85,6 +86,11 @@ def _register_default_jobs() -> dict[str, SchedulerJobState]:
             job_name="usage_expansion_metrics",
             interval=timedelta(hours=1),
             enqueue=lambda: _enqueue_callable(run_usage_expansion_metrics),
+        ),
+        "stripe_usage_reporting": SchedulerJobState(
+            job_name="stripe_usage_reporting",
+            interval=timedelta(seconds=60),
+            enqueue=lambda: _enqueue_callable(run_stripe_usage_reporting),
         ),
     }
     now = datetime.now(timezone.utc)

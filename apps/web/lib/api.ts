@@ -55,6 +55,29 @@ import type {
 import { getApiAccessToken } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
 
+export type UsageQuotaStatus = {
+  id: string;
+  organization_id: string;
+  max_traces_per_day: number | null;
+  max_processors: number | null;
+  max_api_requests: number | null;
+  usage_status?: {
+    used: number;
+    limit: number | null;
+    percent_used: number;
+    usage_percent?: number;
+    projected_usage?: number;
+    estimated_overage_cost?: number | null;
+    status: string;
+  } | null;
+  upgrade_prompt?: {
+    title: string;
+    message: string;
+    cta: string;
+    plan: string;
+  } | null;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const sessionToken = await getApiAccessToken();
   const response = await fetch(`${API_URL}${path}`, {
@@ -93,6 +116,10 @@ export async function createOrganization(payload: {
 
 export async function getOrganization(organizationId: string) {
   return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`);
+}
+
+export async function getOrganizationUsageQuota(organizationId: string) {
+  return request<UsageQuotaStatus>(`/api/v1/organizations/${organizationId}/usage-quota`);
 }
 
 export async function getProject(projectId: string) {

@@ -1515,8 +1515,8 @@ def billing_checkout_endpoint(
     checkout_url = create_checkout_session(
         organization,
         payload.plan.strip().lower(),
-        success_url=f"{settings.app_url}/settings?billing=success",
-        cancel_url=f"{settings.app_url}/settings?billing=cancel",
+        success_url=f"{settings.app_url}/billing/success",
+        cancel_url=f"{settings.app_url}/settings/billing",
     )
     return BillingCheckoutResponse(checkout_url=checkout_url)
 
@@ -1889,10 +1889,12 @@ def get_org_usage_quota_endpoint(
     quota = get_or_create_usage_quota(db, organization_id=organization_id)
     usage_status = get_usage_status(db, organization_id=organization_id)
     upgrade_prompt = None
-    if usage_status["status"] == "warning":
-        upgrade_prompt = get_upgrade_prompt("usage_warning", usage_status)
-    elif usage_status["status"] in {"critical", "blocked"}:
-        upgrade_prompt = get_upgrade_prompt("usage_blocked", usage_status)
+    percent_used = float(usage_status.get("usage_percent") or usage_status.get("percent_used") or 0)
+    projected_usage = int(usage_status.get("projected_usage") or 0)
+    limit = usage_status.get("limit")
+    if percent_used >= 0.8 or (limit and projected_usage > int(limit)):
+        prompt_key = "usage_blocked" if percent_used >= 1.0 else "usage_warning"
+        upgrade_prompt = get_upgrade_prompt(prompt_key, usage_status)
     return UsageQuotaStatusRead(
         **UsageQuotaRead.model_validate(quota).model_dump(),
         usage_status=usage_status,

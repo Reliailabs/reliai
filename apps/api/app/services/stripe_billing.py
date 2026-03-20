@@ -27,10 +27,19 @@ def _configure_stripe() -> None:
 def _price_ids() -> dict[str, str]:
     settings = get_settings()
     price_map = {
-        "team": settings.stripe_price_team,
-        "production": settings.stripe_price_production,
+        "team": settings.stripe_price_team_base,
+        "production": settings.stripe_price_production_base,
     }
     return {key: value for key, value in price_map.items() if value}
+
+
+def _usage_price_ids() -> dict[str, str]:
+    settings = get_settings()
+    usage_map = {
+        "team": settings.stripe_price_team_usage,
+        "production": settings.stripe_price_production_usage,
+    }
+    return {key: value for key, value in usage_map.items() if value}
 
 
 def _plan_from_subscription(subscription: stripe.Subscription, price_map: dict[str, str]) -> str:
@@ -67,17 +76,23 @@ def create_checkout_session(organization: Organization, plan: str, *, success_ur
     if not settings.stripe_secret_key:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Stripe is not configured")
     price_map = _price_ids()
+    usage_price_map = _usage_price_ids()
     price_id = price_map.get(plan)
-    if not price_id:
+    usage_price_id = usage_price_map.get(plan)
+    if not price_id or not usage_price_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported plan")
     _configure_stripe()
     customer_id = organization.stripe_customer_id
     session = stripe.checkout.Session.create(
         customer=customer_id,
         mode="subscription",
-        line_items=[{"price": price_id, "quantity": 1}],
+        line_items=[
+            {"price": price_id, "quantity": 1},
+            {"price": usage_price_id},
+        ],
         success_url=success_url,
         cancel_url=cancel_url,
+        allow_promotion_codes=True,
         metadata={"org_id": str(organization.id), "plan": plan},
     )
     return session.url

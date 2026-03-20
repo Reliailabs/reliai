@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { BellRing, CheckCheck, ShieldAlert, ShieldCheck, ShieldEllipsis } from "lucide-react";
 
+import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { Card } from "@/components/ui/card";
-import { getApiHealth, listIncidents } from "@/lib/api";
+import { getApiHealth, getOrganization, getOrganizationUsageQuota, listIncidents } from "@/lib/api";
+import { requireOperatorSession } from "@/lib/auth";
 
 function deliveryTone(status: string | null | undefined) {
   if (status === "sent") return "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200";
@@ -12,8 +14,16 @@ function deliveryTone(status: string | null | undefined) {
 }
 
 export default async function DashboardPage() {
+  const session = await requireOperatorSession();
+  const activeOrganizationId = session.active_organization_id;
   const health = await getApiHealth().catch(() => ({ status: "degraded" }));
   const incidents = await listIncidents({ limit: 50 }).catch(() => ({ items: [] }));
+  const usageQuota = activeOrganizationId
+    ? await getOrganizationUsageQuota(activeOrganizationId).catch(() => null)
+    : null;
+  const organization = activeOrganizationId
+    ? await getOrganization(activeOrganizationId).catch(() => null)
+    : null;
   const openIncidents = incidents.items.filter((incident) => incident.status === "open");
   const acknowledgedOpenIncidents = openIncidents.filter((incident) => incident.acknowledged_at !== null);
   const unacknowledgedOpenIncidents = openIncidents.filter((incident) => incident.acknowledged_at === null);
@@ -63,8 +73,18 @@ export default async function DashboardPage() {
               outcomes from the same deterministic incident queue.
             </p>
           </div>
-          <div className="rounded-lg border border-line bg-surface px-4 py-3 text-sm">
-            API status: <span className="font-medium text-ink">{health.status}</span>
+          <div className="flex flex-col items-start gap-3 lg:items-end">
+            <div className="rounded-lg border border-line bg-surface px-4 py-3 text-sm">
+              API status: <span className="font-medium text-ink">{health.status}</span>
+            </div>
+            {usageQuota?.usage_status && organization ? (
+              <UsageMeter
+                usageStatus={usageQuota.usage_status}
+                plan={organization.plan}
+                upgradePrompt={usageQuota.upgrade_prompt ?? null}
+                organizationId={organization.id}
+              />
+            ) : null}
           </div>
         </div>
       </header>

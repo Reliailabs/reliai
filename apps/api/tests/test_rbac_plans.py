@@ -40,7 +40,7 @@ def test_has_feature_by_plan():
     assert has_feature("enterprise", "slos") is True
 
 
-def test_get_usage_status_thresholds(db_session, monkeypatch):
+def test_get_usage_status_thresholds(db_session):
     org = Organization(name="Acme", slug="acme", plan="free")
     db_session.add(org)
     db_session.commit()
@@ -49,7 +49,9 @@ def test_get_usage_status_thresholds(db_session, monkeypatch):
     db_session.add(quota)
     db_session.commit()
 
-    monkeypatch.setattr("app.services.usage_quotas.get_daily_usage", lambda key: 80)
+    org.monthly_traces = 2200
+    db_session.add(org)
+    db_session.commit()
     status = get_usage_status(db_session, organization_id=org.id)
     assert status["status"] == "warning"
 

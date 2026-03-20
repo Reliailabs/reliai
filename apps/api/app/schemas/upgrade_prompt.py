@@ -14,6 +14,9 @@ class UsageStatusRead(APIModel):
     used: int
     limit: int | None
     percent_used: float
+    usage_percent: float
+    projected_usage: int
+    estimated_overage_cost: float | None
     status: str
 
 
