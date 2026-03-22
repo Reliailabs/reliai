@@ -5,6 +5,7 @@ import pytest
 from fastapi import HTTPException, status
 
 from app.models.environment import Environment
+from app.models.organization import Organization
 from app.models.trace import Trace
 from app.services.clickhouse_migrations import apply_migrations, get_current_version
 from app.services.cost_intelligence import get_project_cost_intelligence
@@ -28,6 +29,13 @@ from app.services.trace_warehouse import (
 from app.workers.warehouse_archiver import run_warehouse_archiver
 
 from .test_api import auth_headers, create_api_key, create_operator, create_organization, create_project, ingest_trace, sign_in
+
+
+def set_org_plan(db_session, organization_id: str, plan: str) -> None:
+    organization = db_session.get(Organization, UUID(organization_id))
+    assert organization is not None
+    organization.plan = plan
+    db_session.commit()
 
 
 def test_clickhouse_migrations_apply_in_order(monkeypatch):
@@ -352,6 +360,7 @@ def test_membership_admin_endpoints_require_org_admin(client, db_session):
     admin_session = sign_in(client, email=admin.email)
     outsider_session = sign_in(client, email=outsider.email)
     organization = create_organization(client, admin_session, name="Members Org", slug="members-org")
+    set_org_plan(db_session, organization["id"], "team")
     project = create_project(client, admin_session, organization["id"])
 
     create_response = client.post(

@@ -34,6 +34,7 @@ services:
       DATABASE_URL: postgresql+psycopg://reliai:reliai@postgres:5432/reliai
       REDIS_URL: redis://redis:6379
       SECRET_KEY: demo-secret-key-change-in-production
+      INGEST_RATE_LIMIT_PER_MINUTE: "20000"
       RELIAI_ENV: development
       SEED_ON_STARTUP: "true"
     ports:

@@ -38,18 +38,18 @@ export function ProjectEnvironmentShell({
   ];
 
   return (
-    <div className="rounded-[24px] border border-zinc-300 bg-white px-5 py-4 shadow-sm">
+    <div className="rounded-[24px] border border-line bg-surface px-5 py-4 shadow-none">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <p className="text-[11px] uppercase tracking-[0.24em] text-steel">Project scope</p>
           <div className="mt-2 flex items-center gap-3">
             <h1 className="text-lg font-semibold text-ink">{projectName}</h1>
-            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-steel">
+            <span className="rounded-full border border-line bg-surfaceAlt px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-steel">
               {selectedEnvironment}
             </span>
           </div>
         </div>
-        <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-steel">
+        <label className="flex items-center gap-3 rounded-2xl border border-line bg-surfaceAlt px-4 py-3 text-sm text-steel">
           <span className="font-medium text-ink">Environment</span>
           <select
             value={selectedEnvironment}
@@ -58,7 +58,7 @@ export function ProjectEnvironmentShell({
               params.set("environment", event.target.value);
               window.location.assign(`${pathname}?${params.toString()}`);
             }}
-            className="min-w-44 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-ink outline-none"
+            className="min-w-44 rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink outline-none"
           >
             {environments.map((environment) => (
               <option key={environment.id} value={environment.name}>
@@ -76,7 +76,7 @@ export function ProjectEnvironmentShell({
             className={`rounded-full px-3 py-2 text-sm font-medium transition ${
               tab.active
                 ? "bg-ink text-white"
-                : "border border-zinc-200 bg-zinc-50 text-steel hover:border-zinc-300 hover:text-ink"
+                : "border border-line bg-surfaceAlt text-steel hover:border-border hover:text-ink"
             }`}
           >
             {tab.label}

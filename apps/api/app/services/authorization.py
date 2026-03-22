@@ -20,7 +20,6 @@ from app.services.rbac import has_required_role, normalize_role
 from app.services.workos_roles import (
     ORG_ROLE_ADMIN,
     ORG_ROLE_VIEWER,
-    normalize_org_role,
     project_role_meets_requirement,
 )
 

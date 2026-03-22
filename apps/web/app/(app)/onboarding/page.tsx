@@ -2,6 +2,26 @@ import { CheckCircle2, CircleDashed, KeyRound, Network, Radar } from "lucide-rea
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+
+import { createOrganization } from "@/lib/api";
+import { requireOperatorSession, switchOrganization } from "@/lib/auth";
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
+function defaultOrgName(email?: string | null) {
+  if (!email) return "Reliai Workspace";
+  const domain = email.split("@")[1];
+  if (!domain) return "Reliai Workspace";
+  const label = domain.split(".")[0] || "Reliai";
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)} Workspace`;
+}
 
 const steps = [
   {
@@ -30,7 +50,33 @@ const steps = [
   }
 ];
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const session = await requireOperatorSession();
+  const defaultName = defaultOrgName(session.operator.email);
+  const defaultSlug = slugify(defaultName);
+
+  async function createOrganizationAction(formData: FormData) {
+    "use server";
+    const session = await requireOperatorSession();
+    const nameInput = String(formData.get("name") ?? "").trim();
+    const slugInput = String(formData.get("slug") ?? "").trim();
+    const fallbackName = defaultOrgName(session.operator.email);
+    const finalName = nameInput || fallbackName;
+    const finalSlug = slugify(slugInput || finalName);
+    if (!finalName || !finalSlug) {
+      return;
+    }
+    const organization = await createOrganization({
+      name: finalName,
+      slug: finalSlug,
+      plan: "free",
+      owner_auth_user_id: session.operator.id,
+      owner_role: "owner"
+    });
+    await switchOrganization(organization.id);
+    redirect("/dashboard");
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
       <Card className="p-6">
@@ -99,7 +145,27 @@ export default function OnboardingPage() {
             </p>
           </div>
         </div>
-        <Button className="mt-5 w-full">Create organization</Button>
+        <form action={createOrganizationAction} className="mt-5 space-y-3">
+          <label className="block space-y-2 text-sm text-steel">
+            <span className="text-xs uppercase tracking-[0.24em] text-steel">Organization name</span>
+            <input
+              name="name"
+              defaultValue={defaultName}
+              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+            />
+          </label>
+          <label className="block space-y-2 text-sm text-steel">
+            <span className="text-xs uppercase tracking-[0.24em] text-steel">Slug</span>
+            <input
+              name="slug"
+              defaultValue={defaultSlug}
+              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+            />
+          </label>
+          <Button type="submit" className="w-full">
+            Create organization
+          </Button>
+        </form>
       </Card>
     </div>
   );

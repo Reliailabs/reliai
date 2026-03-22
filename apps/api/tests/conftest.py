@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
 os.environ["API_KEY_HASH_SECRET"] = "test-secret"
 os.environ["AUTH_SESSION_HASH_SECRET"] = "test-session-secret"
+os.environ["EVENT_STREAM_BROKERS"] = ""
 
 from app.db.session import get_db
 from app.db import base as _db_base  # noqa: F401

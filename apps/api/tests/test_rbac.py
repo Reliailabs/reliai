@@ -169,4 +169,4 @@ def test_workos_group_mapping_updates_single_membership_role(db_session, monkeyp
     context = authenticate_workos_token(db_session, "header.payload.signature")
 
     assert context.operator.workos_user_id == "wos_user_123"
-    assert context.memberships[0].role == "org_admin"
+    assert context.memberships[0].role == "admin"

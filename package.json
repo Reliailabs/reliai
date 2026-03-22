@@ -16,5 +16,9 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "tsx": "^4.20.5"
+  },
+  "dependencies": {
+    "build": "^0.1.4",
+    "npm": "^11.12.0"
   }
 }

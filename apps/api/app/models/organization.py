@@ -36,6 +36,7 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         uselist=False,
     )
     audit_logs = relationship("AuditLog", back_populates="organization")
+    config_snapshots = relationship("OrganizationConfigSnapshot", back_populates="organization")
     public_api_keys = relationship("PublicApiKey", back_populates="organization")
     usage_quota = relationship("UsageQuota", back_populates="organization", uselist=False)
     platform_extensions = relationship("PlatformExtension", back_populates="organization")

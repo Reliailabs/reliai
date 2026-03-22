@@ -1,0 +1,20 @@
+services:
+  otel-collector:
+    volumes:
+      - ../../otel-collector-config.yaml:/etc/otelcol/config.yaml
+    command: ["--config=/etc/otelcol/config.yaml"]
+    depends_on:
+      reliai-otel-adapter:
+        condition: service_started
+    environment:
+      - RELIAI_API_KEY=${RELIAI_API_KEY}
+
+  reliai-otel-adapter:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - RELIAI_API_URL=${RELIAI_API_URL:-http://host.docker.internal:8000}
+      - RELIAI_API_KEY=${RELIAI_API_KEY}

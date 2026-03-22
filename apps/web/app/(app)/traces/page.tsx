@@ -4,6 +4,7 @@ import { ChevronRight, Filter, Radar, SearchSlash } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { listTraces, type TraceFilters } from "@/lib/api";
+import { TraceWowBanner } from "@/components/traces/trace-wow-banner";
 
 function getStatusPill(success: boolean, errorType: string | null) {
   if (success) {
@@ -44,6 +45,9 @@ export default async function TracesPage({
   };
 
   const traces = await listTraces(filters).catch(() => ({ items: [], next_cursor: null }));
+  const bestTraceId = traces.items[0]?.id;
+  const disableAutoSelect = readSearchParam(params.autoselect) === "0";
+  const hasCursor = Boolean(filters.cursor);
   const hasFilters =
     Boolean(filters.projectId) ||
     Boolean(filters.promptVersionId) ||
@@ -135,6 +139,17 @@ export default async function TracesPage({
             </div>
           </form>
         </div>
+
+        {bestTraceId ? (
+          <div className="border-b border-zinc-200 px-6 py-5">
+            <TraceWowBanner
+              bestTraceId={bestTraceId}
+              hasFilters={hasFilters}
+              disableAutoSelect={disableAutoSelect}
+              hasCursor={hasCursor}
+            />
+          </div>
+        ) : null}
 
         {traces.items.length === 0 ? (
           <div className="px-6 py-12">

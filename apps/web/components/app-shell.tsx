@@ -6,6 +6,8 @@ import { Activity, KeyRound, ScanSearch, Settings2, ShieldAlert } from "lucide-r
 
 import { signOut } from "@/lib/auth";
 import { OrgSwitcher } from "@/components/org-switcher";
+import { DensityToggle } from "@/components/density-toggle";
+import { WarRoomToggle } from "@/components/war-room-toggle";
 
 const navItems = [
   { href: "/dashboard" as Route, label: "Overview", icon: Activity },
@@ -33,9 +35,9 @@ export async function AppShell({
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] text-ink">
+    <div className="app-shell min-h-screen bg-bg text-textPrimary">
       <div className="mx-auto grid min-h-screen max-w-[1400px] grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="border-r border-line bg-white px-5 py-6">
+        <aside className="border-r border-line bg-surface px-5 py-6">
           <div className="mb-8">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Reliai</p>
             <h1 className="mt-2 text-xl font-semibold">AI reliability operations</h1>
@@ -58,6 +60,12 @@ export async function AppShell({
           <div className="mt-8 rounded-lg border border-line bg-surface px-3 py-3 text-sm text-steel">
             <p className="font-medium text-ink">{operatorEmail}</p>
             <OrgSwitcher memberships={memberships} activeOrganizationId={activeOrganizationId} />
+            <div className="mt-3">
+              <DensityToggle />
+            </div>
+            <div className="mt-2">
+              <WarRoomToggle />
+            </div>
             <form action={signOutAction} className="mt-3">
               <button className="text-sm text-steel underline-offset-4 hover:text-ink hover:underline">
                 Sign out

@@ -3,13 +3,167 @@
 @tailwind utilities;
 
 :root {
-  --background: #f3f4f6;
-  --foreground: #111827;
-  --font-body: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+  --background: #0b0f14;
+  --foreground: #e5e7eb;
+  --surface: #111827;
+  --surface-alt: #0f172a;
+  --border: #1f2937;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-base: 14px;
+  --spacing-card: 1.5rem;
+  --card-radius: 12px;
+  --spacing-table-x: 0.75rem;
+  --spacing-table-y: 0.5rem;
+}
+
+.density-compact {
+  --font-base: 13px;
+  --spacing-card: 1rem;
+  --spacing-table-x: 0.5rem;
+  --spacing-table-y: 0.375rem;
+}
+
+html {
+  font-size: var(--font-base);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+@layer base {
+  .app-shell {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+  }
+
+  .app-shell .text-steel {
+    color: var(--text-secondary);
+  }
+
+  .app-shell .text-ink {
+    color: var(--text-primary);
+  }
+
+  .app-shell .bg-white {
+    background-color: var(--surface);
+  }
+
+  .app-shell .bg-zinc-50,
+  .app-shell .bg-gray-50,
+  .app-shell .bg-slate-50 {
+    background-color: var(--surface-alt);
+  }
+
+  .app-shell .bg-surface {
+    background-color: var(--surface);
+  }
+
+  .app-shell .border-line {
+    border-color: var(--border);
+  }
+
+  .app-shell .border-zinc-200,
+  .app-shell .border-zinc-300 {
+    border-color: var(--border);
+  }
+
+  .app-shell aside {
+    background-color: var(--surface);
+    border-color: var(--border);
+  }
+
+  .app-shell .shadow-sm,
+  .app-shell .shadow,
+  .app-shell .shadow-md,
+  .app-shell .shadow-lg {
+    box-shadow: none;
+  }
+
+  .app-shell h1,
+  .app-shell h2,
+  .app-shell .card-title {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    font-family: var(--font-ui);
+  }
+
+  .app-shell table th,
+  .app-shell table td {
+    padding: var(--spacing-table-y) var(--spacing-table-x);
+    vertical-align: middle;
+  }
+
+  .card-surface {
+    border-radius: var(--card-radius);
+  }
+
+  .app-shell .card-surface {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+
+  .app-shell .metadata-bar {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .app-shell .density-toggle {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .app-shell .war-room-toggle {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    color: var(--text-secondary);
+  }
+
+  .war-room {
+    font-size: 13px;
+  }
+
+  .war-room .card-surface {
+    padding: 8px !important;
+    border-radius: 6px;
+  }
+
+  .war-room .app-shell main {
+    padding: 8px !important;
+  }
+
+  .war-room .app-shell aside {
+    padding: 8px !important;
+  }
+
+  .war-room .text-zinc-400 {
+    color: #71717a;
+  }
+
+  .war-room .text-zinc-500 {
+    color: #52525b;
+  }
+
+  .war-room .failure {
+    color: #ef4444;
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  .text-mono-data {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    letter-spacing: -0.01em;
+  }
 }

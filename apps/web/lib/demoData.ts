@@ -658,6 +658,10 @@ export const demoDeploymentDetail: DeploymentDetailRead = {
       "Recent incident correlation detected during rollout",
     ],
     recommended_guardrails: ["latency_retry", "structured_output"],
+    regression_risk: {
+      is_regression: true,
+      reasons: ["failures increased (+2)", "retries increased (+3)", "latency increased (+180ms)"],
+    },
   },
 };
 

@@ -3,6 +3,8 @@ import { ArrowLeft, ArrowRight, GitCommitHorizontal, History, ShieldAlert } from
 
 import type { DeploymentDetailRead } from "@reliai/types";
 
+import { Button } from "@/components/ui/button";
+import { ActionCallout } from "@/components/ui/action-callout";
 import { Card } from "@/components/ui/card";
 import { gateLabel, gateTone, renderMetadata } from "@/components/presenters/ops-format";
 import { cn } from "@/lib/utils";
@@ -104,6 +106,24 @@ export function DeploymentDetailView({ detail, screenshotMode = false }: Deploym
                   ))}
                 </ul>
               </div>
+              {gate.regression_risk?.is_regression ? (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                  <p className="text-sm font-semibold text-rose-900">Regression risk detected</p>
+                  <ul className="mt-3 space-y-2 text-sm text-rose-800">
+                    {gate.regression_risk.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Button size="sm" className="rounded-full bg-rose-600 text-white hover:bg-rose-700">
+                      Deploy anyway
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-full border-rose-200 text-rose-700">
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : (
             <p className="mt-5 text-sm leading-6 text-steel">
@@ -122,18 +142,23 @@ export function DeploymentDetailView({ detail, screenshotMode = false }: Deploym
           </div>
           {intelligence && (intelligence.graph_risk_patterns.length > 0 || intelligence.recommended_guardrails.length > 0) ? (
             <div className="mt-5 space-y-4">
-              <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-                <p className="font-medium text-ink">Known reliability patterns detected</p>
-                {intelligence.risk_explanations.length > 0 ? (
-                  <ul className="mt-3 space-y-2">
-                    {intelligence.risk_explanations.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2">Graph correlations indicate elevated deployment risk for this change.</p>
-                )}
-              </div>
+              <ActionCallout
+                label="Action"
+                directive="Known reliability patterns detected."
+                supporting={
+                  intelligence.risk_explanations.length > 0 ? (
+                    <ul className="mt-2 space-y-2">
+                      {intelligence.risk_explanations.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2">Graph correlations indicate elevated deployment risk for this change.</p>
+                  )
+                }
+                confidence="medium"
+                source="risk graph"
+              />
               {intelligence.graph_risk_patterns.length > 0 ? (
                 <div className="grid gap-3 md:grid-cols-2">
                   {intelligence.graph_risk_patterns.map((item) => (

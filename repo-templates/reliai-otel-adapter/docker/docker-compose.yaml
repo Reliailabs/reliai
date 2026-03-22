@@ -1,0 +1,12 @@
+services:
+  reliai-otel-adapter:
+    env_file:
+      - ../.env.demo
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - RELIAI_API_URL=${RELIAI_API_URL:-http://host.docker.internal:8000}
+      - RELIAI_API_KEY=${RELIAI_API_KEY}

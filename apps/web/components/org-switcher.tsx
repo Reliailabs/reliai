@@ -30,7 +30,7 @@ export async function OrgSwitcher({
         <select
           name="organization_id"
           defaultValue={activeOrganizationId ?? memberships[0]?.organization_id}
-          className="min-w-0 flex-1 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
         >
           {memberships.map((membership) => (
             <option key={membership.organization_id} value={membership.organization_id}>

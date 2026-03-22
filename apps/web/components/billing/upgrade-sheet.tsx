@@ -29,11 +29,11 @@ export function UpgradeSheet({ open, onClose, onConfirm, currentCost, targetPlan
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/30">
-      <div className="w-full rounded-t-2xl bg-white p-6 shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
+      <div className="w-full rounded-t-2xl bg-surface p-6 shadow-none">
         <h2 className="text-lg font-semibold text-ink">Upgrade to {plan.name}</h2>
         <p className="mt-2 text-sm text-steel">Reduce overage costs and keep full observability.</p>
 
-        <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-ink">
+        <div className="mt-4 rounded-xl border border-line bg-surfaceAlt px-4 py-3 text-sm text-ink">
           <div className="flex items-center justify-between">
             <span>New plan</span>
             <span className="font-semibold">{plan.name}</span>

@@ -13,6 +13,7 @@ from app.models.guardrail_policy import GuardrailPolicy
 from app.models.incident import Incident
 from app.models.project import Project
 from app.services.deployment_risk_engine import calculate_deployment_risk
+from app.services.deployment_regression_engine import build_deployment_regression_risk
 from app.services.reliability_graph import get_graph_guardrail_recommendations, get_high_risk_patterns
 from app.services.trace_query_router import query_hourly_metrics
 
@@ -160,9 +161,12 @@ def evaluate_deployment(db: Session, project_id: UUID, deployment_id: UUID) -> d
     if not explanations:
         explanations.append("no elevated safety signals detected in current deployment checks")
 
+    regression_risk = build_deployment_regression_risk(db, deployment=deployment)
+
     return {
         "decision": _decision_for_score(risk_score),
         "risk_score": risk_score,
         "explanations": explanations,
         "recommended_guardrails": missing_recommended_guardrails[:4] or recommended_guardrail_types[:4],
+        "regression_risk": regression_risk,
     }

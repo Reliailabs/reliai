@@ -19,7 +19,9 @@ import {
 import type { IncidentEventRead } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
+import { ActionCallout } from "@/components/ui/action-callout";
 import { Card } from "@/components/ui/card";
+import { MetadataBar, MetadataItem } from "@/components/ui/metadata-bar";
 import {
   acknowledgeIncident,
   assignIncidentOwner,
@@ -184,6 +186,20 @@ export default async function IncidentDetailPage({
           <p className="mt-2 text-sm text-steel">
             {incident.project_name} · opened {new Date(incident.started_at).toLocaleString()}
           </p>
+          <MetadataBar className="mt-4">
+            <MetadataItem label="Project" value={incident.project_name ?? incident.project_id} mono truncate />
+            <MetadataItem
+              label="Severity"
+              value={incident.severity}
+              status={incident.severity === "critical" ? "critical" : "neutral"}
+            />
+            <MetadataItem
+              label="Status"
+              value={incident.status}
+              status={incident.status === "open" ? "critical" : "success"}
+            />
+            <MetadataItem label="Incident" value={incident.id} mono truncate />
+          </MetadataBar>
         </div>
         <div className="flex items-center gap-3">
           <Button asChild variant="outline" className="rounded-full">
@@ -192,18 +208,6 @@ export default async function IncidentDetailPage({
           <Button asChild variant="outline" className="rounded-full">
             <Link href={`/incidents/${incident.id}/command`}>Open Command Center</Link>
           </Button>
-          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${severityTone(incident.severity)}`}>
-            {incident.severity}
-          </span>
-          <span
-            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-              incident.status === "open"
-                ? "bg-ink text-white"
-                : "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200"
-            }`}
-          >
-            {incident.status}
-          </span>
         </div>
       </div>
 
@@ -327,9 +331,11 @@ export default async function IncidentDetailPage({
               </div>
             </div>
             <div className="mt-5 space-y-3">
-              <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
-                <p className="text-sm font-medium text-ink">{command.root_cause.recommended_fix.summary}</p>
-              </div>
+              <ActionCallout
+                label="Action"
+                directive={command.root_cause.recommended_fix.summary}
+                confidence="high"
+              />
               <div className="rounded-2xl border border-zinc-200 px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-steel">Recommended guardrails</p>
                 <div className="mt-3 space-y-2 text-sm text-steel">

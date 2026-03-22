@@ -813,6 +813,12 @@ export interface DeploymentGateRead {
   risk_score: number;
   explanations: string[];
   recommended_guardrails: string[];
+  regression_risk: DeploymentRegressionRiskRead | null;
+}
+
+export interface DeploymentRegressionRiskRead {
+  is_regression: boolean;
+  reasons: string[];
 }
 
 export interface DeploymentSimulationRead {
@@ -838,6 +844,27 @@ export interface DeploymentDetailRead extends DeploymentRead {
   latest_risk_score: DeploymentRiskRead | null;
   intelligence: DeploymentIntelligence | null;
   gate: DeploymentGateRead | null;
+}
+
+export interface ConfigPatchItem {
+  key: string;
+  from: string | number | boolean | null;
+  to: string | number | boolean | null;
+}
+
+export interface ConfigSnapshotRead {
+  id: string;
+  organization_id: string;
+  config_json: Record<string, unknown>;
+  created_at: string;
+  created_by: string | null;
+  source_trace_id: string | null;
+  reason: string | null;
+}
+
+export interface ConfigApplyResponse {
+  status: string;
+  config_snapshot: ConfigSnapshotRead;
 }
 
 export interface IncidentDeploymentContextRead {

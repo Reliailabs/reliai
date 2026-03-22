@@ -7,7 +7,7 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, desc, or_, select
+from sqlalchemy import and_, case, desc, or_, select, String
 from sqlalchemy.orm import Session, selectinload
 
 from app.events import build_trace_event_payload, validate_trace_event
@@ -261,10 +261,32 @@ def list_traces(db: Session, operator: OperatorContext, filters: TraceListQuery)
     else:
         allowed_project_ids = authorized_project_ids(db, operator)
 
+    metadata_text = Trace.metadata_json.cast(String)
+    wow_rank = case(
+        (
+            and_(
+                metadata_text.ilike("%failure_reason%"),
+                metadata_text.ilike("%retry_attempt%"),
+                metadata_text.ilike("%span_type%"),
+                metadata_text.ilike("%retrieval%"),
+            ),
+            0,
+        ),
+        (
+            and_(
+                metadata_text.ilike("%failure_reason%"),
+                metadata_text.ilike("%span_type%"),
+                metadata_text.ilike("%retrieval%"),
+            ),
+            1,
+        ),
+        else_=2,
+    )
+
     statement = (
         select(Trace)
         .where(Trace.project_id.in_(allowed_project_ids))
-        .order_by(desc(Trace.created_at), desc(Trace.id))
+        .order_by(wow_rank, desc(Trace.created_at), desc(Trace.id))
     )
 
     if filters.project_id is not None:

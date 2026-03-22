@@ -3,6 +3,7 @@ import { BellRing, CheckCheck, ShieldAlert, ShieldCheck, ShieldEllipsis } from "
 
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { Card } from "@/components/ui/card";
+import { MetadataBar, MetadataItem } from "@/components/ui/metadata-bar";
 import { getApiHealth, getOrganization, getOrganizationUsageQuota, listIncidents } from "@/lib/api";
 import { requireOperatorSession } from "@/lib/auth";
 
@@ -74,9 +75,15 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-col items-start gap-3 lg:items-end">
-            <div className="rounded-lg border border-line bg-surface px-4 py-3 text-sm">
-              API status: <span className="font-medium text-ink">{health.status}</span>
-            </div>
+            <MetadataBar>
+              <MetadataItem
+                label="API"
+                value={health.status}
+                status={health.status === "ok" ? "success" : "critical"}
+              />
+              <MetadataItem label="Open" value={String(openIncidents.length)} />
+              <MetadataItem label="Ack" value={String(acknowledgedOpenIncidents.length)} />
+            </MetadataBar>
             {usageQuota?.usage_status && organization ? (
               <UsageMeter
                 usageStatus={usageQuota.usage_status}

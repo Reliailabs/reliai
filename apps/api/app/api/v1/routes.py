@@ -24,6 +24,7 @@ from app.schemas.auth import (
     OperatorRead,
 )
 from app.schemas.billing import BillingCheckoutRequest, BillingCheckoutResponse
+from app.schemas.config import ConfigApplyRequest, ConfigApplyResponse, ConfigUndoRequest, ConfigSnapshotRead
 from app.schemas.cost_intelligence import (
     CostAnomalyRead,
     CostByModelRead,
@@ -41,6 +42,7 @@ from app.schemas.deployment import (
     DeploymentCreate,
     DeploymentDetailRead,
     DeploymentGateRead,
+    DeploymentRegressionRiskRead,
     DeploymentIntelligencePatternRead,
     DeploymentIntelligenceRead,
     DeploymentEventRead,
@@ -331,6 +333,7 @@ from app.services.authorization import (
     require_project_role,
     require_system_admin,
 )
+from app.services.rbac import has_required_role
 from app.services.organizations import create_organization, get_organization
 from app.services.organization_alert_targets import (
     get_org_alert_target,
@@ -428,6 +431,7 @@ from app.services.timeline import get_project_timeline
 from app.services.event_stream import PolicyViolationEventPayload, publish_event
 from app.services.entitlements import has_feature
 from app.services.stripe_billing import create_checkout_session, ensure_stripe_customer, handle_stripe_webhook
+from app.services.organization_config import apply_config_patch, undo_config_patch
 from app.services.upgrade_prompts import get_upgrade_prompt
 from app.services.usage_quotas import (
     enforce_daily_api_quota,
@@ -639,11 +643,18 @@ def _deployment_intelligence_item(item: dict) -> DeploymentIntelligenceRead:
 
 
 def _deployment_gate_item(item: dict) -> DeploymentGateRead:
+    regression = item.get("regression_risk")
     return DeploymentGateRead(
         decision=str(item["decision"]),
         risk_score=int(item["risk_score"]),
         explanations=[str(value) for value in item.get("explanations", [])],
         recommended_guardrails=[str(value) for value in item.get("recommended_guardrails", [])],
+        regression_risk=DeploymentRegressionRiskRead(
+            is_regression=bool(regression.get("is_regression")),
+            reasons=[str(value) for value in regression.get("reasons", [])],
+        )
+        if isinstance(regression, dict)
+        else None,
     )
 
 
@@ -1331,7 +1342,9 @@ def list_global_reliability_patterns_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> GlobalReliabilityPatternListResponse:
-    if not operator.operator.is_system_admin and not any(item.role == "org_admin" for item in operator.memberships):
+    if not operator.operator.is_system_admin and not any(
+        has_required_role(item.role, "admin") for item in operator.memberships
+    ):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return GlobalReliabilityPatternListResponse(
         patterns=[item for item in get_global_reliability_patterns(db)]
@@ -1530,6 +1543,53 @@ async def billing_webhook_endpoint(
     signature = request.headers.get("stripe-signature")
     handle_stripe_webhook(db, payload, signature)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/config/apply", response_model=ConfigApplyResponse)
+def apply_config_endpoint(
+    payload: ConfigApplyRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ConfigApplyResponse:
+    organization_id = operator.active_organization_id
+    if organization_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active organization selected")
+    require_org_role(operator, organization_id, "admin")
+    snapshot = apply_config_patch(
+        db,
+        operator=operator,
+        organization_id=organization_id,
+        patch=payload.patch,
+        source_trace_id=payload.source_trace_id,
+        reason=payload.reason,
+    )
+    return ConfigApplyResponse(
+        status="applied",
+        config_snapshot=ConfigSnapshotRead.model_validate(snapshot),
+    )
+
+
+@router.post("/config/undo", response_model=ConfigApplyResponse)
+def undo_config_endpoint(
+    payload: ConfigUndoRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ConfigApplyResponse:
+    organization_id = operator.active_organization_id
+    if organization_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active organization selected")
+    require_org_role(operator, organization_id, "admin")
+    snapshot = undo_config_patch(
+        db,
+        operator=operator,
+        organization_id=organization_id,
+        source_trace_id=payload.source_trace_id,
+        reason=payload.reason,
+    )
+    return ConfigApplyResponse(
+        status="undone",
+        config_snapshot=ConfigSnapshotRead.model_validate(snapshot),
+    )
 
 
 @router.post("/auth/sign-in", response_model=AuthSessionResponse)

@@ -8,7 +8,10 @@ export function Card({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-xl border border-line bg-white shadow-sm", className)}
+      className={cn(
+        "card-surface border border-line bg-white text-ink shadow-sm !p-[var(--spacing-card)]",
+        className
+      )}
       {...props}
     />
   );

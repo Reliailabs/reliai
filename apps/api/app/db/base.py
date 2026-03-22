@@ -32,6 +32,7 @@ from app.models.metadata_cardinality import MetadataCardinality
 from app.models.model_reliability_pattern import ModelReliabilityPattern
 from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
+from app.models.organization_config_snapshot import OrganizationConfigSnapshot
 from app.models.organization_guardrail_policy import OrganizationGuardrailPolicy
 from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
@@ -93,6 +94,7 @@ __all__ = [
     "ModelReliabilityPattern",
     "OnboardingChecklist",
     "Organization",
+    "OrganizationConfigSnapshot",
     "OrganizationGuardrailPolicy",
     "OrganizationAlertTarget",
     "OrganizationMember",

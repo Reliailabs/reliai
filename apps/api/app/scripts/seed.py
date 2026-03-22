@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -21,6 +22,7 @@ from app.schemas.trace import RetrievalSpanIngest, TraceIngestRequest
 from app.services.alerts import create_alert_deliveries_for_open_incidents
 from app.services.api_keys import create_api_key
 from app.services.auth import create_operator_user
+from app.core.settings import get_settings
 from app.services.deployments import create_deployment
 from app.services.evaluations import run_structured_output_validity_evaluation
 from app.services.environments import ensure_project_bootstrap_environments
@@ -32,7 +34,7 @@ from app.services.guardrails import (
     create_guardrail_policy,
 )
 from app.services.incidents import sync_incidents_for_scope
-from app.services.onboarding import get_or_create_checklist
+from app.services.onboarding import get_or_create_checklist, mark_api_key_created
 from app.services.registry import ensure_model_version_record, ensure_prompt_version_record
 from app.services.regressions import compute_regressions_for_scope
 from app.services.reliability_metrics import compute_project_reliability_metrics
@@ -45,6 +47,35 @@ SEED_OPERATOR_EMAIL = "owner@acme.test"
 SEED_OPERATOR_PASSWORD = "reliai-dev-password"
 SEED_REQUEST_PREFIX = "sample-support-agent"
 STALE_PROJECT_SLUG = "checkout-assistant"
+DEMO_API_KEY = "reliai_demo_key"
+
+
+def _hash_api_key(plaintext_key: str) -> str:
+    secret = get_settings().api_key_hash_secret
+    return hashlib.sha256(f"{secret}:{plaintext_key}".encode("utf-8")).hexdigest()
+
+
+def _ensure_demo_api_key(db, project: Project, plaintext_key: str) -> APIKey:
+    prefix = plaintext_key[:12]
+    key_hash = _hash_api_key(plaintext_key)
+    existing = db.scalars(
+        select(APIKey).where(APIKey.key_prefix == prefix, APIKey.revoked_at.is_(None))
+    ).all()
+    for candidate in existing:
+        if candidate.key_hash == key_hash:
+            return candidate
+    key_record = APIKey(
+        project_id=project.id,
+        key_prefix=prefix,
+        key_hash=key_hash,
+        label="Demo ingest",
+    )
+    db.add(key_record)
+    db.flush()
+    mark_api_key_created(db, project.organization_id)
+    db.commit()
+    db.refresh(key_record)
+    return key_record
 
 
 def _get_or_create_guardrail_policy(
@@ -627,6 +658,7 @@ def run() -> None:
         stale_summary = _seed_stale_telemetry_scenario(db, project=stale_project)
 
         key_record, plaintext = create_api_key(db, project.id, APIKeyCreate(label="Local ingest"))
+        demo_key_record = _ensure_demo_api_key(db, project, DEMO_API_KEY)
         trace_total = len(db.scalars(select(Trace).where(Trace.project_id == project.id)).all())
         stale_trace_total = len(db.scalars(select(Trace).where(Trace.project_id == stale_project.id)).all())
         active_key_count = len(
@@ -640,8 +672,10 @@ def run() -> None:
         print(f"Seeded project={project.id}")
         print(f"Seeded stale_test_project={stale_project.id}")
         print(f"API key={plaintext}")
+        print(f"Demo API key={DEMO_API_KEY}")
         print(f"Generated at={datetime.now(timezone.utc).isoformat()}")
         print(f"Key record={key_record.id}")
+        print(f"Demo key record={demo_key_record.id}")
         print(f"Sample traces_total={trace_total}")
         print(f"Sample baseline_traces={sample_summary['baseline_traces']}")
         print(f"Sample current_traces={sample_summary['current_traces']}")

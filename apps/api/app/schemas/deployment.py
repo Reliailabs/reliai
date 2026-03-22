@@ -82,11 +82,17 @@ class DeploymentIntelligenceRead(APIModel):
     recommended_guardrails: list[str]
 
 
+class DeploymentRegressionRiskRead(APIModel):
+    is_regression: bool
+    reasons: list[str]
+
+
 class DeploymentGateRead(APIModel):
     decision: str
     risk_score: int
     explanations: list[str]
     recommended_guardrails: list[str]
+    regression_risk: DeploymentRegressionRiskRead | None = None
 
 
 class DeploymentSimulationCreate(BaseModel):

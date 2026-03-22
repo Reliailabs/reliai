@@ -608,4 +608,4 @@ def test_membership_row_created_for_operator_owned_organization(client, db_sessi
         )
         .one()
     )
-    assert membership.role == "org_admin"
+    assert membership.role == "owner"
