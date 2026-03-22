@@ -4,8 +4,8 @@ import { ArrowLeft, ArrowRight, GitCommitHorizontal, History, ShieldAlert } from
 import type { DeploymentDetailRead } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
-import { ActionCallout } from "@/components/ui/action-callout";
 import { Card } from "@/components/ui/card";
+import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { gateLabel, gateTone, renderMetadata } from "@/components/presenters/ops-format";
 import { cn } from "@/lib/utils";
 
@@ -142,9 +142,8 @@ export function DeploymentDetailView({ detail, screenshotMode = false }: Deploym
           </div>
           {intelligence && (intelligence.graph_risk_patterns.length > 0 || intelligence.recommended_guardrails.length > 0) ? (
             <div className="mt-5 space-y-4">
-              <ActionCallout
-                label="Action"
-                directive="Known reliability patterns detected."
+              <RecommendationCallout
+                recommendation="Review the traces that triggered the deployment risk patterns before proceeding."
                 supporting={
                   intelligence.risk_explanations.length > 0 ? (
                     <ul className="mt-2 space-y-2">
@@ -156,8 +155,6 @@ export function DeploymentDetailView({ detail, screenshotMode = false }: Deploym
                     <p className="mt-2">Graph correlations indicate elevated deployment risk for this change.</p>
                   )
                 }
-                confidence="medium"
-                source="risk graph"
               />
               {intelligence.graph_risk_patterns.length > 0 ? (
                 <div className="grid gap-3 md:grid-cols-2">

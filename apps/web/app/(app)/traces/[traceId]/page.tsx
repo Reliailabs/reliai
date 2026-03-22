@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, GitCompareArrows, Play, Waypoints } from "lucide-react";
@@ -93,12 +94,22 @@ export default async function TraceDetailPage({
     currentGraph?.nodes
       ?.slice()
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) ?? [];
+  const slowestLatency = analysis?.slowest_span?.latency_ms ?? null;
+  const slowestShare =
+    slowestLatency && trace.latency_ms ? Math.round((slowestLatency / trace.latency_ms) * 100) : null;
+  const tokenTotal = totalTokens;
+  const tokenShare =
+    analysis?.largest_token_span?.token_count && tokenTotal
+      ? Math.round((analysis.largest_token_span.token_count / tokenTotal) * 100)
+      : null;
   const keyFindings = [
     analysis?.slowest_span
       ? {
           id: analysis.slowest_span.span_id,
           label: "Slowest step",
           detail: `${analysis.slowest_span.span_name ?? "Span"} · ${analysis.slowest_span.latency_ms ?? 0} ms`,
+          rationale: slowestShare ? `Accounts for ${slowestShare}% of trace latency.` : "Largest latency contribution in this trace.",
+          confidence: "high",
         }
       : null,
     analysis?.largest_token_span
@@ -106,6 +117,8 @@ export default async function TraceDetailPage({
           id: analysis.largest_token_span.span_id,
           label: "Token spike",
           detail: `${analysis.largest_token_span.span_name ?? "Span"} · ${analysis.largest_token_span.token_count ?? 0} tokens`,
+          rationale: tokenShare ? `Accounts for ${tokenShare}% of total tokens.` : "Largest token contribution in this trace.",
+          confidence: "medium",
         }
       : null,
     analysis?.most_guardrail_retries
@@ -113,9 +126,11 @@ export default async function TraceDetailPage({
           id: analysis.most_guardrail_retries.span_id,
           label: "Guardrail retries",
           detail: `${analysis.most_guardrail_retries.guardrail_policy ?? "Guardrail"} · ${analysis.most_guardrail_retries.retry_count ?? 0} retries`,
+          rationale: "Highest retry concentration in the trace graph.",
+          confidence: "medium",
         }
       : null,
-  ].filter(Boolean) as Array<{ id: string; label: string; detail: string }>;
+  ].filter(Boolean) as Array<{ id: string; label: string; detail: string; rationale: string; confidence: string }>;
   const maxDuration = Math.max(...orderedSteps.map((node) => node.latency_ms ?? 0), 1);
   const hasInputs = Boolean(trace.input_text);
   const hasOutputs = Boolean(trace.output_text);
@@ -159,7 +174,7 @@ export default async function TraceDetailPage({
             ) : null}
             {trace.compare_path ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={trace.compare_path}>
+                <Link href={trace.compare_path as Route}>
                   <GitCompareArrows className="mr-2 h-4 w-4" />
                   Compare
                 </Link>
@@ -202,12 +217,16 @@ export default async function TraceDetailPage({
               <div className="mt-4 space-y-3">
                 {keyFindings.map((item) => (
                   <a
-                    key={item.id}
+                    key={`${item.id}-${item.label}`}
                     href={`#span-${item.id}`}
                     className="block rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-sm text-ink transition hover:border-textSecondary"
                   >
                     <span className="text-[11px] uppercase tracking-[0.2em] text-steel">{item.label}</span>
                     <p className="mt-1 font-medium">{item.detail}</p>
+                    <p className="mt-1 text-xs text-steel">{item.rationale}</p>
+                    <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-steel">
+                      confidence {item.confidence}
+                    </p>
                   </a>
                 ))}
               </div>

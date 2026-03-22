@@ -334,7 +334,13 @@ export default async function IncidentDetailPage({
               <ActionCallout
                 label="Action"
                 directive={command.root_cause.recommended_fix.summary}
+                supporting={
+                  command.root_cause.root_cause_probabilities[0]
+                    ? `Root cause confidence ${percent(command.root_cause.root_cause_probabilities[0]?.probability)} based on trace deltas.`
+                    : "Root cause signal is based on current trace deltas."
+                }
                 confidence="high"
+                source="incident engine"
               />
               <div className="rounded-2xl border border-zinc-200 px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-steel">Recommended guardrails</p>

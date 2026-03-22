@@ -8,6 +8,7 @@ import { signOut } from "@/lib/auth";
 import { OrgSwitcher } from "@/components/org-switcher";
 import { DensityToggle } from "@/components/density-toggle";
 import { WarRoomToggle } from "@/components/war-room-toggle";
+import { AppShellTransition } from "@/components/app-shell-transition";
 
 const navItems = [
   { href: "/dashboard" as Route, label: "Overview", icon: Activity },
@@ -73,7 +74,9 @@ export async function AppShell({
             </form>
           </div>
         </aside>
-        <main className="px-4 py-4 lg:px-8 lg:py-6">{children}</main>
+        <main className="px-4 py-4 lg:px-8 lg:py-6">
+          <AppShellTransition>{children}</AppShellTransition>
+        </main>
       </div>
     </div>
   );

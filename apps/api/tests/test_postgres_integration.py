@@ -62,7 +62,7 @@ def postgres_database_url() -> Generator[str, None, None]:
     get_settings.cache_clear()
     os.environ["DATABASE_URL"] = database_url
 
-    alembic_config = Config("apps/api/alembic.ini")
+    alembic_config = Config(str(ROOT_DIR / "apps/api/alembic.ini"))
     alembic_config.set_main_option("sqlalchemy.url", database_url)
     alembic_config.set_main_option("script_location", str(ROOT_DIR / "infra/db/migrations"))
     command.upgrade(alembic_config, "head")

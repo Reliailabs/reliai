@@ -13,6 +13,12 @@ ACTION is a semantic pattern for operator guidance when the system can make a **
 - Marketing, onboarding tips, or promotional content.
 - Status, warnings, or generic “important” notes.
 
+## Use Recommendation instead when
+- The guidance is advisory, not directive.
+- Confidence is medium/low or the system is providing options.
+- You are listing multiple possible mitigations.
+- You are summarizing “possible next steps” rather than a clear action.
+
 ## Component API
 
 ```tsx
@@ -39,6 +45,23 @@ ACTION is a semantic pattern for operator guidance when the system can make a **
 - ACTION should not appear in healthy/green states unless the directive is urgent.
 - Do not stack multiple ACTIONs; use standard recommendation patterns instead.
 
+## Prohibited ACTION contexts
+- Billing or upgrade prompts.
+- Usage pressure cards.
+- Onboarding and setup flows.
+- Marketing pages and demo promos.
+- Passive recommendation lists.
+- Low‑confidence suggestions.
+
+## Decision checklist (must be all YES)
+1. Is there a specific next step?
+2. Is it high confidence?
+3. Is it timely?
+4. Is operator action needed now?
+5. Will ACTION materially improve speed to resolution?
+
+If any answer is **No**, do not use ACTION.
+
 ## Visual contract
 - Warm cream surface with strong dark text.
 - Subtle warm border.
@@ -54,3 +77,6 @@ ACTION is a semantic pattern for operator guidance when the system can make a **
 - “Consider reviewing logs.” (too vague)
 - “Upgrade to Production.” (marketing CTA)
 - “No issues detected.” (not an action)
+
+**Good Recommendation**
+- “Review ranked causes and trace deltas before choosing a mitigation.”

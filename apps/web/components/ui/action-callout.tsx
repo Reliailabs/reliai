@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -50,7 +51,7 @@ export function ActionCallout({
       {cta ? (
         <div className="mt-3">
           <Link
-            href={cta.href}
+            href={cta.href as Route}
             className="inline-flex items-center text-sm font-semibold text-actionAccent underline underline-offset-4 hover:text-actionText"
           >
             {cta.label}

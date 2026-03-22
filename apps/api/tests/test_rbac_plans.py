@@ -5,7 +5,7 @@ from app.services.entitlements import has_feature
 from app.services.rbac import has_required_role
 from app.services.usage_quotas import get_usage_status
 from app.services.upgrade_prompts import get_upgrade_prompt
-from apps.api.tests.test_api import auth_headers, create_operator, sign_in
+from tests.test_api import auth_headers, create_operator, sign_in
 from app.models.organization import Organization
 from app.models.usage_quota import UsageQuota
 

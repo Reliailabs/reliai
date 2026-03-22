@@ -4,8 +4,8 @@ from sqlalchemy import select
 from app.cli.__main__ import main as cli_main
 from app.models.audit_event import AuditEvent
 from app.models.operator_user import OperatorUser
-from apps.api.tests.conftest import BorrowedSession
-from apps.api.tests.test_api import create_operator
+from tests.conftest import BorrowedSession
+from tests.test_api import create_operator
 
 
 def _patch_session(monkeypatch, db_session):

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
@@ -28,6 +29,8 @@ from app.services.trace_warehouse import (
 )
 from app.workers.warehouse_archiver import run_warehouse_archiver
 
+ROOT_DIR = Path(__file__).resolve().parents[3]
+
 from .test_api import auth_headers, create_api_key, create_operator, create_organization, create_project, ingest_trace, sign_in
 
 
@@ -56,7 +59,18 @@ def test_clickhouse_migrations_apply_in_order(monkeypatch):
         return ""
 
     monkeypatch.setattr("app.services.clickhouse_migrations._post_sql", fake_post)
-    monkeypatch.setattr("app.services.clickhouse_migrations.get_settings", lambda: type("S", (), {"trace_warehouse_url": "http://warehouse", "clickhouse_database": "reliai", "clickhouse_migrations_dir": "infra/clickhouse/migrations"})())
+    monkeypatch.setattr(
+        "app.services.clickhouse_migrations.get_settings",
+        lambda: type(
+            "S",
+            (),
+            {
+                "trace_warehouse_url": "http://warehouse",
+                "clickhouse_database": "reliai",
+                "clickhouse_migrations_dir": str(ROOT_DIR / "infra/clickhouse/migrations"),
+            },
+        )(),
+    )
 
     applied = apply_migrations()
 

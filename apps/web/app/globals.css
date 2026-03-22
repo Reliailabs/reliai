@@ -158,6 +158,17 @@ body {
     color: #ef4444;
     font-weight: 600;
   }
+
+  .app-shell-transition {
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 160ms ease-out, transform 160ms ease-out;
+  }
+
+  .app-shell-transition[data-state="ready"] {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @layer utilities {

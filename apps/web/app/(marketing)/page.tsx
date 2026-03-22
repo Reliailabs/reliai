@@ -1,500 +1,226 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Bot,
-  CheckCircle2,
-  Cpu,
-  Radar,
-  ShieldCheck,
-  Siren,
-  TriangleAlert,
-  Workflow,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-import { ControlPanelPreview } from "@/components/marketing/control-panel-preview";
-import { FailureTimeline } from "@/components/marketing/failure-timeline";
 import {
-  marketingCardClass,
   marketingContainerClass,
-  marketingMetricClass,
   marketingSectionClass,
   marketingSectionLargeClass,
-  MarketingScreenshotCard,
 } from "@/components/marketing/spatial-system";
-import { SdkInstallSection } from "@/components/marketing/sdk-install-section";
-import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
-const productPillars = [
+const workflowSections = [
   {
-    title: "Instrument",
-    body: "SDKs capture traces and pipeline spans across retrieval, prompt construction, model calls, and guardrails.",
-    icon: Radar,
+    label: "Detect",
+    title: "Catch regressions as they land.",
+    body: "Reliai turns trace deltas into incidents with a deterministic baseline, so operators see drift before users do.",
+    image: "/screenshots/control-panel.png",
+    alt: "Reliai control panel showing incident detection and reliability score",
   },
   {
-    title: "Detect",
-    body: "Reliai identifies reliability regressions, runtime failures, and risky deployment changes before users notice them.",
-    icon: TriangleAlert,
+    label: "Diagnose",
+    title: "Read the trace like a debugger.",
+    body: "Span timelines, retrieval failures, and guardrail retries are ordered for root-cause inspection—not for dashboards.",
+    image: "/screenshots/trace-graph.png",
+    alt: "Trace graph with retrieval failures and retry recovery",
   },
   {
-    title: "Investigate",
-    body: "Trace graphs, incident analysis, and replay flows reveal what changed, where the system failed, and why.",
-    icon: Cpu,
-  },
-  {
-    title: "Protect",
-    body: "Guardrails and deployment gates keep known failure modes from reaching production users.",
-    icon: ShieldCheck,
+    label: "Act",
+    title: "Move from insight to action.",
+    body: "Incidents surface a clear next step and the supporting evidence needed to execute with confidence.",
+    image: "/screenshots/incident.png",
+    alt: "Incident detail view showing operator action and evidence",
   },
 ];
 
-const reliabilityLoop = ["Trace", "Detect", "Investigate", "Mitigate", "Prevent"];
-
-const demoFlow = [
-  {
-    step: "01",
-    title: "Start at the control panel",
-    body: "Operators answer the first question immediately: Is my AI system safe right now?",
-  },
-  {
-    step: "02",
-    title: "Open the incident",
-    body: "Reliai turns regressions into incidents with linked traces, deployment windows, and candidate causes.",
-  },
-  {
-    step: "03",
-    title: "Inspect the trace graph",
-    body: "Execution graphs make the failing stage visible across retrieval, prompt build, model, tool, and guardrail spans.",
-  },
-  {
-    step: "04",
-    title: "Mitigate before blast radius expands",
-    body: "Recommended guardrails and deployment gates give the operator a concrete next action.",
-  },
-];
-
-const productionSignals = [
-  {
-    text: "92/100 health",
-  },
-  {
-    text: "1 incident",
-  },
-  {
-    text: "17 guardrails",
-  },
-  {
-    text: "2.3M traces",
-  },
-];
-
-interface MarketingHomePageProps {
-  searchParams?: Promise<{ visual?: string }>;
-}
-
-export default async function MarketingHomePage({ searchParams }: MarketingHomePageProps) {
-  const params = await searchParams;
-  const visualTestMode = params?.visual === "1";
-
+export default function MarketingHomePage() {
   return (
-    <main className="overflow-x-hidden bg-[#f7f8fa]">
-      <section className="relative overflow-hidden border-b border-zinc-200">
-        <div className="absolute inset-x-0 top-0 h-[40rem] bg-[radial-gradient(circle_at_65%_16%,rgba(255,255,255,0.78),transparent_24%),radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,248,250,1))]" />
-        <div data-marketing-container="" className={`${marketingContainerClass} relative pb-8 pt-24 lg:pt-28`}>
-          <div className="max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.32em] text-steel">AI reliability control plane</p>
-            <h1 className="mt-5 text-5xl font-semibold tracking-tight text-ink lg:text-6xl">
-              Know when your AI breaks—before your users do.
+    <main className="bg-[#f7f8fa] text-ink">
+      <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
+        <div className={`${marketingContainerClass} grid gap-12 pb-16 pt-24 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center`}>
+          <div>
+            <p className="text-xs uppercase tracking-[0.32em] text-steel">AI debugging system</p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
+              Debug AI systems in minutes, not days.
             </h1>
-            <p className="mt-6 text-lg leading-8 text-steel">
-              Reliai detects AI regressions, explains root causes, and applies guardrails to protect production systems.
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-steel">
+              Reliai gives operators a deterministic workflow for detecting regressions, isolating root cause, and taking action before users notice.
             </p>
-            <div className="mt-6 flex max-w-[600px] flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-3 shadow-sm">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-steel">Install</p>
-                  <code className={`mt-1 block overflow-x-auto text-sm font-medium text-ink ${marketingMetricClass}`}>
-                    pip install reliai
-                  </code>
-                </div>
-                <CopyButton value="pip install reliai" label="Copy" />
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button asChild size="lg">
-                  <Link href="/playground">
-                    Try Playground
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link href="/demo">View Demo</Link>
-                </Button>
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center justify-center rounded-full px-4 py-3 text-sm font-medium text-steel transition hover:bg-white hover:text-ink"
-                >
-                  Get Started
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Button asChild>
+                <Link href="/demo">
+                  Run the demo
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
-              </div>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/docs">Read the docs</Link>
+              </Button>
             </div>
-            <div className="mt-8">
-              <p className="text-sm font-medium text-ink">Used to protect production AI systems</p>
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-sm text-zinc-600">
-                {productionSignals.map((signal, index) => (
-                  <div key={signal.text} className="flex items-center gap-3">
-                    <span>{signal.text}</span>
-                    {index < productionSignals.length - 1 ? <span className="text-zinc-400">•</span> : null}
-                  </div>
-                ))}
+            <div className="mt-10 mb-12 border-t border-line pt-4">
+              <p className="mb-3 text-xs uppercase tracking-[0.28em] text-textMuted">
+                System performance
+              </p>
+              <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-textMuted">Incident detection</div>
+                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">&lt; 30s</div>
+                  <div className="mt-1 text-xs text-textSecondary">Time to first regression signal</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-textMuted">Root cause time</div>
+                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">2m 14s</div>
+                  <div className="mt-1 text-xs text-textSecondary">Mean time to isolate failure</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-textMuted">Traces analyzed</div>
+                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">3.2M / day</div>
+                  <div className="mt-1 text-xs text-textSecondary">Across production systems</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-textMuted">Detection rate</div>
+                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">98.6%</div>
+                  <div className="mt-1 text-xs text-textSecondary">Regression identification accuracy</div>
+                </div>
               </div>
             </div>
           </div>
+          <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
+              app.reliai.dev/control-panel
+            </div>
+            <div className="aspect-[16/10] overflow-hidden">
+              <Image
+                src="/screenshots/control-panel.png"
+                alt="Reliai control panel showing live incident detection"
+                width={3200}
+                height={2000}
+                className="h-full w-full object-cover object-top"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <div className="mt-12 space-y-6">
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card className={`${marketingCardClass} h-full`}>
-                <p className="text-xs uppercase tracking-[0.18em] text-steel">System health</p>
-                <p className={`mt-3 text-3xl font-semibold text-emerald-700 ${marketingMetricClass}`}>92 / 100</p>
-                <p className="mt-2 text-sm text-steel">Reliability score with one active incident under control.</p>
-              </Card>
-              <Card className={`${marketingCardClass} h-full`}>
-                <p className="text-xs uppercase tracking-[0.18em] text-steel">Incident detection</p>
-                <p className={`mt-3 text-3xl font-semibold text-rose-700 ${marketingMetricClass}`}>1</p>
-                <p className="mt-2 text-sm text-steel">Retrieval latency regression opened automatically.</p>
-              </Card>
-              <Card className={`${marketingCardClass} h-full`}>
-                <p className="text-xs uppercase tracking-[0.18em] text-steel">Recommended action</p>
-                <p className={`mt-3 text-lg font-semibold text-amber-700 ${marketingMetricClass}`}>Enable retry policy</p>
-                <p className="mt-2 text-sm text-steel">Suggested guardrail for the retrieval stage.</p>
-              </Card>
+      <section className={`${marketingSectionClass}`}>
+        <div className={`${marketingContainerClass} mt-12 mb-14`}>
+          <div className="max-w-3xl">
+            <p className="text-xs uppercase tracking-[0.22em] text-textMuted">Example incident</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-textPrimary md:text-3xl">
+              A regression appears after a deployment.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-textSecondary md:text-base">
+              Reliai detects it, isolates the failure, and points the operator to the next step before
+              users notice.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-3 md:gap-6">
+            <div className="rounded-2xl border border-line bg-white/80 p-5 md:p-6">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-textMuted">Detect</p>
+              <h3 className="mt-3 text-base font-semibold leading-snug text-textPrimary md:text-lg">
+                Latency regression detected in 22s
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-textSecondary">
+                The baseline drifts immediately after rollout and incident creation begins without waiting
+                for human triage.
+              </p>
             </div>
 
-            <div className="relative mb-0 mt-6 flex justify-center md:-mb-[120px]">
-              <div className="absolute inset-x-24 top-4 -z-10 h-[86%] rounded-[999px] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.92),rgba(255,255,255,0.36)_38%,transparent_72%)] blur-3xl" />
-              <div className="w-full [perspective:2000px]">
-                <div
-                  className="relative mx-auto w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_40px_120px_rgba(0,0,0,0.25)] md:scale-[0.98]"
-                  style={
-                    visualTestMode
-                      ? undefined
-                      : {
-                          transform: "rotateX(3deg) rotateY(-5deg) scale(0.98)",
-                          transformStyle: "preserve-3d",
-                        }
-                  }
-                >
-                  <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2">
-                    <span className="h-3 w-3 rounded-full bg-red-400" />
-                    <span className="h-3 w-3 rounded-full bg-yellow-400" />
-                    <span className="h-3 w-3 rounded-full bg-green-400" />
-                    <div className="ml-3 flex-1 rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] text-steel">
-                      app.reliai.dev/control-panel
+            <div className="rounded-2xl border border-line bg-white/80 p-5 md:p-6">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-textMuted">Diagnose</p>
+              <h3 className="mt-3 text-base font-semibold leading-snug text-textPrimary md:text-lg">
+                Retrieval identified as the failure point
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-textSecondary">
+                Trace analysis isolates the slow span, highlights the affected deployment, and shows the
+                strongest root-cause signals.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-line bg-white/80 p-5 md:p-6">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-textMuted">Act</p>
+              <h3 className="mt-3 text-base font-semibold leading-snug text-textPrimary md:text-lg">
+                Operator receives a clear next step
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-textSecondary">
+                Reliai recommends reviewing supporting traces and recent changes before rollback or
+                mitigation.
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-5 text-sm text-textSecondary">Resolution path established in under 3 minutes.</p>
+        </div>
+      </section>
+
+      <section className={`border-b border-zinc-200 ${marketingSectionClass}`}>
+        <div className={`${marketingContainerClass} space-y-14`}>
+          <div className="max-w-2xl">
+            <p className="text-xs uppercase tracking-[0.28em] text-steel">Workflow</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+              Detect. Diagnose. Act.
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-steel">
+              Every screen is built for operators who need to answer: what broke, where, and why—fast.
+            </p>
+          </div>
+
+          <div className="space-y-10">
+            {workflowSections.map((section, index) => (
+              <div
+                key={section.label}
+                className={`grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center ${
+                  index % 2 === 1 ? "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]" : ""
+                }`}
+              >
+                <div className={index % 2 === 1 ? "lg:order-2" : ""}>
+                  <p className="text-xs uppercase tracking-[0.28em] text-steel">{section.label}</p>
+                  <h3 className="mt-3 text-2xl font-semibold text-ink">{section.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-steel">{section.body}</p>
+                </div>
+                <div className={index % 2 === 1 ? "lg:order-1" : ""}>
+                  <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
+                      app.reliai.dev/{section.label.toLowerCase()}
                     </div>
-                  </div>
-                  <div className="aspect-video overflow-hidden bg-zinc-100">
-                    <div className="h-full w-full">
+                    <div className="aspect-[16/9] overflow-hidden">
                       <Image
-                        src="/screenshots/control-panel.png"
-                        alt="Reliai control panel showing reliability score, incident detection, and recommended guardrails"
+                        src={section.image}
+                        alt={section.alt}
                         width={3200}
                         height={2000}
-                        className="block h-full w-full object-cover object-top [image-rendering:-webkit-optimize-contrast]"
-                        style={{ objectPosition: "left top" }}
-                        priority
+                        className="h-full w-full object-cover object-top"
                       />
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className={`border-b border-zinc-200 bg-white ${marketingSectionLargeClass}`}>
-        <div className={`${marketingContainerClass} pb-16 pt-16 md:pt-40`}>
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
-            <div className="flex h-full flex-col">
-              <Card className={`${marketingCardClass} h-full flex flex-col`}>
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Failure story</p>
-                <h2 className="mt-3 text-4xl font-semibold tracking-tight text-ink">
-                  AI systems fail in ways traditional observability tools cannot detect.
-                </h2>
-                <p className="mt-5 text-base leading-8 text-steel">
-                  A prompt update introduced hallucinated responses. Reliai detected the regression, opened an incident,
-                  explained the likely cause, and recommended a guardrail before users noticed.
-                </p>
-                <div className="mt-8 flex-1">
-                  <FailureTimeline disableAnimation={visualTestMode} />
-                </div>
-              </Card>
-            </div>
-
-            <div className="flex h-full flex-col">
-              <Card className={`${marketingCardClass} h-full flex flex-col`}>
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">What the operator sees</p>
-                <h3 className="mt-3 text-2xl font-semibold text-ink">
-                  Reliability score, active incident, and recommended guardrail in one view.
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-steel">
-                  The screenshot stays focused on the signals that matter first: system health, detected failure, and
-                  the next mitigation step.
-                </p>
-                <div className="mt-8 flex-1">
-                  <ControlPanelPreview />
-                </div>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={`${marketingContainerClass} ${marketingSectionClass} py-16`}>
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
-          <Card className={`${marketingCardClass} h-full`}>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Interactive demo</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-ink">
-              Walk the operator workflow in under five minutes.
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-steel">
-              Start at system status, open the incident, inspect the trace graph, and finish at the mitigation point.
-            </p>
-            <div className="mt-12 grid gap-6">
-              {demoFlow.map((item) => (
-                <div key={item.step} className="flex h-full flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                  <p className="text-xs uppercase tracking-[0.18em] text-steel">{item.step}</p>
-                  <p className="mt-2 text-lg font-semibold text-ink">{item.title}</p>
-                  <p className="mt-2 text-sm leading-7 text-steel">{item.body}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8">
-              <Button asChild size="lg">
-                <Link href="/demo">
-                  View Demo
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </Card>
-
-          <div className="grid justify-start gap-6">
-            <Card className={`${marketingCardClass} flex w-full max-w-[478px] flex-col overflow-hidden p-0`}>
-              <div className="border-b border-zinc-200 bg-white px-5 py-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Control Panel</p>
-                <p className="mt-1.5 text-sm leading-6 text-steel">
-                  Reliability score, active incident load, and the next operator action in one surface.
-                </p>
-              </div>
-              <MarketingScreenshotCard
-                alt="Control Panel"
-                src="/screenshots/control-panel.png"
-                className="flex-1 rounded-none border-0 shadow-none"
-                viewportClassName="bg-white"
-              />
-            </Card>
-            <Card className={`${marketingCardClass} flex w-full max-w-[478px] flex-col overflow-hidden p-0`}>
-              <div className="border-b border-zinc-200 bg-white px-5 py-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Incident Command Center</p>
-                <p className="mt-1.5 text-sm leading-6 text-steel">
-                  Root-cause signals, mitigation guidance, and remediation context for live incident response.
-                </p>
-              </div>
-              <MarketingScreenshotCard
-                alt="Incident Command Center"
-                src="/screenshots/incident.png"
-                className="flex-1 rounded-none border-0 shadow-none"
-                viewportClassName="bg-white"
-              />
-            </Card>
-            <Card className={`${marketingCardClass} flex w-full max-w-[478px] flex-col overflow-hidden p-0`}>
-              <div className="border-b border-zinc-200 bg-white px-5 py-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Trace Graph</p>
-                <p className="mt-1.5 text-sm leading-6 text-steel">
-                  Execution graph for retrieval, prompt build, model call, tool execution, and post-processing spans.
-                </p>
-              </div>
-              <MarketingScreenshotCard
-                alt="Trace Graph"
-                src="/screenshots/trace-graph.png"
-                className="flex-1 rounded-none border-0 shadow-none"
-                viewportClassName="bg-white"
-              />
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      <section className={`border-y border-zinc-200 bg-white ${marketingSectionClass}`}>
-        <div className={`${marketingContainerClass} py-16`}>
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-steel">Playground</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-                Paste a prompt. See the execution path immediately.
-              </h2>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-steel">
-                The playground is the fastest way to understand Reliai. Run a request, inspect the trace graph, and
-                see how the control plane would analyze the system.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild size="lg">
-                  <Link href="/playground">
-                    Try Playground
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link href="/demo">See full operator flow</Link>
-                </Button>
-              </div>
-            </div>
-            <Card className={marketingCardClass}>
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">What engineers see</p>
-              <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                <p className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-                  Prompt input
-                </p>
-                <p className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-                  Trace graph
-                </p>
-                <p className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-                  Reliability signals
-                </p>
-              </div>
-              <MarketingScreenshotCard
-                alt="Playground"
-                src="/screenshots/playground.png"
-                className="mt-12"
-                viewportClassName="bg-white"
-              />
-              <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-6">
-                <p className="text-sm leading-7 text-steel">
-                  The playground is the fastest path to product understanding for engineers evaluating the control plane.
-                </p>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      <section className={`${marketingContainerClass} ${marketingSectionClass} py-16`}>
-        <div className="max-w-3xl">
-          <p className="text-xs uppercase tracking-[0.28em] text-steel">The Reliai loop</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-            Reliai runs a continuous reliability loop around production AI systems.
-          </h2>
-        </div>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
-          {reliabilityLoop.map((item, index) => (
-            <Card key={item} className={`${marketingCardClass} h-full`}>
-                <p className="text-xs uppercase tracking-[0.22em] text-steel">Step {index + 1}</p>
-                <p className={`mt-3 text-xl font-semibold text-ink ${marketingMetricClass}`}>{item}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className={`border-y border-zinc-200 bg-white ${marketingSectionClass}`}>
-        <div className={`${marketingContainerClass} py-16`}>
-          <div className="max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">Architecture in motion</p>
+      <section className={`${marketingSectionClass}`}>
+        <div className={`${marketingContainerClass} flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between`}>
+          <div className="max-w-2xl">
+            <p className="text-xs uppercase tracking-[0.28em] text-steel">Operator-grade</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-              Four operator workflows take the system from telemetry to protection.
+              Built for real incident response.
             </h2>
-          </div>
-          <div className="mt-8 grid gap-6 lg:grid-cols-4">
-            {productPillars.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Card key={item.title} className={`${marketingCardClass} h-full flex flex-col justify-between`}>
-                  <div>
-                    <Icon className="h-5 w-5 text-steel" />
-                    <h3 className="mt-4 text-xl font-semibold text-ink">{item.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-steel">{item.body}</p>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <SdkInstallSection />
-
-      <section className={`${marketingContainerClass} ${marketingSectionClass} overflow-x-hidden py-12`}>
-        <div className="max-w-3xl">
-          <p className="text-xs uppercase tracking-[0.28em] text-steel">Architecture</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-            The control plane sits between the AI system and the production operator.
-          </h2>
-        </div>
-        <div className="mx-auto mt-16 max-w-[900px]">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            {[
-              { label: "AI Application", icon: Bot },
-              { label: "Reliai SDK", icon: Radar },
-              { label: "Reliai Control Plane", icon: Workflow },
-              { label: "Operators", icon: Siren },
-            ].flatMap((item, index, list) => {
-              const Icon = item.icon;
-              const nodes = [
-                <div
-                  key={item.label}
-                  className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white p-6 text-center shadow-sm"
-                >
-                  <p className="text-xs uppercase tracking-[0.18em] text-steel">Stage {index + 1}</p>
-                  <Icon className="mx-auto mt-4 h-6 w-6 text-steel" />
-                  <p className="mt-4 text-lg font-semibold text-ink">{item.label}</p>
-                </div>,
-              ];
-
-              if (index < list.length - 1) {
-                nodes.push(
-                  <div
-                    key={`${item.label}-arrow`}
-                    className="hidden shrink-0 text-xl text-zinc-400 lg:block"
-                    aria-hidden="true"
-                  >
-                    →
-                  </div>,
-                );
-              }
-
-              return nodes;
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className={`${marketingContainerClass} ${marketingSectionClass} py-12`}>
-        <div className="mx-auto max-w-4xl">
-          <Card className={`${marketingCardClass} bg-[linear-gradient(180deg,#ffffff,#f5f6f8)]`}>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Run your AI systems with reliability</p>
-            <h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink">
-              Make reliability visible before failures hit users.
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-steel">
-              Reliai gives operators one control plane for tracing, detection, investigation, deployment safety, and
-              runtime protection.
+            <p className="mt-4 text-sm leading-6 text-steel">
+              Reliai pairs trace-level context with deterministic regression signals so teams can act with confidence.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link href="/signup">Start Free</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/demo">
-                  View Demo
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </Card>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/demo">Run the demo</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/pricing">View pricing</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </main>

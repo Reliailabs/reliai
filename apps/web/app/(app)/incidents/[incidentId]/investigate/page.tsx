@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, GitCompareArrows, ShieldAlert, Wrench } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { getIncidentInvestigation } from "@/lib/api";
 
 function formatDate(value: string | null | undefined) {
@@ -93,13 +94,15 @@ export default async function IncidentInvestigationPage({
           <p className="mt-2 text-lg font-semibold text-ink">{incident.compare.current_window_start ?? "n/a"}</p>
           <p className="mt-1 text-sm text-steel">{incident.compare.current_window_end ?? "n/a"}</p>
         </Card>
-        <Card className="rounded-[24px] border-zinc-300 p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-steel">Suggested fix</p>
-          <p className="mt-3 text-sm text-steel">Top action</p>
-          <p className="mt-2 text-lg font-semibold text-ink">
-            {investigation.recommendations[0]?.recommended_action ?? investigation.root_cause_analysis.recommended_fix.summary}
-          </p>
-        </Card>
+        <RecommendationCallout
+          label="Recommendation"
+          recommendation={
+            investigation.recommendations[0]?.recommended_action ??
+            investigation.root_cause_analysis.recommended_fix.summary
+          }
+          supporting="Review ranked causes before taking mitigation action."
+          className="rounded-[24px]"
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_420px]">
@@ -122,23 +125,15 @@ export default async function IncidentInvestigationPage({
           <p className="text-xs uppercase tracking-[0.24em] text-steel">Suggested fix</p>
           <div className="mt-4 space-y-3">
             {investigation.recommendations.length > 0 ? (
-              investigation.recommendations.map((item) => (
-                <div key={`${item.recommendation_id ?? item.recommended_action}`} className="rounded-2xl border border-zinc-200 px-4 py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-ink">{item.recommended_action}</p>
-                      <p className="mt-2 text-sm leading-6 text-steel">
-                        {String(item.supporting_evidence.description ?? "No recommendation description available.")}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 ring-1 ring-zinc-200">
-                      {percent(item.confidence)}
-                    </span>
-                  </div>
-                </div>
+              investigation.recommendations.map((item, index) => (
+                <RecommendationCallout
+                  key={`${item.recommendation_id ?? item.recommended_action}-${index}`}
+                  recommendation={item.recommended_action}
+                  supporting={String(item.supporting_evidence.description ?? "No recommendation description available.")}
+                />
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-4 text-sm text-steel">
+              <div className="rounded-2xl border border-line bg-surfaceAlt px-4 py-4 text-sm text-steel">
                 No deterministic recommendation matched this incident. Review the ranked causes and trace deltas first.
               </div>
             )}
