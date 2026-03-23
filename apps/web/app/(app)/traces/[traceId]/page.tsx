@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, GitCompareArrows, Play, Waypoints } from "lucide-react";
 
 import { CopyButton } from "@/components/copy-button";
-import { ActionCallout } from "@/components/ui/action-callout";
+import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { Button } from "@/components/ui/button";
 import { MetadataBar, MetadataItem } from "@/components/ui/metadata-bar";
 import { getTraceAnalysis, getTraceCompare, getTraceDetail, getTraceGraph, getTraceReplay } from "@/lib/api";
@@ -109,7 +109,6 @@ export default async function TraceDetailPage({
           label: "Slowest step",
           detail: `${analysis.slowest_span.span_name ?? "Span"} · ${analysis.slowest_span.latency_ms ?? 0} ms`,
           rationale: slowestShare ? `Accounts for ${slowestShare}% of trace latency.` : "Largest latency contribution in this trace.",
-          confidence: "high",
         }
       : null,
     analysis?.largest_token_span
@@ -118,7 +117,6 @@ export default async function TraceDetailPage({
           label: "Token spike",
           detail: `${analysis.largest_token_span.span_name ?? "Span"} · ${analysis.largest_token_span.token_count ?? 0} tokens`,
           rationale: tokenShare ? `Accounts for ${tokenShare}% of total tokens.` : "Largest token contribution in this trace.",
-          confidence: "medium",
         }
       : null,
     analysis?.most_guardrail_retries
@@ -127,10 +125,9 @@ export default async function TraceDetailPage({
           label: "Guardrail retries",
           detail: `${analysis.most_guardrail_retries.guardrail_policy ?? "Guardrail"} · ${analysis.most_guardrail_retries.retry_count ?? 0} retries`,
           rationale: "Highest retry concentration in the trace graph.",
-          confidence: "medium",
         }
       : null,
-  ].filter(Boolean) as Array<{ id: string; label: string; detail: string; rationale: string; confidence: string }>;
+  ].filter(Boolean) as Array<{ id: string; label: string; detail: string; rationale: string }>;
   const maxDuration = Math.max(...orderedSteps.map((node) => node.latency_ms ?? 0), 1);
   const hasInputs = Boolean(trace.input_text);
   const hasOutputs = Boolean(trace.output_text);
@@ -224,9 +221,6 @@ export default async function TraceDetailPage({
                     <span className="text-[11px] uppercase tracking-[0.2em] text-steel">{item.label}</span>
                     <p className="mt-1 font-medium">{item.detail}</p>
                     <p className="mt-1 text-xs text-steel">{item.rationale}</p>
-                    <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-steel">
-                      confidence {item.confidence}
-                    </p>
                   </a>
                 ))}
               </div>
@@ -470,12 +464,11 @@ export default async function TraceDetailPage({
       </section>
 
       <div className="mx-auto max-w-[1400px] px-6">
-        <ActionCallout
-          label="Action"
-          directive="Focus on the slowest or failing step, then compare it against baseline behavior."
-          supporting="Confirm the regression path before taking any rollback action."
-          confidence="medium"
-        />
+          <RecommendationCallout
+            label="Recommendation"
+            recommendation="Consider focusing on the slowest or failing step, then compare it against baseline behavior."
+            supporting="Use the baseline comparison to confirm the regression path before taking rollback action."
+          />
       </div>
     </div>
   );

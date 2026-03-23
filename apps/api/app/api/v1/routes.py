@@ -4,12 +4,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy import desc, select
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.dependencies import require_operator
 from app.core.settings import get_settings
 from app.db.session import get_db
+from app.models.deployment import Deployment
+from app.models.model_version import ModelVersion
 from app.models.organization import Organization
+from app.models.prompt_version import PromptVersion
 from app.models.project import Project
 from app.models.reliability_graph_edge import ReliabilityGraphEdge
 from app.models.reliability_graph_node import ReliabilityGraphNode
@@ -30,6 +34,15 @@ from app.schemas.cost_intelligence import (
     CostByModelRead,
     DailyCostPointRead,
     ProjectCostRead,
+)
+from app.schemas.dashboard import (
+    DashboardChangeFeedRead,
+    DashboardChangeRead,
+    DashboardIncidentActivityItem,
+    DashboardIncidentAttentionItem,
+    DashboardInvestigationLinks,
+    DashboardTriageContext,
+    DashboardTriageRead,
 )
 from app.schemas.customer_export import CustomerExportCreate, CustomerExportRead
 from app.schemas.customer_reliability import (
@@ -111,6 +124,7 @@ from app.schemas.incident import (
     GuardrailActivityRead,
     IncidentCommandCenterRead,
     IncidentCommandCenterRootCauseRead,
+    IncidentCommandCenterMetricRead,
     IncidentCommandTraceCompareRead,
     IncidentCompareRead,
     IncidentDetailRead,
@@ -832,7 +846,67 @@ def _incident_analysis_item(report) -> IncidentAnalysisRead:
     )
 
 
+def _recommendation_meta(report) -> tuple[float | None, float | None, str | None, str | None]:
+    top_probability = None
+    if report.root_cause_probabilities:
+        first = report.root_cause_probabilities[0]
+        if isinstance(first, dict):
+            top_probability = first.get("probability")
+        else:
+            top_probability = getattr(first, "probability", None)
+    recommendation_confidence = top_probability
+    recommendation_kind = None
+    if top_probability is not None:
+        recommendation_kind = "action" if top_probability >= 0.8 else "recommendation"
+    recommended_action_reason = (
+        "Based on trace deltas and root-cause evidence."
+        if report.evidence
+        else None
+    )
+    return top_probability, recommendation_confidence, recommendation_kind, recommended_action_reason
+
+
+def _incident_command_metric_item(incident) -> IncidentCommandCenterMetricRead | None:
+    summary = incident.summary_json or {}
+    metric_name = summary.get("metric_name")
+    if not metric_name:
+        return None
+    metric_name = str(metric_name)
+    metric_type = "custom"
+    unit = None
+    if "latency" in metric_name:
+        metric_type = "latency"
+        unit = "ms"
+    elif "success_rate" in metric_name or "error_rate" in metric_name or "validity" in metric_name:
+        metric_type = "error_rate"
+        unit = "%"
+    elif "retry" in metric_name:
+        metric_type = "retry_rate"
+        unit = "%"
+
+    def _stringify(value) -> str | None:
+        if value is None:
+            return None
+        return str(value)
+
+    return IncidentCommandCenterMetricRead(
+        metric_name=metric_name,
+        metric_type=metric_type,
+        display_name=metric_name.replace("_", " "),
+        unit=unit,
+        value=_stringify(summary.get("current_value")),
+        baseline_value=_stringify(summary.get("baseline_value")),
+        delta_percent=_stringify(summary.get("delta_percent")),
+    )
+
+
 def _incident_command_root_cause_item(report) -> IncidentCommandCenterRootCauseRead:
+    (
+        top_probability,
+        recommendation_confidence,
+        recommendation_kind,
+        recommended_action_reason,
+    ) = _recommendation_meta(report)
     return IncidentCommandCenterRootCauseRead(
         incident_id=report.incident.id,
         generated_at=report.generated_at,
@@ -842,16 +916,30 @@ def _incident_command_root_cause_item(report) -> IncidentCommandCenterRootCauseR
         ],
         evidence=report.evidence,
         recommended_fix=RootCauseRecommendedFixRead.model_validate(report.recommended_fix),
+        top_root_cause_probability=top_probability,
+        recommendation_confidence=recommendation_confidence,
+        recommendation_kind=recommendation_kind,
+        recommended_action_reason=recommended_action_reason,
     )
 
 
 def _incident_investigation_root_cause_item(report) -> IncidentInvestigationRootCauseRead:
+    (
+        top_probability,
+        recommendation_confidence,
+        recommendation_kind,
+        recommended_action_reason,
+    ) = _recommendation_meta(report)
     return IncidentInvestigationRootCauseRead(
         incident_id=report.incident.id,
         generated_at=report.generated_at,
         ranked_causes=[RootCauseProbabilityRead.model_validate(item) for item in report.root_cause_probabilities],
         evidence=report.evidence,
         recommended_fix=RootCauseRecommendedFixRead.model_validate(report.recommended_fix),
+        top_root_cause_probability=top_probability,
+        recommendation_confidence=recommendation_confidence,
+        recommendation_kind=recommendation_kind,
+        recommended_action_reason=recommended_action_reason,
     )
 
 
@@ -1213,9 +1301,189 @@ def _incident_detail_item(
     )
 
 
+def _dashboard_attention_item(incident) -> DashboardIncidentAttentionItem:
+    return DashboardIncidentAttentionItem(
+        id=incident.id,
+        title=incident.title,
+        severity=incident.severity,
+        status=incident.status,
+        project_id=incident.project_id,
+        project_name=incident.project.name,
+        environment_id=incident.environment_id,
+        started_at=incident.started_at,
+        acknowledged_at=incident.acknowledged_at,
+        path=f"/incidents/{incident.id}",
+    )
+
+
+def _dashboard_activity_item(incident) -> DashboardIncidentActivityItem:
+    return DashboardIncidentActivityItem(
+        id=incident.id,
+        title=incident.title,
+        status=incident.status,
+        project_name=incident.project.name,
+        started_at=incident.started_at,
+        resolved_at=incident.resolved_at,
+        path=f"/incidents/{incident.id}",
+    )
+
+
+def _deployment_change_summary(item: Deployment) -> str:
+    prompt = item.prompt_version.version if item.prompt_version is not None else None
+    model = item.model_version.model_name if item.model_version is not None else None
+    if prompt and model:
+        return f"Deployment: {prompt} on {model}"
+    if prompt:
+        return f"Deployment: prompt {prompt}"
+    if model:
+        return f"Deployment: {model}"
+    return f"Deployment to {item.environment}"
+
+
+def _prompt_change_summary(item: PromptVersion) -> str:
+    return f"Prompt version {item.version}"
+
+
+def _model_change_summary(item: ModelVersion) -> str:
+    model = item.model_name
+    version = f" {item.model_version}" if item.model_version else ""
+    return f"Model {model}{version}"
+
+
 @router.get("/health")
 def versioned_health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.get("/dashboard/triage", response_model=DashboardTriageRead)
+def get_dashboard_triage_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DashboardTriageRead:
+    active_org = operator.active_organization_id or (operator.organization_ids[0] if operator.organization_ids else None)
+    if active_org is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+
+    attention_incidents = list_incidents(db, operator, IncidentListQuery(status="open", limit=50))
+    attention_incidents = [
+        incident for incident in attention_incidents if incident.organization_id == active_org
+    ]
+    recent_incidents = list_incidents(db, operator, IncidentListQuery(status="resolved", limit=25))
+    recent_incidents = [
+        incident for incident in recent_incidents if incident.organization_id == active_org
+    ]
+
+    attention_items = [_dashboard_attention_item(incident) for incident in attention_incidents[:12]]
+    activity_items = [_dashboard_activity_item(incident) for incident in recent_incidents[:8]]
+    unacknowledged = len([incident for incident in attention_incidents if incident.acknowledged_at is None])
+
+    return DashboardTriageRead(
+        attention=attention_items,
+        recent_incident_activity=activity_items,
+        investigation_links=DashboardInvestigationLinks(
+            incidents="/incidents",
+            traces="/traces",
+            reliability=None,
+        ),
+        context=DashboardTriageContext(
+            active_incident_count=len(attention_incidents),
+            unacknowledged_incident_count=unacknowledged,
+            degraded_project_count=None,
+            last_updated_at=datetime.now(timezone.utc),
+        ),
+    )
+
+
+@router.get("/dashboard/changes", response_model=DashboardChangeFeedRead)
+def get_dashboard_changes_endpoint(
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> DashboardChangeFeedRead:
+    active_org = operator.active_organization_id or (operator.organization_ids[0] if operator.organization_ids else None)
+    if active_org is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+
+    projects = list_projects(db, operator, ProjectListQuery(organization_id=active_org, limit=200))
+    project_ids = [project.id for project in projects]
+    if not project_ids:
+        return DashboardChangeFeedRead(changes=[])
+
+    project_map = {project.id: project.name for project in projects}
+
+    deployments = db.scalars(
+        select(Deployment)
+        .options(selectinload(Deployment.prompt_version), selectinload(Deployment.model_version))
+        .where(Deployment.project_id.in_(project_ids))
+        .order_by(desc(Deployment.deployed_at), desc(Deployment.id))
+        .limit(15)
+    ).all()
+    prompt_versions = db.scalars(
+        select(PromptVersion)
+        .where(PromptVersion.project_id.in_(project_ids))
+        .order_by(desc(PromptVersion.updated_at), desc(PromptVersion.id))
+        .limit(15)
+    ).all()
+    model_versions = db.scalars(
+        select(ModelVersion)
+        .where(ModelVersion.project_id.in_(project_ids))
+        .order_by(desc(ModelVersion.updated_at), desc(ModelVersion.id))
+        .limit(15)
+    ).all()
+
+    changes: list[DashboardChangeRead] = []
+    for deployment in deployments:
+        changes.append(
+            DashboardChangeRead(
+                id=deployment.id,
+                project_id=deployment.project_id,
+                project_name=project_map.get(deployment.project_id, "Unknown project"),
+                environment=deployment.environment,
+                kind="deployment",
+                summary=_deployment_change_summary(deployment),
+                created_at=deployment.deployed_at,
+                actor=deployment.deployed_by,
+                related_incident_count=len(deployment.incidents) if deployment.incidents is not None else None,
+                related_regression_count=None,
+                path=f"/deployments/{deployment.id}",
+            )
+        )
+
+    for prompt in prompt_versions:
+        changes.append(
+            DashboardChangeRead(
+                id=prompt.id,
+                project_id=prompt.project_id,
+                project_name=project_map.get(prompt.project_id, "Unknown project"),
+                environment=None,
+                kind="prompt",
+                summary=_prompt_change_summary(prompt),
+                created_at=prompt.updated_at,
+                actor=None,
+                related_incident_count=None,
+                related_regression_count=None,
+                path=f"/prompt-versions/{prompt.id}?projectId={prompt.project_id}",
+            )
+        )
+
+    for model in model_versions:
+        changes.append(
+            DashboardChangeRead(
+                id=model.id,
+                project_id=model.project_id,
+                project_name=project_map.get(model.project_id, "Unknown project"),
+                environment=None,
+                kind="model",
+                summary=_model_change_summary(model),
+                created_at=model.updated_at,
+                actor=None,
+                related_incident_count=None,
+                related_regression_count=None,
+                path=f"/model-versions/{model.id}?projectId={model.project_id}",
+            )
+        )
+
+    changes.sort(key=lambda item: item.created_at, reverse=True)
+    return DashboardChangeFeedRead(changes=changes[:25])
 
 
 @router.get("/system/event-pipeline", response_model=EventPipelineResponse)
@@ -2780,6 +3048,7 @@ def get_incident_command_center_endpoint(
             command.baseline_traces,
         ),
         root_cause=_incident_command_root_cause_item(command.root_cause_report),
+        metric=_incident_command_metric_item(command.incident),
         trace_compare=IncidentCommandTraceCompareRead(
             failing_trace_summary=_trace_compare_item(command.trace_compare.trace)
             if command.trace_compare is not None

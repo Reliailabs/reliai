@@ -4,7 +4,13 @@ import { CheckCheck, ShieldAlert, ShieldCheck, ShieldEllipsis } from "lucide-rea
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { Card } from "@/components/ui/card";
 import { MetadataBar, MetadataItem } from "@/components/ui/metadata-bar";
-import { getApiHealth, getOrganization, getOrganizationUsageQuota, listIncidents } from "@/lib/api";
+import {
+  getApiHealth,
+  getDashboardChanges,
+  getDashboardTriage,
+  getOrganization,
+  getOrganizationUsageQuota,
+} from "@/lib/api";
 import { requireOperatorSession } from "@/lib/auth";
 
 function deliveryTone(status: string | null | undefined) {
@@ -18,22 +24,28 @@ export default async function DashboardPage() {
   const session = await requireOperatorSession();
   const activeOrganizationId = session.active_organization_id;
   const health = await getApiHealth().catch(() => ({ status: "degraded" }));
-  const incidents = await listIncidents({ limit: 50 }).catch(() => ({ items: [] }));
+  const triage = await getDashboardTriage().catch(() => null);
+  const changesFeed = await getDashboardChanges().catch(() => ({ changes: [] }));
   const usageQuota = activeOrganizationId
     ? await getOrganizationUsageQuota(activeOrganizationId).catch(() => null)
     : null;
   const organization = activeOrganizationId
     ? await getOrganization(activeOrganizationId).catch(() => null)
     : null;
-  const openIncidents = incidents.items.filter((incident) => incident.status === "open");
-  const acknowledgedOpenIncidents = openIncidents.filter((incident) => incident.acknowledged_at !== null);
-  const unacknowledgedOpenIncidents = openIncidents.filter((incident) => incident.acknowledged_at === null);
-  const resolvedRecentIncidents = incidents.items.filter((incident) => incident.status === "resolved");
-  const recentAlerts = incidents.items
-    .map((incident) => incident.latest_alert_delivery)
-    .filter((delivery): delivery is NonNullable<typeof delivery> => delivery !== null)
-    .sort((left, right) => right.created_at.localeCompare(left.created_at))
-    .slice(0, 5);
+  const attentionItems = triage?.attention ?? [];
+  const recentActivity = triage?.recent_incident_activity ?? [];
+  const attentionCount = triage?.context.active_incident_count ?? attentionItems.length;
+  const unacknowledgedCount = triage?.context.unacknowledged_incident_count ?? 0;
+  const recentAlerts: Array<{
+    id: string;
+    channel_type: string;
+    channel_target: string;
+    delivery_status: string;
+    attempt_count: number;
+    sent_at: string | null;
+    created_at: string;
+    next_attempt_at: string | null;
+  }> = [];
 
   return (
     <div className="space-y-6">
@@ -53,8 +65,8 @@ export default async function DashboardPage() {
               value={health.status}
               status={health.status === "ok" ? "success" : "critical"}
             />
-            <MetadataItem label="Open" value={String(openIncidents.length)} />
-            <MetadataItem label="Ack" value={String(acknowledgedOpenIncidents.length)} />
+            <MetadataItem label="Open" value={String(attentionCount)} />
+            <MetadataItem label="Ack" value={String(attentionCount - unacknowledgedCount)} />
           </MetadataBar>
         </div>
       </header>
@@ -67,28 +79,28 @@ export default async function DashboardPage() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.24em] text-steel">Needs attention</p>
                   <h2 className="mt-2 text-lg font-semibold text-ink">
-                    {openIncidents.length === 0
+                    {attentionCount === 0
                       ? "All systems within threshold"
-                      : `${openIncidents.length} active incident${openIncidents.length === 1 ? "" : "s"}`}
+                      : `${attentionCount} active incident${attentionCount === 1 ? "" : "s"}`}
                   </h2>
                 </div>
                 <div className="rounded-lg border border-line bg-surface-alt px-3 py-2 text-xs text-steel">
-                  {unacknowledgedOpenIncidents.length} awaiting acknowledgment
+                  {unacknowledgedCount} awaiting acknowledgment
                 </div>
               </div>
             </div>
 
-            {openIncidents.length === 0 ? (
+            {attentionItems.length === 0 ? (
               <div className="px-5 py-6 text-sm leading-6 text-steel">
                 No active incidents are open. Review recent changes below to confirm the system remains
                 stable after the latest deployments.
               </div>
             ) : (
               <div className="divide-y divide-line">
-                {[...unacknowledgedOpenIncidents, ...acknowledgedOpenIncidents].slice(0, 8).map((incident) => (
+                {attentionItems.slice(0, 8).map((incident) => (
                   <Link
                     key={incident.id}
-                    href={`/incidents/${incident.id}`}
+                    href={incident.path}
                     className="flex flex-col gap-3 px-5 py-4 transition hover:bg-surface-alt lg:flex-row lg:items-center lg:justify-between"
                   >
                     <div className="flex items-start gap-3">
@@ -125,19 +137,19 @@ export default async function DashboardPage() {
           </section>
 
           <section className="rounded-2xl border border-line bg-surface px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent change vectors</p>
-            {resolvedRecentIncidents.length > 0 ? (
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent incident activity</p>
+            {recentActivity.length > 0 ? (
               <div className="mt-4 space-y-3">
-                {resolvedRecentIncidents.slice(0, 5).map((incident) => (
+                {recentActivity.slice(0, 5).map((incident) => (
                   <Link
                     key={incident.id}
-                    href={`/incidents/${incident.id}`}
+                    href={incident.path}
                     className="flex items-center justify-between rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-ink transition hover:border-textSecondary"
                   >
                     <div>
                       <p className="font-medium">{incident.title}</p>
                       <p className="mt-1 text-xs text-steel">
-                        Resolved {new Date(incident.resolved_at ?? incident.updated_at).toLocaleString()}
+                        Resolved {new Date(incident.resolved_at ?? incident.started_at).toLocaleString()}
                       </p>
                     </div>
                     <span className="text-xs text-steel">Review</span>
@@ -152,28 +164,50 @@ export default async function DashboardPage() {
           </section>
 
           <section className="rounded-2xl border border-line bg-surface px-5 py-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent changes</p>
+            {changesFeed.changes.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {changesFeed.changes.slice(0, 6).map((change) => (
+                  <Link
+                    key={change.id}
+                    href={change.path ?? "#"}
+                    className="flex items-center justify-between rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-ink transition hover:border-textSecondary"
+                  >
+                    <div>
+                      <p className="font-medium">{change.summary}</p>
+                      <p className="mt-1 text-xs text-steel">
+                        {change.project_name}
+                        {change.environment ? ` · ${change.environment}` : ""}
+                        {change.actor ? ` · ${change.actor}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-xs text-steel">{new Date(change.created_at).toLocaleString()}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-steel">
+                No recent deployment, prompt, or model changes detected.
+              </p>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-line bg-surface px-5 py-4">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Investigation entry points</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
               <Link
-                href="/traces"
+                href={triage?.investigation_links.traces ?? "/traces"}
                 className="rounded-lg border border-line bg-surface-alt px-3 py-3 text-sm text-ink transition hover:border-textSecondary"
               >
                 <p className="font-medium">Trace explorer</p>
                 <p className="mt-1 text-xs text-steel">Inspect retrieval failures and latency spikes.</p>
               </Link>
               <Link
-                href="/incidents"
+                href={triage?.investigation_links.incidents ?? "/incidents"}
                 className="rounded-lg border border-line bg-surface-alt px-3 py-3 text-sm text-ink transition hover:border-textSecondary"
               >
                 <p className="font-medium">Incident queue</p>
                 <p className="mt-1 text-xs text-steel">Review open and recently resolved incidents.</p>
-              </Link>
-              <Link
-                href="/system/reliability-patterns"
-                className="rounded-lg border border-line bg-surface-alt px-3 py-3 text-sm text-ink transition hover:border-textSecondary"
-              >
-                <p className="font-medium">Project reliability</p>
-                <p className="mt-1 text-xs text-steel">Scan regression patterns and drift signals.</p>
               </Link>
             </div>
           </section>
@@ -189,11 +223,11 @@ export default async function DashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span>Open incidents</span>
-                <span className="font-medium text-ink">{openIncidents.length}</span>
+                <span className="font-medium text-ink">{attentionCount}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Awaiting ack</span>
-                <span className="font-medium text-ink">{unacknowledgedOpenIncidents.length}</span>
+                <span className="font-medium text-ink">{unacknowledgedCount}</span>
               </div>
             </div>
           </Card>
@@ -209,39 +243,10 @@ export default async function DashboardPage() {
 
           <Card className="p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent alert deliveries</p>
-            {recentAlerts.length > 0 ? (
-              <div className="mt-4 space-y-3">
-                {recentAlerts.map((alert) => (
-                  <div key={alert.id} className="rounded-xl border border-line px-4 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-ink">{alert.channel_type}</p>
-                        <p className="mt-1 text-sm text-steel">{alert.channel_target}</p>
-                      </div>
-                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${deliveryTone(alert.delivery_status)}`}>
-                        {alert.delivery_status}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-steel">
-                      Attempts {alert.attempt_count}
-                      {alert.sent_at
-                        ? ` · sent ${new Date(alert.sent_at).toLocaleString()}`
-                        : ` · created ${new Date(alert.created_at).toLocaleString()}`}
-                    </p>
-                    {alert.next_attempt_at ? (
-                      <p className="mt-2 text-sm text-steel">
-                        Next retry {new Date(alert.next_attempt_at).toLocaleString()}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-4 text-sm leading-6 text-steel">
-                No alert deliveries have been recorded yet. When a new or reopened incident opens,
-                its first Slack delivery attempt will appear here.
-              </div>
-            )}
+            <div className="mt-4 text-sm leading-6 text-steel">
+              Alert deliveries remain available in incident detail views until dashboard-level delivery
+              summaries are wired to a dedicated contract.
+            </div>
           </Card>
         </aside>
       </div>

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import type { IncidentCommandCenterRead } from "@reliai/types";
 
 import { ActionCallout } from "@/components/ui/action-callout";
+import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatTime, severityTone } from "@/components/presenters/ops-format";
@@ -21,14 +22,99 @@ interface IncidentCommandCenterViewProps {
   screenshotMode?: boolean;
 }
 
+function formatKey(key: string) {
+  return key.replaceAll("_", " ");
+}
+
+function formatPrimitive(value: unknown) {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return null;
+}
+
+function formatObjectLines(prefix: string, value: Record<string, unknown>) {
+  const lines: string[] = [];
+  Object.entries(value).forEach(([childKey, childValue]) => {
+    if (childValue === null || childValue === undefined) return;
+    if (Array.isArray(childValue)) {
+      childValue.forEach((item) => {
+        const primitive = formatPrimitive(item);
+        if (primitive !== null) {
+          lines.push(`${formatKey(prefix)} ${formatKey(childKey)}: ${primitive}`);
+        } else if (item && typeof item === "object") {
+          const compact = Object.entries(item as Record<string, unknown>)
+            .map(([k, v]) => {
+              const vPrimitive = formatPrimitive(v);
+              return vPrimitive ? `${formatKey(k)}=${vPrimitive}` : null;
+            })
+            .filter(Boolean)
+            .join(", ");
+          if (compact) {
+            lines.push(`${formatKey(prefix)} ${formatKey(childKey)}: ${compact}`);
+          } else {
+            lines.push(`${formatKey(prefix)} ${formatKey(childKey)}: ${JSON.stringify(item)}`);
+          }
+        }
+      });
+      return;
+    }
+    const primitive = formatPrimitive(childValue);
+    if (primitive !== null) {
+      lines.push(`${formatKey(prefix)} ${formatKey(childKey)}: ${primitive}`);
+      return;
+    }
+    if (childValue && typeof childValue === "object") {
+      const compact = Object.entries(childValue as Record<string, unknown>)
+        .map(([k, v]) => {
+          const vPrimitive = formatPrimitive(v);
+          return vPrimitive ? `${formatKey(k)}=${vPrimitive}` : null;
+        })
+        .filter(Boolean)
+        .join(", ");
+      if (compact) {
+        lines.push(`${formatKey(prefix)} ${formatKey(childKey)}: ${compact}`);
+      } else {
+        lines.push(`${formatKey(prefix)} ${formatKey(childKey)}: ${JSON.stringify(childValue)}`);
+      }
+    }
+  });
+  return lines;
+}
+
 function formatEvidence(evidence: Record<string, unknown> | null): string[] {
   if (!evidence) return [];
   return Object.entries(evidence).flatMap(([key, value]) => {
-    if (Array.isArray(value)) {
-      return value.map((item) => `${key}: ${String(item)}`);
-    }
     if (value === null || value === undefined) return [];
-    return `${key}: ${String(value)}`;
+    if (Array.isArray(value)) {
+      return value.flatMap((item) => {
+        const primitive = formatPrimitive(item);
+        if (primitive !== null) {
+          return `${formatKey(key)}: ${primitive}`;
+        }
+        if (item && typeof item === "object") {
+          return formatObjectLines(formatKey(key), item as Record<string, unknown>);
+        }
+        return [];
+      });
+    }
+    const primitive = formatPrimitive(value);
+    if (primitive !== null) {
+      return `${formatKey(key)}: ${primitive}`;
+    }
+    if (value && typeof value === "object") {
+      const compact = Object.entries(value as Record<string, unknown>)
+        .map(([k, v]) => {
+          const vPrimitive = formatPrimitive(v);
+          return vPrimitive ? `${formatKey(k)}=${vPrimitive}` : null;
+        })
+        .filter(Boolean)
+        .join(", ");
+      if (compact) {
+        return `${formatKey(key)}: ${compact}`;
+      }
+      return formatObjectLines(formatKey(key), value as Record<string, unknown>);
+    }
+    return [];
   });
 }
 
@@ -40,25 +126,46 @@ export function IncidentCommandCenterView({
 }: IncidentCommandCenterViewProps) {
   const incident = command.incident;
   const summary = incident.summary_json ?? {};
-  const metricKey = String(summary.metric_name ?? "");
-  const currentValue = summary.current_value ? String(summary.current_value) : "n/a";
-  const baselineValue = summary.baseline_value ? String(summary.baseline_value) : "n/a";
-  const deltaPercent = summary.delta_percent ? `${summary.delta_percent}%` : "n/a";
+  const metric = command.metric ?? null;
+  const metricName = metric?.display_name ?? metric?.metric_name ?? String(summary.metric_name ?? "metric");
+  const metricUnit = metric?.unit ?? null;
+  const currentValue = metric?.value ?? (summary.current_value ? String(summary.current_value) : "n/a");
+  const baselineValue = metric?.baseline_value ?? (summary.baseline_value ? String(summary.baseline_value) : "n/a");
+  const deltaPercent = metric?.delta_percent ?? (summary.delta_percent ? String(summary.delta_percent) : "n/a");
 
-  const errorsValue =
-    metricKey.includes("error") || metricKey.includes("success") ? currentValue : "n/a";
-  const latencyValue = metricKey.includes("latency") ? currentValue : "n/a";
-  const retryValue = metricKey.includes("retry") ? currentValue : "n/a";
-
-  const signalStrip = [
-    { label: "errors/sec", value: errorsValue },
-    { label: "latency", value: latencyValue },
-    { label: "retries", value: retryValue },
-  ];
+  const metricSignals = metric
+    ? [
+        { label: metricName, value: `${currentValue}${metricUnit ? ` ${metricUnit}` : ""}` },
+        baselineValue !== "n/a"
+          ? { label: "baseline", value: `${baselineValue}${metricUnit ? ` ${metricUnit}` : ""}` }
+          : null,
+        deltaPercent !== "n/a" ? { label: "delta", value: `${deltaPercent}%` } : null,
+      ].filter(Boolean)
+    : metricName
+      ? [{ label: metricName, value: String(currentValue) }]
+      : [];
 
   const rootCauseTitle =
     command.root_cause.root_cause_probabilities[0]?.label ?? "No dominant root cause yet";
-  const evidence = formatEvidence(command.root_cause.evidence);
+  const evidenceLines = formatEvidence(command.root_cause.evidence);
+  const maxEvidenceLines = 14;
+  const extraEvidenceCount =
+    evidenceLines.length > maxEvidenceLines ? evidenceLines.length - maxEvidenceLines : 0;
+  const visibleEvidence = extraEvidenceCount > 0
+    ? evidenceLines.slice(0, maxEvidenceLines)
+    : evidenceLines;
+  const rootCauseProbability =
+    command.root_cause.top_root_cause_probability ??
+    command.root_cause.root_cause_probabilities[0]?.probability ??
+    null;
+  const recommendationKind =
+    command.root_cause.recommendation_kind ??
+    (typeof rootCauseProbability === "number" && rootCauseProbability >= 0.8 ? "action" : "recommendation");
+  const supportingText =
+    command.root_cause.recommended_action_reason ??
+    (rootCauseProbability !== null
+      ? `Root cause confidence ${Math.round(rootCauseProbability * 100)}% based on trace deltas.`
+      : "Root cause signal is based on current trace deltas.");
 
   return (
     <div
@@ -92,7 +199,7 @@ export function IncidentCommandCenterView({
         </div>
 
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-steel">
-          {signalStrip.map((signal) => (
+          {metricSignals.map((signal) => (
             <div key={signal.label} className="flex items-center gap-2">
               <span className="uppercase tracking-[0.2em] text-steel">{signal.label}</span>
               <span className="text-ink">{signal.value}</span>
@@ -107,11 +214,14 @@ export function IncidentCommandCenterView({
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Root cause</p>
             <p className="mt-2 text-sm font-semibold text-ink">{rootCauseTitle}</p>
             <p className="mt-2 text-sm text-steel">{command.root_cause.recommended_fix.summary}</p>
-            {evidence.length > 0 ? (
+            {visibleEvidence.length > 0 ? (
               <ul className="mt-3 text-xs text-steel">
-                {evidence.map((item) => (
+                {visibleEvidence.map((item) => (
                   <li key={item}>• {item}</li>
                 ))}
+                {extraEvidenceCount > 0 ? (
+                  <li className="text-steel">+{extraEvidenceCount} more</li>
+                ) : null}
               </ul>
             ) : null}
           </div>
@@ -133,19 +243,27 @@ export function IncidentCommandCenterView({
             <ul className="mt-2 text-sm text-steel">
               <li>• current value: {currentValue}</li>
               <li>• baseline value: {baselineValue}</li>
-              <li>• delta: {deltaPercent}</li>
+              <li>• delta: {deltaPercent !== "n/a" ? `${deltaPercent}%` : "n/a"}</li>
             </ul>
           </div>
         </div>
 
         <div className="space-y-4">
-          <ActionCallout
-            label="Action"
-            directive={command.root_cause.recommended_fix.summary}
-            supporting={suggestedFix?.description}
-            confidence="high"
-            source="root-cause engine"
-          />
+          {recommendationKind === "action" ? (
+            <ActionCallout
+              label="Action"
+              directive={command.root_cause.recommended_fix.summary}
+              supporting={supportingText}
+              confidence="high"
+              source="root-cause engine"
+            />
+          ) : (
+            <RecommendationCallout
+              label="Recommendation"
+              recommendation={command.root_cause.recommended_fix.summary}
+              supporting={supportingText}
+            />
+          )}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Mitigations</p>

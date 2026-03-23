@@ -23,9 +23,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "PORT=3000 HOSTNAME=127.0.0.1 node apps/web/.next/standalone/apps/web/server.js",
+    command: "pnpm --filter web dev --port 3000",
     port: 3000,
-    reuseExistingServer: !isCI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

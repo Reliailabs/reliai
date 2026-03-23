@@ -118,6 +118,10 @@ class IncidentCommandCenterRootCauseRead(APIModel):
     root_cause_probabilities: list[RootCauseProbabilityRead]
     evidence: dict[str, Any]
     recommended_fix: RootCauseRecommendedFixRead
+    top_root_cause_probability: float | None = None
+    recommendation_confidence: float | None = None
+    recommendation_kind: str | None = None
+    recommended_action_reason: str | None = None
 
 
 class IncidentCommandTraceCompareRead(APIModel):
@@ -132,9 +136,20 @@ class GuardrailActivityRead(APIModel):
     last_trigger_time: datetime | None
 
 
+class IncidentCommandCenterMetricRead(APIModel):
+    metric_name: str
+    metric_type: str
+    display_name: str
+    unit: str | None = None
+    value: str | None = None
+    baseline_value: str | None = None
+    delta_percent: str | None = None
+
+
 class IncidentCommandCenterRead(APIModel):
     incident: IncidentDetailRead
     root_cause: IncidentCommandCenterRootCauseRead
+    metric: IncidentCommandCenterMetricRead | None = None
     trace_compare: IncidentCommandTraceCompareRead
     deployment_context: IncidentDeploymentContextRead | None
     guardrail_activity: list[GuardrailActivityRead]
@@ -183,6 +198,10 @@ class IncidentInvestigationRootCauseRead(APIModel):
     ranked_causes: list[RootCauseProbabilityRead]
     evidence: dict[str, Any]
     recommended_fix: RootCauseRecommendedFixRead
+    top_root_cause_probability: float | None = None
+    recommendation_confidence: float | None = None
+    recommendation_kind: str | None = None
+    recommended_action_reason: str | None = None
 
 
 class IncidentInvestigationRead(APIModel):

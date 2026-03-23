@@ -454,6 +454,19 @@ export const demoIncidentCommand: IncidentCommandCenterRead = {
       summary: "Enable latency retry on retrieval and compare v42 against the previous prompt before expanding rollout.",
       metadata_json: null,
     },
+    top_root_cause_probability: 0.71,
+    recommendation_confidence: 0.71,
+    recommendation_kind: "recommendation",
+    recommended_action_reason: "Root cause confidence 71% based on trace deltas from the retrieval latency window.",
+  },
+  metric: {
+    metric_name: "retrieval_latency_ms",
+    metric_type: "latency",
+    display_name: "Retrieval latency",
+    unit: "ms",
+    value: "980",
+    baseline_value: "410",
+    delta_percent: "139.0",
   },
   trace_compare: {
     failing_trace_summary: {

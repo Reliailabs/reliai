@@ -78,6 +78,57 @@ export type UsageQuotaStatus = {
   } | null;
 };
 
+export type DashboardTriageRead = {
+  attention: Array<{
+    id: string;
+    title: string;
+    severity: string;
+    status: string;
+    project_id: string;
+    project_name: string;
+    environment_id: string;
+    started_at: string;
+    acknowledged_at: string | null;
+    path: string;
+  }>;
+  recent_incident_activity: Array<{
+    id: string;
+    title: string;
+    status: string;
+    project_name: string;
+    started_at: string;
+    resolved_at: string | null;
+    path: string;
+  }>;
+  investigation_links: {
+    incidents: string;
+    traces: string;
+    reliability?: string | null;
+  };
+  context: {
+    active_incident_count: number;
+    unacknowledged_incident_count: number;
+    degraded_project_count?: number | null;
+    last_updated_at: string;
+  };
+};
+
+export type DashboardChangeFeedRead = {
+  changes: Array<{
+    id: string;
+    project_id: string;
+    project_name: string;
+    environment: string | null;
+    kind: string;
+    summary: string;
+    created_at: string;
+    actor?: string | null;
+    related_incident_count?: number | null;
+    related_regression_count?: number | null;
+    path?: string | null;
+  }>;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const sessionToken = await getApiAccessToken();
   const response = await fetch(`${API_URL}${path}`, {
@@ -99,6 +150,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function getApiHealth() {
   return request<{ status: string }>("/api/v1/health");
+}
+
+export async function getDashboardTriage() {
+  return request<DashboardTriageRead>("/api/v1/dashboard/triage");
+}
+
+export async function getDashboardChanges() {
+  return request<DashboardChangeFeedRead>("/api/v1/dashboard/changes");
 }
 
 export async function createOrganization(payload: {
