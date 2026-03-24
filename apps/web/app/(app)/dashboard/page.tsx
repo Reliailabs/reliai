@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { CheckCheck, ShieldAlert, ShieldCheck, ShieldEllipsis } from "lucide-react";
 
 import { UsageMeter } from "@/components/dashboard/usage-meter";
@@ -100,7 +101,7 @@ export default async function DashboardPage() {
                 {attentionItems.slice(0, 8).map((incident) => (
                   <Link
                     key={incident.id}
-                    href={incident.path}
+                    href={incident.path as Route}
                     className="flex flex-col gap-3 px-5 py-4 transition hover:bg-surface-alt lg:flex-row lg:items-center lg:justify-between"
                   >
                     <div className="flex items-start gap-3">
@@ -143,7 +144,7 @@ export default async function DashboardPage() {
                 {recentActivity.slice(0, 5).map((incident) => (
                   <Link
                     key={incident.id}
-                    href={incident.path}
+                    href={incident.path as Route}
                     className="flex items-center justify-between rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-ink transition hover:border-textSecondary"
                   >
                     <div>
@@ -167,23 +168,37 @@ export default async function DashboardPage() {
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent changes</p>
             {changesFeed.changes.length > 0 ? (
               <div className="mt-4 space-y-3">
-                {changesFeed.changes.slice(0, 6).map((change) => (
-                  <Link
-                    key={change.id}
-                    href={change.path ?? "#"}
-                    className="flex items-center justify-between rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-ink transition hover:border-textSecondary"
-                  >
-                    <div>
-                      <p className="font-medium">{change.summary}</p>
-                      <p className="mt-1 text-xs text-steel">
-                        {change.project_name}
-                        {change.environment ? ` · ${change.environment}` : ""}
-                        {change.actor ? ` · ${change.actor}` : ""}
-                      </p>
+                {changesFeed.changes.slice(0, 6).map((change) => {
+                  const content = (
+                    <>
+                      <div>
+                        <p className="font-medium">{change.summary}</p>
+                        <p className="mt-1 text-xs text-steel">
+                          {change.project_name}
+                          {change.environment ? ` · ${change.environment}` : ""}
+                          {change.actor ? ` · ${change.actor}` : ""}
+                        </p>
+                      </div>
+                      <span className="text-xs text-steel">{new Date(change.created_at).toLocaleString()}</span>
+                    </>
+                  );
+                  return change.path ? (
+                    <Link
+                      key={change.id}
+                      href={change.path as Route}
+                      className="flex items-center justify-between rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-ink transition hover:border-textSecondary"
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <div
+                      key={change.id}
+                      className="flex items-center justify-between rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-ink"
+                    >
+                      {content}
                     </div>
-                    <span className="text-xs text-steel">{new Date(change.created_at).toLocaleString()}</span>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-3 text-sm text-steel">
@@ -196,14 +211,14 @@ export default async function DashboardPage() {
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Investigation entry points</p>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <Link
-                href={triage?.investigation_links.traces ?? "/traces"}
+                href={(triage?.investigation_links.traces ?? "/traces") as Route}
                 className="rounded-lg border border-line bg-surface-alt px-3 py-3 text-sm text-ink transition hover:border-textSecondary"
               >
                 <p className="font-medium">Trace explorer</p>
                 <p className="mt-1 text-xs text-steel">Inspect retrieval failures and latency spikes.</p>
               </Link>
               <Link
-                href={triage?.investigation_links.incidents ?? "/incidents"}
+                href={(triage?.investigation_links.incidents ?? "/incidents") as Route}
                 className="rounded-lg border border-line bg-surface-alt px-3 py-3 text-sm text-ink transition hover:border-textSecondary"
               >
                 <p className="font-medium">Incident queue</p>

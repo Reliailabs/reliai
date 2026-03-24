@@ -25,12 +25,36 @@ function readSearchParam(
   return value ?? undefined;
 }
 
+function toUtcInputValue(date: Date) {
+  return date.toISOString().slice(0, 16);
+}
+
+function normalizeUtcInputValue(
+  raw: string | undefined,
+  fallback: string
+) {
+  if (!raw) {
+    return fallback;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.valueOf())) {
+    return fallback;
+  }
+  return toUtcInputValue(parsed);
+}
+
 export default async function TracesPage({
   searchParams
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = (await searchParams) ?? {};
+  const now = new Date();
+  const defaultDateTo = toUtcInputValue(now);
+  const defaultDateFrom = toUtcInputValue(new Date(now.getTime() - 60 * 60 * 1000));
+  const hasExplicitDateFilter = Boolean(params.date_from) || Boolean(params.date_to);
+  const dateFrom = normalizeUtcInputValue(readSearchParam(params.date_from), defaultDateFrom);
+  const dateTo = normalizeUtcInputValue(readSearchParam(params.date_to), defaultDateTo);
   const filters: TraceFilters = {
     projectId: readSearchParam(params.project_id),
     promptVersionId: readSearchParam(params.prompt_version_id),
@@ -38,8 +62,8 @@ export default async function TracesPage({
     modelName: readSearchParam(params.model_name),
     promptVersion: readSearchParam(params.prompt_version),
     success: readSearchParam(params.success) as "true" | "false" | undefined,
-    dateFrom: readSearchParam(params.date_from),
-    dateTo: readSearchParam(params.date_to),
+    dateFrom,
+    dateTo,
     cursor: readSearchParam(params.cursor),
     limit: readSearchParam(params.limit) ? Number(readSearchParam(params.limit)) : 25
   };
@@ -55,8 +79,7 @@ export default async function TracesPage({
     Boolean(filters.modelName) ||
     Boolean(filters.promptVersion) ||
     Boolean(filters.success) ||
-    Boolean(filters.dateFrom) ||
-    Boolean(filters.dateTo);
+    hasExplicitDateFilter;
 
   return (
     <div className="space-y-6">
@@ -116,12 +139,14 @@ export default async function TracesPage({
               name="date_from"
               type="datetime-local"
               defaultValue={filters.dateFrom}
+              step={60}
               className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-ink outline-none"
             />
             <input
               name="date_to"
               type="datetime-local"
               defaultValue={filters.dateTo}
+              step={60}
               className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-ink outline-none"
             />
             <div className="xl:col-span-6 flex flex-wrap items-center gap-3">

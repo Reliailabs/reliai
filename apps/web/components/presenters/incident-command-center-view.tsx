@@ -133,17 +133,24 @@ export function IncidentCommandCenterView({
   const baselineValue = metric?.baseline_value ?? (summary.baseline_value ? String(summary.baseline_value) : "n/a");
   const deltaPercent = metric?.delta_percent ?? (summary.delta_percent ? String(summary.delta_percent) : "n/a");
 
-  const metricSignals = metric
-    ? [
-        { label: metricName, value: `${currentValue}${metricUnit ? ` ${metricUnit}` : ""}` },
-        baselineValue !== "n/a"
-          ? { label: "baseline", value: `${baselineValue}${metricUnit ? ` ${metricUnit}` : ""}` }
-          : null,
-        deltaPercent !== "n/a" ? { label: "delta", value: `${deltaPercent}%` } : null,
-      ].filter(Boolean)
-    : metricName
-      ? [{ label: metricName, value: String(currentValue) }]
-      : [];
+  const metricSignals: Array<{ label: string; value: string }> = [];
+  if (metric) {
+    metricSignals.push({
+      label: metricName,
+      value: `${currentValue}${metricUnit ? ` ${metricUnit}` : ""}`,
+    });
+    if (baselineValue !== "n/a") {
+      metricSignals.push({
+        label: "baseline",
+        value: `${baselineValue}${metricUnit ? ` ${metricUnit}` : ""}`,
+      });
+    }
+    if (deltaPercent !== "n/a") {
+      metricSignals.push({ label: "delta", value: `${deltaPercent}%` });
+    }
+  } else if (metricName) {
+    metricSignals.push({ label: metricName, value: String(currentValue) });
+  }
 
   const rootCauseTitle =
     command.root_cause.root_cause_probabilities[0]?.label ?? "No dominant root cause yet";

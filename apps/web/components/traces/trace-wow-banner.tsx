@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 type TraceWowBannerProps = {
@@ -22,6 +22,7 @@ export function TraceWowBanner({
   const router = useRouter();
   const autoSelectDisabled = Boolean(disableAutoSelect);
   const cursorPresent = Boolean(hasCursor);
+  const cancelRef = useRef(false);
 
   useEffect(() => {
     if (!bestTraceId || hasFilters) {
@@ -39,8 +40,32 @@ export function TraceWowBanner({
     if (window.sessionStorage.getItem(AUTO_SELECT_KEY)) {
       return;
     }
-    window.sessionStorage.setItem(AUTO_SELECT_KEY, "1");
-    router.replace(`/traces/${bestTraceId}`);
+    const cancelAutoSelect = () => {
+      cancelRef.current = true;
+    };
+    const clearAndCancel = () => {
+      cancelAutoSelect();
+      clearTimeout(timeoutId);
+      window.removeEventListener("pointerdown", clearAndCancel);
+      window.removeEventListener("keydown", clearAndCancel);
+      window.removeEventListener("focusin", clearAndCancel);
+    };
+    window.addEventListener("pointerdown", clearAndCancel, { once: true });
+    window.addEventListener("keydown", clearAndCancel, { once: true });
+    window.addEventListener("focusin", clearAndCancel, { once: true });
+    const timeoutId = window.setTimeout(() => {
+      if (cancelRef.current) {
+        return;
+      }
+      window.sessionStorage.setItem(AUTO_SELECT_KEY, "1");
+      router.replace(`/traces/${bestTraceId}`);
+    }, 800);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("pointerdown", clearAndCancel);
+      window.removeEventListener("keydown", clearAndCancel);
+      window.removeEventListener("focusin", clearAndCancel);
+    };
   }, [bestTraceId, autoSelectDisabled, cursorPresent, hasFilters, router]);
 
   if (!bestTraceId) {

@@ -1343,7 +1343,12 @@ export interface IncidentCommandCenterRead {
     root_cause_probabilities: RootCauseProbabilityRead[];
     evidence: Record<string, unknown>;
     recommended_fix: RootCauseRecommendedFixRead;
+    top_root_cause_probability?: number | null;
+    recommendation_confidence?: number | null;
+    recommendation_kind?: string | null;
+    recommended_action_reason?: string | null;
   };
+  metric?: IncidentCommandCenterMetricRead | null;
   trace_compare: {
     failing_trace_summary: TraceCompareItemRead | null;
     baseline_trace_summary: TraceCompareItemRead | null;
@@ -1353,9 +1358,20 @@ export interface IncidentCommandCenterRead {
   guardrail_activity: GuardrailActivityRead[];
   possible_root_causes: Record<string, unknown>[];
   graph_related_patterns: IncidentGraphInsights[];
+  similar_platform_failures?: Record<string, unknown>[];
   recommended_mitigations: string[];
   related_regressions: RegressionSnapshotRead[];
   recent_signals: TimelineEventRead[];
+}
+
+export interface IncidentCommandCenterMetricRead {
+  metric_name: string;
+  metric_type: string;
+  display_name: string;
+  unit?: string | null;
+  value?: string | null;
+  baseline_value?: string | null;
+  delta_percent?: string | null;
 }
 
 export interface IncidentGraphInsights {
