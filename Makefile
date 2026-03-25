@@ -31,7 +31,7 @@ dev:
 	cd apps/api && $(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 worker:
-	cd apps/api && PYTHONPATH=$(ROOT_DIR)/apps/api $(ROOT_DIR)/.venv/bin/rq worker default
+	cd apps/api && PYTHONPATH=$(ROOT_DIR)/apps/api $(PYTHON) -m app.scripts.rq_worker
 
 test:
 	cd apps/api && $(PYTHON) -m pytest tests

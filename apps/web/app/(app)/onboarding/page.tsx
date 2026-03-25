@@ -1,9 +1,11 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CheckCircle2, CircleDashed, KeyRound, Network, Radar } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import { OnboardingPathTracker } from "@/components/onboarding/onboarding-path-tracker";
+import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
 import { Button } from "@/components/ui/button";
-import { redirect } from "next/navigation";
-
+import { Card } from "@/components/ui/card";
 import { createOrganization } from "@/lib/api";
 import { requireOperatorSession, switchOrganization } from "@/lib/auth";
 
@@ -28,104 +30,208 @@ const steps = [
     label: "Create organization",
     state: "current",
     icon: Network,
-    detail: "Register the tenant root used to scope projects, members, and onboarding."
+    detail: "Register the tenant root used to scope projects, members, and onboarding.",
   },
   {
     label: "Create project",
     state: "next",
     icon: CircleDashed,
-    detail: "Provision a production, staging, or development project inside the organization."
+    detail: "Provision a production, staging, or development project inside the organization.",
   },
   {
     label: "Generate API key",
     state: "next",
     icon: KeyRound,
-    detail: "Issue a project-scoped ingest key. The secret is revealed once."
+    detail: "Issue a project-scoped ingest key. The secret is revealed once.",
   },
   {
     label: "Send first trace",
     state: "next",
     icon: Radar,
-    detail: "POST a minimal trace payload to the ingestion endpoint and verify acceptance."
-  }
-];
+    detail: "POST a minimal trace payload to the ingestion endpoint and verify acceptance.",
+  },
+] as const;
 
-export default async function OnboardingPage() {
+type OnboardingPath = "choose" | "sdk" | "simulation";
+
+function normalizePath(value: string | undefined): OnboardingPath {
+  if (value === "sdk" || value === "simulation") return value;
+  return "choose";
+}
+
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ path?: string }>;
+}) {
+  const { path } = await searchParams;
+  const selectedPath = normalizePath(path);
+
   const session = await requireOperatorSession();
   const defaultName = defaultOrgName(session.operator.email);
   const defaultSlug = slugify(defaultName);
 
   async function createOrganizationAction(formData: FormData) {
     "use server";
+
     const session = await requireOperatorSession();
     const nameInput = String(formData.get("name") ?? "").trim();
     const slugInput = String(formData.get("slug") ?? "").trim();
     const fallbackName = defaultOrgName(session.operator.email);
     const finalName = nameInput || fallbackName;
     const finalSlug = slugify(slugInput || finalName);
+
     if (!finalName || !finalSlug) {
       return;
     }
+
     const organization = await createOrganization({
       name: finalName,
       slug: finalSlug,
       plan: "free",
       owner_auth_user_id: session.operator.id,
-      owner_role: "owner"
+      owner_role: "owner",
     });
+
     await switchOrganization(organization.id);
     redirect("/dashboard");
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
+    <div className="space-y-6">
+      <OnboardingPathTracker path={selectedPath} />
+
       <Card className="p-6">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Onboarding</p>
-        <h1 className="mt-3 text-3xl font-semibold">First trace path</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-steel">
-          This shell teaches the smallest operator workflow that matters in Milestone 1: set up a
-          tenant, issue an ingest key, and verify the first production trace lands.
+        <p className="text-xs uppercase tracking-[0.24em] text-steel">Quick start</p>
+        <h1 className="mt-3 text-3xl font-semibold text-ink">See your first AI incident in minutes</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-steel">
+          Connect your live system or run a guided simulation to experience the incident workflow.
+          The goal is to get to actionable investigation quickly.
         </p>
 
-        <div className="mt-8 space-y-4">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            const isCurrent = step.state === "current";
-            return (
-              <div
-                key={step.label}
-                className="grid gap-4 rounded-xl border border-line bg-surface px-4 py-4 md:grid-cols-[48px_minmax(0,1fr)_auto]"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white">
-                  <Icon className="h-5 w-5 text-ink" />
-                </div>
-                <div>
-                  <p className="text-sm text-steel">Step {index + 1}</p>
-                  <h2 className="mt-1 text-lg font-semibold">{step.label}</h2>
-                  <p className="mt-2 text-sm leading-6 text-steel">{step.detail}</p>
-                </div>
-                <div className="flex items-center">
-                  {isCurrent ? (
-                    <span className="rounded-full bg-accentSoft px-3 py-1 text-xs font-medium text-accent">
-                      Current
-                    </span>
-                  ) : (
-                    <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-steel">
-                      Pending
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button asChild size="sm" variant={selectedPath === "choose" ? "default" : "outline"}>
+            <Link href="/onboarding">Choose path</Link>
+          </Button>
+          <Button asChild size="sm" variant={selectedPath === "sdk" ? "default" : "outline"}>
+            <Link href="/onboarding?path=sdk">Connect SDK</Link>
+          </Button>
+          <Button asChild size="sm" variant={selectedPath === "simulation" ? "default" : "outline"}>
+            <Link href="/onboarding?path=simulation">Start simulation</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/dashboard">Skip for now</Link>
+          </Button>
         </div>
       </Card>
 
-      <Card className="h-fit p-6">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Ingest example</p>
-        <div className="mt-4 rounded-xl bg-[#111827] p-4 text-sm text-zinc-100">
-          <pre className="overflow-x-auto whitespace-pre-wrap font-mono">
-{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
+      {selectedPath === "choose" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 1</p>
+            <h2 className="mt-2 text-xl font-semibold text-ink">Connect your app</h2>
+            <p className="mt-2 text-sm leading-6 text-steel">
+              Install the SDK and send traces from your own environment. This path is best when you
+              already have traffic and want production signals immediately.
+            </p>
+            <div className="mt-5">
+              <Button asChild>
+                <Link href="/onboarding?path=sdk">Connect SDK</Link>
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 2</p>
+            <h2 className="mt-2 text-xl font-semibold text-ink">Try a guided simulation</h2>
+            <p className="mt-2 text-sm leading-6 text-steel">
+              Generate synthetic traces and walk through incident detection, comparison, and root-cause
+              confirmation with realistic operator screens.
+            </p>
+            <div className="mt-5">
+              <Button asChild>
+                <Link href="/onboarding?path=simulation">Start simulation</Link>
+              </Button>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+
+      {selectedPath === "sdk" ? (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
+          <Card className="p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Connect your app</p>
+            <h2 className="mt-3 text-2xl font-semibold text-ink">Install SDK and send first traces</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
+              Use this setup checklist to create a workspace, issue a key, and verify ingestion.
+              If your traffic is quiet, switch to simulation and return later.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isCurrent = step.state === "current";
+                return (
+                  <div
+                    key={step.label}
+                    className="grid gap-4 rounded-xl border border-line bg-surface px-4 py-4 md:grid-cols-[48px_minmax(0,1fr)_auto]"
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white">
+                      <Icon className="h-5 w-5 text-ink" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-steel">Step {index + 1}</p>
+                      <h3 className="mt-1 text-lg font-semibold text-ink">{step.label}</h3>
+                      <p className="mt-2 text-sm leading-6 text-steel">{step.detail}</p>
+                    </div>
+                    <div className="flex items-center">
+                      {isCurrent ? (
+                        <span className="rounded-full bg-accentSoft px-3 py-1 text-xs font-medium text-accent">
+                          Current
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-steel">
+                          Pending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <form action={createOrganizationAction} className="mt-6 grid gap-3 md:grid-cols-2">
+              <label className="block space-y-2 text-sm text-steel">
+                <span className="text-xs uppercase tracking-[0.24em] text-steel">Organization name</span>
+                <input
+                  name="name"
+                  defaultValue={defaultName}
+                  className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                />
+              </label>
+
+              <label className="block space-y-2 text-sm text-steel">
+                <span className="text-xs uppercase tracking-[0.24em] text-steel">Slug</span>
+                <input
+                  name="slug"
+                  defaultValue={defaultSlug}
+                  className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                />
+              </label>
+
+              <div className="md:col-span-2 flex flex-wrap gap-2">
+                <Button type="submit">Create organization</Button>
+                <Button asChild variant="outline" type="button">
+                  <Link href="/onboarding?path=simulation">Run simulation instead</Link>
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          <Card className="h-fit p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Ingest example</p>
+            <div className="mt-4 rounded-xl bg-[#111827] p-4 text-sm text-zinc-100">
+              <pre className="overflow-x-auto whitespace-pre-wrap font-mono">{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
   -H "x-api-key: reliai_..." \\
   -H "content-type: application/json" \\
   -d '{
@@ -133,40 +239,24 @@ export default async function OnboardingPage() {
     "request_id":"req_123",
     "model_name":"gpt-4.1-mini",
     "success":true
-  }'`}
-          </pre>
+  }'`}</pre>
+            </div>
+            <div className="mt-5 rounded-xl border border-line bg-surface px-4 py-4">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-ink" />
+                <p className="text-sm leading-6 text-steel">
+                  After first accepted traces, open incidents and command center to investigate live
+                  failures with cohort and prompt evidence.
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
-        <div className="mt-5 rounded-xl border border-line bg-surface px-4 py-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 text-ink" />
-            <p className="text-sm leading-6 text-steel">
-              After the first accepted trace, Milestone 2 can build a trace explorer on top of the
-              same project and trace records.
-            </p>
-          </div>
-        </div>
-        <form action={createOrganizationAction} className="mt-5 space-y-3">
-          <label className="block space-y-2 text-sm text-steel">
-            <span className="text-xs uppercase tracking-[0.24em] text-steel">Organization name</span>
-            <input
-              name="name"
-              defaultValue={defaultName}
-              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
-            />
-          </label>
-          <label className="block space-y-2 text-sm text-steel">
-            <span className="text-xs uppercase tracking-[0.24em] text-steel">Slug</span>
-            <input
-              name="slug"
-              defaultValue={defaultSlug}
-              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
-            />
-          </label>
-          <Button type="submit" className="w-full">
-            Create organization
-          </Button>
-        </form>
-      </Card>
+      ) : null}
+
+      {selectedPath === "simulation" ? (
+        <OnboardingSimulationRunner defaultProjectName={`${defaultSlug}-simulation`} />
+      ) : null}
     </div>
   );
 }

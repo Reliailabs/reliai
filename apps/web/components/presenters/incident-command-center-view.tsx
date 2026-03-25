@@ -20,7 +20,15 @@ interface IncidentCommandCenterViewProps {
   command: IncidentCommandCenterRead;
   suggestedFix?: SuggestedFix | null;
   screenshotMode?: boolean;
+  activeTab?: string;
 }
+
+const TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "cohort-diff", label: "Cohort Diff" },
+  { id: "prompt-diff", label: "Prompt Diff" },
+  { id: "traces", label: "Affected Traces" },
+] as const;
 
 function formatKey(key: string) {
   return key.replaceAll("_", " ");
@@ -123,6 +131,7 @@ export function IncidentCommandCenterView({
   command,
   suggestedFix = null,
   screenshotMode = false,
+  activeTab = "overview",
 }: IncidentCommandCenterViewProps) {
   const incident = command.incident;
   const summary = incident.summary_json ?? {};
@@ -215,6 +224,25 @@ export function IncidentCommandCenterView({
         </div>
       </header>
 
+      {!screenshotMode ? (
+        <nav className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1">
+          {TABS.map((tab) => (
+            <Link
+              key={tab.id}
+              href={`/incidents/${incidentId}/command?tab=${tab.id}`}
+              className={cn(
+                "rounded-[10px] px-4 py-2 text-sm font-medium transition-colors",
+                activeTab === tab.id
+                  ? "bg-white text-ink shadow-sm"
+                  : "text-steel hover:text-ink"
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
+
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]">
         <div className="space-y-4">
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
@@ -237,8 +265,18 @@ export function IncidentCommandCenterView({
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Trace evidence</p>
             <p className="mt-2 text-sm text-steel">Top failing trace is ready for review.</p>
             {!screenshotMode ? (
-              <div className="mt-3">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <Button asChild size="sm">
+                  <Link href={`/incidents/${incidentId}/command?tab=cohort-diff`}>
+                    Open cohort diff
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/incidents/${incidentId}/command?tab=prompt-diff`}>
+                    View prompt diff
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
                   <a href={command.trace_compare.compare_link}>Open example trace</a>
                 </Button>
               </div>

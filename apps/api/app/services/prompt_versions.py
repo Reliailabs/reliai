@@ -1,13 +1,89 @@
 from __future__ import annotations
 
+import difflib
+
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.incident import Incident
+from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.reliability_metric import ReliabilityMetric
 from app.models.trace import Trace
 from app.services.registry import build_prompt_version_path, get_prompt_version_record
+from app.services.authorization import require_project_access
+from app.services.auth import OperatorContext
+
+MAX_PROMPT_DIFF_CHARS = 200_000
+MAX_PROMPT_DIFF_LINES = 4_000
+
+
+def _normalized_prompt_content(value: str | None) -> str:
+    if value is None:
+        return ""
+    normalized = value.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = "\n".join(line.rstrip() for line in normalized.split("\n"))
+    if len(normalized) > MAX_PROMPT_DIFF_CHARS:
+        normalized = normalized[:MAX_PROMPT_DIFF_CHARS]
+    return normalized
+
+
+def _line_diff(*, from_content: str, to_content: str) -> list[dict[str, str]]:
+    from_lines = from_content.split("\n")
+    to_lines = to_content.split("\n")
+    if len(from_lines) > MAX_PROMPT_DIFF_LINES:
+        from_lines = from_lines[:MAX_PROMPT_DIFF_LINES]
+    if len(to_lines) > MAX_PROMPT_DIFF_LINES:
+        to_lines = to_lines[:MAX_PROMPT_DIFF_LINES]
+
+    rows: list[dict[str, str]] = []
+    for line in difflib.ndiff(from_lines, to_lines):
+        marker = line[:2]
+        text = line[2:]
+        if marker == "- ":
+            rows.append({"type": "removed", "text": text})
+        elif marker == "+ ":
+            rows.append({"type": "added", "text": text})
+        elif marker == "  ":
+            rows.append({"type": "unchanged", "text": text})
+    return rows
+
+
+def get_prompt_version_diff(
+    db: Session,
+    operator: OperatorContext,
+    *,
+    from_version_id,
+    to_version_id,
+) -> dict | None:
+    from_record = db.scalar(select(PromptVersion).where(PromptVersion.id == from_version_id))
+    to_record = db.scalar(select(PromptVersion).where(PromptVersion.id == to_version_id))
+    if from_record is None or to_record is None:
+        return None
+    if from_record.project_id != to_record.project_id:
+        return None
+
+    require_project_access(db, operator, from_record.project_id)
+
+    # Prompt versions currently store editable prompt text in notes.
+    from_content = _normalized_prompt_content(from_record.notes)
+    to_content = _normalized_prompt_content(to_record.notes)
+
+    return {
+        "from_version": {
+            "id": from_record.id,
+            "version": from_record.version,
+            "content": from_content,
+            "created_at": from_record.created_at,
+        },
+        "to_version": {
+            "id": to_record.id,
+            "version": to_record.version,
+            "content": to_content,
+            "created_at": to_record.created_at,
+        },
+        "diff": _line_diff(from_content=from_content, to_content=to_content),
+    }
 
 
 def get_prompt_version_detail(db: Session, *, project_id, prompt_version_id) -> dict | None:

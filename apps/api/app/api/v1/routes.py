@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session, selectinload
@@ -169,6 +169,12 @@ from app.schemas.organization_guardrail import (
     OrganizationGuardrailPolicyRead,
     PolicyViolationEventCreate,
 )
+from app.schemas.onboarding_simulation import (
+    OnboardingSimulationCreate,
+    OnboardingSimulationCreateResponse,
+    OnboardingSimulationStatusRead,
+)
+from app.schemas.prompt_diff import PromptDiffRead
 from app.schemas.project import (
     ModelVersionDetailRead,
     ModelVersionListResponse,
@@ -368,6 +374,7 @@ from app.services.public_api import (
     revoke_public_api_key,
 )
 from app.services.prompt_versions import get_prompt_version_detail
+from app.services.prompt_versions import get_prompt_version_diff
 from app.services.rate_limiter import enforce_rate_limit
 from app.services.reliability_metrics import (
     METRIC_ALERT_DELIVERY_SUCCESS_RATE,
@@ -422,6 +429,11 @@ from app.services.memberships import (
     list_project_members,
     remove_organization_member,
     remove_project_member,
+)
+from app.services.onboarding_simulations import (
+    create_onboarding_simulation,
+    get_onboarding_simulation,
+    run_onboarding_simulation,
 )
 from app.services.workos_roles import normalize_org_role
 from app.services.trace_ingestion_control import (
@@ -2935,6 +2947,91 @@ def get_prompt_version_detail_endpoint(
         traces_path=detail["traces_path"],
         regressions_path=detail["regressions_path"],
         incidents_path=detail["incidents_path"],
+    )
+
+
+@router.get("/prompts/diff", response_model=PromptDiffRead)
+def get_prompt_diff_endpoint(
+    from_version_id: UUID = Query(alias="fromVersionId"),
+    to_version_id: UUID = Query(alias="toVersionId"),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> PromptDiffRead:
+    result = get_prompt_version_diff(
+        db,
+        operator,
+        from_version_id=from_version_id,
+        to_version_id=to_version_id,
+    )
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prompt versions not found")
+    return PromptDiffRead.model_validate(result)
+
+
+@router.post("/onboarding/simulations", response_model=OnboardingSimulationCreateResponse)
+def create_onboarding_simulation_endpoint(
+    payload: OnboardingSimulationCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OnboardingSimulationCreateResponse:
+    try:
+        simulation = create_onboarding_simulation(
+            db,
+            operator,
+            project_name=payload.project_name,
+            model_name=payload.model_name,
+            prompt_type=payload.prompt_type,
+            simulation_type=payload.simulation_type or "refusal_spike",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    background_tasks.add_task(run_onboarding_simulation, simulation.id)
+    return OnboardingSimulationCreateResponse(simulation_id=simulation.id)
+
+
+@router.get("/onboarding/simulations/{simulation_id}/status", response_model=OnboardingSimulationStatusRead)
+def get_onboarding_simulation_status_endpoint(
+    simulation_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OnboardingSimulationStatusRead:
+    simulation = get_onboarding_simulation(
+        db,
+        operator,
+        simulation_id=simulation_id,
+    )
+    if simulation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Simulation not found")
+    payload = simulation.analysis_json or {}
+    incident_id = payload.get("incident_id")
+
+    raw_status = str(payload.get("status") or "pending")
+    status_value = raw_status if raw_status in {"pending", "running", "complete", "failed"} else "failed"
+    try:
+        progress_value = int(payload.get("progress") or 0)
+    except (TypeError, ValueError):
+        progress_value = 0
+    progress_value = max(0, min(progress_value, 100))
+
+    raw_stage = payload.get("stage")
+    stage_value = str(raw_stage).strip() if raw_stage else "queued"
+
+    incident_uuid = None
+    if isinstance(incident_id, str):
+        try:
+            incident_uuid = UUID(incident_id)
+        except ValueError:
+            incident_uuid = None
+
+    return OnboardingSimulationStatusRead(
+        simulation_id=simulation.id,
+        status=status_value,
+        progress=progress_value,
+        stage=stage_value,
+        incident_id=incident_uuid,
+        error=str(payload.get("error")) if payload.get("error") else None,
+        created_at=simulation.created_at,
     )
 
 
