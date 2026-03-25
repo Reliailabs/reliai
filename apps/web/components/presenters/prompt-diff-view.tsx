@@ -240,6 +240,7 @@ function PromptDiffEvidence({
     () => [...comparison.prompt_version_contexts].slice(0, 2),
     [comparison.prompt_version_contexts]
   );
+  const promptContextCount = comparison.prompt_version_contexts.length;
   const fromVersionId = promptCandidates[1]?.id ?? null;
   const toVersionId = promptCandidates[0]?.id ?? null;
   const [diffData, setDiffData] = useState<NormalizedPromptDiffApiResponse | null>(null);
@@ -256,7 +257,11 @@ function PromptDiffEvidence({
   useEffect(() => {
     if (!isUuidLike(fromVersionId) || !isUuidLike(toVersionId)) {
       setDiffData(null);
-      setDiffError("Not enough prompt versions are available to compute a diff.");
+      if (promptContextCount === 1) {
+        setDiffError("This incident has only one prompt version in evidence, so a diff is not available yet.");
+      } else {
+        setDiffError("No prompt version evidence is available for this incident yet.");
+      }
       return;
     }
 
@@ -295,7 +300,7 @@ function PromptDiffEvidence({
     run();
 
     return () => controller.abort();
-  }, [fromVersionId, toVersionId]);
+  }, [fromVersionId, promptContextCount, toVersionId]);
 
   const deployedMinutes = diffData ? deployedMinutesBeforeIncident(diffData, incident) : null;
 

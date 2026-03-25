@@ -119,7 +119,7 @@ export default async function OnboardingPage({
           <Button asChild size="sm" variant={selectedPath === "simulation" ? "default" : "outline"}>
             <Link href="/onboarding?path=simulation">Start simulation</Link>
           </Button>
-          <Button asChild size="sm" variant="ghost">
+          <Button asChild size="sm" variant="subtle">
             <Link href="/dashboard">Skip for now</Link>
           </Button>
         </div>

@@ -56,7 +56,7 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
     let pollCount = 0;
     let cancelled = false;
     let inFlight = false;
-    let timer: ReturnType<typeof window.setInterval> | null = null;
+    let timer: number | null = null;
 
     const stopPolling = () => {
       if (timer !== null) {
@@ -263,7 +263,7 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
             <Link href="/onboarding?path=sdk">Connect SDK instead</Link>
           </Button>
           {state === "failed" ? (
-            <Button type="button" variant="ghost" onClick={resetSimulation}>
+            <Button type="button" variant="subtle" onClick={resetSimulation}>
               Reset
             </Button>
           ) : null}
