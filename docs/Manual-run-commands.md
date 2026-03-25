@@ -47,3 +47,10 @@ I fixed the migration path because it blocked the “refresh the full app” seq
 Next recommended step:
 
 Triage and fix the 27 failing backend tests in cluster order: warehouse fixture drift first, then trace/deployment simulation assumptions, then clickhouse migration expectations.
+
+Onboarding simulation smoke check:
+
+python scripts/smoke_onboarding_simulation.py \
+	--base-url http://127.0.0.1:8000 \
+	--email owner@acme.test \
+	--password reliai-dev-password

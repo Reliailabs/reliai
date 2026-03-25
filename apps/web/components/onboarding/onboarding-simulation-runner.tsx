@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -40,6 +40,7 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
   const [projectName, setProjectName] = useState(defaultProjectName);
   const [modelName, setModelName] = useState("gpt-4.1-mini");
   const [promptType, setPromptType] = useState("support_triage");
+  const hasNavigatedRef = useRef(false);
 
   const statusLabel = useMemo(() => {
     if (!status) return "Queued";
@@ -54,13 +55,25 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
 
     let pollCount = 0;
     let cancelled = false;
+    let inFlight = false;
+    let timer: ReturnType<typeof window.setInterval> | null = null;
+
+    const stopPolling = () => {
+      if (timer !== null) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    };
 
     const poll = async () => {
-      if (cancelled) return;
+      if (cancelled || inFlight || hasNavigatedRef.current) return;
+      inFlight = true;
       pollCount += 1;
       if (pollCount > MAX_POLLS) {
-        setError("Simulation timed out. Try again to rerun the onboarding scenario.");
+        stopPolling();
+        setError("Simulation timed out after 5 minutes. Retry to generate a new simulation run.");
         setState("failed");
+        inFlight = false;
         return;
       }
 
@@ -70,55 +83,84 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
         });
         const payload = (await response.json()) as SimulationStatusResponse | { detail?: string };
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Your session expired. Refresh and sign in again.");
+          }
           throw new Error((payload as { detail?: string }).detail || `Status check failed (${response.status})`);
         }
         const simulationStatus = payload as SimulationStatusResponse;
         setStatus(simulationStatus);
 
         if (simulationStatus.status === "completed" || simulationStatus.status === "complete") {
+          stopPolling();
           if (simulationStatus.incident_id) {
             trackEvent("simulation_completed", {
               simulation_id: simulationStatus.simulation_id,
               incident_id: simulationStatus.incident_id,
               status: simulationStatus.status,
             });
+            hasNavigatedRef.current = true;
             router.push(`/incidents/${simulationStatus.incident_id}/command`);
+            inFlight = false;
             return;
           }
           setError("Simulation completed but no incident was created. Try running it again.");
           setState("failed");
+          inFlight = false;
           return;
         }
 
         if (simulationStatus.status === "failed") {
+          stopPolling();
           trackEvent("simulation_completed", {
             simulation_id: simulationStatus.simulation_id,
             incident_id: null,
             status: simulationStatus.status,
           });
-          setError(simulationStatus.error || "Simulation failed before incident creation.");
+          setError(
+            simulationStatus.error ||
+              "Simulation failed before incident creation. Retry, or switch to SDK onboarding if the issue persists."
+          );
           setState("failed");
+          inFlight = false;
+          return;
+        }
+
+        if (simulationStatus.status !== "running" && simulationStatus.status !== "pending") {
+          stopPolling();
+          setError(`Unexpected simulation status: ${simulationStatus.status}`);
+          setState("failed");
+          inFlight = false;
+          return;
         }
       } catch (pollError) {
+        stopPolling();
         setError(pollError instanceof Error ? pollError.message : "Unable to poll simulation status");
         setState("failed");
+      } finally {
+        inFlight = false;
       }
     };
 
     poll();
-    const timer = window.setInterval(poll, POLL_INTERVAL_MS);
+    timer = window.setInterval(poll, POLL_INTERVAL_MS);
 
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
+      stopPolling();
     };
   }, [simulationId, state, router]);
 
   async function startSimulation() {
+    if (state === "creating" || state === "running") {
+      return;
+    }
+
     setState("creating");
     setError(null);
     setStatus(null);
     setSimulationId(null);
+    hasNavigatedRef.current = false;
 
     trackEvent("simulation_started", {
       project_name: projectName,
@@ -144,6 +186,9 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
       }
 
       const nextSimulationId = (payload as SimulationCreateResponse).simulation_id;
+      if (!nextSimulationId) {
+        throw new Error("Simulation was created but no simulation_id was returned.");
+      }
       setSimulationId(nextSimulationId);
       setState("running");
     } catch (startError) {
@@ -157,6 +202,7 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
     setSimulationId(null);
     setStatus(null);
     setError(null);
+    hasNavigatedRef.current = false;
   }
 
   return (

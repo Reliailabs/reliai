@@ -83,18 +83,61 @@ interface PromptDiffApiVersion {
   id: string;
   version: string;
   content: string;
-  created_at: string;
+  created_at?: string;
+  createdAt?: string;
 }
 
 interface PromptDiffApiResponse {
+  from_version?: PromptDiffApiVersion;
+  to_version?: PromptDiffApiVersion;
+  from?: PromptDiffApiVersion;
+  to?: PromptDiffApiVersion;
+  diff: PromptDiffApiLine[];
+}
+
+interface NormalizedPromptDiffApiResponse {
   from_version: PromptDiffApiVersion;
   to_version: PromptDiffApiVersion;
   diff: PromptDiffApiLine[];
 }
 
+function getVersionCreatedAt(version: PromptDiffApiVersion) {
+  return version.created_at ?? version.createdAt ?? "";
+}
+
+function normalizePromptDiffResponse(payload: PromptDiffApiResponse): NormalizedPromptDiffApiResponse | null {
+  const fromVersion = payload.from_version ?? payload.from;
+  const toVersion = payload.to_version ?? payload.to;
+  if (!fromVersion || !toVersion) {
+    return null;
+  }
+
+  const normalizedDiff = (payload.diff || [])
+    .filter((line) => typeof line?.text === "string")
+    .map((line) => ({
+      type: line.type === "added" || line.type === "removed" || line.type === "unchanged" ? line.type : "unchanged",
+      text: line.text,
+    }));
+
+  return {
+    from_version: fromVersion,
+    to_version: toVersion,
+    diff: normalizedDiff,
+  };
+}
+
+function isUuidLike(value: string | null | undefined) {
+  if (!value) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function deployedMinutesBeforeIncident(diff: PromptDiffApiResponse, incident: IncidentDetailRead) {
   const incidentStart = new Date(incident.started_at).getTime();
-  const deployedAt = new Date(diff.to_version.created_at).getTime();
+  const toVersion = diff.to_version ?? diff.to;
+  if (!toVersion) {
+    return null;
+  }
+  const deployedAt = new Date(getVersionCreatedAt(toVersion)).getTime();
   if (!Number.isFinite(incidentStart) || !Number.isFinite(deployedAt)) {
     return null;
   }
@@ -199,7 +242,7 @@ function PromptDiffEvidence({
   );
   const fromVersionId = promptCandidates[1]?.id ?? null;
   const toVersionId = promptCandidates[0]?.id ?? null;
-  const [diffData, setDiffData] = useState<PromptDiffApiResponse | null>(null);
+  const [diffData, setDiffData] = useState<NormalizedPromptDiffApiResponse | null>(null);
   const [loadingDiff, setLoadingDiff] = useState(false);
   const [diffError, setDiffError] = useState<string | null>(null);
 
@@ -211,7 +254,7 @@ function PromptDiffEvidence({
   }, [incidentId, comparison.prompt_version_contexts.length]);
 
   useEffect(() => {
-    if (!fromVersionId || !toVersionId) {
+    if (!isUuidLike(fromVersionId) || !isUuidLike(toVersionId)) {
       setDiffData(null);
       setDiffError("Not enough prompt versions are available to compute a diff.");
       return;
@@ -226,11 +269,18 @@ function PromptDiffEvidence({
           `/api/prompts/diff?fromVersionId=${encodeURIComponent(fromVersionId)}&toVersionId=${encodeURIComponent(toVersionId)}`,
           { signal: controller.signal, cache: "no-store" }
         );
+        if (response.status === 401) {
+          throw new Error("Your session expired. Refresh and sign in again.");
+        }
         if (!response.ok) {
           throw new Error(`Prompt diff failed (${response.status})`);
         }
         const json = (await response.json()) as PromptDiffApiResponse;
-        setDiffData(json);
+        const normalized = normalizePromptDiffResponse(json);
+        if (!normalized) {
+          throw new Error("Prompt diff response was missing required version data.");
+        }
+        setDiffData(normalized);
       } catch (error) {
         if (!controller.signal.aborted) {
           setDiffData(null);
@@ -324,10 +374,10 @@ function PromptDiffEvidence({
           <div className="mt-4 space-y-3">
             <div className="grid gap-2 text-xs text-steel sm:grid-cols-2">
               <p>
-                From <span className="font-semibold text-ink">{diffData.from_version.version}</span> · {formatDateTime(diffData.from_version.created_at)}
+                From <span className="font-semibold text-ink">{diffData.from_version.version}</span> · {formatDateTime(getVersionCreatedAt(diffData.from_version))}
               </p>
               <p>
-                To <span className="font-semibold text-ink">{diffData.to_version.version}</span> · {formatDateTime(diffData.to_version.created_at)}
+                To <span className="font-semibold text-ink">{diffData.to_version.version}</span> · {formatDateTime(getVersionCreatedAt(diffData.to_version))}
               </p>
             </div>
             <PromptTextDiff rows={diffData.diff} />

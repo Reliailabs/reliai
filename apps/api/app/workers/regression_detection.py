@@ -21,6 +21,16 @@ from app.workers.evaluations import enqueue_alert_delivery_job
 logger = logging.getLogger(__name__)
 
 
+def _publish_event_safe(topic: str, payload: dict, *, context: dict[str, str]) -> None:
+    try:
+        publish_event(topic, payload)
+    except Exception as exc:  # pragma: no cover - defensive fail-open for local/dev broker outages
+        logger.warning(
+            "event publish failed during regression detection",
+            extra={**context, "error": str(exc), "event_type": str(payload.get("event_type", ""))},
+        )
+
+
 def run_trace_regression_detection(trace_id: str) -> None:
     db = SessionLocal()
     try:
@@ -73,9 +83,13 @@ def run_trace_regression_detection(trace_id: str) -> None:
         ]
         db.commit()
         for payload in regression_events:
-            publish_event(get_settings().event_stream_topic_traces, payload)
+            _publish_event_safe(
+                get_settings().event_stream_topic_traces,
+                payload,
+                context={"trace_id": str(trace.id), "project_id": str(trace.project_id)},
+            )
         for incident in opened_incidents:
-            publish_event(
+            _publish_event_safe(
                 get_settings().event_stream_topic_traces,
                 {
                     "event_type": INCIDENT_CREATED_EVENT,
@@ -89,6 +103,7 @@ def run_trace_regression_detection(trace_id: str) -> None:
                     "started_at": incident.started_at.isoformat(),
                     "metadata": incident.summary_json or {},
                 },
+                context={"trace_id": str(trace.id), "project_id": str(trace.project_id)},
             )
         for delivery_id in delivery_ids:
             enqueue_alert_delivery_job(delivery_id)

@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
@@ -62,11 +62,36 @@ def _select_or_create_project(
     operator: OperatorContext,
     project_name: str | None,
 ) -> Project:
+    if operator.active_organization_id is None:
+        raise ValueError("No active organization selected")
+
     allowed_project_ids = authorized_project_ids(
         db,
         operator,
         organization_id=operator.active_organization_id,
     )
+
+    if project_name:
+        normalized_name = project_name.strip()
+        if allowed_project_ids:
+            existing_named = db.scalar(
+                select(Project)
+                .where(
+                    Project.id.in_(allowed_project_ids),
+                    func.lower(Project.name) == normalized_name.lower(),
+                )
+                .order_by(Project.created_at.asc(), Project.id.asc())
+            )
+            if existing_named is not None:
+                return existing_named
+
+        payload = ProjectCreate(
+            name=normalized_name,
+            environment=ENVIRONMENT_PRODUCTION,
+            description="Auto-created project for onboarding simulation flow.",
+        )
+        return create_project(db, operator.active_organization_id, payload)
+
     if allowed_project_ids:
         existing = db.scalar(
             select(Project)
@@ -75,9 +100,6 @@ def _select_or_create_project(
         )
         if existing is not None:
             return existing
-
-    if operator.active_organization_id is None:
-        raise ValueError("No active organization selected")
 
     payload = ProjectCreate(
         name=project_name or "Quickstart Simulation Project",
@@ -244,6 +266,43 @@ def _create_synthetic_trace(
     return str(trace.id)
 
 
+def _create_fallback_incident(
+    db: Session,
+    *,
+    simulation: DeploymentSimulation,
+    project: Project,
+) -> Incident:
+    now = _now()
+    incident = Incident(
+        organization_id=project.organization_id,
+        project_id=project.id,
+        environment_id=simulation.environment_id,
+        deployment_id=None,
+        incident_type="success_rate_drop",
+        severity="high",
+        title="Onboarding simulation regression detected",
+        status="open",
+        fingerprint=f"onboarding-simulation:{simulation.id}",
+        summary_json={
+            "metric_name": "success_rate",
+            "scope_type": "project",
+            "scope_id": str(project.id),
+            "source": "onboarding_simulation_fallback",
+            "simulation_id": str(simulation.id),
+        },
+        started_at=now,
+        updated_at=now,
+        resolved_at=None,
+        acknowledged_at=None,
+        acknowledged_by_operator_user_id=None,
+        owner_operator_user_id=None,
+    )
+    db.add(incident)
+    db.commit()
+    db.refresh(incident)
+    return incident
+
+
 def run_onboarding_simulation(simulation_id: UUID) -> None:
     db = SessionLocal()
     try:
@@ -256,10 +315,10 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
             return
 
         current_status = str((simulation.analysis_json or {}).get("status") or SIM_STATUS_PENDING)
-        if current_status == SIM_STATUS_COMPLETE:
+        if current_status in {SIM_STATUS_RUNNING, SIM_STATUS_COMPLETE}:
             logger.info(
-                "onboarding simulation skipped because it is already complete",
-                extra={"simulation_id": str(simulation.id)},
+                "onboarding simulation skipped because it is already in a terminal or running state",
+                extra={"simulation_id": str(simulation.id), "status": current_status},
             )
             return
 
@@ -378,24 +437,41 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
 
         incident = db.scalar(
             select(Incident)
-            .where(Incident.project_id == project.id)
+            .where(
+                Incident.project_id == project.id,
+                Incident.started_at >= simulation.created_at,
+            )
             .order_by(desc(Incident.started_at), desc(Incident.id))
         )
 
         if incident is None:
-            _set_simulation_state(
-                db,
-                simulation=simulation,
-                status=SIM_STATUS_FAILED,
-                progress=100,
-                stage="failed",
-                error="Simulation completed but no incident was created.",
-            )
-            logger.error(
-                "onboarding simulation finished without incident",
+            logger.warning(
+                "onboarding simulation produced no incident from regression detection; creating fallback incident",
                 extra={"simulation_id": str(simulation.id), "project_id": str(project.id)},
             )
-            return
+            try:
+                incident = _create_fallback_incident(db, simulation=simulation, project=project)
+            except Exception as fallback_exc:
+                _set_simulation_state(
+                    db,
+                    simulation=simulation,
+                    status=SIM_STATUS_FAILED,
+                    progress=100,
+                    stage="failed",
+                    error=(
+                        "Simulation completed but no incident was created, "
+                        f"and fallback incident creation failed: {fallback_exc}"
+                    ),
+                )
+                logger.error(
+                    "onboarding simulation finished without incident and fallback failed",
+                    extra={
+                        "simulation_id": str(simulation.id),
+                        "project_id": str(project.id),
+                        "error": str(fallback_exc),
+                    },
+                )
+                return
 
         _set_simulation_state(
             db,

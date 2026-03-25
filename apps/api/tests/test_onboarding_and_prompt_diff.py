@@ -174,7 +174,12 @@ def test_onboarding_simulation_status_endpoint_returns_contract(client, db_sessi
     assert payload["incident_id"] == str(incident_id)
 
 
-def test_onboarding_simulation_runner_marks_failed_when_incident_missing(client, db_session, fake_queue, monkeypatch):
+def test_onboarding_simulation_runner_marks_failed_when_incident_and_fallback_missing(
+    client,
+    db_session,
+    fake_queue,
+    monkeypatch,
+):
     session_payload, _, _ = _seed_operator_project(
         client,
         db_session,
@@ -192,6 +197,11 @@ def test_onboarding_simulation_runner_marks_failed_when_incident_missing(client,
 
     monkeypatch.setattr(onboarding_simulations_service, "SessionLocal", lambda: BorrowedSession(db_session))
     monkeypatch.setattr(onboarding_simulations_service, "run_trace_regression_detection", lambda trace_id: None)
+    monkeypatch.setattr(
+        onboarding_simulations_service,
+        "_create_fallback_incident",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("fallback unavailable")),
+    )
 
     onboarding_simulations_service.run_onboarding_simulation(simulation_id)
 
@@ -199,7 +209,44 @@ def test_onboarding_simulation_runner_marks_failed_when_incident_missing(client,
     assert simulation is not None
     assert simulation.analysis_json["status"] == "failed"
     assert simulation.analysis_json["stage"] == "failed"
-    assert "no incident" in simulation.analysis_json["error"].lower()
+    assert "fallback" in simulation.analysis_json["error"].lower()
+
+
+def test_onboarding_simulation_runner_creates_fallback_incident_when_detection_misses(
+    client,
+    db_session,
+    fake_queue,
+    monkeypatch,
+):
+    session_payload, _, _ = _seed_operator_project(
+        client,
+        db_session,
+        email="simulation-fallback-owner@acme.test",
+        slug="simulation-fallback-org",
+    )
+    monkeypatch.setattr("app.api.v1.routes.run_onboarding_simulation", lambda simulation_id: None)
+
+    create_response = client.post(
+        "/api/v1/onboarding/simulations",
+        headers=auth_headers(session_payload),
+        json={"simulation_type": "refusal_spike"},
+    )
+    simulation_id = UUID(create_response.json()["simulation_id"])
+
+    monkeypatch.setattr(onboarding_simulations_service, "SessionLocal", lambda: BorrowedSession(db_session))
+    monkeypatch.setattr(onboarding_simulations_service, "run_trace_regression_detection", lambda trace_id: None)
+
+    onboarding_simulations_service.run_onboarding_simulation(simulation_id)
+
+    simulation = db_session.get(DeploymentSimulation, simulation_id)
+    assert simulation is not None
+    assert simulation.analysis_json["status"] == "complete"
+    fallback_incident_id = simulation.analysis_json.get("incident_id")
+    assert fallback_incident_id is not None
+
+    fallback_incident = db_session.get(Incident, UUID(str(fallback_incident_id)))
+    assert fallback_incident is not None
+    assert fallback_incident.summary_json.get("source") == "onboarding_simulation_fallback"
 
 
 def test_onboarding_simulation_runner_triggers_regression_and_completes(client, db_session, fake_queue, monkeypatch):
