@@ -330,6 +330,7 @@ from app.services.incidents import (
     build_trace_compare_item,
     build_trace_diff_blocks,
     derive_dimension_summaries,
+    derive_incident_registry_contexts,
     derive_registry_contexts,
     derive_root_cause_hints,
     get_incident_alert_deliveries,
@@ -1236,7 +1237,7 @@ def _reliability_series_item(metric_name: str, metrics) -> ReliabilityMetricSeri
     )
 
 
-def _incident_compare_item(incident, regressions, representative_traces, baseline_traces) -> IncidentCompareRead:
+def _incident_compare_item(db, incident, regressions, representative_traces, baseline_traces) -> IncidentCompareRead:
     summary = incident.summary_json or {}
     rule = get_incident_rule(incident.incident_type)
     root_cause_hints = derive_root_cause_hints(
@@ -1248,8 +1249,9 @@ def _incident_compare_item(incident, regressions, representative_traces, baselin
         current_traces=representative_traces,
         baseline_traces=baseline_traces,
     )
-    prompt_version_contexts, model_version_contexts = derive_registry_contexts(
-        project_id=incident.project_id,
+    prompt_version_contexts, model_version_contexts = derive_incident_registry_contexts(
+        db,
+        incident=incident,
         current_traces=representative_traces,
         baseline_traces=baseline_traces,
     )
@@ -1295,6 +1297,7 @@ def _incident_compare_item(incident, regressions, representative_traces, baselin
 
 
 def _incident_detail_item(
+    db,
     incident,
     regressions,
     traces,
@@ -1308,7 +1311,7 @@ def _incident_detail_item(
         regressions=[RegressionSnapshotRead.model_validate(regression) for regression in regressions],
         traces=[IncidentTraceSampleRead.model_validate(trace) for trace in traces],
         events=[_incident_event_item(event) for event in events],
-        compare=_incident_compare_item(incident, regressions, representative_traces, baseline_traces),
+        compare=_incident_compare_item(db, incident, regressions, representative_traces, baseline_traces),
         deployment_context=_incident_deployment_context_item(incident),
     )
 
@@ -3119,6 +3122,7 @@ def get_incident_detail_endpoint(
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     return _incident_detail_item(
+        db,
         incident,
         regressions,
         traces,
@@ -3137,6 +3141,7 @@ def get_incident_command_center_endpoint(
     command = get_incident_command_center(db, operator, incident_id)
     return IncidentCommandCenterRead(
         incident=_incident_detail_item(
+            db,
             command.incident,
             command.regressions,
             command.traces,
@@ -3179,6 +3184,7 @@ def get_incident_investigation_endpoint(
     command = investigation.command_center
     return IncidentInvestigationRead(
         incident=_incident_detail_item(
+            db,
             command.incident,
             command.regressions,
             command.traces,
@@ -3264,6 +3270,7 @@ def acknowledge_incident_endpoint(
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     return _incident_detail_item(
+        db,
         incident,
         regressions,
         traces,
@@ -3293,6 +3300,7 @@ def assign_incident_owner_endpoint(
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     return _incident_detail_item(
+        db,
         incident,
         regressions,
         traces,
@@ -3316,6 +3324,7 @@ def resolve_incident_endpoint(
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     return _incident_detail_item(
+        db,
         incident,
         regressions,
         traces,
@@ -3339,6 +3348,7 @@ def reopen_incident_endpoint(
     representative_traces, baseline_traces = get_incident_compare_traces(db, incident)
     events = get_incident_events(db, operator, incident_id)
     return _incident_detail_item(
+        db,
         incident,
         regressions,
         traces,
@@ -3377,8 +3387,9 @@ def get_incident_trace_compare_endpoint(
     incident = get_incident_detail(db, operator, incident_id)
     current_traces, baseline_traces = get_incident_compare_traces(db, incident)
     summary = incident.summary_json or {}
-    prompt_version_contexts, model_version_contexts = derive_registry_contexts(
-        project_id=incident.project_id,
+    prompt_version_contexts, model_version_contexts = derive_incident_registry_contexts(
+        db,
+        incident=incident,
         current_traces=current_traces,
         baseline_traces=baseline_traces,
     )

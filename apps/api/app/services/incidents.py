@@ -14,6 +14,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.settings import get_settings
+from app.models.deployment_simulation import DeploymentSimulation
 from app.models.alert_delivery import AlertDelivery
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
@@ -1329,6 +1330,375 @@ def derive_registry_contexts(
                 "traces_path": build_model_version_path(project_id=project_id, model_version_id=record.id),
             }
         )
+
+    return prompt_contexts, model_contexts
+
+
+def _prompt_version_record_by_version(
+    db: Session,
+    *,
+    project_id: UUID,
+    version: str | None,
+    cache: dict[str, PromptVersion],
+) -> PromptVersion | None:
+    normalized = (version or "").strip()
+    if not normalized:
+        return None
+    cached = cache.get(normalized)
+    if cached is not None:
+        return cached
+    record = db.scalar(
+        select(PromptVersion).where(
+            PromptVersion.project_id == project_id,
+            PromptVersion.version == normalized,
+        )
+    )
+    if record is not None:
+        cache[normalized] = record
+    return record
+
+
+def _prompt_record_for_trace(
+    db: Session,
+    *,
+    project_id: UUID,
+    trace: Trace,
+    cache: dict[str, PromptVersion],
+) -> PromptVersion | None:
+    if trace.prompt_version_record is not None:
+        return trace.prompt_version_record
+    return _prompt_version_record_by_version(
+        db,
+        project_id=project_id,
+        version=trace.prompt_version,
+        cache=cache,
+    )
+
+
+def _prompt_context_item(
+    *,
+    project_id: UUID,
+    record: PromptVersion,
+    current_count: int | None,
+    baseline_count: int | None,
+) -> dict[str, Any]:
+    traces_path, regressions_path, incidents_path = build_prompt_version_path(
+        project_id=project_id,
+        prompt_version_id=record.id,
+        version=record.version,
+    )
+    return {
+        "id": record.id,
+        "project_id": project_id,
+        "version": record.version,
+        "label": record.label,
+        "current_count": current_count,
+        "baseline_count": baseline_count,
+        "traces_path": traces_path,
+        "regressions_path": regressions_path,
+        "incidents_path": incidents_path,
+    }
+
+
+def _derive_prompt_contexts_from_traces(
+    db: Session,
+    *,
+    project_id: UUID,
+    current_traces: list[Trace],
+    baseline_traces: list[Trace],
+) -> list[dict[str, Any]]:
+    version_cache: dict[str, PromptVersion] = {}
+    prompt_records: dict[UUID, PromptVersion] = {}
+    prompt_current: Counter[UUID] = Counter()
+    prompt_baseline: Counter[UUID] = Counter()
+
+    for trace in current_traces:
+        record = _prompt_record_for_trace(
+            db,
+            project_id=project_id,
+            trace=trace,
+            cache=version_cache,
+        )
+        if record is None:
+            continue
+        prompt_records[record.id] = record
+        prompt_current[record.id] += 1
+
+    for trace in baseline_traces:
+        record = _prompt_record_for_trace(
+            db,
+            project_id=project_id,
+            trace=trace,
+            cache=version_cache,
+        )
+        if record is None:
+            continue
+        prompt_records[record.id] = record
+        prompt_baseline[record.id] += 1
+
+    contexts: list[dict[str, Any]] = []
+    for prompt_id, count in prompt_current.most_common(3):
+        record = prompt_records[prompt_id]
+        contexts.append(
+            _prompt_context_item(
+                project_id=project_id,
+                record=record,
+                current_count=count,
+                baseline_count=prompt_baseline.get(prompt_id, 0),
+            )
+        )
+    return contexts
+
+
+def _merge_prompt_contexts(
+    existing: list[dict[str, Any]],
+    additions: list[dict[str, Any]],
+    *,
+    limit: int = 3,
+) -> list[dict[str, Any]]:
+    seen = {item["id"] for item in existing}
+    for item in additions:
+        if item["id"] in seen:
+            continue
+        existing.append(item)
+        seen.add(item["id"])
+        if len(existing) >= limit:
+            break
+    return existing
+
+
+def _summary_prompt_record(
+    db: Session,
+    *,
+    project_id: UUID,
+    summary: dict[str, Any],
+    prompt_id_key: str,
+    prompt_version_key: str,
+    cache: dict[str, PromptVersion],
+) -> PromptVersion | None:
+    raw_prompt_id = summary.get(prompt_id_key)
+    if raw_prompt_id:
+        try:
+            prompt_id = UUID(str(raw_prompt_id))
+        except (TypeError, ValueError):
+            prompt_id = None
+        if prompt_id is not None:
+            record = db.scalar(
+                select(PromptVersion).where(
+                    PromptVersion.project_id == project_id,
+                    PromptVersion.id == prompt_id,
+                )
+            )
+            if record is not None:
+                return record
+    return _prompt_version_record_by_version(
+        db,
+        project_id=project_id,
+        version=summary.get(prompt_version_key),
+        cache=cache,
+    )
+
+
+def _previous_prompt_record(
+    db: Session,
+    *,
+    project_id: UUID,
+    exclude_prompt_ids: set[UUID],
+    anchor_time: datetime | None,
+) -> PromptVersion | None:
+    statement = (
+        select(PromptVersion)
+        .where(
+            PromptVersion.project_id == project_id,
+            PromptVersion.id.not_in(exclude_prompt_ids),
+        )
+        .order_by(desc(PromptVersion.created_at), desc(PromptVersion.id))
+    )
+    if anchor_time is not None:
+        anchored = db.scalar(statement.where(PromptVersion.created_at <= anchor_time))
+        if anchored is not None:
+            return anchored
+    return db.scalar(statement)
+
+
+def _incident_prompt_counts(
+    db: Session,
+    *,
+    project_id: UUID,
+    traces: list[Trace],
+) -> Counter[UUID]:
+    cache: dict[str, PromptVersion] = {}
+    counts: Counter[UUID] = Counter()
+    for trace in traces:
+        record = _prompt_record_for_trace(
+            db,
+            project_id=project_id,
+            trace=trace,
+            cache=cache,
+        )
+        if record is not None:
+            counts[record.id] += 1
+    return counts
+
+
+def derive_incident_registry_contexts(
+    db: Session,
+    *,
+    incident: Incident,
+    current_traces: list[Trace],
+    baseline_traces: list[Trace],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    summary = incident.summary_json or {}
+    window_current_traces = _load_window_traces(
+        db,
+        incident=incident,
+        window_start_key="current_window_start",
+        window_end_key="current_window_end",
+        with_details=True,
+    )
+    window_baseline_traces = _load_window_traces(
+        db,
+        incident=incident,
+        window_start_key="baseline_window_start",
+        window_end_key="baseline_window_end",
+        with_details=True,
+    )
+    source_current = window_current_traces or current_traces
+    source_baseline = window_baseline_traces or baseline_traces
+
+    prompt_contexts = _derive_prompt_contexts_from_traces(
+        db,
+        project_id=incident.project_id,
+        current_traces=source_current,
+        baseline_traces=source_baseline,
+    )
+    _, model_contexts = derive_registry_contexts(
+        project_id=incident.project_id,
+        current_traces=source_current,
+        baseline_traces=source_baseline,
+    )
+
+    version_cache: dict[str, PromptVersion] = {}
+    current_counts = _incident_prompt_counts(db, project_id=incident.project_id, traces=source_current)
+    baseline_counts = _incident_prompt_counts(db, project_id=incident.project_id, traces=source_baseline)
+
+    explicit_current = _summary_prompt_record(
+        db,
+        project_id=incident.project_id,
+        summary=summary,
+        prompt_id_key="current_prompt_version_id",
+        prompt_version_key="current_prompt_version",
+        cache=version_cache,
+    )
+    explicit_baseline = _summary_prompt_record(
+        db,
+        project_id=incident.project_id,
+        summary=summary,
+        prompt_id_key="baseline_prompt_version_id",
+        prompt_version_key="baseline_prompt_version",
+        cache=version_cache,
+    )
+
+    explicit_contexts: list[dict[str, Any]] = []
+    if explicit_current is not None:
+        explicit_contexts.append(
+            _prompt_context_item(
+                project_id=incident.project_id,
+                record=explicit_current,
+                current_count=current_counts.get(explicit_current.id, 0),
+                baseline_count=baseline_counts.get(explicit_current.id, 0),
+            )
+        )
+    if explicit_baseline is not None:
+        explicit_contexts.append(
+            _prompt_context_item(
+                project_id=incident.project_id,
+                record=explicit_baseline,
+                current_count=current_counts.get(explicit_baseline.id, 0),
+                baseline_count=baseline_counts.get(explicit_baseline.id, 0),
+            )
+        )
+
+    if len(prompt_contexts) < 2 and summary.get("scope_type") == "prompt_version":
+        scoped_record = _prompt_version_record_by_version(
+            db,
+            project_id=incident.project_id,
+            version=summary.get("scope_id"),
+            cache=version_cache,
+        )
+        if scoped_record is not None:
+            explicit_contexts.append(
+                _prompt_context_item(
+                    project_id=incident.project_id,
+                    record=scoped_record,
+                    current_count=current_counts.get(scoped_record.id, 0),
+                    baseline_count=baseline_counts.get(scoped_record.id, 0),
+                )
+            )
+
+    if len(prompt_contexts) < 2 and summary.get("simulation_id"):
+        try:
+            simulation_id = UUID(str(summary.get("simulation_id")))
+        except (TypeError, ValueError):
+            simulation_id = None
+        if simulation_id is not None:
+            simulation = db.get(DeploymentSimulation, simulation_id)
+            if simulation is not None and simulation.prompt_version_id is not None:
+                simulation_prompt = db.scalar(
+                    select(PromptVersion).where(
+                        PromptVersion.project_id == incident.project_id,
+                        PromptVersion.id == simulation.prompt_version_id,
+                    )
+                )
+                if simulation_prompt is not None:
+                    explicit_contexts.append(
+                        _prompt_context_item(
+                            project_id=incident.project_id,
+                            record=simulation_prompt,
+                            current_count=current_counts.get(simulation_prompt.id, 0),
+                            baseline_count=baseline_counts.get(simulation_prompt.id, 0),
+                        )
+                    )
+
+                simulation_summary = simulation.analysis_json or {}
+                baseline_simulation_prompt = _summary_prompt_record(
+                    db,
+                    project_id=incident.project_id,
+                    summary=simulation_summary,
+                    prompt_id_key="baseline_prompt_version_id",
+                    prompt_version_key="baseline_prompt_version",
+                    cache=version_cache,
+                )
+                if baseline_simulation_prompt is not None:
+                    explicit_contexts.append(
+                        _prompt_context_item(
+                            project_id=incident.project_id,
+                            record=baseline_simulation_prompt,
+                            current_count=current_counts.get(baseline_simulation_prompt.id, 0),
+                            baseline_count=baseline_counts.get(baseline_simulation_prompt.id, 0),
+                        )
+                    )
+
+    prompt_contexts = _merge_prompt_contexts(prompt_contexts, explicit_contexts)
+    if len(prompt_contexts) < 2 and prompt_contexts:
+        previous_record = _previous_prompt_record(
+            db,
+            project_id=incident.project_id,
+            exclude_prompt_ids={item["id"] for item in prompt_contexts},
+            anchor_time=incident.started_at,
+        )
+        if previous_record is not None:
+            prompt_contexts = _merge_prompt_contexts(
+                prompt_contexts,
+                [
+                    _prompt_context_item(
+                        project_id=incident.project_id,
+                        record=previous_record,
+                        current_count=current_counts.get(previous_record.id, 0),
+                        baseline_count=baseline_counts.get(previous_record.id, 0),
+                    )
+                ],
+            )
 
     return prompt_contexts, model_contexts
 

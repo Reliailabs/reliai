@@ -11,7 +11,9 @@ from app.db.session import SessionLocal
 from app.models.deployment_simulation import DeploymentSimulation
 from app.models.environment import ENVIRONMENT_PRODUCTION
 from app.models.incident import Incident
+from app.models.prompt_version import PromptVersion
 from app.models.project import Project
+from app.models.trace import Trace
 from app.schemas.project import ProjectCreate
 from app.schemas.trace import TraceIngestRequest
 from app.services.auth import OperatorContext
@@ -191,20 +193,28 @@ def _set_simulation_state(
     incident_id: str | None = None,
     error: str | None = None,
 ) -> None:
-    simulation.analysis_json = _analysis_payload(
-        status=status,
-        progress=progress,
-        stage=stage,
-        incident_id=incident_id,
-        error=error,
-        simulation_type=str((simulation.analysis_json or {}).get("simulation_type") or "refusal_spike"),
-    )
+    preserved = {
+        key: value
+        for key, value in (simulation.analysis_json or {}).items()
+        if key not in {"status", "progress", "stage", "incident_id", "error"}
+    }
+    simulation.analysis_json = {
+        **preserved,
+        **_analysis_payload(
+            status=status,
+            progress=progress,
+            stage=stage,
+            incident_id=incident_id,
+            error=error,
+            simulation_type=str((simulation.analysis_json or {}).get("simulation_type") or "refusal_spike"),
+        ),
+    }
     db.add(simulation)
     db.commit()
     db.refresh(simulation)
 
 
-def _seed_prompt_versions(db: Session, *, project: Project) -> tuple[str, str]:
+def _seed_prompt_versions(db: Session, *, project: Project) -> tuple[PromptVersion, PromptVersion]:
     from_version = "v17"
     to_version = "v18"
     v17 = ensure_prompt_version_record(db, project=project, version=from_version)
@@ -226,7 +236,11 @@ def _seed_prompt_versions(db: Session, *, project: Project) -> tuple[str, str]:
         )
         db.add(v18)
     db.commit()
-    return from_version, to_version
+    assert v17 is not None
+    assert v18 is not None
+    db.refresh(v17)
+    db.refresh(v18)
+    return v17, v18
 
 
 def _create_synthetic_trace(
@@ -241,7 +255,7 @@ def _create_synthetic_trace(
     success: bool,
     output_text: str,
     latency_ms: int,
-) -> str:
+) -> Trace:
     payload = TraceIngestRequest(
         timestamp=timestamp,
         request_id=request_id,
@@ -263,7 +277,52 @@ def _create_synthetic_trace(
         },
     )
     trace = create_trace(db, project, payload)
-    return str(trace.id)
+    return trace
+
+
+def _trace_window_bounds(traces: list[Trace]) -> tuple[str | None, str | None]:
+    if not traces:
+        return None, None
+    timestamps = sorted(trace.timestamp for trace in traces)
+    return timestamps[0].isoformat(), (timestamps[-1] + timedelta(seconds=1)).isoformat()
+
+
+def _onboarding_compare_metadata(
+    *,
+    simulation: DeploymentSimulation,
+    project: Project,
+    baseline_prompt: PromptVersion,
+    failing_prompt: PromptVersion,
+    baseline_traces: list[Trace],
+    failing_traces: list[Trace],
+) -> dict[str, object]:
+    baseline_window_start, baseline_window_end = _trace_window_bounds(baseline_traces)
+    current_window_start, current_window_end = _trace_window_bounds(failing_traces)
+    sample_trace_ids = [str(trace.id) for trace in (failing_traces[:3] + baseline_traces[:2])]
+    return {
+        "scope_type": "project",
+        "scope_id": str(project.id),
+        "source": "onboarding_simulation",
+        "simulation_id": str(simulation.id),
+        "baseline_window_start": baseline_window_start,
+        "baseline_window_end": baseline_window_end,
+        "current_window_start": current_window_start,
+        "current_window_end": current_window_end,
+        "baseline_prompt_version_id": str(baseline_prompt.id),
+        "baseline_prompt_version": baseline_prompt.version,
+        "current_prompt_version_id": str(failing_prompt.id),
+        "current_prompt_version": failing_prompt.version,
+        "sample_trace_ids": sample_trace_ids,
+    }
+
+
+def _merge_incident_summary(existing: dict | None, additions: dict[str, object]) -> dict:
+    merged = dict(existing or {})
+    for key, value in additions.items():
+        existing_value = merged.get(key)
+        if key not in merged or existing_value is None or existing_value == [] or existing_value == "":
+            merged[key] = value
+    return merged
 
 
 def _create_fallback_incident(
@@ -271,6 +330,7 @@ def _create_fallback_incident(
     *,
     simulation: DeploymentSimulation,
     project: Project,
+    compare_metadata: dict[str, object],
 ) -> Incident:
     now = _now()
     incident = Incident(
@@ -284,6 +344,7 @@ def _create_fallback_incident(
         status="open",
         fingerprint=f"onboarding-simulation:{simulation.id}",
         summary_json={
+            **compare_metadata,
             "metric_name": "success_rate",
             "scope_type": "project",
             "scope_id": str(project.id),
@@ -359,22 +420,35 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
             stage="generating_baseline",
         )
         baseline_prompt, failing_prompt = _seed_prompt_versions(db, project=project)
+        simulation.prompt_version_id = failing_prompt.id
+        simulation.analysis_json = {
+            **(simulation.analysis_json or {}),
+            "baseline_prompt_version_id": str(baseline_prompt.id),
+            "baseline_prompt_version": baseline_prompt.version,
+            "current_prompt_version_id": str(failing_prompt.id),
+            "current_prompt_version": failing_prompt.version,
+        }
+        db.add(simulation)
+        db.commit()
+        db.refresh(simulation)
 
         now = _now()
         generated_trace_count = 0
+        baseline_traces: list[Trace] = []
         for index in range(18):
-            _create_synthetic_trace(
+            baseline_trace = _create_synthetic_trace(
                 db,
                 project=project,
                 timestamp=now - timedelta(minutes=120 - (index * 2)),
                 request_id=f"sim_baseline_{index:02d}_{simulation.id}",
                 model_name=model_name,
                 prompt_type=prompt_type,
-                prompt_version=baseline_prompt,
+                prompt_version=baseline_prompt.version,
                 success=True,
                 output_text="{\"result\": \"Account access reset instructions\"}",
                 latency_ms=420,
             )
+            baseline_traces.append(baseline_trace)
             generated_trace_count += 1
 
         _set_simulation_state(
@@ -386,16 +460,17 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
         )
 
         last_trace_id: str | None = None
+        failing_traces: list[Trace] = []
         for index in range(18):
             is_failure = index < 10
-            last_trace_id = _create_synthetic_trace(
+            failing_trace = _create_synthetic_trace(
                 db,
                 project=project,
                 timestamp=now - timedelta(minutes=55 - (index * 3)),
                 request_id=f"sim_failing_{index:02d}_{simulation.id}",
                 model_name=model_name,
                 prompt_type=prompt_type,
-                prompt_version=failing_prompt,
+                prompt_version=failing_prompt.version,
                 success=not is_failure,
                 output_text=(
                     "I cannot assist with this request under the current policy." if is_failure
@@ -403,15 +478,33 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
                 ),
                 latency_ms=640 if is_failure else 480,
             )
+            failing_traces.append(failing_trace)
+            last_trace_id = str(failing_trace.id)
             generated_trace_count += 1
+
+        compare_metadata = _onboarding_compare_metadata(
+            simulation=simulation,
+            project=project,
+            baseline_prompt=baseline_prompt,
+            failing_prompt=failing_prompt,
+            baseline_traces=baseline_traces,
+            failing_traces=failing_traces,
+        )
+        simulation.analysis_json = {
+            **(simulation.analysis_json or {}),
+            **compare_metadata,
+        }
+        db.add(simulation)
+        db.commit()
+        db.refresh(simulation)
 
         logger.info(
             "onboarding simulation traces generated",
             extra={
                 "simulation_id": str(simulation.id),
                 "project_id": str(project.id),
-                "baseline_prompt": baseline_prompt,
-                "candidate_prompt": failing_prompt,
+                "baseline_prompt": baseline_prompt.version,
+                "candidate_prompt": failing_prompt.version,
                 "trace_count": generated_trace_count,
             },
         )
@@ -450,7 +543,12 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
                 extra={"simulation_id": str(simulation.id), "project_id": str(project.id)},
             )
             try:
-                incident = _create_fallback_incident(db, simulation=simulation, project=project)
+                incident = _create_fallback_incident(
+                    db,
+                    simulation=simulation,
+                    project=project,
+                    compare_metadata=compare_metadata,
+                )
             except Exception as fallback_exc:
                 _set_simulation_state(
                     db,
@@ -472,6 +570,13 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
                     },
                 )
                 return
+        else:
+            merged_summary = _merge_incident_summary(incident.summary_json, compare_metadata)
+            if merged_summary != (incident.summary_json or {}):
+                incident.summary_json = merged_summary
+                db.add(incident)
+                db.commit()
+                db.refresh(incident)
 
         _set_simulation_state(
             db,

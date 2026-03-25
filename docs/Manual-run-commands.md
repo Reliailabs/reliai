@@ -51,6 +51,6 @@ Triage and fix the 27 failing backend tests in cluster order: warehouse fixture 
 Onboarding simulation smoke check:
 
 python scripts/smoke_onboarding_simulation.py \
-	--base-url http://127.0.0.1:8000 \
-	--email owner@acme.test \
-	--password reliai-dev-password
+ --base-url http://127.0.0.1:8000 \
+ --email owner@acme.test \
+ --password reliai-dev-password
