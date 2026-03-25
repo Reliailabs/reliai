@@ -533,14 +533,21 @@ def test_trace_detail_is_tenant_safe_and_includes_evaluations(client, db_session
     assert detail.status_code == 200
     payload = detail.json()
     assert payload["retrieval_span"]["source_count"] == 2
-    assert len(payload["evaluations"]) == 1
-    assert payload["evaluations"][0]["eval_type"] == STRUCTURED_VALIDITY_EVAL_TYPE
-    assert payload["evaluations"][0]["label"] == "pass"
+    # evaluation count grows as new evaluators are added; assert at least the structured validity one is present
+    assert len(payload["evaluations"]) >= 1
+    eval_types = {e["eval_type"] for e in payload["evaluations"]}
+    assert STRUCTURED_VALIDITY_EVAL_TYPE in eval_types
+    sv_eval = next(e for e in payload["evaluations"] if e["eval_type"] == STRUCTURED_VALIDITY_EVAL_TYPE)
+    assert sv_eval["label"] == "pass"
 
     forbidden = client.get(f"/api/v1/traces/{trace_id}", headers=auth_headers(owner_two_session))
     assert forbidden.status_code == 404
 
-    stored_evaluation = db_session.query(Evaluation).filter(Evaluation.trace_id == UUID(trace_id)).one()
+    stored_evaluation = (
+        db_session.query(Evaluation)
+        .filter(Evaluation.trace_id == UUID(trace_id), Evaluation.eval_type == STRUCTURED_VALIDITY_EVAL_TYPE)
+        .one()
+    )
     assert stored_evaluation.label == "pass"
 
 

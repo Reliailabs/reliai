@@ -29,6 +29,8 @@ import type {
   ProjectReliabilityRead,
   ProjectRead,
   PlatformMetricsRead,
+  ProjectCustomMetricListResponse,
+  ProjectCustomMetricRead,
   PlatformExtensionListResponse,
   GraphGuardrailRecommendationListResponse,
   ReliabilityActionLogListResponse,
@@ -236,6 +238,40 @@ export async function updateProjectIngestionPolicy(
   return request<TraceIngestionPolicyRead>(`/api/v1/projects/${projectId}/ingestion-policy`, {
     method: "PUT",
     body: JSON.stringify(payload)
+  });
+}
+
+export async function listProjectCustomMetrics(projectId: string) {
+  return request<ProjectCustomMetricListResponse>(`/api/v1/projects/${projectId}/custom-metrics`);
+}
+
+export async function createProjectCustomMetric(
+  projectId: string,
+  payload: {
+    name: string;
+    metric_type: "regex" | "keyword";
+    value_mode: "boolean" | "count";
+    pattern?: string | null;
+    keywords?: string[] | null;
+    enabled?: boolean;
+  },
+) {
+  return request<ProjectCustomMetricRead>(`/api/v1/projects/${projectId}/custom-metrics`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateProjectCustomMetric(
+  projectId: string,
+  metricId: string,
+  payload: {
+    enabled: boolean;
+  },
+) {
+  return request<ProjectCustomMetricRead>(`/api/v1/projects/${projectId}/custom-metrics/${metricId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }
 

@@ -53,6 +53,14 @@ class EvaluationRead(APIModel):
     created_at: datetime
 
 
+class TraceSignalResultRead(APIModel):
+    metric_key: str | None
+    name: str
+    mode: str
+    value: float | bool | None
+    matched: bool
+
+
 class TraceListQuery(BaseModel):
     project_id: UUID | None = None
     environment: str | None = Field(default=None, max_length=64)
@@ -141,6 +149,7 @@ class TraceListItemRead(APIModel):
     success: bool
     error_type: str | None
     created_at: datetime
+    refusal_detected: bool | None = None
 
 
 class TraceListResponse(BaseModel):
@@ -184,6 +193,8 @@ class TraceDetailRead(APIModel):
     compare_path: str | None
     retrieval_span: RetrievalSpanRead | None
     evaluations: list[EvaluationRead]
+    refusal_detected: bool | None = None
+    custom_metric_results: list[TraceSignalResultRead] = []
 
 
 class TraceGraphNodeRead(APIModel):
@@ -294,6 +305,8 @@ class TraceCompareItemRead(APIModel):
     prompt_version_record: PromptVersionRead | None
     model_version_record: ModelVersionRead | None
     structured_output: TraceCompareEvaluationRead | None
+    refusal_detected: bool | None = None
+    custom_metric_results: list[TraceSignalResultRead] = []
     retrieval: TraceCompareRetrievalRead | None
     metadata_excerpt_json: dict[str, Any] | None
 

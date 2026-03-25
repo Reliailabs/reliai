@@ -66,6 +66,42 @@ function TraceCompareCard({
             <p>Structured output · {renderStructured(trace)}</p>
           </div>
           <div>
+            <p className="font-medium text-ink">Refusal signal</p>
+            <div className="mt-1">
+              {trace.refusal_detected === null ? (
+                <span className="text-sm text-steel">n/a</span>
+              ) : trace.refusal_detected ? (
+                <span className="inline-flex rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200">
+                  Refusal detected
+                </span>
+              ) : (
+                <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+                  Not detected
+                </span>
+              )}
+            </div>
+          </div>
+          {(trace.custom_metric_results ?? []).length > 0 ? (
+            <div>
+              <p className="font-medium text-ink">Custom metrics</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(trace.custom_metric_results ?? []).map((item) => (
+                  <span
+                    key={item.metric_key ?? item.name}
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                      item.matched
+                        ? "bg-rose-50 text-rose-700 ring-rose-200"
+                        : "bg-zinc-50 text-zinc-500 ring-zinc-200"
+                    }`}
+                  >
+                    {item.matched ? "Triggered: " : ""}{item.name}
+                    {item.mode === "count" && item.matched ? ` (${item.value})` : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div>
             <p className="font-medium text-ink">Retrieval</p>
             <p className="mt-1">
               {trace.retrieval

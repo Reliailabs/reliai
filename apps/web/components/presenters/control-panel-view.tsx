@@ -147,6 +147,10 @@ export function ControlPanelView({
       href: `/projects/${projectId}/guardrails${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`,
     },
     {
+      label: "Custom Metrics",
+      href: `/projects/${projectId}/metrics`,
+    },
+    {
       label: "View Trace Graphs",
       href: "/traces",
     },

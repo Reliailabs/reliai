@@ -235,14 +235,21 @@ export default async function TracesPage({
                       {trace.latency_ms !== null ? `${trace.latency_ms} ms` : "n/a"}
                     </td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusPill(
-                          trace.success,
-                          trace.error_type
-                        )}`}
-                      >
-                        {trace.success ? "Success" : trace.error_type ?? "Failure"}
-                      </span>
+                      <div className="flex flex-col gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusPill(
+                            trace.success,
+                            trace.error_type
+                          )}`}
+                        >
+                          {trace.success ? "Success" : trace.error_type ?? "Failure"}
+                        </span>
+                        {trace.refusal_detected ? (
+                          <span className="inline-flex rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 ring-1 ring-rose-200">
+                            Refusal
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}

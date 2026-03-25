@@ -375,6 +375,25 @@ export interface TraceIngestionPolicyRead {
   cardinality_summary: MetadataCardinalityRead[];
 }
 
+export interface ProjectCustomMetricRead {
+  id: string;
+  project_id: string;
+  name: string;
+  metric_key: string;
+  metric_type: "regex" | "keyword";
+  value_mode: "boolean" | "count";
+  pattern: string | null;
+  keywords_json: string[] | null;
+  enabled: boolean;
+  metadata_json: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectCustomMetricListResponse {
+  items: ProjectCustomMetricRead[];
+}
+
 export interface GrowthDailyPoint {
   date: string;
   count: number;
@@ -899,6 +918,14 @@ export interface EvaluationRead {
   created_at: string;
 }
 
+export interface TraceSignalResultRead {
+  metric_key: string | null;
+  name: string;
+  mode: string;
+  value: number | boolean | null;
+  matched: boolean;
+}
+
 export interface TraceListItemRead {
   id: string;
   organization_id: string;
@@ -915,6 +942,7 @@ export interface TraceListItemRead {
   success: boolean;
   error_type: string | null;
   created_at: string;
+  refusal_detected?: boolean | null;
 }
 
 export interface TraceListResponse {
@@ -958,6 +986,8 @@ export interface TraceDetailRead {
   compare_path: string | null;
   retrieval_span: RetrievalSpanRead | null;
   evaluations: EvaluationRead[];
+  refusal_detected?: boolean | null;
+  custom_metric_results?: TraceSignalResultRead[];
 }
 
 export interface TraceGraphNodeRead {
@@ -1159,6 +1189,8 @@ export interface TraceCompareItemRead {
   prompt_version_record: PromptVersionRead | null;
   model_version_record: ModelVersionRead | null;
   structured_output: TraceCompareEvaluationRead | null;
+  refusal_detected?: boolean | null;
+  custom_metric_results?: TraceSignalResultRead[];
   retrieval: TraceCompareRetrievalRead | null;
   metadata_excerpt_json: Record<string, unknown> | null;
 }

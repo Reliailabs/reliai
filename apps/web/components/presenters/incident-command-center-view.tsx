@@ -245,6 +245,24 @@ export function IncidentCommandCenterView({
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]">
         <div className="space-y-4">
+          {incident.incident_type === "refusal_rate_spike" ? (
+            <div className="rounded-[18px] border border-rose-200 bg-rose-50 px-5 py-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-rose-600">Refusal Rate Spike</p>
+              <p className="mt-2 text-sm font-semibold text-rose-900">
+                {currentValue !== "n/a" ? `Refusal rate: ${currentValue}${metricUnit ? ` ${metricUnit}` : ""}` : "Refusal rate elevated above baseline"}
+              </p>
+              {baselineValue !== "n/a" ? (
+                <p className="mt-1 text-sm text-rose-700">
+                  Baseline was {baselineValue}
+                  {deltaPercent !== "n/a" ? ` · ${deltaPercent}% change` : ""}
+                </p>
+              ) : null}
+              <p className="mt-2 text-sm text-rose-700">
+                Model outputs are matching known refusal phrases more frequently than the baseline window. Check the prompt diff for recent system prompt changes.
+              </p>
+            </div>
+          ) : null}
+
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Root cause</p>
             <p className="mt-2 text-sm font-semibold text-ink">{rootCauseTitle}</p>

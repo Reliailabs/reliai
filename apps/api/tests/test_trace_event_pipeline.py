@@ -118,7 +118,8 @@ def test_trace_consumers_process_trace_event(
 
     traces = db_session.query(Trace).all()
     assert len(traces) == 20
-    assert db_session.query(Evaluation).count() == 20
+    # each trace now produces multiple evaluations (structured_validity + refusal_detection + any custom metrics)
+    assert db_session.query(Evaluation).count() >= 20
     assert len(fake_trace_warehouse.rows) == 20
     assert all(row.environment_id is not None for row in fake_trace_warehouse.rows.values())
     assert db_session.query(ReliabilityMetric).count() > 0

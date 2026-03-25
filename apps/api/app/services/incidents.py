@@ -25,7 +25,14 @@ from app.models.prompt_version import PromptVersion
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 from app.models.user import User
-from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
+from app.services.custom_metrics import (
+    custom_metric_rollup_name,
+    list_enabled_project_custom_metrics,
+)
+from app.services.evaluations import (
+    STRUCTURED_VALIDITY_EVAL_TYPE,
+    trace_refusal_detected,
+)
 from app.services.deployments import most_recent_project_deployment
 from app.services.environments import normalize_environment_name
 from app.services.reliability_graph import sync_incident_root_causes
@@ -105,6 +112,15 @@ INCIDENT_RULES = (
         absolute_threshold=Decimal("0.010000"),
         percent_threshold=Decimal("0.40"),
     ),
+    IncidentRule(
+        incident_type="refusal_rate_spike",
+        metric_name="refusal_rate",
+        title_template="Refusal rate spiked",
+        minimum_sample_size=10,
+        comparator="spike",
+        absolute_threshold=Decimal("0.15"),
+        percent_threshold=Decimal("0.50"),
+    ),
 )
 
 
@@ -132,7 +148,7 @@ def _fingerprint(scope: RollupScope, rule: IncidentRule) -> str:
 def _severity(rule: IncidentRule, snapshot: RegressionSnapshot) -> str:
     percent = abs(snapshot.delta_percent or Decimal("0"))
     absolute = abs(snapshot.delta_absolute)
-    if rule.metric_name in {"structured_output_validity_pass_rate", "success_rate"}:
+    if rule.metric_name in {"structured_output_validity_pass_rate", "success_rate", "refusal_rate"} or rule.metric_name.startswith("custom_metric."):
         if absolute >= Decimal("0.30"):
             return "critical"
         if absolute >= Decimal("0.20"):
@@ -157,8 +173,9 @@ def _snapshot_breaches(rule: IncidentRule, snapshot: RegressionSnapshot) -> bool
         return False
     if absolute < rule.absolute_threshold:
         return False
-    if rule.percent_threshold is not None and abs(snapshot.delta_percent or Decimal("0")) < rule.percent_threshold:
-        return False
+    if rule.percent_threshold is not None and snapshot.baseline_value != 0:
+        if abs(snapshot.delta_percent or Decimal("0")) < rule.percent_threshold:
+            return False
     return True
 
 
@@ -166,6 +183,17 @@ def snapshot_breaches_any_rule(snapshot: RegressionSnapshot) -> bool:
     for rule in INCIDENT_RULES:
         if rule.metric_name == snapshot.metric_name and _snapshot_breaches(rule, snapshot):
             return True
+    if snapshot.metric_name.startswith("custom_metric."):
+        custom_rule = IncidentRule(
+            incident_type="custom_metric_spike",
+            metric_name=snapshot.metric_name,
+            title_template="",
+            minimum_sample_size=10,
+            comparator="spike",
+            absolute_threshold=Decimal("0.15"),
+            percent_threshold=Decimal("0.50"),
+        )
+        return _snapshot_breaches(custom_rule, snapshot)
     return False
 
 
@@ -187,13 +215,24 @@ def _sample_traces(
 
     if rule.metric_name == "success_rate":
         statement = statement.order_by(Trace.success.asc(), desc(Trace.timestamp))
+    elif rule.metric_name == "refusal_rate":
+        statement = statement.order_by(desc(Trace.timestamp))
     elif rule.metric_name == "p95_latency_ms":
         statement = statement.order_by(desc(Trace.latency_ms), desc(Trace.timestamp))
     elif rule.metric_name == "average_cost_usd_per_trace":
         statement = statement.order_by(desc(Trace.total_cost_usd), desc(Trace.timestamp))
     else:
         statement = statement.order_by(desc(Trace.timestamp))
-    return db.scalars(statement.limit(5)).all()
+    rows = db.scalars(statement.limit(15)).all()
+    if rule.metric_name != "refusal_rate":
+        return rows[:5]
+
+    refusal_sorted = sorted(
+        rows,
+        key=lambda trace: (1 if trace_refusal_detected(trace) else 0, trace.timestamp),
+        reverse=True,
+    )
+    return refusal_sorted[:5]
 
 
 def append_incident_event(
@@ -1900,6 +1939,20 @@ def derive_root_cause_hints(
 def build_trace_compare_item(trace: Trace) -> dict[str, Any]:
     structured_output_label = _structured_output_label(trace)
     structured_output_reason = _structured_output_reason(trace)
+    custom_metric_results = []
+    for evaluation in getattr(trace, "evaluations", []):
+        if not evaluation.eval_type.startswith("custom_metric:"):
+            continue
+        raw = evaluation.raw_result_json or {}
+        custom_metric_results.append(
+            {
+                "metric_key": raw.get("metric_key"),
+                "name": raw.get("metric_name") or evaluation.eval_type,
+                "mode": raw.get("value_mode") or "boolean",
+                "value": raw.get("result_value"),
+                "matched": bool(raw.get("result_value")),
+            }
+        )
     return {
         "id": trace.id,
         "request_id": trace.request_id,
@@ -1928,6 +1981,8 @@ def build_trace_compare_item(trace: Trace) -> dict[str, Any]:
         }
         if structured_output_label is not None or structured_output_reason is not None
         else None,
+        "refusal_detected": trace_refusal_detected(trace),
+        "custom_metric_results": custom_metric_results,
         "retrieval": {
             "retrieval_latency_ms": trace.retrieval_span.retrieval_latency_ms,
             "source_count": trace.retrieval_span.source_count,

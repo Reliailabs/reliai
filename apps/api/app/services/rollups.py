@@ -10,14 +10,23 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.evaluation import Evaluation
+from app.models.project_custom_metric import ProjectCustomMetric
 from app.models.evaluation_rollup import EvaluationRollup
 from app.models.trace import Trace
-from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
+from app.services.custom_metrics import (
+    custom_metric_eval_type,
+    custom_metric_rollup_name,
+    list_enabled_project_custom_metrics,
+    metric_hit_from_evaluation_raw,
+    metric_value_from_evaluation_raw,
+)
+from app.services.evaluations import REFUSAL_DETECTION_EVAL_TYPE, STRUCTURED_VALIDITY_EVAL_TYPE
 
 ROLLUP_WINDOW_MINUTES = (60, 360, 1440)
 ROLLUP_METRICS = (
     "structured_output_validity_pass_rate",
     "success_rate",
+    "refusal_rate",
     "median_latency_ms",
     "p95_latency_ms",
     "average_cost_usd_per_trace",
@@ -125,7 +134,8 @@ def _compute_metric_rows(
     scope: RollupScope,
     window: WindowDefinition,
     traces: list[Trace],
-    evaluation_by_trace_id: dict[UUID, Evaluation],
+    evaluations_by_trace_id: dict[UUID, list[Evaluation]],
+    custom_metrics: list[ProjectCustomMetric],
 ) -> list[WindowRollup]:
     scoped_traces = [trace for trace in traces if _matches_scope(trace, scope)]
     latency_values = [trace.latency_ms for trace in scoped_traces if trace.latency_ms is not None]
@@ -142,9 +152,29 @@ def _compute_metric_rows(
     ]
     structured_passes = 0
     for trace in structured_traces:
-        evaluation = evaluation_by_trace_id.get(trace.id)
+        evaluation = next(
+            (
+                item
+                for item in evaluations_by_trace_id.get(trace.id, [])
+                if item.eval_type == STRUCTURED_VALIDITY_EVAL_TYPE
+            ),
+            None,
+        )
         if evaluation and (evaluation.label == "pass" or (evaluation.score or Decimal("0")) >= Decimal("50")):
             structured_passes += 1
+
+    refusal_count = 0
+    for trace in scoped_traces:
+        evaluation = next(
+            (
+                item
+                for item in evaluations_by_trace_id.get(trace.id, [])
+                if item.eval_type == REFUSAL_DETECTION_EVAL_TYPE
+            ),
+            None,
+        )
+        if evaluation and metric_hit_from_evaluation_raw(evaluation.raw_result_json):
+            refusal_count += 1
 
     success_count = sum(1 for trace in scoped_traces if trace.success)
     success_rate = (
@@ -158,8 +188,11 @@ def _compute_metric_rows(
         if cost_values
         else Decimal("0")
     )
+    refusal_rate = (
+        Decimal(refusal_count) / Decimal(len(scoped_traces)) if scoped_traces else Decimal("0")
+    )
 
-    return [
+    rows = [
         WindowRollup(
             scope=scope,
             metric_name="structured_output_validity_pass_rate",
@@ -175,6 +208,14 @@ def _compute_metric_rows(
             sample_size=len(scoped_traces),
             metric_value=quantize_decimal(success_rate),
             metadata_json={"trace_count": len(scoped_traces)},
+        ),
+        WindowRollup(
+            scope=scope,
+            metric_name="refusal_rate",
+            window=window,
+            sample_size=len(scoped_traces),
+            metric_value=quantize_decimal(refusal_rate),
+            metadata_json={"trace_count": len(scoped_traces), "refusal_count": refusal_count},
         ),
         WindowRollup(
             scope=scope,
@@ -202,8 +243,52 @@ def _compute_metric_rows(
         ),
     ]
 
+    for metric in custom_metrics:
+        eval_type = custom_metric_eval_type(metric)
+        values: list[float] = []
+        hits = 0
+        for trace in scoped_traces:
+            evaluation = next(
+                (
+                    item
+                    for item in evaluations_by_trace_id.get(trace.id, [])
+                    if item.eval_type == eval_type
+                ),
+                None,
+            )
+            if evaluation is None:
+                continue
+            value = metric_value_from_evaluation_raw(evaluation.raw_result_json)
+            if value is None:
+                continue
+            values.append(value)
+            if value > 0:
+                hits += 1
 
-def _fetch_window_data(db: Session, scope: RollupScope, window: WindowDefinition) -> tuple[list[Trace], dict[UUID, Evaluation]]:
+        if metric.value_mode == "boolean":
+            metric_value = Decimal(hits) / Decimal(len(scoped_traces)) if scoped_traces else Decimal("0")
+            metadata = {"trace_count": len(scoped_traces), "hit_count": hits, "mode": "boolean"}
+        else:
+            metric_value = (
+                Decimal(str(sum(values))) / Decimal(len(scoped_traces)) if scoped_traces else Decimal("0")
+            )
+            metadata = {"trace_count": len(scoped_traces), "match_count": sum(values), "mode": "count"}
+
+        rows.append(
+            WindowRollup(
+                scope=scope,
+                metric_name=custom_metric_rollup_name(metric),
+                window=window,
+                sample_size=len(scoped_traces),
+                metric_value=quantize_decimal(metric_value),
+                metadata_json=metadata,
+            )
+        )
+
+    return rows
+
+
+def _fetch_window_data(db: Session, scope: RollupScope, window: WindowDefinition) -> tuple[list[Trace], dict[UUID, list[Evaluation]]]:
     trace_statement = select(Trace).where(
         Trace.organization_id == scope.organization_id,
         Trace.project_id == scope.project_id,
@@ -217,23 +302,33 @@ def _fetch_window_data(db: Session, scope: RollupScope, window: WindowDefinition
     if not trace_ids:
         return [], {}
 
-    evaluations = db.scalars(
-        select(Evaluation).where(
-            Evaluation.trace_id.in_(trace_ids), Evaluation.eval_type == STRUCTURED_VALIDITY_EVAL_TYPE
-        )
-    ).all()
-    evaluation_by_trace_id = {evaluation.trace_id: evaluation for evaluation in evaluations}
-    return traces, evaluation_by_trace_id
+    evaluations = db.scalars(select(Evaluation).where(Evaluation.trace_id.in_(trace_ids))).all()
+    evaluations_by_trace_id: dict[UUID, list[Evaluation]] = {}
+    for evaluation in evaluations:
+        evaluations_by_trace_id.setdefault(evaluation.trace_id, []).append(evaluation)
+    return traces, evaluations_by_trace_id
+
+
+def list_rollup_metrics_for_project(db: Session, *, project_id: UUID) -> tuple[str, ...]:
+    custom_metrics = list_enabled_project_custom_metrics(db, project_id=project_id)
+    return ROLLUP_METRICS + tuple(custom_metric_rollup_name(metric) for metric in custom_metrics)
 
 
 def compute_rollups_for_scope(
     db: Session, *, scope: RollupScope, anchor_time: datetime
 ) -> dict[int, dict[str, EvaluationRollup]]:
+    custom_metrics = list_enabled_project_custom_metrics(db, project_id=scope.project_id)
     rollups_by_window: dict[int, dict[str, EvaluationRollup]] = {}
     for window_minutes in ROLLUP_WINDOW_MINUTES:
         window = build_current_window(anchor_time, window_minutes)
-        traces, evaluation_by_trace_id = _fetch_window_data(db, scope, window)
-        computed_rows = _compute_metric_rows(scope, window, traces, evaluation_by_trace_id)
+        traces, evaluations_by_trace_id = _fetch_window_data(db, scope, window)
+        computed_rows = _compute_metric_rows(
+            scope,
+            window,
+            traces,
+            evaluations_by_trace_id,
+            custom_metrics,
+        )
         metric_map: dict[str, EvaluationRollup] = {}
         for row in computed_rows:
             record = db.scalar(

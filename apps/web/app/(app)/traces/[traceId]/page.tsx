@@ -17,8 +17,10 @@ function renderJson(value: unknown) {
 function evaluationTone(label: string | null) {
   switch (label) {
     case "pass":
+    case "miss":
       return "bg-successBg text-success ring-1 ring-success/30";
     case "fail":
+    case "hit":
       return "bg-errorBg text-error ring-1 ring-error/30";
     default:
       return "bg-warningBg text-warning ring-1 ring-warning/30";
@@ -74,7 +76,11 @@ export default async function TraceDetailPage({
 
   const pythonReplay = buildPythonReplaySnippet(trace.trace_id);
   const nodeReplay = buildNodeReplaySnippet(trace.trace_id);
+  const customMetricResults = trace.custom_metric_results ?? [];
   const totalTokens = (trace.prompt_tokens ?? 0) + (trace.completion_tokens ?? 0);
+  const refusalEval = trace.evaluations.find((e) => e.eval_type === "refusal_detection");
+  const refusalMatchedPattern =
+    (refusalEval?.raw_result_json?.matched_pattern as string | undefined) ?? null;
   const replayPayload = replay ? JSON.stringify(replay, null, 2) : null;
   const comparePair = compare?.pairs?.[0] ?? null;
   const baselineTraceId = comparePair?.baseline_trace?.id ?? null;
@@ -203,6 +209,25 @@ export default async function TraceDetailPage({
                   <p className="mt-1 text-sm font-semibold text-ink">
                     {trace.guardrail_policy} · {trace.guardrail_action ?? "—"}
                   </p>
+                </div>
+              ) : null}
+              {trace.refusal_detected !== null ? (
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-steel">Refusal signal</p>
+                  <span
+                    className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                      trace.refusal_detected
+                        ? "bg-rose-50 text-rose-700 ring-rose-200"
+                        : "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    }`}
+                  >
+                    {trace.refusal_detected ? "Detected" : "Not detected"}
+                  </span>
+                  {trace.refusal_detected && refusalMatchedPattern ? (
+                    <p className="mt-1 max-w-[200px] truncate text-xs text-steel">
+                      <span className="font-mono">{refusalMatchedPattern}</span>
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -448,6 +473,35 @@ export default async function TraceDetailPage({
                     <pre className="mt-3 overflow-x-auto rounded-lg bg-bg p-3 text-xs text-textPrimary">
                       {renderJson(evaluation.raw_result_json ?? {})}
                     </pre>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {customMetricResults.length > 0 ? (
+            <div className="rounded-2xl border border-line bg-surface px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.24em] text-steel">Custom metrics</p>
+              <div className="mt-4 space-y-3">
+                {customMetricResults.map((result) => (
+                  <div key={`${result.metric_key ?? result.name}-${result.mode}`} className="rounded-lg border border-line bg-surfaceAlt p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-ink">{result.name}</p>
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${result.matched ? "bg-errorBg text-error ring-error/30" : "bg-successBg text-success ring-success/30"}`}>
+                        {result.matched ? "triggered" : "no match"}
+                      </span>
+                    </div>
+                    {result.mode === "count" ? (
+                      <p className="mt-2 text-sm text-steel">
+                        {result.matched
+                          ? `${result.value} match${Number(result.value) === 1 ? "" : "es"}`
+                          : "No matches found"}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-sm text-steel">
+                        {result.matched ? "Pattern triggered in output" : "No match in output"}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

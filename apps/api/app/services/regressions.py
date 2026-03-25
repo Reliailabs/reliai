@@ -22,12 +22,13 @@ from app.services.incidents import (
     derive_registry_contexts,
     derive_root_cause_hints,
 )
+from app.services.evaluations import trace_refusal_detected
 from app.services.rollups import (
-    ROLLUP_METRICS,
     RollupScope,
     build_baseline_window,
     build_current_window,
     compute_rollups_for_scope,
+    list_rollup_metrics_for_project,
     quantize_decimal,
 )
 
@@ -94,7 +95,7 @@ def compute_regressions_for_scope(
     baseline_window = build_baseline_window(current_window)
     snapshots: list[RegressionSnapshot] = []
 
-    for metric_name in ROLLUP_METRICS:
+    for metric_name in list_rollup_metrics_for_project(db, project_id=scope.project_id):
         current_rollup = current_rollups[INCIDENT_WINDOW_MINUTES][metric_name]
         baseline_rollup = _baseline_rollup(
             db, scope=scope, metric_name=metric_name, baseline_window=baseline_window
@@ -224,6 +225,10 @@ def _regression_sort_key(metric_name: str, trace: Trace, *, window_kind: str) ->
         return (1 if primary else 0, secondary, trace.timestamp)
     if metric_name == "average_cost_usd_per_trace":
         return (trace.total_cost_usd or Decimal("0"), trace.timestamp)
+    if metric_name == "refusal_rate":
+        detected = 1 if trace_refusal_detected(trace) else 0
+        primary = detected if window_kind == "current" else (1 - detected)
+        return (primary, trace.timestamp)
     return (trace.latency_ms or 0, trace.timestamp)
 
 

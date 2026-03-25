@@ -44,6 +44,7 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     guardrail_policies = relationship("GuardrailPolicy", back_populates="project")
     project_members = relationship("ProjectMember", back_populates="project")
     automation_rules = relationship("AutomationRule", back_populates="project")
+    custom_metrics = relationship("ProjectCustomMetric", back_populates="project")
     external_processors = relationship("ExternalProcessor", back_populates="project")
     customer_exports = relationship("CustomerExport")
     sdk_metrics = relationship("SDKMetric")

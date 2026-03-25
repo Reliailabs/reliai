@@ -51,6 +51,12 @@ from app.schemas.customer_reliability import (
     CustomerReliabilityProjectRead,
 )
 from app.schemas.customer_expansion_metrics import SystemCustomerExpansionRead
+from app.schemas.custom_metric import (
+    ProjectCustomMetricCreate,
+    ProjectCustomMetricListResponse,
+    ProjectCustomMetricRead,
+    ProjectCustomMetricUpdate,
+)
 from app.schemas.deployment import (
     DeploymentCreate,
     DeploymentDetailRead,
@@ -274,6 +280,11 @@ from app.services.customer_reliability_metrics import (
     list_customer_reliability_projects,
 )
 from app.services.customer_expansion_metrics import get_customer_expansion_metrics
+from app.services.custom_metrics import (
+    create_project_custom_metric,
+    list_project_custom_metrics,
+    set_project_custom_metric_enabled,
+)
 from app.services.deployments import (
     create_deployment,
     get_deployment_detail,
@@ -823,7 +834,11 @@ def _operator_context_for_public_project(project: Project):
 
 
 def _trace_list_item(trace) -> TraceListItemRead:
-    return TraceListItemRead.model_validate(trace)
+    item = TraceListItemRead.model_validate(trace)
+    signals = ((trace.metadata_json or {}).get("behavior_signals") or {})
+    val = signals.get("refusal_detected")
+    item.refusal_detected = bool(val) if val is not None else None
+    return item
 
 
 def _incident_deployment_context_item(incident) -> IncidentDeploymentContextRead | None:
@@ -890,7 +905,12 @@ def _incident_command_metric_item(incident) -> IncidentCommandCenterMetricRead |
     if "latency" in metric_name:
         metric_type = "latency"
         unit = "ms"
-    elif "success_rate" in metric_name or "error_rate" in metric_name or "validity" in metric_name:
+    elif (
+        "success_rate" in metric_name
+        or "error_rate" in metric_name
+        or "validity" in metric_name
+        or "refusal_rate" in metric_name
+    ):
         metric_type = "error_rate"
         unit = "%"
     elif "retry" in metric_name:
@@ -1116,6 +1136,26 @@ def _version_incident_item(incident) -> VersionIncidentRead:
 
 
 def _trace_detail_item(trace, registry_pivots, compare_path: str | None) -> TraceDetailRead:
+    refusal_detected = None
+    custom_metric_results = []
+    for evaluation in trace.evaluations:
+        raw = evaluation.raw_result_json or {}
+        if evaluation.eval_type == "refusal_detection":
+            value = raw.get("result_value")
+            refusal_detected = bool(value) if isinstance(value, (bool, int, float)) else evaluation.label == "fail"
+            continue
+        if not evaluation.eval_type.startswith("custom_metric:"):
+            continue
+        custom_metric_results.append(
+            {
+                "metric_key": raw.get("metric_key"),
+                "name": raw.get("metric_name") or evaluation.eval_type,
+                "mode": raw.get("value_mode") or "boolean",
+                "value": raw.get("result_value"),
+                "matched": bool(raw.get("result_value")),
+            }
+        )
+
     return TraceDetailRead(
         id=trace.id,
         organization_id=trace.organization_id,
@@ -1156,6 +1196,8 @@ def _trace_detail_item(trace, registry_pivots, compare_path: str | None) -> Trac
         compare_path=compare_path,
         retrieval_span=trace.retrieval_span,
         evaluations=trace.evaluations,
+        refusal_detected=refusal_detected,
+        custom_metric_results=custom_metric_results,
     )
 
 
@@ -2499,6 +2541,54 @@ def update_project_ingestion_policy_endpoint(
     project = require_project_role(db, operator, project_id, "engineer")
     upsert_project_ingestion_policy(db, project=project, payload=payload)
     return _trace_ingestion_policy_item(db, project)
+
+
+@router.get("/projects/{project_id}/custom-metrics", response_model=ProjectCustomMetricListResponse)
+def list_project_custom_metrics_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectCustomMetricListResponse:
+    require_project_access(db, operator, project_id)
+    items = list_project_custom_metrics(db, project_id=project_id)
+    return ProjectCustomMetricListResponse(items=[ProjectCustomMetricRead.model_validate(item) for item in items])
+
+
+@router.post(
+    "/projects/{project_id}/custom-metrics",
+    response_model=ProjectCustomMetricRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_project_custom_metric_endpoint(
+    project_id: UUID,
+    payload: ProjectCustomMetricCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectCustomMetricRead:
+    project = require_project_role(db, operator, project_id, "engineer")
+    item = create_project_custom_metric(db, project=project, payload=payload)
+    return ProjectCustomMetricRead.model_validate(item)
+
+
+@router.patch(
+    "/projects/{project_id}/custom-metrics/{metric_id}",
+    response_model=ProjectCustomMetricRead,
+)
+def update_project_custom_metric_endpoint(
+    project_id: UUID,
+    metric_id: UUID,
+    payload: ProjectCustomMetricUpdate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectCustomMetricRead:
+    require_project_role(db, operator, project_id, "engineer")
+    item = set_project_custom_metric_enabled(
+        db,
+        project_id=project_id,
+        metric_id=metric_id,
+        enabled=payload.enabled,
+    )
+    return ProjectCustomMetricRead.model_validate(item)
 
 
 @router.get("/projects/{project_id}/guardrails", response_model=GuardrailPolicyListResponse)
