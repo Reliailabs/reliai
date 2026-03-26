@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
 import { signIn } from "@/lib/auth";
@@ -23,21 +21,21 @@ export async function POST(request: Request) {
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
 
   if (typeof email !== "string" || typeof password !== "string") {
-    return NextResponse.redirect(new URL(`/sign-in?error=1`, request.url));
+    return NextResponse.redirect(new URL("/sign-in?error=1", request.url));
   }
 
   const result = await signIn(email, password);
   if (!result) {
-    return NextResponse.redirect(new URL(`/sign-in?error=1`, request.url));
+    return NextResponse.redirect(new URL("/sign-in?error=1", request.url));
   }
 
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, result.session_token, {
+  const response = NextResponse.redirect(new URL(returnTo, request.url));
+  response.cookies.set(SESSION_COOKIE_NAME, result.session_token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
     secure: process.env.NODE_ENV === "production",
   });
 
-  redirect(returnTo);
+  return response;
 }
