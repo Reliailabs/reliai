@@ -103,11 +103,14 @@ const failures = [
 
 export default function MarketingHomePage() {
   return (
-    <main className="bg-[#f7f8fa] text-ink" data-marketing-container>
+    <main className="bg-[#f7f8fa] text-ink">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
-        <div className={`${marketingContainerClass} grid gap-12 pb-16 pt-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start`}>
+        <div
+          className={`${marketingContainerClass} grid gap-12 pb-16 pt-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start`}
+          data-marketing-container
+        >
 
           {/* Left column */}
           <div>

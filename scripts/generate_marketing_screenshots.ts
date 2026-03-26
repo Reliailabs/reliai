@@ -11,7 +11,7 @@ const outputDir = path.join(root, "apps/web/public/screenshots");
 const baseUrl = "http://127.0.0.1:3000";
 const viewport = {
   width: 1600,
-  height: 1250,
+  height: 1000,
 } as const;
 
 const shots = [
@@ -20,21 +20,20 @@ const shots = [
     file: "control-panel.png",
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
     readySelector: "[data-control-panel-ready], [data-tour-id='metric-reliability-score']",
-    elementSelector: "[data-control-panel]",
     scrollY: 0,
   },
   {
     route: "/marketing/screenshot/incident",
     file: "incident.png",
-    signals: ["text=Likely root cause", "text=Recommended mitigation"],
-    readySelector: "text=Recommended mitigation",
+    signals: ["text=Root cause", "text=Impact"],
+    readySelector: "text=Impact",
     scrollY: 0,
   },
   {
     route: "/marketing/screenshot/trace-graph",
     file: "trace-graph.png",
-    signals: ["text=Trace Analysis", "text=Slowest step", "text=Largest token consumer"],
-    readySelector: "text=Trace Analysis",
+    signals: ["text=Execution graph", "text=Execution breakdown", "text=Slowest span"],
+    readySelector: "text=Execution graph",
     scrollY: 0,
   },
 ];
