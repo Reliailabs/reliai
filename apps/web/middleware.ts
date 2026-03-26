@@ -7,19 +7,11 @@ import { workosConfigured } from "@/lib/constants";
 const workosMiddleware = authkitMiddleware();
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
-  const baseResponse = workosConfigured()
+  const response = workosConfigured()
     ? workosMiddleware(request, event)
     : NextResponse.next();
-  const response = baseResponse ?? NextResponse.next();
 
-  if (request.nextUrl.pathname.startsWith("/onboarding") && response instanceof NextResponse) {
-    response.cookies.set("reliai_onboarding_public", "1", {
-      path: "/onboarding",
-      sameSite: "lax"
-    });
-  }
-
-  return response;
+  return response ?? NextResponse.next();
 }
 
 export const config = {
