@@ -26,15 +26,15 @@ const shots = [
   {
     route: "/marketing/screenshot/trace-graph",
     file: "trace-graph.png",
-    signals: ["text=Trace Analysis", "text=Slowest step", "text=Largest token consumer"],
-    readySelector: "text=Trace Analysis",
+    signals: ["text=Execution graph", "text=Execution breakdown", "text=Slowest span"],
+    readySelector: "text=Execution graph",
     scrollY: 0,
   },
   {
     route: "/marketing/screenshot/incident",
     file: "incident.png",
-    signals: ["text=Likely root cause", "text=Recommended mitigation"],
-    readySelector: "text=Recommended mitigation",
+    signals: ["text=Root cause", "text=Impact"],
+    readySelector: "text=Impact",
     scrollY: 0,
   },
   {
