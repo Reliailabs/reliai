@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, AlertTriangle, FileCode2, Layers, Timer, GitBranch, Wrench } from "lucide-react";
 
+import { HeroAnnotatedVisual } from "@/components/marketing/hero-annotated-visual";
 import {
   marketingContainerClass,
   marketingSectionClass,
@@ -122,13 +123,13 @@ export default function MarketingHomePage() {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild>
-                <Link href="/onboarding">
+                <Link href="/onboarding?path=simulation">
                   See your first incident in under 2 minutes
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/demo">Run the demo</Link>
+                <Link href="/demo">View live demo</Link>
               </Button>
             </div>
 
@@ -157,43 +158,8 @@ export default function MarketingHomePage() {
             </div>
           </div>
 
-          {/* Right column — annotated screenshot */}
-          <div className="relative">
-            <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
-                app.reliai.dev/incidents/command
-              </div>
-              <div className="aspect-[16/10] overflow-hidden relative">
-                <Image
-                  src="/screenshots/incident.png"
-                  alt="Reliai incident command center showing root cause analysis with 6 scored causes and a recommended fix"
-                  width={3200}
-                  height={2000}
-                  className="h-full w-full object-cover object-top"
-                  priority
-                />
-              </div>
-            </div>
-
-            {/* Annotation callouts */}
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-textMuted">Trigger</p>
-                <p className="mt-0.5 text-xs font-semibold text-textPrimary">Incident auto-opened</p>
-                <p className="mt-0.5 text-[10px] text-textSecondary leading-4">Threshold crossed, no manual triage</p>
-              </div>
-              <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-textMuted">Root cause</p>
-                <p className="mt-0.5 text-xs font-semibold text-textPrimary">6 causes scored</p>
-                <p className="mt-0.5 text-[10px] text-textSecondary leading-4">Highest probability surfaced first</p>
-              </div>
-              <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-textMuted">Fix</p>
-                <p className="mt-0.5 text-xs font-semibold text-textPrimary">Specific recommendation</p>
-                <p className="mt-0.5 text-[10px] text-textSecondary leading-4">Which version, what to roll back</p>
-              </div>
-            </div>
-          </div>
+          {/* Right column — annotated hero visual */}
+          <HeroAnnotatedVisual />
 
         </div>
       </section>

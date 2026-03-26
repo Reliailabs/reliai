@@ -355,6 +355,7 @@ from app.services.incidents import (
     get_incident_regressions,
     get_incident_rule,
     get_incident_traces,
+    get_incident_window_traces,
     list_incidents,
     reopen_incident,
     resolve_incident,
@@ -3623,6 +3624,7 @@ def get_incident_trace_compare_endpoint(
 ) -> TraceComparisonRead:
     incident = get_incident_detail(db, operator, incident_id)
     current_traces, baseline_traces = get_incident_compare_traces(db, incident)
+    window_current, window_baseline = get_incident_window_traces(db, incident)
     summary = incident.summary_json or {}
     prompt_version_contexts, model_version_contexts = derive_incident_registry_contexts(
         db,
@@ -3633,8 +3635,20 @@ def get_incident_trace_compare_endpoint(
     prompt_content_diff = compute_prompt_content_diff(
         db,
         project_id=incident.project_id,
-        current_traces=current_traces,
-        baseline_traces=baseline_traces,
+        current_traces=window_current or current_traces,
+        baseline_traces=window_baseline or baseline_traces,
+        fallback_current_version=summary.get("current_prompt_version")
+        if isinstance(summary.get("current_prompt_version"), str)
+        else None,
+        fallback_baseline_version=summary.get("baseline_prompt_version")
+        if isinstance(summary.get("baseline_prompt_version"), str)
+        else None,
+        fallback_current_content=summary.get("current_prompt_content")
+        if isinstance(summary.get("current_prompt_content"), str)
+        else None,
+        fallback_baseline_content=summary.get("baseline_prompt_content")
+        if isinstance(summary.get("baseline_prompt_content"), str)
+        else None,
     )
     return _trace_comparison_item(
         comparison_scope="incident",
