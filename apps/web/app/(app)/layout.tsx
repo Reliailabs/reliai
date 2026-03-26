@@ -1,10 +1,7 @@
 import type { ReactNode } from "react";
 
-import { cookies } from "next/headers";
-
 import { AppShell } from "@/components/app-shell";
-import { OnboardingPreAuthShell } from "@/components/onboarding/onboarding-preauth-shell";
-import { getOperatorSession, requireOperatorSession } from "@/lib/auth";
+import { requireOperatorSession } from "@/lib/auth";
 
 export default async function ProductLayout({ children }: { children: ReactNode }) {
   const session = await requireOperatorSession();
