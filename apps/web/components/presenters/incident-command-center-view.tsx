@@ -150,10 +150,11 @@ export function IncidentCommandCenterView({
   const baselineValue = metric?.baseline_value ?? (summary.baseline_value ? String(summary.baseline_value) : "n/a");
   const deltaPercent = metric?.delta_percent ?? (summary.delta_percent ? String(summary.delta_percent) : "n/a");
   const resolutionImpact = command.resolution_impact ?? null;
-  const compareLink =
-    command.trace_compare.compare_link && command.trace_compare.compare_link.includes("?")
+  const compareLink = command.trace_compare.compare_link
+    ? (command.trace_compare.compare_link.includes("?")
       ? `${command.trace_compare.compare_link}&incident_id=${incidentId}`
-      : `${command.trace_compare.compare_link}?incident_id=${incidentId}`;
+      : `${command.trace_compare.compare_link}?incident_id=${incidentId}`)
+    : null;
 
   const metricSignals: Array<{ label: string; value: string }> = [];
   if (metric) {
@@ -361,9 +362,11 @@ export function IncidentCommandCenterView({
                     View prompt diff
                   </Link>
                 </Button>
-                <Button asChild size="sm" variant="outline">
-                  <a href={compareLink}>Open example trace</a>
-                </Button>
+                {compareLink ? (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={compareLink}>Open example trace</a>
+                  </Button>
+                ) : null}
               </div>
             ) : null}
           </div>

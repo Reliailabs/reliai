@@ -231,10 +231,10 @@ def _seed_prompt_versions(db: Session, *, project: Project) -> tuple[PromptVersi
         "Prefer refusal when safety confidence is below threshold.\n"
         "If uncertain, respond with policy-safe refusal."
     )
-    if v17 is not None and v17.notes != baseline_notes:
+    if v17 is not None and not (v17.notes or "").strip():
         v17.notes = baseline_notes
         db.add(v17)
-    if v18 is not None and v18.notes != failing_notes:
+    if v18 is not None and not (v18.notes or "").strip():
         v18.notes = failing_notes
         db.add(v18)
     db.commit()
