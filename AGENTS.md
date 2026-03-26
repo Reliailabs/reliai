@@ -297,3 +297,5 @@ If uncertain, choose the path that:
 ## One-Sentence Policy
 
 Reliai uses a protected-main, short-lived branch, PR-before-merge workflow with a small validation gate, tagged releases, and strict production-clean discipline.
+
+NOTE: Avoid destructive cleans (e.g., git clean -fdx) because they remove .env and other local secrets. Prefer targeted cleanup and keep .env local (gitignored).
