@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckCircle2, CircleDashed, KeyRound, Network, Radar } from "lucide-react";
+import type { Route } from "next";
 
 import { OnboardingPathTracker } from "@/components/onboarding/onboarding-path-tracker";
 import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
@@ -71,9 +72,9 @@ export default async function OnboardingPage({
   const maybeSession = await getOperatorSession();
   if (!maybeSession) {
     const returnTo = "/onboarding?path=simulation&autostart=1";
-    const signInHref = { pathname: "/sign-in", query: { return_to: returnTo } };
+    const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
     if (autoStartSimulation) {
-      redirect(`/sign-in?return_to=${encodeURIComponent(returnTo)}`);
+      redirect(signInHref);
     }
     return (
       <div className="space-y-6">
