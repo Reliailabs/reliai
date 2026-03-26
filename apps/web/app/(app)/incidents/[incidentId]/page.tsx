@@ -123,6 +123,18 @@ function renderEventSummary(event: IncidentEventRead) {
       metadata.baseline_value ?? "n/a"
     )}`;
   }
+  if (event.event_type === "config_applied" || event.event_type === "config_undone") {
+    const impact = metadata.resolution_impact as
+      | { summary?: string; status?: string }
+      | undefined;
+    if (impact?.summary) {
+      return impact.summary;
+    }
+    if (impact?.status === "pending") {
+      return "Fix applied. Waiting for post-fix data.";
+    }
+    return String(metadata.reason ?? "Config change recorded");
+  }
   return event.actor_operator_user_email ?? "Operator action";
 }
 

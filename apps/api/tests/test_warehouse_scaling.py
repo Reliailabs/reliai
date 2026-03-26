@@ -29,9 +29,17 @@ from app.services.trace_warehouse import (
 )
 from app.workers.warehouse_archiver import run_warehouse_archiver
 
-ROOT_DIR = Path(__file__).resolve().parents[3]
+from .test_api import (
+    auth_headers,
+    create_api_key,
+    create_operator,
+    create_organization,
+    create_project,
+    ingest_trace,
+    sign_in,
+)
 
-from .test_api import auth_headers, create_api_key, create_operator, create_organization, create_project, ingest_trace, sign_in
+ROOT_DIR = Path(__file__).resolve().parents[3]
 
 
 def set_org_plan(db_session, organization_id: str, plan: str) -> None:

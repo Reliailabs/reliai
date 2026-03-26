@@ -146,10 +146,22 @@ class IncidentCommandCenterMetricRead(APIModel):
     delta_percent: str | None = None
 
 
+class IncidentResolutionImpactRead(APIModel):
+    metric_name: str
+    display_name: str
+    unit: str | None = None
+    before_value: float | None = None
+    after_value: float | None = None
+    delta: float | None = None
+    summary: str | None = None
+    status: str | None = None
+
+
 class IncidentCommandCenterRead(APIModel):
     incident: IncidentDetailRead
     root_cause: IncidentCommandCenterRootCauseRead
     metric: IncidentCommandCenterMetricRead | None = None
+    resolution_impact: IncidentResolutionImpactRead | None = None
     trace_compare: IncidentCommandTraceCompareRead
     deployment_context: IncidentDeploymentContextRead | None
     guardrail_activity: list[GuardrailActivityRead]

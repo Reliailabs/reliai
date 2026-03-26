@@ -17,6 +17,10 @@ from app.models.trace import Trace
 from app.schemas.timeline import TimelineEventRead
 from app.services.auth import OperatorContext
 from app.services.incidents import (
+    INCIDENT_EVENT_CONFIG_APPLIED,
+    INCIDENT_EVENT_CONFIG_UNDONE,
+    build_resolution_impact_baseline,
+    compute_resolution_impact,
     get_incident_compare_traces,
     get_incident_detail,
     get_incident_events,
@@ -61,6 +65,7 @@ class IncidentCommandCenterResult:
     guardrail_activity: list[GuardrailActivitySummary]
     related_regressions: list[RegressionSnapshot]
     recent_signals: list[TimelineEventRead]
+    resolution_impact: dict | None = None
 
 
 def _coerce_utc_datetime(value: datetime) -> datetime:
@@ -278,6 +283,46 @@ def _similar_platform_failures(
     return find_similar_platform_failures(db, model_family=model_family, limit=limit)
 
 
+def _resolution_action_label(event_type: str) -> str:
+    if event_type == INCIDENT_EVENT_CONFIG_UNDONE:
+        return "after config rollback"
+    return "after config update"
+
+
+def _resolution_impact_for_event(
+    db: Session,
+    *,
+    incident: Incident,
+    event: IncidentEvent,
+) -> dict | None:
+    if event.event_type not in {INCIDENT_EVENT_CONFIG_APPLIED, INCIDENT_EVENT_CONFIG_UNDONE}:
+        return None
+    metadata = event.metadata_json or {}
+    existing = metadata.get("resolution_impact") if isinstance(metadata, dict) else None
+    action_time = _coerce_utc_datetime(event.created_at)
+    baseline = existing
+    if existing is None:
+        baseline = build_resolution_impact_baseline(db, incident=incident, action_time=action_time)
+        if baseline is None:
+            return None
+    impact = compute_resolution_impact(
+        db,
+        incident=incident,
+        action_time=action_time,
+        action_label=_resolution_action_label(event.event_type),
+        baseline=baseline,
+    )
+    if impact is None:
+        return None
+    if existing != impact:
+        metadata = dict(metadata) if isinstance(metadata, dict) else {}
+        metadata["resolution_impact"] = impact
+        event.metadata_json = metadata
+        db.add(event)
+        db.commit()
+    return impact
+
+
 def get_incident_command_center(
     db: Session,
     operator: OperatorContext,
@@ -294,6 +339,13 @@ def get_incident_command_center(
     graph_related_patterns = _graph_related_patterns(db, operator=operator, incident=incident)
     similar_platform_failures = _similar_platform_failures(db, incident=incident, traces=traces)
     recommended_mitigations = _recommended_mitigations(db, operator=operator, incident=incident)
+
+    resolution_impact = None
+    for event in events:
+        impact = _resolution_impact_for_event(db, incident=incident, event=event)
+        if impact is not None:
+            resolution_impact = impact
+            break
 
     anchor_trace = _select_anchor_trace(representative_traces)
     trace_compare = get_trace_compare(db, operator, anchor_trace.id) if anchor_trace is not None else None
@@ -332,4 +384,5 @@ def get_incident_command_center(
         ),
         related_regressions=_related_regressions(db, incident=incident),
         recent_signals=_recent_signals(db, incident=incident),
+        resolution_impact=resolution_impact,
     )

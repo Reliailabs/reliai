@@ -126,6 +126,14 @@ function formatEvidence(evidence: Record<string, unknown> | null): string[] {
   });
 }
 
+function formatImpactValue(value: number | null | undefined, unit: string | null | undefined) {
+  if (value === null || value === undefined) return "n/a";
+  if (unit === "%") return `${value}%`;
+  if (unit === "ms") return `${value}ms`;
+  if (unit) return `${value}${unit}`;
+  return String(value);
+}
+
 export function IncidentCommandCenterView({
   incidentId,
   command,
@@ -141,6 +149,7 @@ export function IncidentCommandCenterView({
   const currentValue = metric?.value ?? (summary.current_value ? String(summary.current_value) : "n/a");
   const baselineValue = metric?.baseline_value ?? (summary.baseline_value ? String(summary.baseline_value) : "n/a");
   const deltaPercent = metric?.delta_percent ?? (summary.delta_percent ? String(summary.delta_percent) : "n/a");
+  const resolutionImpact = command.resolution_impact ?? null;
 
   const metricSignals: Array<{ label: string; value: string }> = [];
   if (metric) {
@@ -349,6 +358,32 @@ export function IncidentCommandCenterView({
               </div>
             ) : null}
           </div>
+
+          {resolutionImpact ? (
+            <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-steel">Resolution impact</p>
+              {resolutionImpact.summary ? (
+                <p className="mt-2 text-sm font-semibold text-ink">{resolutionImpact.summary}</p>
+              ) : (
+                <p className="mt-2 text-sm text-steel">Waiting for post-fix data.</p>
+              )}
+              <ul className="mt-2 text-sm text-steel">
+                <li>
+                  • before: {formatImpactValue(resolutionImpact.before_value, resolutionImpact.unit)}
+                </li>
+                {resolutionImpact.after_value !== null && resolutionImpact.after_value !== undefined ? (
+                  <li>
+                    • after: {formatImpactValue(resolutionImpact.after_value, resolutionImpact.unit)}
+                  </li>
+                ) : null}
+                {resolutionImpact.delta !== null && resolutionImpact.delta !== undefined ? (
+                  <li>
+                    • delta: {formatImpactValue(resolutionImpact.delta, resolutionImpact.unit)}
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Impact</p>

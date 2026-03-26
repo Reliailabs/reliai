@@ -1376,6 +1376,17 @@ export interface GuardrailActivityRead {
   last_trigger_time: string | null;
 }
 
+export interface IncidentResolutionImpactRead {
+  metric_name: string;
+  display_name: string;
+  unit?: string | null;
+  before_value?: number | null;
+  after_value?: number | null;
+  delta?: number | null;
+  summary?: string | null;
+  status?: string | null;
+}
+
 export interface IncidentCommandCenterRead {
   incident: IncidentDetailRead;
   root_cause: {
@@ -1390,6 +1401,7 @@ export interface IncidentCommandCenterRead {
     recommended_action_reason?: string | null;
   };
   metric?: IncidentCommandCenterMetricRead | null;
+  resolution_impact?: IncidentResolutionImpactRead | null;
   trace_compare: {
     failing_trace_summary: TraceCompareItemRead | null;
     baseline_trace_summary: TraceCompareItemRead | null;

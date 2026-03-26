@@ -122,13 +122,13 @@ export default function MarketingHomePage() {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild>
-                <Link href="/demo">
-                  Run the demo
+                <Link href="/onboarding">
+                  See your first incident in under 2 minutes
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline">
-                <Link href="/docs">Read the docs</Link>
+                <Link href="/demo">Run the demo</Link>
               </Button>
             </div>
 

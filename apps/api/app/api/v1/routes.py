@@ -3387,6 +3387,7 @@ def get_incident_command_center_endpoint(
         ),
         root_cause=_incident_command_root_cause_item(command.root_cause_report),
         metric=_incident_command_metric_item(command.incident),
+        resolution_impact=command.resolution_impact,
         trace_compare=IncidentCommandTraceCompareRead(
             failing_trace_summary=_trace_compare_item(command.trace_compare.trace)
             if command.trace_compare is not None
