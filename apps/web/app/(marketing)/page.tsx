@@ -103,7 +103,7 @@ const failures = [
 
 export default function MarketingHomePage() {
   return (
-    <main className="bg-[#f7f8fa] text-ink" data-marketing-container>
+    <main className="bg-[#f7f8fa] text-ink">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
