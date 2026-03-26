@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, Filter, FolderKanban, SearchSlash, UserRound } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { getMetricDisplayName } from "@/components/presenters/ops-format";
 import { listIncidents, listProjects } from "@/lib/api";
 import { requireOperatorSession } from "@/lib/auth";
 
@@ -182,7 +183,7 @@ export default async function IncidentsPage({
                 className="grid gap-4 px-6 py-5 transition hover:bg-zinc-50 lg:grid-cols-[minmax(0,1.4fr)_180px_180px_190px_220px_24px] lg:items-center"
               >
                 <div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${severityTone(incident.severity)}`}>
                       {incident.severity}
                     </span>
@@ -195,6 +196,19 @@ export default async function IncidentsPage({
                     >
                       {incident.status}
                     </span>
+                    {incident.incident_type === "refusal_rate_spike" ? (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-rose-100 text-rose-700 ring-1 ring-rose-200">
+                        Refusal spike
+                      </span>
+                    ) : null}
+                    {incident.incident_type.startsWith("custom_metric_spike") ? (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-amber-100 text-amber-700 ring-1 ring-amber-200">
+                        {getMetricDisplayName(
+                          (incident.summary_json?.metric_name as string) ?? null,
+                          incident.summary_json,
+                        )} spike
+                      </span>
+                    ) : null}
                   </div>
                   <p className="mt-3 text-sm font-medium text-ink">{incident.title}</p>
                   <p className="mt-2 text-sm text-steel">{incident.project_name}</p>
@@ -208,7 +222,10 @@ export default async function IncidentsPage({
                 <div className="text-sm text-steel">
                   <p className="inline-flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    {String(incident.summary_json.metric_name ?? "metric")}
+                    {getMetricDisplayName(
+                      (incident.summary_json?.metric_name as string) ?? null,
+                      incident.summary_json,
+                    )}
                   </p>
                 </div>
                 <div className="text-sm text-steel">

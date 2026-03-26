@@ -19,6 +19,7 @@ from app.models.alert_delivery import AlertDelivery
 from app.models.incident import Incident
 from app.models.incident_event import IncidentEvent
 from app.models.model_version import ModelVersion
+from app.models.reliability_metric import ReliabilityMetric
 from app.models.organization_member import OrganizationMember
 from app.models.project import Project
 from app.models.prompt_version import PromptVersion
@@ -53,7 +54,188 @@ INCIDENT_EVENT_OWNER_ASSIGNED = "owner_assigned"
 INCIDENT_EVENT_OWNER_CLEARED = "owner_cleared"
 INCIDENT_EVENT_RESOLVED = "resolved"
 INCIDENT_EVENT_REOPENED = "reopened"
+INCIDENT_EVENT_CONFIG_APPLIED = "config_applied"
+INCIDENT_EVENT_CONFIG_UNDONE = "config_undone"
 TELEMETRY_FRESHNESS_INCIDENT_TYPE = "telemetry_freshness_stale"
+
+_RESOLUTION_DISPLAY_NAMES: dict[str, str] = {
+    "refusal_rate": "Refusal rate",
+    "success_rate": "Success rate",
+    "structured_output_validity_pass_rate": "Structured output validity",
+    "p95_latency_ms": "P95 latency",
+    "median_latency_ms": "Median latency",
+    "average_cost_usd_per_trace": "Cost per trace",
+}
+
+
+def _resolution_display_name(metric_name: str, summary: dict[str, Any]) -> str:
+    if metric_name in _RESOLUTION_DISPLAY_NAMES:
+        return _RESOLUTION_DISPLAY_NAMES[metric_name]
+    if metric_name.startswith("custom_metric."):
+        stored = summary.get("custom_metric_name")
+        if stored:
+            return f"{stored} rate"
+        key = metric_name.removeprefix("custom_metric.").removesuffix("_rate")
+        return key.replace("_", " ").title() + " rate"
+    return metric_name.replace("_", " ").replace(".", " ").title()
+
+
+def _resolution_direction(metric_name: str) -> str:
+    metric_name = metric_name.lower()
+    if "success_rate" in metric_name or "validity" in metric_name:
+        return "higher"
+    if "latency" in metric_name or "cost" in metric_name:
+        return "lower"
+    if "refusal_rate" in metric_name or "error_rate" in metric_name:
+        return "lower"
+    if metric_name.startswith("custom_metric."):
+        return "lower"
+    return "lower"
+
+
+def _format_resolution_value(value: float, unit: str | None) -> tuple[float, str]:
+    if unit == "%":
+        display = round(value * 100, 1)
+        return display, f"{display}%"
+    if unit == "ms":
+        display = round(value)
+        return display, f"{display}ms"
+    display = round(value, 3)
+    if unit:
+        return display, f"{display}{unit}"
+    return display, str(display)
+
+
+def _format_resolution_display_value(value: float, unit: str | None) -> str:
+    if unit == "%":
+        return f"{value}%"
+    if unit == "ms":
+        return f"{value}ms"
+    if unit:
+        return f"{value}{unit}"
+    return str(value)
+
+
+def _resolution_metric_statement(
+    *,
+    incident: Incident,
+    metric_name: str,
+    scope_type: str,
+    scope_id: str,
+    window_minutes: int,
+):
+    return (
+        select(ReliabilityMetric)
+        .where(
+            ReliabilityMetric.project_id == incident.project_id,
+            ReliabilityMetric.metric_name == metric_name,
+            ReliabilityMetric.scope_type == scope_type,
+            ReliabilityMetric.scope_id == scope_id,
+            ReliabilityMetric.window_minutes == window_minutes,
+        )
+        .order_by(desc(ReliabilityMetric.window_end), desc(ReliabilityMetric.created_at))
+    )
+
+
+def build_resolution_impact_baseline(
+    db: Session,
+    *,
+    incident: Incident,
+    action_time: datetime,
+) -> dict[str, Any] | None:
+    summary = incident.summary_json or {}
+    metric_name = summary.get("metric_name")
+    scope_type = summary.get("scope_type")
+    scope_id = summary.get("scope_id")
+    if not metric_name or not scope_type or not scope_id:
+        return None
+    window_minutes = int(summary.get("window_minutes") or INCIDENT_WINDOW_MINUTES)
+    statement = _resolution_metric_statement(
+        incident=incident,
+        metric_name=str(metric_name),
+        scope_type=str(scope_type),
+        scope_id=str(scope_id),
+        window_minutes=window_minutes,
+    )
+    before = db.scalar(statement.where(ReliabilityMetric.window_end <= action_time))
+    if before is None:
+        return None
+    unit = before.unit
+    display_name = _resolution_display_name(str(metric_name), summary)
+    before_value, _ = _format_resolution_value(before.value_number, unit)
+    return {
+        "metric_name": str(metric_name),
+        "display_name": display_name,
+        "before_value": before_value,
+        "unit": unit,
+        "status": "pending",
+    }
+
+
+def compute_resolution_impact(
+    db: Session,
+    *,
+    incident: Incident,
+    action_time: datetime,
+    action_label: str,
+    baseline: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    summary = incident.summary_json or {}
+    metric_name = summary.get("metric_name")
+    scope_type = summary.get("scope_type")
+    scope_id = summary.get("scope_id")
+    if not metric_name or not scope_type or not scope_id:
+        return None
+    window_minutes = int(summary.get("window_minutes") or INCIDENT_WINDOW_MINUTES)
+    if baseline is None:
+        baseline = build_resolution_impact_baseline(
+            db,
+            incident=incident,
+            action_time=action_time,
+        )
+    if baseline is None:
+        return None
+    before_value = baseline.get("before_value")
+    unit = baseline.get("unit")
+    display_name = baseline.get("display_name") or _resolution_display_name(str(metric_name), summary)
+    if before_value is None or unit is None:
+        return None
+
+    after_threshold = action_time + timedelta(minutes=window_minutes)
+    statement = _resolution_metric_statement(
+        incident=incident,
+        metric_name=str(metric_name),
+        scope_type=str(scope_type),
+        scope_id=str(scope_id),
+        window_minutes=window_minutes,
+    )
+    after = db.scalar(statement.where(ReliabilityMetric.window_end >= after_threshold))
+    if after is None:
+        return {
+            **baseline,
+            "status": "pending",
+        }
+    after_value, after_display = _format_resolution_value(after.value_number, unit)
+    before_display = _format_resolution_display_value(before_value, unit)
+    direction = _resolution_direction(str(metric_name))
+    summary_text = None
+    if direction == "higher":
+        verb = "improved" if after_value > before_value else "declined"
+    elif "latency" in str(metric_name).lower():
+        verb = "improved" if after_value < before_value else "increased"
+    else:
+        verb = "dropped" if after_value < before_value else "increased"
+    summary_text = f"{display_name} {verb} from {before_display} to {after_display} {action_label}"
+    return {
+        "metric_name": str(metric_name),
+        "display_name": display_name,
+        "before_value": before_value,
+        "after_value": after_value,
+        "delta": after_value - before_value,
+        "unit": unit,
+        "summary": summary_text,
+        "status": "ready",
+    }
 
 
 @dataclass(frozen=True)
@@ -356,6 +538,121 @@ def _mark_reopened(
     return incident
 
 
+def _sync_single_rule(
+    db: Session,
+    *,
+    scope: RollupScope,
+    project: Project,
+    rule: IncidentRule,
+    snapshot: RegressionSnapshot,
+    detected_at: datetime,
+    result: IncidentSyncResult,
+    extra_summary_fields: dict[str, Any] | None = None,
+) -> None:
+    fingerprint = _fingerprint(scope, rule)
+    incident = db.scalar(select(Incident).where(Incident.fingerprint == fingerprint))
+    breaches = _snapshot_breaches(rule, snapshot)
+
+    if not breaches:
+        if incident is not None and incident.status == "open":
+            _mark_resolved(
+                db,
+                incident=incident,
+                resolved_at=detected_at,
+                actor_operator_user_id=None,
+                reason="threshold_recovered",
+            )
+            result.resolved_incidents.append(incident)
+        return
+
+    metadata = snapshot.metadata_json or {}
+    sample_traces = _sample_traces(
+        db,
+        scope,
+        rule,
+        metadata["current_window_start"],
+        metadata["current_window_end"],
+    )
+    severity = _severity(rule, snapshot)
+    summary_json = _incident_summary_json(scope=scope, snapshot=snapshot, sample_traces=sample_traces)
+    if extra_summary_fields:
+        summary_json.update(extra_summary_fields)
+    event_metadata = _incident_event_metadata(scope=scope, snapshot=snapshot, severity=severity)
+
+    if incident is None:
+        deployment = most_recent_project_deployment(
+            db,
+            project_id=scope.project_id,
+            detected_at=detected_at,
+        )
+        incident = Incident(
+            organization_id=scope.organization_id,
+            project_id=scope.project_id,
+            deployment_id=deployment.id if deployment is not None else None,
+            incident_type=rule.incident_type,
+            fingerprint=fingerprint,
+            started_at=detected_at,
+            updated_at=detected_at,
+            status="open",
+            severity=severity,
+            title="",
+            summary_json=summary_json,
+        )
+        db.add(incident)
+        db.flush()
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=INCIDENT_EVENT_OPENED,
+            metadata_json={**event_metadata, "reason": "threshold_breached"},
+            created_at=detected_at,
+        )
+        result.opened_incidents.append(incident)
+    elif incident.status != "open":
+        # Deterministic reopen rule:
+        # A resolved incident is reopened in place when the same fingerprint breaches again.
+        # Fingerprint is org + project + scope + incident_type + incident window, so operators
+        # get one explainable lifecycle per recurring regression instead of duplicate incidents.
+        _mark_reopened(
+            db,
+            incident=incident,
+            reopened_at=detected_at,
+            actor_operator_user_id=None,
+            reason="threshold_breached_again",
+        )
+        result.reopened_incidents.append(incident)
+        deployment = most_recent_project_deployment(
+            db,
+            project_id=scope.project_id,
+            detected_at=detected_at,
+        )
+        incident.deployment_id = deployment.id if deployment is not None else None
+    else:
+        incident.updated_at = detected_at
+        db.add(incident)
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=INCIDENT_EVENT_UPDATED,
+            metadata_json=event_metadata,
+            created_at=detected_at,
+        )
+        result.updated_incidents.append(incident)
+
+    incident.severity = severity
+    incident.title = (
+        f"{rule.title_template} on {project.name}"
+        if scope.scope_type == "project"
+        else f"{rule.title_template} on {project.name} ({scope.scope_id})"
+    )
+    incident.summary_json = summary_json
+    incident.updated_at = detected_at
+    incident.resolved_at = None
+    db.add(incident)
+    db.flush()
+    sync_incident_root_causes(db, incident=incident)
+
+
 def sync_incidents_for_scope(
     db: Session,
     *,
@@ -371,107 +668,43 @@ def sync_incidents_for_scope(
         snapshot = snapshot_by_metric.get(rule.metric_name)
         if snapshot is None:
             continue
-
-        fingerprint = _fingerprint(scope, rule)
-        incident = db.scalar(select(Incident).where(Incident.fingerprint == fingerprint))
-        breaches = _snapshot_breaches(rule, snapshot)
-
-        if not breaches:
-            if incident is not None and incident.status == "open":
-                _mark_resolved(
-                    db,
-                    incident=incident,
-                    resolved_at=detected_at,
-                    actor_operator_user_id=None,
-                    reason="threshold_recovered",
-                )
-                result.resolved_incidents.append(incident)
-            continue
-
-        metadata = snapshot.metadata_json or {}
-        sample_traces = _sample_traces(
+        _sync_single_rule(
             db,
-            scope,
-            rule,
-            metadata["current_window_start"],
-            metadata["current_window_end"],
+            scope=scope,
+            project=project,
+            rule=rule,
+            snapshot=snapshot,
+            detected_at=detected_at,
+            result=result,
         )
-        severity = _severity(rule, snapshot)
-        summary_json = _incident_summary_json(scope=scope, snapshot=snapshot, sample_traces=sample_traces)
-        event_metadata = _incident_event_metadata(scope=scope, snapshot=snapshot, severity=severity)
 
-        if incident is None:
-            deployment = most_recent_project_deployment(
-                db,
-                project_id=scope.project_id,
-                detected_at=detected_at,
-            )
-            incident = Incident(
-                organization_id=scope.organization_id,
-                project_id=scope.project_id,
-                deployment_id=deployment.id if deployment is not None else None,
-                incident_type=rule.incident_type,
-                fingerprint=fingerprint,
-                started_at=detected_at,
-                updated_at=detected_at,
-                status="open",
-                severity=severity,
-                title="",
-                summary_json=summary_json,
-            )
-            db.add(incident)
-            db.flush()
-            append_incident_event(
-                db,
-                incident=incident,
-                event_type=INCIDENT_EVENT_OPENED,
-                metadata_json={**event_metadata, "reason": "threshold_breached"},
-                created_at=detected_at,
-            )
-            result.opened_incidents.append(incident)
-        elif incident.status != "open":
-            # Deterministic reopen rule:
-            # A resolved incident is reopened in place when the same fingerprint breaches again.
-            # Fingerprint is org + project + scope + incident_type + incident window, so operators
-            # get one explainable lifecycle per recurring regression instead of duplicate incidents.
-            _mark_reopened(
-                db,
-                incident=incident,
-                reopened_at=detected_at,
-                actor_operator_user_id=None,
-                reason="threshold_breached_again",
-            )
-            result.reopened_incidents.append(incident)
-            deployment = most_recent_project_deployment(
-                db,
-                project_id=scope.project_id,
-                detected_at=detected_at,
-            )
-            incident.deployment_id = deployment.id if deployment is not None else None
-        else:
-            incident.updated_at = detected_at
-            db.add(incident)
-            append_incident_event(
-                db,
-                incident=incident,
-                event_type=INCIDENT_EVENT_UPDATED,
-                metadata_json=event_metadata,
-                created_at=detected_at,
-            )
-            result.updated_incidents.append(incident)
-
-        incident.severity = severity
-        incident.title = (
-            f"{rule.title_template} on {project.name}"
-            if scope.scope_type == "project"
-            else f"{rule.title_template} on {project.name} ({scope.scope_id})"
+    custom_metrics = list_enabled_project_custom_metrics(db, project_id=scope.project_id)
+    for metric in custom_metrics:
+        snapshot = snapshot_by_metric.get(custom_metric_rollup_name(metric))
+        if snapshot is None:
+            continue
+        rule = IncidentRule(
+            incident_type=f"custom_metric_spike:{metric.metric_key}",
+            metric_name=custom_metric_rollup_name(metric),
+            title_template=f"{metric.name} rate increased",
+            minimum_sample_size=10,
+            comparator="spike",
+            absolute_threshold=Decimal("0.15"),
+            percent_threshold=Decimal("0.50"),
         )
-        incident.summary_json = summary_json
-        incident.updated_at = detected_at
-        incident.resolved_at = None
-        db.add(incident)
-        db.flush()
-        sync_incident_root_causes(db, incident=incident)
+        _sync_single_rule(
+            db,
+            scope=scope,
+            project=project,
+            rule=rule,
+            snapshot=snapshot,
+            detected_at=detected_at,
+            result=result,
+            extra_summary_fields={
+                "custom_metric_key": metric.metric_key,
+                "custom_metric_name": metric.name,
+            },
+        )
 
     return result
 
@@ -729,6 +962,17 @@ def get_incident_rule(incident_type: str) -> IncidentRule | None:
     for rule in INCIDENT_RULES:
         if rule.incident_type == incident_type:
             return rule
+    if incident_type.startswith("custom_metric_spike"):
+        metric_key = incident_type.removeprefix("custom_metric_spike:") or "custom_metric"
+        return IncidentRule(
+            incident_type=incident_type,
+            metric_name=f"custom_metric.{metric_key}_rate",
+            title_template=f"{metric_key.replace('_', ' ').title()} rate increased",
+            minimum_sample_size=10,
+            comparator="spike",
+            absolute_threshold=Decimal("0.10"),
+            percent_threshold=Decimal("0.50"),
+        )
     return None
 
 

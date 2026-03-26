@@ -29,6 +29,7 @@ import {
   getIncidentAlerts,
   getIncidentCommandCenter,
   getIncidentDetail,
+  listProjectCustomMetrics,
   reopenIncident,
   resolveIncident,
 } from "@/lib/api";
@@ -45,6 +46,14 @@ function deliveryTone(status: string) {
   if (status === "failed") return "bg-rose-100 text-rose-700 ring-1 ring-rose-200";
   if (status === "suppressed") return "bg-amber-100 text-amber-800 ring-1 ring-amber-200";
   return "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200";
+}
+
+function alertStatusLabel(status: string | null | undefined) {
+  if (status === "sent") return "Alert sent";
+  if (status === "failed") return "Alert failed";
+  if (status === "pending") return "Alert pending";
+  if (status === "suppressed") return "Alert suppressed";
+  return "Alert not sent";
 }
 
 function eventLabel(eventType: IncidentEventRead["event_type"]) {
@@ -69,6 +78,10 @@ function eventLabel(eventType: IncidentEventRead["event_type"]) {
       return "Alert sent";
     case "alert_failed":
       return "Alert failed";
+    case "config_applied":
+      return "Config applied";
+    case "config_undone":
+      return "Config reverted";
   }
 }
 
@@ -134,6 +147,14 @@ export default async function IncidentDetailPage({
   if (!incident) {
     notFound();
   }
+
+  const customMetricsResponse = await listProjectCustomMetrics(incident.project_id).catch(() => ({ items: [] }));
+  const hasRefusalMetric = customMetricsResponse.items.some((metric) =>
+    /(refusal)/i.test(metric.name) || /(refusal)/i.test(metric.metric_key)
+  );
+  const showRefusalMetricCta =
+    incident.incident_type === "refusal_rate_spike" && !hasRefusalMetric;
+  const latestAlert = incident.latest_alert_delivery ?? null;
 
   const rootCauseProbability =
     command?.root_cause.top_root_cause_probability ??
@@ -216,6 +237,20 @@ export default async function IncidentDetailPage({
           </MetadataBar>
         </div>
         <div className="flex items-center gap-3">
+          <div
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${deliveryTone(
+              latestAlert?.delivery_status ?? "unknown"
+            )}`}
+            title={
+              latestAlert?.delivery_status === "failed" && latestAlert.error_message
+                ? latestAlert.error_message
+                : undefined
+            }
+          >
+            <BellRing className="h-3.5 w-3.5" />
+            {alertStatusLabel(latestAlert?.delivery_status)}
+            {latestAlert && latestAlert.attempt_count > 1 ? ` · ${latestAlert.attempt_count} attempts` : ""}
+          </div>
           <Button asChild variant="outline" className="rounded-full">
             <Link href={`/incidents/${incident.id}/investigate`}>Investigate</Link>
           </Button>
@@ -360,6 +395,22 @@ export default async function IncidentDetailPage({
                   supporting={actionSupporting}
                 />
               )}
+              {showRefusalMetricCta ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-4 text-sm text-amber-900">
+                  <p className="text-xs uppercase tracking-[0.24em] text-amber-700">Behavioral signal</p>
+                  <p className="mt-2 font-semibold">Track this behavior as a metric</p>
+                  <p className="mt-2 text-sm">
+                    Create a refusal metric to keep this signal visible in Reliability and future incidents.
+                  </p>
+                  <div className="mt-3">
+                    <Button asChild size="sm">
+                      <Link href={`/projects/${incident.project_id}/metrics?template=refusal_language&source=incident&incident_id=${incident.id}`}>
+                        Create refusal metric
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
               <div className="rounded-2xl border border-zinc-200 px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-steel">Recommended guardrails</p>
                 <div className="mt-3 space-y-2 text-sm text-steel">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Bot,
@@ -97,6 +97,7 @@ interface TraceGraphViewProps {
 }
 
 export function TraceGraphView({ graph, analysis, screenshotMode = false }: TraceGraphViewProps) {
+  const [incidentId, setIncidentId] = useState<string | null>(null);
   const parentByChild = new Map(graph.edges.map((edge) => [edge.child_span_id, edge.parent_span_id]));
   const orderedNodes = [...graph.nodes].sort((left, right) => {
     const leftDepth = spanDepth(left.span_id, parentByChild);
@@ -178,6 +179,12 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
   const [undoStatus, setUndoStatus] = useState<"idle" | "pending" | "error">("idle");
   const [appliedSummary, setAppliedSummary] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIncidentId(params.get("incident_id"));
+  }, []);
+
   const canApplyFix = configPatch.length > 0 && !screenshotMode;
 
   const applyFix = async () => {
@@ -191,6 +198,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
         body: JSON.stringify({
           patch: configPatch,
           source_trace_id: graph.trace_id,
+          incident_id: incidentId ?? undefined,
         }),
       });
       const json = await response.json().catch(() => ({}));
@@ -216,7 +224,10 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
       const response = await fetch("/api/config/undo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_trace_id: graph.trace_id }),
+        body: JSON.stringify({
+          source_trace_id: graph.trace_id,
+          incident_id: incidentId ?? undefined,
+        }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) {

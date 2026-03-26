@@ -333,10 +333,12 @@ from app.services.auth_workos import (
     handle_scim_user_provisioned,
 )
 from app.services.incident_command_center import get_incident_command_center
-from app.services.incident_investigation import get_incident_investigation
+from app.services.incident_investigation import compute_prompt_content_diff, get_incident_investigation
 from app.services.incidents import (
     acknowledge_incident,
     assign_incident_owner,
+    append_incident_event,
+    build_resolution_impact_baseline,
     build_cohort_pivots,
     build_trace_compare_item,
     build_trace_diff_blocks,
@@ -344,6 +346,8 @@ from app.services.incidents import (
     derive_incident_registry_contexts,
     derive_registry_contexts,
     derive_root_cause_hints,
+    INCIDENT_EVENT_CONFIG_APPLIED,
+    INCIDENT_EVENT_CONFIG_UNDONE,
     get_incident_alert_deliveries,
     get_incident_compare_traces,
     get_incident_detail,
@@ -886,12 +890,100 @@ def _recommendation_meta(report) -> tuple[float | None, float | None, str | None
     recommendation_kind = None
     if top_probability is not None:
         recommendation_kind = "action" if top_probability >= 0.8 else "recommendation"
-    recommended_action_reason = (
-        "Based on trace deltas and root-cause evidence."
-        if report.evidence
-        else None
-    )
+    recommended_action_reason = _recommendation_reason(report)
     return top_probability, recommendation_confidence, recommendation_kind, recommended_action_reason
+
+
+def _format_ratio(value: float | None) -> str | None:
+    if value is None:
+        return None
+    return f"{round(value * 100, 1)}%"
+
+
+def _recommendation_reason(report) -> str | None:
+    if not report.root_cause_probabilities:
+        return None
+    top = report.root_cause_probabilities[0]
+    cause_type = top.get("cause_type") if isinstance(top, dict) else getattr(top, "cause_type", None)
+    evidence = top.get("evidence_json") if isinstance(top, dict) else getattr(top, "evidence_json", None)
+    evidence = evidence or {}
+    parts: list[str] = []
+
+    if report.regressions:
+        regression = report.regressions[0]
+        current = getattr(regression, "current_value", None)
+        baseline = getattr(regression, "baseline_value", None)
+        delta = getattr(regression, "delta_percent", None)
+        metric_name = getattr(regression, "metric_name", None) or "metric"
+        if current is not None and baseline is not None:
+            delta_text = f" ({delta}%)" if delta is not None else ""
+            parts.append(f"{metric_name} shifted from {baseline} to {current}{delta_text}.")
+
+    if cause_type == "prompt_concentration":
+        current_value = evidence.get("current_value")
+        current_share = _format_ratio(evidence.get("current_share"))
+        baseline_share = _format_ratio(evidence.get("baseline_share"))
+        if current_value and current_share and baseline_share:
+            parts.append(
+                f"Prompt {current_value} share rose from {baseline_share} to {current_share} in failing traces."
+            )
+    elif cause_type == "model_concentration":
+        current_value = evidence.get("current_value")
+        current_share = _format_ratio(evidence.get("current_share"))
+        baseline_share = _format_ratio(evidence.get("baseline_share"))
+        if current_value and current_share and baseline_share:
+            parts.append(
+                f"Model {current_value} share rose from {baseline_share} to {current_share} in failing traces."
+            )
+    elif cause_type == "latency_change":
+        current = evidence.get("current_median_latency_ms")
+        baseline = evidence.get("baseline_median_latency_ms")
+        if current is not None and baseline is not None:
+            parts.append(f"Median latency increased from {baseline}ms to {current}ms.")
+    elif cause_type == "retrieval_shift":
+        current = evidence.get("current_retrieval_median_ms")
+        baseline = evidence.get("baseline_retrieval_median_ms")
+        if current is not None and baseline is not None:
+            parts.append(f"Retrieval latency increased from {baseline}ms to {current}ms.")
+    elif cause_type == "deployment_risk_correlation":
+        risk_level = evidence.get("risk_level")
+        risk_score = evidence.get("risk_score")
+        if risk_level and risk_score is not None:
+            parts.append(f"Deployment risk score {risk_score} ({risk_level}) overlaps incident timing.")
+    elif cause_type == "error_cluster":
+        error_type = evidence.get("error_type")
+        share = _format_ratio(evidence.get("current_share"))
+        if error_type and share:
+            parts.append(f"Error {error_type} accounts for {share} of failing traces.")
+
+    if not parts:
+        label = top.get("label") if isinstance(top, dict) else getattr(top, "label", None)
+        if label:
+            return f"Root-cause evidence concentrates on {label.lower()}."
+        return None
+    return " ".join(parts)
+
+
+_METRIC_DISPLAY_NAMES: dict[str, str] = {
+    "refusal_rate": "Refusal rate",
+    "success_rate": "Success rate",
+    "structured_output_validity_pass_rate": "Structured output validity",
+    "p95_latency_ms": "P95 latency",
+    "median_latency_ms": "Median latency",
+    "average_cost_usd_per_trace": "Cost per trace",
+}
+
+
+def _metric_display_name(metric_name: str, summary: dict) -> str:
+    if metric_name in _METRIC_DISPLAY_NAMES:
+        return _METRIC_DISPLAY_NAMES[metric_name]
+    if metric_name.startswith("custom_metric."):
+        stored = summary.get("custom_metric_name")
+        if stored:
+            return f"{stored} rate"
+        key = metric_name.removeprefix("custom_metric.").removesuffix("_rate")
+        return key.replace("_", " ").title() + " rate"
+    return metric_name.replace("_", " ").replace(".", " ").title()
 
 
 def _incident_command_metric_item(incident) -> IncidentCommandCenterMetricRead | None:
@@ -916,6 +1008,9 @@ def _incident_command_metric_item(incident) -> IncidentCommandCenterMetricRead |
     elif "retry" in metric_name:
         metric_type = "retry_rate"
         unit = "%"
+    elif metric_name.startswith("custom_metric."):
+        metric_type = "error_rate"
+        unit = "%"
 
     def _stringify(value) -> str | None:
         if value is None:
@@ -925,7 +1020,7 @@ def _incident_command_metric_item(incident) -> IncidentCommandCenterMetricRead |
     return IncidentCommandCenterMetricRead(
         metric_name=metric_name,
         metric_type=metric_type,
-        display_name=metric_name.replace("_", " "),
+        display_name=_metric_display_name(metric_name, summary),
         unit=unit,
         value=_stringify(summary.get("current_value")),
         baseline_value=_stringify(summary.get("baseline_value")),
@@ -1222,6 +1317,7 @@ def _trace_comparison_item(
     model_version_contexts,
     cohort_pivots,
     related_incident_id,
+    prompt_content_diff,
 ) -> TraceComparisonRead:
     current_items = [_trace_compare_item(trace) for trace in current_traces]
     baseline_items = [_trace_compare_item(trace) for trace in baseline_traces]
@@ -1264,6 +1360,7 @@ def _trace_comparison_item(
         model_version_contexts=[_model_version_context_item(item) for item in model_version_contexts],
         cohort_pivots=[_cohort_pivot_item(pivot) for pivot in cohort_pivots],
         related_incident_id=related_incident_id,
+        prompt_content_diff=prompt_content_diff,
     )
 
 
@@ -1888,6 +1985,31 @@ def apply_config_endpoint(
         source_trace_id=payload.source_trace_id,
         reason=payload.reason,
     )
+    if payload.incident_id is not None:
+        action_time = datetime.now(timezone.utc)
+        incident = get_incident_detail(db, operator, payload.incident_id)
+        resolution_impact = build_resolution_impact_baseline(
+            db,
+            incident=incident,
+            action_time=action_time,
+        )
+        metadata_json = {
+            "config_snapshot_id": str(snapshot.id),
+            "source_trace_id": payload.source_trace_id,
+            "patch": [item.model_dump(by_alias=True) for item in payload.patch],
+            "reason": payload.reason,
+        }
+        if resolution_impact is not None:
+            metadata_json["resolution_impact"] = resolution_impact
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=INCIDENT_EVENT_CONFIG_APPLIED,
+            actor_operator_user_id=operator.operator.id,
+            metadata_json=metadata_json,
+            created_at=action_time,
+        )
+        db.commit()
     return ConfigApplyResponse(
         status="applied",
         config_snapshot=ConfigSnapshotRead.model_validate(snapshot),
@@ -1911,6 +2033,30 @@ def undo_config_endpoint(
         source_trace_id=payload.source_trace_id,
         reason=payload.reason,
     )
+    if payload.incident_id is not None:
+        action_time = datetime.now(timezone.utc)
+        incident = get_incident_detail(db, operator, payload.incident_id)
+        resolution_impact = build_resolution_impact_baseline(
+            db,
+            incident=incident,
+            action_time=action_time,
+        )
+        metadata_json = {
+            "config_snapshot_id": str(snapshot.id),
+            "source_trace_id": payload.source_trace_id,
+            "reason": payload.reason,
+        }
+        if resolution_impact is not None:
+            metadata_json["resolution_impact"] = resolution_impact
+        append_incident_event(
+            db,
+            incident=incident,
+            event_type=INCIDENT_EVENT_CONFIG_UNDONE,
+            actor_operator_user_id=operator.operator.id,
+            metadata_json=metadata_json,
+            created_at=action_time,
+        )
+        db.commit()
     return ConfigApplyResponse(
         status="undone",
         config_snapshot=ConfigSnapshotRead.model_validate(snapshot),
@@ -3483,6 +3629,12 @@ def get_incident_trace_compare_endpoint(
         current_traces=current_traces,
         baseline_traces=baseline_traces,
     )
+    prompt_content_diff = compute_prompt_content_diff(
+        db,
+        project_id=incident.project_id,
+        current_traces=current_traces,
+        baseline_traces=baseline_traces,
+    )
     return _trace_comparison_item(
         comparison_scope="incident",
         source_id=incident.id,
@@ -3514,6 +3666,7 @@ def get_incident_trace_compare_endpoint(
             current_traces=current_traces,
         ),
         related_incident_id=incident.id,
+        prompt_content_diff=prompt_content_diff,
     )
 
 
@@ -3592,6 +3745,12 @@ def get_regression_compare_endpoint(
     result = get_regression_compare(db, operator, regression_id=regression_id)
     regression = result.regression
     metadata = regression.metadata_json or {}
+    prompt_content_diff = compute_prompt_content_diff(
+        db,
+        project_id=regression.project_id,
+        current_traces=result.current_representative_traces,
+        baseline_traces=result.baseline_representative_traces,
+    )
     return _trace_comparison_item(
         comparison_scope="regression",
         source_id=regression.id,
@@ -3612,6 +3771,7 @@ def get_regression_compare_endpoint(
         model_version_contexts=result.model_version_contexts,
         cohort_pivots=result.cohort_pivots,
         related_incident_id=result.related_incident.id if result.related_incident is not None else None,
+        prompt_content_diff=prompt_content_diff,
     )
 
 
@@ -3884,6 +4044,12 @@ def get_trace_compare_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> TraceComparisonRead:
     result = get_trace_compare(db, operator, trace_id)
+    prompt_content_diff = compute_prompt_content_diff(
+        db,
+        project_id=result.trace.project_id,
+        current_traces=[result.trace],
+        baseline_traces=[result.baseline_trace] if result.baseline_trace is not None else [],
+    )
     prompt_version_contexts, model_version_contexts = derive_registry_contexts(
         project_id=result.trace.project_id,
         current_traces=[result.trace],
@@ -3920,6 +4086,7 @@ def get_trace_compare_endpoint(
             current_traces=[result.trace],
         ),
         related_incident_id=None,
+        prompt_content_diff=prompt_content_diff,
     )
 
 

@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, ChartColumn, FolderKanban, History, ShieldCheck,
 import type { ProjectReliabilityRead, ReliabilityMetricSeriesRead } from "@reliai/types";
 
 import { Card } from "@/components/ui/card";
-import { getProject, getProjectReliability } from "@/lib/api";
+import { getProject, getProjectReliability, listProjectCustomMetrics } from "@/lib/api";
 
 function percent(value: number | null) {
   if (value === null) return "n/a";
@@ -75,10 +75,39 @@ export default async function ProjectReliabilityPage({
   const rawSearchParams = searchParams ? await searchParams : {};
   const environment =
     typeof rawSearchParams.environment === "string" ? rawSearchParams.environment : undefined;
-  const [project, reliability] = await Promise.all([
+  const [project, reliability, customMetricsResponse] = await Promise.all([
     getProject(projectId),
     getProjectReliability(projectId, environment),
+    listProjectCustomMetrics(projectId).catch(() => ({ items: [] })),
   ]);
+
+  const customMetrics = customMetricsResponse.items.filter((metric) => metric.enabled);
+  const behavioralSeries = reliability.trend_series.filter((series) => {
+    const name = series.metric_name.toLowerCase();
+    return name.includes("custom_metric") || name.includes("refusal");
+  });
+
+  const behavioralSignals = customMetrics
+    .map((metric) => {
+      const metricKey = metric.metric_key.toLowerCase();
+      const metricName = metric.name.toLowerCase();
+      const series =
+        behavioralSeries.find((item) => item.metric_name.toLowerCase().includes(metricKey)) ??
+        behavioralSeries.find((item) => item.metric_name.toLowerCase().includes(metricName));
+      const latestPoint = series?.points[series.points.length - 1] ?? null;
+      return {
+        metric,
+        series,
+        latestPoint,
+      };
+    })
+    .sort((a, b) => {
+      const aValue = a.latestPoint?.value_number ?? 0;
+      const bValue = b.latestPoint?.value_number ?? 0;
+      if (bValue !== aValue) return bValue - aValue;
+      return new Date(b.metric.updated_at).getTime() - new Date(a.metric.updated_at).getTime();
+    })
+    .slice(0, 3);
 
   const headlineCards = [
     {
@@ -247,6 +276,66 @@ export default async function ProjectReliabilityPage({
                 </div>
               ))}
             </div>
+          </Card>
+
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5 text-steel" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">Behavioral signals</p>
+                <h2 className="mt-2 text-2xl font-semibold text-ink">Custom behavior metrics</h2>
+              </div>
+            </div>
+            {behavioralSignals.length === 0 ? (
+              <p className="mt-5 text-sm leading-6 text-steel">
+                No behavioral signals are tracked yet.{" "}
+                <Link href={`/projects/${projectId}/metrics`} className="underline hover:text-ink">
+                  Create a custom metric
+                </Link>{" "}
+                to see behavior trends here.
+              </p>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {behavioralSignals.map(({ metric, series, latestPoint }) => {
+                  const unit = series?.unit ?? "";
+                  const windowMinutes = latestPoint?.window_minutes ?? null;
+                  const windowLabel = windowMinutes === 1440 ? "last 24h" : "last window";
+                  const latestValue = latestPoint ? numberValue(latestPoint.value_number) : "n/a";
+                  return (
+                    <div key={metric.id} className="rounded-2xl border border-zinc-200 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-ink">{metric.name}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.2em] text-steel">
+                            Trigger rate · {windowLabel}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-ink">
+                          {latestValue}{unit ? ` ${unit}` : ""}
+                        </p>
+                      </div>
+                      {series ? (
+                        <div className="mt-3">
+                          <Sparkline series={series} />
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-xs text-steel">No recent signal data yet.</p>
+                      )}
+                      <Link
+                        href={`/traces?project_id=${encodeURIComponent(projectId)}`}
+                        className="mt-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink hover:underline"
+                      >
+                        View triggering traces
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <p className="mt-4 text-sm text-steel">
+              These metrics are tied to incidents when thresholds are exceeded.
+            </p>
           </Card>
 
           <Card className="rounded-[28px] border-zinc-300 p-6">

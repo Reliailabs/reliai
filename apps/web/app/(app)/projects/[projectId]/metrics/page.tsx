@@ -11,12 +11,79 @@ import {
   updateProjectCustomMetric,
 } from "@/lib/api";
 
+type MetricTemplate = {
+  name: string;
+  metric_type: "keyword" | "regex";
+  value_mode: "boolean" | "count";
+  pattern: string;
+  keywords: string;
+};
+
+const METRIC_TEMPLATES: Record<string, MetricTemplate> = {
+  refusal_language: {
+    name: "Refusal language",
+    metric_type: "keyword",
+    value_mode: "boolean",
+    pattern: "",
+    keywords: "I cannot help, I'm unable, I can't provide, I cannot assist",
+  },
+  apology_language: {
+    name: "Apology language",
+    metric_type: "keyword",
+    value_mode: "boolean",
+    pattern: "",
+    keywords: "I'm sorry, I apologize, I regret",
+  },
+  policy_violation: {
+    name: "Policy violation",
+    metric_type: "regex",
+    value_mode: "boolean",
+    pattern: String.raw`\b(forbidden|not allowed|policy violation|restricted)\b`,
+    keywords: "",
+  },
+  safety_blocks: {
+    name: "Safety blocks",
+    metric_type: "keyword",
+    value_mode: "count",
+    pattern: "",
+    keywords: "blocked, safety policy, unsafe request, disallowed content",
+  },
+};
+
+function readParam(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value[0];
+  return value ?? undefined;
+}
+
+function parseKeywords(value: string | undefined) {
+  if (!value) return "";
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
 export default async function ProjectCustomMetricsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { projectId } = await params;
+  const resolvedSearch = searchParams ? await searchParams : {};
+  const templateKey = typeof resolvedSearch.template === "string" ? resolvedSearch.template : undefined;
+  const tpl = templateKey ? (METRIC_TEMPLATES[templateKey] ?? null) : null;
+  const prefillName = readParam(resolvedSearch.name);
+  const prefillType = readParam(resolvedSearch.metric_type) as MetricTemplate["metric_type"] | undefined;
+  const prefillMode = readParam(resolvedSearch.value_mode) as MetricTemplate["value_mode"] | undefined;
+  const prefillPattern = readParam(resolvedSearch.pattern);
+  const prefillKeywords = parseKeywords(readParam(resolvedSearch.keywords));
+  const prefillSource = readParam(resolvedSearch.source);
+  const createdFlag = readParam(resolvedSearch.created) === "1";
+  const createdName = readParam(resolvedSearch.created_name);
+  const highlightForm = Boolean(tpl || prefillName || prefillPattern || prefillKeywords || prefillSource);
   const [project, metricsResponse] = await Promise.all([
     getProject(projectId).catch(() => null),
     listProjectCustomMetrics(projectId).catch(() => null),
@@ -41,8 +108,9 @@ export default async function ProjectCustomMetricsPage({
           .filter(Boolean)
       : null;
 
+    const metricName = String(formData.get("name") ?? "").trim();
     await createProjectCustomMetric(projectId, {
-      name: String(formData.get("name") ?? "").trim(),
+      name: metricName,
       metric_type: metricType,
       value_mode: valueMode,
       pattern: String(formData.get("pattern") ?? "").trim() || null,
@@ -52,7 +120,9 @@ export default async function ProjectCustomMetricsPage({
 
     revalidatePath(`/projects/${projectId}/metrics`);
     revalidatePath(`/projects/${projectId}/control`);
-    redirect(`/projects/${projectId}/metrics`);
+    redirect(
+      `/projects/${projectId}/metrics?created=1&created_name=${encodeURIComponent(metricName)}`
+    );
   }
 
   async function toggleMetricAction(formData: FormData) {
@@ -102,17 +172,76 @@ export default async function ProjectCustomMetricsPage({
         </div>
       </header>
 
+      {createdFlag ? (
+        <Card className="rounded-[28px] border-amber-200 bg-amber-50/60 p-5">
+          <p className="text-xs uppercase tracking-[0.24em] text-amber-700">Metric enabled</p>
+          <h2 className="mt-2 text-xl font-semibold text-amber-950">
+            {createdName ? `${createdName} is now tracked` : "Metric is now tracked"}
+          </h2>
+          <p className="mt-2 text-sm text-amber-900">
+            This signal now feeds Reliability and incident detection.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <Link
+              href={`/projects/${projectId}/reliability`}
+              className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 transition hover:border-amber-400 hover:text-amber-950"
+            >
+              View in reliability
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/traces?project_id=${encodeURIComponent(projectId)}`}
+              className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 hover:text-amber-950"
+            >
+              View recent traces
+            </Link>
+          </div>
+        </Card>
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.05fr)]">
-        <Card className="rounded-[28px] border-zinc-300 p-6">
+        <Card className={`rounded-[28px] border-zinc-300 p-6 ${highlightForm ? "border-amber-200 bg-amber-50/40" : ""}`}>
           <div className="flex items-center gap-3">
             <Gauge className="h-5 w-5 text-steel" />
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-steel">Create custom metric</p>
               <h2 className="mt-2 text-2xl font-semibold text-ink">Add a behavioral signal</h2>
+              {prefillSource ? (
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+                  Recommended from {prefillSource.replaceAll("_", " ")}
+                </p>
+              ) : null}
             </div>
           </div>
 
-          <form action={createMetricAction} className="mt-6 space-y-5">
+          <div className="mt-6">
+            <p className="text-xs uppercase tracking-[0.2em] text-steel">Quick templates</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {Object.entries(METRIC_TEMPLATES).map(([key, t]) => (
+                <Link
+                  key={key}
+                  href={`/projects/${projectId}/metrics?template=${key}`}
+                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition hover:border-zinc-400 ${
+                    templateKey === key
+                      ? "border-ink bg-ink text-white"
+                      : "border-zinc-300 bg-white text-steel"
+                  }`}
+                >
+                  {t.name}
+                </Link>
+              ))}
+              {templateKey ? (
+                <Link
+                  href={`/projects/${projectId}/metrics`}
+                  className="inline-flex items-center rounded-full border border-zinc-200 px-3 py-1 text-xs text-steel hover:border-zinc-400"
+                >
+                  Clear
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          <form action={createMetricAction} className="mt-5 space-y-5">
             <div>
               <label htmlFor="name" className="text-sm font-medium text-ink">Metric name</label>
               <input
@@ -122,6 +251,7 @@ export default async function ProjectCustomMetricsPage({
                 minLength={2}
                 maxLength={120}
                 placeholder="Refusal language"
+                defaultValue={prefillName ?? tpl?.name ?? ""}
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm text-ink outline-none transition focus:border-zinc-500"
               />
             </div>
@@ -132,7 +262,7 @@ export default async function ProjectCustomMetricsPage({
                 <select
                   id="metric_type"
                   name="metric_type"
-                  defaultValue="keyword"
+                  defaultValue={prefillType ?? tpl?.metric_type ?? "keyword"}
                   className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm text-ink outline-none transition focus:border-zinc-500"
                 >
                   <option value="keyword">keyword</option>
@@ -144,7 +274,7 @@ export default async function ProjectCustomMetricsPage({
                 <select
                   id="value_mode"
                   name="value_mode"
-                  defaultValue="boolean"
+                  defaultValue={prefillMode ?? tpl?.value_mode ?? "boolean"}
                   className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm text-ink outline-none transition focus:border-zinc-500"
                 >
                   <option value="boolean">boolean hit/miss</option>
@@ -160,6 +290,7 @@ export default async function ProjectCustomMetricsPage({
                 name="pattern"
                 maxLength={500}
                 placeholder="i\s+cannot\s+help\s+with\s+that"
+                defaultValue={prefillPattern ?? tpl?.pattern ?? ""}
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm text-ink outline-none transition focus:border-zinc-500"
               />
             </div>
@@ -171,6 +302,7 @@ export default async function ProjectCustomMetricsPage({
                 name="keywords"
                 rows={3}
                 placeholder="cannot help, unable to assist, can't provide"
+                defaultValue={prefillKeywords || tpl?.keywords || ""}
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm text-ink outline-none transition focus:border-zinc-500"
               />
             </div>
@@ -179,7 +311,7 @@ export default async function ProjectCustomMetricsPage({
               type="submit"
               className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
             >
-              Save custom metric
+              Create metric
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
@@ -196,17 +328,20 @@ export default async function ProjectCustomMetricsPage({
             </div>
             {metrics.length === 0 ? (
               <div className="mt-5 rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-sm leading-6 text-steel">
-                No custom metrics are configured yet. Add one to start tracking a project-specific behavior signal.
+                <p className="text-sm font-medium text-ink">Track behaviors that matter</p>
+                <p className="mt-2">
+                  Create a metric to track refusal language, policy violations, or any custom pattern in outputs.
+                </p>
               </div>
             ) : (
               <div className="mt-5 space-y-3">
                 {metrics.map((metric) => (
                   <div key={metric.id} className="rounded-[22px] border border-zinc-200 px-4 py-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-ink">{metric.name}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.2em] text-steel">{metric.metric_key}</p>
-                      </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-ink">{metric.name}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.2em] text-steel">{metric.metric_key}</p>
+                    </div>
                       <form action={toggleMetricAction}>
                         <input type="hidden" name="metric_id" value={metric.id} />
                         <input type="hidden" name="enabled" value={String(!metric.enabled)} />
@@ -222,6 +357,11 @@ export default async function ProjectCustomMetricsPage({
                         </button>
                       </form>
                     </div>
+                    <p className="mt-2 text-sm text-steel">
+                      {metric.enabled
+                        ? "Enabled — this metric is now tracked in Reliability and Incidents."
+                        : "Disabled — no new incidents or signals will be created."}
+                    </p>
                     <div className="mt-3 grid gap-2 text-sm text-steel md:grid-cols-2">
                       <p>
                         Type: <span className="font-medium text-ink">{metric.metric_type}</span>

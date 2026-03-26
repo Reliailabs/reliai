@@ -182,6 +182,7 @@ export function IncidentCommandCenterView({
     (rootCauseProbability !== null
       ? `Root cause confidence ${Math.round(rootCauseProbability * 100)}% based on trace deltas.`
       : "Root cause signal is based on current trace deltas.");
+  const showRefusalMetricCta = incident.incident_type === "refusal_rate_spike";
 
   return (
     <div
@@ -263,10 +264,58 @@ export function IncidentCommandCenterView({
             </div>
           ) : null}
 
+          {showRefusalMetricCta ? (
+            <div className="rounded-[18px] border border-amber-200 bg-amber-50/60 px-5 py-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-amber-700">Behavioral signal</p>
+              <p className="mt-2 text-sm font-semibold text-amber-900">
+                Track this behavior as a metric
+              </p>
+              <p className="mt-2 text-sm text-amber-800">
+                Turn refusal spikes into a persistent metric visible in Reliability and incidents.
+              </p>
+              <div className="mt-3">
+                <Button asChild size="sm">
+                  <Link href={`/projects/${incident.project_id}/metrics?template=refusal_language&source=incident&incident_id=${incident.id}`}>
+                    Create refusal metric
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {incident.incident_type.startsWith("custom_metric_spike") ? (() => {
+            const customMetricName = String(summary.custom_metric_name ?? "Custom metric");
+            const currentPct = currentValue !== "n/a" ? Math.round(Number(currentValue) * 100) : null;
+            const baselinePct = baselineValue !== "n/a" ? Math.round(Number(baselineValue) * 100) : null;
+            return (
+              <div className="rounded-[18px] border border-amber-200 bg-amber-50 px-5 py-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-amber-600">{customMetricName} Spike</p>
+                <p className="mt-2 text-sm font-semibold text-amber-900">
+                  {currentPct !== null
+                    ? `${currentPct}% of traces matched this pattern${baselinePct !== null ? ` (baseline: ${baselinePct}%)` : ""}`
+                    : `${customMetricName} rate elevated above baseline`}
+                </p>
+                {deltaPercent !== "n/a" ? (
+                  <p className="mt-1 text-sm text-amber-700">
+                    {deltaPercent}% change from baseline
+                  </p>
+                ) : null}
+                <p className="mt-2 text-sm text-amber-700">
+                  This indicates increased occurrence of:{" "}
+                  <span className="font-medium">{customMetricName}</span>.
+                  Review recent prompt or model changes.
+                </p>
+              </div>
+            );
+          })() : null}
+
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Root cause</p>
             <p className="mt-2 text-sm font-semibold text-ink">{rootCauseTitle}</p>
             <p className="mt-2 text-sm text-steel">{command.root_cause.recommended_fix.summary}</p>
+            {command.root_cause.recommended_action_reason ? (
+              <p className="mt-2 text-sm text-ink">{command.root_cause.recommended_action_reason}</p>
+            ) : null}
             {visibleEvidence.length > 0 ? (
               <ul className="mt-3 text-xs text-steel">
                 {visibleEvidence.map((item) => (

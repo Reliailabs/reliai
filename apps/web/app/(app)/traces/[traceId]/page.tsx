@@ -7,7 +7,7 @@ import { CopyButton } from "@/components/copy-button";
 import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { Button } from "@/components/ui/button";
 import { MetadataBar, MetadataItem } from "@/components/ui/metadata-bar";
-import { getTraceAnalysis, getTraceCompare, getTraceDetail, getTraceGraph, getTraceReplay } from "@/lib/api";
+import { getTraceAnalysis, getTraceCompare, getTraceDetail, getTraceGraph, getTraceReplay, listProjectCustomMetrics } from "@/lib/api";
 import { buildComparison, extractMetrics } from "@/lib/trace-compare-engine";
 
 function renderJson(value: unknown) {
@@ -68,10 +68,11 @@ export default async function TraceDetailPage({
     notFound();
   }
 
-  const [replay, analysis, compare] = await Promise.all([
+  const [replay, analysis, compare, customMetricsResponse] = await Promise.all([
     getTraceReplay(trace.trace_id).catch(() => null),
     getTraceAnalysis(traceId).catch(() => null),
     getTraceCompare(traceId).catch(() => null),
+    listProjectCustomMetrics(trace.project_id).catch(() => ({ items: [] }))
   ]);
 
   const pythonReplay = buildPythonReplaySnippet(trace.trace_id);
@@ -81,6 +82,18 @@ export default async function TraceDetailPage({
   const refusalEval = trace.evaluations.find((e) => e.eval_type === "refusal_detection");
   const refusalMatchedPattern =
     (refusalEval?.raw_result_json?.matched_pattern as string | undefined) ?? null;
+  const hasRefusalMetric = customMetricsResponse.items.some((metric) =>
+    /(refusal)/i.test(metric.name) || /(refusal)/i.test(metric.metric_key)
+  );
+  const hasPolicyMetric = customMetricsResponse.items.some((metric) =>
+    /(policy)/i.test(metric.name) || /(policy)/i.test(metric.metric_key)
+  );
+  const policyEval = trace.evaluations.find((e) =>
+    e.eval_type.toLowerCase().includes("policy") ||
+    (e.label ? e.label.toLowerCase().includes("policy") : false)
+  );
+  const showRefusalMetricCta = trace.refusal_detected === true && !hasRefusalMetric;
+  const showPolicyMetricCta = Boolean(policyEval) && !hasPolicyMetric;
   const replayPayload = replay ? JSON.stringify(replay, null, 2) : null;
   const comparePair = compare?.pairs?.[0] ?? null;
   const baselineTraceId = comparePair?.baseline_trace?.id ?? null;
@@ -227,6 +240,17 @@ export default async function TraceDetailPage({
                     <p className="mt-1 max-w-[200px] truncate text-xs text-steel">
                       <span className="font-mono">{refusalMatchedPattern}</span>
                     </p>
+                  ) : null}
+                  {showRefusalMetricCta ? (
+                    <Button asChild size="sm" variant="outline" className="mt-2 rounded-full">
+                      <Link
+                        href={`/projects/${trace.project_id}/metrics?template=refusal_language&keywords=${encodeURIComponent(
+                          refusalMatchedPattern ?? ""
+                        )}&source=trace`}
+                      >
+                        Track refusal as a metric
+                      </Link>
+                    </Button>
                   ) : null}
                 </div>
               ) : null}
@@ -476,6 +500,28 @@ export default async function TraceDetailPage({
                   </div>
                 ))}
               </div>
+              {showPolicyMetricCta ? (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-3 text-sm text-amber-900">
+                  <p className="text-xs uppercase tracking-[0.2em] text-amber-700">Behavioral signal</p>
+                  <p className="mt-2 font-semibold">Create metric from this behavior</p>
+                  <p className="mt-1 text-sm">
+                    Track policy violations as a custom metric in Reliability and incidents.
+                  </p>
+                  <div className="mt-2">
+                    <Button asChild size="sm" variant="outline" className="rounded-full border-amber-300 text-amber-900 hover:bg-amber-50">
+                      <Link
+                        href={`/projects/${trace.project_id}/metrics?name=Policy%20violation&metric_type=regex&pattern=${encodeURIComponent(
+                          policyEval?.raw_result_json?.matched_pattern
+                            ? String(policyEval.raw_result_json.matched_pattern)
+                            : ""
+                        )}&source=trace`}
+                      >
+                        Create policy metric
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
 

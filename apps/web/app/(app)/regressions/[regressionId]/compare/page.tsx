@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, GitCompareArrows } from "lucide-react";
+import { ArrowLeft, ArrowRight, GitCompareArrows } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { getMetricDisplayName } from "@/components/presenters/ops-format";
 import { getRegressionCompare } from "@/lib/api";
 
 function renderMetadata(value: Record<string, unknown> | null) {
@@ -133,7 +134,7 @@ export default async function RegressionComparePage({
             </p>
           </div>
           <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
-            {compare.metric_name ?? "metric n/a"} · {compare.scope_type ?? "scope"}:{compare.scope_id ?? "n/a"}
+            {getMetricDisplayName(compare.metric_name)} · {compare.scope_type ?? "scope"}:{compare.scope_id ?? "n/a"}
           </div>
         </div>
       </header>
@@ -271,6 +272,29 @@ export default async function RegressionComparePage({
           </div>
         ))}
       </section>
+
+      {compare.pairs.some((p) =>
+        [p.current_trace, p.baseline_trace].some((t) =>
+          (t?.custom_metric_results ?? []).some((m) => m.matched),
+        ),
+      ) ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4">
+          <p className="text-xs uppercase tracking-[0.24em] text-amber-700">Behavioral signal</p>
+          <p className="mt-2 text-sm font-medium text-amber-900">
+            Custom metrics triggered in this comparison
+          </p>
+          <p className="mt-1 text-sm text-amber-800">
+            Track additional behavior patterns or adjust your existing metrics.
+          </p>
+          <Link
+            href={`/projects/${compare.project_id}/metrics`}
+            className="mt-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 hover:text-amber-950"
+          >
+            Manage custom metrics
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }

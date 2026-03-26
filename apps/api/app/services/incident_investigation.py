@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import difflib
 from uuid import UUID
 
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
+from app.models.prompt_version import PromptVersion
 from app.models.deployment_simulation import DeploymentSimulation
 from app.models.reliability_recommendation import ReliabilityRecommendation
 from app.services.auth import OperatorContext
@@ -30,6 +32,65 @@ class IncidentInvestigationResult:
     comparison: dict
     key_differences: list[dict]
 
+
+def _prompt_body(record: PromptVersion) -> str:
+    body = (record.notes or record.label or "").strip()
+    if body:
+        return body
+    return f"[No prompt content stored for version {record.version}]"
+
+
+def _select_prompt_record(db: Session, *, project_id: UUID, traces) -> PromptVersion | None:
+    by_record: dict[UUID, int] = {}
+    by_version: dict[str, int] = {}
+    for trace in traces:
+        if trace.prompt_version_record_id is not None:
+            by_record[trace.prompt_version_record_id] = by_record.get(trace.prompt_version_record_id, 0) + 1
+        elif trace.prompt_version:
+            by_version[trace.prompt_version] = by_version.get(trace.prompt_version, 0) + 1
+    if by_record:
+        record_id = sorted(by_record.items(), key=lambda item: (-item[1], str(item[0])))[0][0]
+        return db.get(PromptVersion, record_id)
+    if by_version:
+        version = sorted(by_version.items(), key=lambda item: (-item[1], item[0]))[0][0]
+        return db.scalar(
+            select(PromptVersion).where(
+                PromptVersion.project_id == project_id,
+                PromptVersion.version == version,
+            )
+        )
+    return None
+
+
+def compute_prompt_content_diff(
+    db: Session,
+    *,
+    project_id: UUID,
+    current_traces,
+    baseline_traces,
+) -> dict | None:
+    current_prompt = _select_prompt_record(db, project_id=project_id, traces=current_traces)
+    baseline_prompt = _select_prompt_record(db, project_id=project_id, traces=baseline_traces)
+    if current_prompt is None or baseline_prompt is None:
+        return None
+    from_text = _prompt_body(baseline_prompt)
+    to_text = _prompt_body(current_prompt)
+    diff_lines = list(
+        difflib.unified_diff(
+            from_text.splitlines(),
+            to_text.splitlines(),
+            fromfile=f"prompt:{baseline_prompt.version}",
+            tofile=f"prompt:{current_prompt.version}",
+            lineterm="",
+        )
+    )
+    if not diff_lines:
+        diff_lines = [f"@@ prompt content identical between {baseline_prompt.version} and {current_prompt.version} @@"] 
+    return {
+        "from_version": baseline_prompt.version,
+        "to_version": current_prompt.version,
+        "diff": diff_lines,
+    }
 
 def _key_differences(trace_compare) -> list[dict]:
     if trace_compare is None:

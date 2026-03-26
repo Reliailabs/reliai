@@ -6,7 +6,7 @@ import { OnboardingPathTracker } from "@/components/onboarding/onboarding-path-t
 import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { createOrganization } from "@/lib/api";
+import { createOrganization, listProjects } from "@/lib/api";
 import { requireOperatorSession, switchOrganization } from "@/lib/auth";
 
 function slugify(value: string) {
@@ -70,6 +70,11 @@ export default async function OnboardingPage({
   const session = await requireOperatorSession();
   const defaultName = defaultOrgName(session.operator.email);
   const defaultSlug = slugify(defaultName);
+  const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
+  const projectList = organizationId
+    ? await listProjects({ organizationId, limit: 1 }).catch(() => null)
+    : null;
+  const primaryProjectId = projectList?.items[0]?.id ?? null;
 
   async function createOrganizationAction(formData: FormData) {
     "use server";
@@ -126,34 +131,59 @@ export default async function OnboardingPage({
       </Card>
 
       {selectedPath === "choose" ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 1</p>
-            <h2 className="mt-2 text-xl font-semibold text-ink">Connect your app</h2>
-            <p className="mt-2 text-sm leading-6 text-steel">
-              Install the SDK and send traces from your own environment. This path is best when you
-              already have traffic and want production signals immediately.
-            </p>
-            <div className="mt-5">
-              <Button asChild>
-                <Link href="/onboarding?path=sdk">Connect SDK</Link>
-              </Button>
-            </div>
-          </Card>
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="p-6">
+              <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 1</p>
+              <h2 className="mt-2 text-xl font-semibold text-ink">Connect your app</h2>
+              <p className="mt-2 text-sm leading-6 text-steel">
+                Install the SDK and send traces from your own environment. This path is best when you
+                already have traffic and want production signals immediately.
+              </p>
+              <div className="mt-5">
+                <Button asChild>
+                  <Link href="/onboarding?path=sdk">Connect SDK</Link>
+                </Button>
+              </div>
+            </Card>
 
-          <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 2</p>
-            <h2 className="mt-2 text-xl font-semibold text-ink">Try a guided simulation</h2>
-            <p className="mt-2 text-sm leading-6 text-steel">
-              Generate synthetic traces and walk through incident detection, comparison, and root-cause
-              confirmation with realistic operator screens.
-            </p>
-            <div className="mt-5">
-              <Button asChild>
-                <Link href="/onboarding?path=simulation">Start simulation</Link>
-              </Button>
-            </div>
-          </Card>
+            <Card className="p-6">
+              <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 2</p>
+              <h2 className="mt-2 text-xl font-semibold text-ink">Try a guided simulation</h2>
+              <p className="mt-2 text-sm leading-6 text-steel">
+                Generate synthetic traces and walk through incident detection, comparison, and root-cause
+                confirmation with realistic operator screens.
+              </p>
+              <div className="mt-5">
+                <Button asChild>
+                  <Link href="/onboarding?path=simulation">Start simulation</Link>
+                </Button>
+              </div>
+            </Card>
+          </div>
+          <p className="text-center text-xs text-steel">
+            After setup, navigate to any project to define{" "}
+            <Link href="/dashboard" className="underline hover:text-ink">
+              custom behavioral signals
+            </Link>{" "}
+            — like refusal language, policy violations, or hallucination markers.
+          </p>
+          {primaryProjectId ? (
+            <Card className="p-5">
+              <p className="text-xs uppercase tracking-[0.24em] text-steel">Behavioral signals</p>
+              <h3 className="mt-2 text-xl font-semibold text-ink">Create a refusal metric</h3>
+              <p className="mt-2 text-sm text-steel">
+                Turn refusal spikes into a persistent metric you can track in Reliability and incidents.
+              </p>
+              <div className="mt-4">
+                <Button asChild>
+                  <Link href={`/projects/${primaryProjectId}/metrics?template=refusal_language&source=onboarding`}>
+                    Create a refusal metric
+                  </Link>
+                </Button>
+              </div>
+            </Card>
+          ) : null}
         </div>
       ) : null}
 

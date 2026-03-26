@@ -18,11 +18,13 @@ class ConfigPatchItem(BaseModel):
 class ConfigApplyRequest(BaseModel):
     patch: list[ConfigPatchItem]
     source_trace_id: str | None = None
+    incident_id: UUID | None = None
     reason: str | None = None
 
 
 class ConfigUndoRequest(BaseModel):
     source_trace_id: str | None = None
+    incident_id: UUID | None = None
     reason: str | None = None
 
 

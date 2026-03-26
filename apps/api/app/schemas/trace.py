@@ -318,6 +318,12 @@ class TraceComparePairRead(APIModel):
     diff_blocks: list[TraceDiffBlockRead]
 
 
+class PromptContentDiffRead(APIModel):
+    from_version: str
+    to_version: str
+    diff: list[str]
+
+
 class TraceComparisonRead(APIModel):
     comparison_scope: str
     source_id: UUID
@@ -339,3 +345,4 @@ class TraceComparisonRead(APIModel):
     model_version_contexts: list[ModelVersionContextRead]
     cohort_pivots: list[CohortPivotRead]
     related_incident_id: UUID | None
+    prompt_content_diff: PromptContentDiffRead | None = None

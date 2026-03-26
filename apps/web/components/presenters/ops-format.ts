@@ -77,3 +77,27 @@ export function renderMetadata(metadata: Record<string, unknown> | null | undefi
   }
   return JSON.stringify(metadata, null, 2);
 }
+
+const METRIC_DISPLAY_NAMES: Record<string, string> = {
+  refusal_rate: "Refusal rate",
+  success_rate: "Success rate",
+  structured_output_validity_pass_rate: "Structured output validity",
+  p95_latency_ms: "P95 latency",
+  median_latency_ms: "Median latency",
+  average_cost_usd_per_trace: "Cost per trace",
+};
+
+export function getMetricDisplayName(
+  metricName: string | null | undefined,
+  summary?: Record<string, unknown>,
+): string {
+  if (!metricName) return "metric";
+  if (metricName in METRIC_DISPLAY_NAMES) return METRIC_DISPLAY_NAMES[metricName];
+  if (metricName.startsWith("custom_metric.")) {
+    const stored = summary?.custom_metric_name;
+    if (typeof stored === "string" && stored) return `${stored} rate`;
+    const key = metricName.replace(/^custom_metric\./, "").replace(/_rate$/, "");
+    return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) + " rate";
+  }
+  return metricName.replace(/[_.]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}

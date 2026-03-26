@@ -1202,6 +1202,12 @@ export interface TraceComparePairRead {
   diff_blocks: TraceDiffBlockRead[];
 }
 
+export interface PromptContentDiffRead {
+  from_version: string;
+  to_version: string;
+  diff: string[];
+}
+
 export interface TraceComparisonRead {
   comparison_scope: string;
   source_id: string;
@@ -1223,6 +1229,7 @@ export interface TraceComparisonRead {
   model_version_contexts: ModelVersionContextRead[];
   cohort_pivots: CohortPivotRead[];
   related_incident_id: string | null;
+  prompt_content_diff?: PromptContentDiffRead | null;
 }
 
 export interface RootCauseProbabilityRead {
@@ -1319,7 +1326,9 @@ export interface IncidentEventRead {
     | "reopened"
     | "alert_attempted"
     | "alert_sent"
-    | "alert_failed";
+    | "alert_failed"
+    | "config_applied"
+    | "config_undone";
   actor_operator_user_id: string | null;
   actor_operator_user_email: string | null;
   metadata_json: Record<string, unknown> | null;
