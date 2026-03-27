@@ -69,7 +69,8 @@ export default async function TracesPage({
   };
 
   const traces = await listTraces(filters).catch(() => ({ items: [], next_cursor: null }));
-  const bestTraceId = traces.items[0]?.id;
+  const forcedWowTraceId = readSearchParam(params.wow_trace_id);
+  const bestTraceId = forcedWowTraceId ?? traces.items[0]?.id;
   const disableAutoSelect = readSearchParam(params.autoselect) === "0";
   const hasCursor = Boolean(filters.cursor);
   const hasFilters =

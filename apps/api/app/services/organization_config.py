@@ -57,7 +57,9 @@ def _apply_patch(current: dict[str, Any], patch: list[ConfigPatchItem]) -> dict[
     for item in patch:
         _validate_patch_item(item)
         current_value = next_config.get(item.key)
-        if item.from_value is not None and current_value != item.from_value:
+        if item.from_value is not None and current_value is not None and current_value != item.from_value:
+            if current_value == item.to:
+                continue
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Config mismatch for {item.key}",

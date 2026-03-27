@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CheckCircle2, CircleDashed, KeyRound, Network, Radar } from "lucide-react";
+import type { Route } from "next";
 
 import { OnboardingPathTracker } from "@/components/onboarding/onboarding-path-tracker";
 import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createOrganization, listProjects } from "@/lib/api";
-import { requireOperatorSession, switchOrganization } from "@/lib/auth";
+import { getOperatorSession, requireOperatorSession, switchOrganization } from "@/lib/auth";
 
 function slugify(value: string) {
   return value
@@ -62,10 +63,63 @@ function normalizePath(value: string | undefined): OnboardingPath {
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ path?: string }>;
+  searchParams: Promise<{ path?: string; autostart?: string }>;
 }) {
-  const { path } = await searchParams;
+  const { path, autostart } = await searchParams;
   const selectedPath = normalizePath(path);
+  const autoStartSimulation = autostart === "1" || autostart === "true";
+
+  const maybeSession = await getOperatorSession();
+  if (!maybeSession) {
+    const returnTo = "/onboarding?path=simulation&autostart=1";
+    const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
+    if (autoStartSimulation) {
+      redirect(signInHref);
+    }
+    return (
+      <div className="space-y-6">
+        <Card className="p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">Guided simulation</p>
+          <h1 className="mt-3 text-3xl font-semibold text-ink">See your first AI incident in under 2 minutes</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-steel">
+            We simulate a realistic failure, open an incident automatically, and walk you through
+            root cause and resolution impact. No SDK required.
+          </p>
+          <div className="mt-4 grid gap-2 text-sm text-steel">
+            <p>1. Generate a realistic regression and incident.</p>
+            <p>2. Review command center evidence and prompt diff.</p>
+            <p>3. Apply a fix and see the impact summary.</p>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href={signInHref}>Start guided simulation</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/sign-in">Sign in</Link>
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <p className="text-xs uppercase tracking-[0.24em] text-steel">What you will see</p>
+          <div className="mt-3 grid gap-4 md:grid-cols-3">
+            <div>
+              <p className="text-sm font-semibold text-ink">Incident opens</p>
+              <p className="mt-1 text-sm text-steel">A refusal spike triggers an incident automatically.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-ink">Evidence + diff</p>
+              <p className="mt-1 text-sm text-steel">Command center shows prompt diff and root-cause scoring.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-ink">Impact proof</p>
+              <p className="mt-1 text-sm text-steel">Resolution impact shows the metric change after a fix.</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const session = await requireOperatorSession();
   const defaultName = defaultOrgName(session.operator.email);
@@ -285,7 +339,10 @@ export default async function OnboardingPage({
       ) : null}
 
       {selectedPath === "simulation" ? (
-        <OnboardingSimulationRunner defaultProjectName={`${defaultSlug}-simulation`} />
+        <OnboardingSimulationRunner
+          defaultProjectName={`${defaultSlug}-simulation`}
+          autoStart={autoStartSimulation}
+        />
       ) : null}
     </div>
   );

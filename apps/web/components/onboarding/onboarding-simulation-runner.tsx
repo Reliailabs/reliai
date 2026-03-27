@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -26,12 +26,13 @@ interface SimulationStatusResponse {
 
 interface OnboardingSimulationRunnerProps {
   defaultProjectName: string;
+  autoStart?: boolean;
 }
 
 const MAX_POLLS = 120;
 const POLL_INTERVAL_MS = 2500;
 
-export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSimulationRunnerProps) {
+export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: OnboardingSimulationRunnerProps) {
   const router = useRouter();
   const [state, setState] = useState<RunnerState>("idle");
   const [simulationId, setSimulationId] = useState<string | null>(null);
@@ -151,7 +152,7 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
     };
   }, [simulationId, state, router]);
 
-  async function startSimulation() {
+  const startSimulation = useCallback(async () => {
     if (state === "creating" || state === "running") {
       return;
     }
@@ -195,7 +196,7 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
       setError(startError instanceof Error ? startError.message : "Failed to start simulation");
       setState("failed");
     }
-  }
+  }, [modelName, projectName, promptType, state]);
 
   function resetSimulation() {
     setState("idle");
@@ -204,6 +205,13 @@ export function OnboardingSimulationRunner({ defaultProjectName }: OnboardingSim
     setError(null);
     hasNavigatedRef.current = false;
   }
+
+  useEffect(() => {
+    if (!autoStart || state !== "idle") {
+      return;
+    }
+    startSimulation();
+  }, [autoStart, startSimulation, state]);
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">

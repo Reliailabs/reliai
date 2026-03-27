@@ -150,6 +150,11 @@ export function IncidentCommandCenterView({
   const baselineValue = metric?.baseline_value ?? (summary.baseline_value ? String(summary.baseline_value) : "n/a");
   const deltaPercent = metric?.delta_percent ?? (summary.delta_percent ? String(summary.delta_percent) : "n/a");
   const resolutionImpact = command.resolution_impact ?? null;
+  const compareLink = command.trace_compare.compare_link
+    ? (command.trace_compare.compare_link.includes("?")
+      ? `${command.trace_compare.compare_link}&incident_id=${incidentId}`
+      : `${command.trace_compare.compare_link}?incident_id=${incidentId}`)
+    : null;
 
   const metricSignals: Array<{ label: string; value: string }> = [];
   if (metric) {
@@ -321,6 +326,11 @@ export function IncidentCommandCenterView({
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Root cause</p>
             <p className="mt-2 text-sm font-semibold text-ink">{rootCauseTitle}</p>
+            {rootCauseProbability !== null ? (
+              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-steel">
+                Confidence: {Math.round(rootCauseProbability * 100)}%
+              </p>
+            ) : null}
             <p className="mt-2 text-sm text-steel">{command.root_cause.recommended_fix.summary}</p>
             {command.root_cause.recommended_action_reason ? (
               <p className="mt-2 text-sm text-ink">{command.root_cause.recommended_action_reason}</p>
@@ -352,9 +362,11 @@ export function IncidentCommandCenterView({
                     View prompt diff
                   </Link>
                 </Button>
-                <Button asChild size="sm" variant="outline">
-                  <a href={command.trace_compare.compare_link}>Open example trace</a>
-                </Button>
+                {compareLink ? (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={compareLink}>Open example trace</a>
+                  </Button>
+                ) : null}
               </div>
             ) : null}
           </div>
