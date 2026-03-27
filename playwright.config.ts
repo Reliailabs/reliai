@@ -1,6 +1,11 @@
 import { defineConfig } from "@playwright/test";
+import { existsSync } from "node:fs";
+import path from "node:path";
 
 const isCI = Boolean(process.env.CI);
+const apiServerEnabled = process.env.PW_API_SERVER !== "false";
+const venvPython = path.join(process.cwd(), "apps/api/.venv/bin/python");
+const apiPython = existsSync(venvPython) ? venvPython : "python";
 
 export default defineConfig({
   testDir: "./tests/visual",
@@ -29,12 +34,16 @@ export default defineConfig({
       reuseExistingServer: !isCI,
       timeout: 120_000,
     },
-    {
-      command: "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
-      port: 8000,
-      reuseExistingServer: !isCI,
-      timeout: 120_000,
-      cwd: "apps/api",
-    },
+    ...(apiServerEnabled
+      ? [
+          {
+            command: `${apiPython} -m uvicorn app.main:app --host 127.0.0.1 --port 8000`,
+            port: 8000,
+            reuseExistingServer: !isCI,
+            timeout: 120_000,
+            cwd: "apps/api",
+          },
+        ]
+      : []),
   ],
 });
