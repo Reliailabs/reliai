@@ -163,15 +163,28 @@ test("trace wow flow auto-selects retrieval failure trace", async ({ page }) => 
   let wowTraceGraphId: string | null = null;
   if (sessionToken) {
     const deadline = Date.now() + 30000;
+    const nowIso = new Date().toISOString();
+    const windowStart = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const searchParams = new URLSearchParams({
+      limit: "20",
+      date_from: windowStart,
+      date_to: nowIso,
+    });
+
     while (Date.now() < deadline && !wowTraceId) {
-      const traceListResponse = await page.request.get("http://127.0.0.1:8000/api/v1/traces?limit=1", {
-        headers: {
-          Authorization: `Bearer ${sessionToken}`,
-        },
-      });
+      const traceListResponse = await page.request.get(
+        `http://127.0.0.1:8000/api/v1/traces?${searchParams.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+          },
+        }
+      );
       if (traceListResponse.ok()) {
-        const traceListJson = (await traceListResponse.json()) as { items?: Array<{ id: string }> };
-        wowTraceId = traceListJson.items?.[0]?.id ?? null;
+        const traceListJson = (await traceListResponse.json()) as {
+          items?: Array<{ id: string; request_id?: string }>;
+        };
+        wowTraceId = traceListJson.items?.find((trace) => trace.request_id === "wow-trace")?.id ?? null;
       }
       if (!wowTraceId) {
         await new Promise((resolve) => setTimeout(resolve, 1000));

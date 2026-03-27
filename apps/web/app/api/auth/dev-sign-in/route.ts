@@ -29,13 +29,21 @@ export async function POST(request: Request) {
     return NextResponse.redirect(new URL("/sign-in?error=1", request.url));
   }
 
-  const response = NextResponse.redirect(new URL(returnTo, request.url));
+  const response = NextResponse.redirect(returnTo);
+  const secureCookie = new URL(request.url).protocol === "https:";
   response.cookies.set(SESSION_COOKIE_NAME, result.session_token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookie,
   });
 
   return response;
+}
+
+export function GET() {
+  return NextResponse.json(
+    { detail: "Use POST to /api/auth/dev-sign-in with form data." },
+    { status: 405 }
+  );
 }

@@ -1,10 +1,15 @@
 import { test } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
 
 test("focused visual QA for homepage, demo, trace detail", async ({ page }) => {
+  const outputDir = path.join(process.cwd(), "test-results", "visual-qa");
+  fs.mkdirSync(outputDir, { recursive: true });
+
   await page.goto("/", { waitUntil: "networkidle" });
   await page.setViewportSize({ width: 1600, height: 1200 });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-home.png", fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, "visual-qa-home.png"), fullPage: true });
 
   const signInResponse = await page.request.post("http://127.0.0.1:8000/api/v1/auth/sign-in", {
     data: {
@@ -30,11 +35,11 @@ test("focused visual QA for homepage, demo, trace detail", async ({ page }) => {
   await page.goto("/demo?visual=1", { waitUntil: "networkidle" });
   await page.waitForSelector("[data-demo-container-ready]");
   await page.waitForTimeout(500);
-  await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-demo.png", fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, "visual-qa-demo.png"), fullPage: true });
 
   await page.goto("/dashboard", { waitUntil: "networkidle" });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-dashboard.png", fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, "visual-qa-dashboard.png"), fullPage: true });
 
   const incidentListResponse = await page.request.get("http://127.0.0.1:8000/api/v1/incidents?limit=1", {
     headers: sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined,
@@ -44,7 +49,7 @@ test("focused visual QA for homepage, demo, trace detail", async ({ page }) => {
   if (incidentId) {
     await page.goto(`/incidents/${incidentId}`, { waitUntil: "networkidle" });
     await page.waitForTimeout(500);
-    await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-incident.png", fullPage: true });
+    await page.screenshot({ path: path.join(outputDir, "visual-qa-incident.png"), fullPage: true });
   }
 
   const traceListResponse = await page.request.get("http://127.0.0.1:8000/api/v1/traces?limit=1", {
@@ -61,6 +66,6 @@ test("focused visual QA for homepage, demo, trace detail", async ({ page }) => {
   if (traceGraphId) {
     await page.goto(`/traces/${traceGraphId}`, { waitUntil: "networkidle" });
     await page.waitForTimeout(500);
-    await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-trace.png", fullPage: true });
+    await page.screenshot({ path: path.join(outputDir, "visual-qa-trace.png"), fullPage: true });
   }
 });
