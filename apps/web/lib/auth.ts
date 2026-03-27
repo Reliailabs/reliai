@@ -73,14 +73,21 @@ export async function signIn(email: string, password: string) {
     return null;
   }
 
-  return (await response.json()) as OperatorSession & { session_token: string };
+  const session = (await response.json()) as OperatorSession & { session_token: string };
+  (await cookies()).set(SESSION_COOKIE_NAME, session.session_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/"
+  });
+  return session;
 }
 
-export async function getWorkosSignInUrl(returnTo?: string): Promise<string | null> {
+export async function getWorkosSignInUrl(): Promise<string | null> {
   if (!workosConfigured()) {
     return null;
   }
-  return getSignInUrl({ returnTo: returnTo || "/dashboard" });
+  return getSignInUrl({ returnTo: "/dashboard" });
 }
 
 export async function getOperatorSession(): Promise<OperatorSession | null> {

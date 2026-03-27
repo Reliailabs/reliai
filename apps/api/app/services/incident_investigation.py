@@ -68,49 +68,10 @@ def compute_prompt_content_diff(
     project_id: UUID,
     current_traces,
     baseline_traces,
-    fallback_current_version: str | None = None,
-    fallback_baseline_version: str | None = None,
-    fallback_current_content: str | None = None,
-    fallback_baseline_content: str | None = None,
 ) -> dict | None:
     current_prompt = _select_prompt_record(db, project_id=project_id, traces=current_traces)
     baseline_prompt = _select_prompt_record(db, project_id=project_id, traces=baseline_traces)
-    if current_prompt is None and fallback_current_version:
-        current_prompt = db.scalar(
-            select(PromptVersion).where(
-                PromptVersion.project_id == project_id,
-                PromptVersion.version == fallback_current_version,
-            )
-        )
-    if baseline_prompt is None and fallback_baseline_version:
-        baseline_prompt = db.scalar(
-            select(PromptVersion).where(
-                PromptVersion.project_id == project_id,
-                PromptVersion.version == fallback_baseline_version,
-            )
-        )
     if current_prompt is None or baseline_prompt is None:
-        if fallback_current_content or fallback_baseline_content:
-            from_text = (fallback_baseline_content or "").strip()
-            to_text = (fallback_current_content or "").strip()
-            diff_lines = list(
-                difflib.unified_diff(
-                    from_text.splitlines(),
-                    to_text.splitlines(),
-                    fromfile=f"prompt:{fallback_baseline_version or 'baseline'}",
-                    tofile=f"prompt:{fallback_current_version or 'current'}",
-                    lineterm="",
-                )
-            )
-            if not diff_lines:
-                diff_lines = [
-                    f"@@ prompt content identical between {fallback_baseline_version or 'baseline'} and {fallback_current_version or 'current'} @@"
-                ]
-            return {
-                "from_version": fallback_baseline_version or "baseline",
-                "to_version": fallback_current_version or "current",
-                "diff": diff_lines,
-            }
         return None
     from_text = _prompt_body(baseline_prompt)
     to_text = _prompt_body(current_prompt)

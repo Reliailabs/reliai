@@ -158,21 +158,10 @@ def build_resolution_impact_baseline(
         window_minutes=window_minutes,
     )
     before = db.scalar(statement.where(ReliabilityMetric.window_end <= action_time))
-    display_name = _resolution_display_name(str(metric_name), summary)
     if before is None:
-        summary_value = summary.get("current_value_number")
-        unit = summary.get("metric_unit")
-        if summary_value is None or unit is None:
-            return None
-        before_value, _ = _format_resolution_value(float(summary_value), str(unit))
-        return {
-            "metric_name": str(metric_name),
-            "display_name": display_name,
-            "before_value": before_value,
-            "unit": str(unit),
-            "status": "pending",
-        }
+        return None
     unit = before.unit
+    display_name = _resolution_display_name(str(metric_name), summary)
     before_value, _ = _format_resolution_value(before.value_number, unit)
     return {
         "metric_name": str(metric_name),
@@ -222,29 +211,6 @@ def compute_resolution_impact(
     )
     after = db.scalar(statement.where(ReliabilityMetric.window_end >= after_threshold))
     if after is None:
-        source = str(summary.get("source") or "")
-        baseline_value_number = summary.get("baseline_value_number")
-        if source.startswith("onboarding_simulation") and baseline_value_number is not None:
-            after_value, after_display = _format_resolution_value(float(baseline_value_number), unit)
-            before_display = _format_resolution_display_value(before_value, unit)
-            direction = _resolution_direction(str(metric_name))
-            if direction == "higher":
-                verb = "improved" if after_value > before_value else "declined"
-            elif "latency" in str(metric_name).lower():
-                verb = "improved" if after_value < before_value else "increased"
-            else:
-                verb = "dropped" if after_value < before_value else "increased"
-            summary_text = f"{display_name} {verb} from {before_display} to {after_display} {action_label}"
-            return {
-                "metric_name": str(metric_name),
-                "display_name": display_name,
-                "before_value": before_value,
-                "after_value": after_value,
-                "delta": after_value - before_value,
-                "unit": unit,
-                "summary": summary_text,
-                "status": "simulated",
-            }
         return {
             **baseline,
             "status": "pending",
@@ -1203,24 +1169,6 @@ def get_incident_compare_traces(db: Session, incident: Incident) -> tuple[list[T
         _select_representative_traces(current_window_traces, incident=incident, window_kind="current"),
         _select_representative_traces(baseline_window_traces, incident=incident, window_kind="baseline"),
     )
-
-
-def get_incident_window_traces(db: Session, incident: Incident) -> tuple[list[Trace], list[Trace]]:
-    current_window_traces = _load_window_traces(
-        db,
-        incident=incident,
-        window_start_key="current_window_start",
-        window_end_key="current_window_end",
-        with_details=True,
-    )
-    baseline_window_traces = _load_window_traces(
-        db,
-        incident=incident,
-        window_start_key="baseline_window_start",
-        window_end_key="baseline_window_end",
-        with_details=True,
-    )
-    return current_window_traces, baseline_window_traces
 
 
 def _share(counter: Counter[str], total: int, key: str) -> Decimal | None:

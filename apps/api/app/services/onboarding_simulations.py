@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
 from app.models.deployment_simulation import DeploymentSimulation
-from app.models.environment import ENVIRONMENT_PRODUCTION, Environment
+from app.models.environment import ENVIRONMENT_PRODUCTION
 from app.models.incident import Incident
 from app.models.prompt_version import PromptVersion
 from app.models.project import Project
@@ -219,23 +219,21 @@ def _seed_prompt_versions(db: Session, *, project: Project) -> tuple[PromptVersi
     to_version = "v18"
     v17 = ensure_prompt_version_record(db, project=project, version=from_version)
     v18 = ensure_prompt_version_record(db, project=project, version=to_version)
-    baseline_notes = (
-        "System role: helpful support assistant\n"
-        "Answer directly when policy allows.\n"
-        "If uncertain, ask one clarifying question.\n"
-        "Do not refuse unless request is unsafe."
-    )
-    failing_notes = (
-        "System role: strict policy-first support assistant\n"
-        "Apply policy checks before every answer.\n"
-        "Prefer refusal when safety confidence is below threshold.\n"
-        "If uncertain, respond with policy-safe refusal."
-    )
-    if v17 is not None and not (v17.notes or "").strip():
-        v17.notes = baseline_notes
+    if v17 is not None and not v17.notes:
+        v17.notes = (
+            "System role: helpful support assistant\n"
+            "Answer directly when policy allows.\n"
+            "If uncertain, ask one clarifying question.\n"
+            "Do not refuse unless request is unsafe."
+        )
         db.add(v17)
-    if v18 is not None and not (v18.notes or "").strip():
-        v18.notes = failing_notes
+    if v18 is not None and not v18.notes:
+        v18.notes = (
+            "System role: strict policy-first support assistant\n"
+            "Apply policy checks before every answer.\n"
+            "Prefer refusal when safety confidence is below threshold.\n"
+            "If uncertain, respond with policy-safe refusal."
+        )
         db.add(v18)
     db.commit()
     assert v17 is not None
@@ -257,7 +255,6 @@ def _create_synthetic_trace(
     success: bool,
     output_text: str,
     latency_ms: int,
-    environment_name: str | None = None,
 ) -> Trace:
     payload = TraceIngestRequest(
         timestamp=timestamp,
@@ -265,7 +262,6 @@ def _create_synthetic_trace(
         model_name=model_name,
         model_provider="openai",
         prompt_version=prompt_version,
-        environment=environment_name,
         input_text=f"User asks for {prompt_type.replace('_', ' ')} troubleshooting steps.",
         output_text=output_text,
         latency_ms=latency_ms,
@@ -303,25 +299,6 @@ def _onboarding_compare_metadata(
     baseline_window_start, baseline_window_end = _trace_window_bounds(baseline_traces)
     current_window_start, current_window_end = _trace_window_bounds(failing_traces)
     sample_trace_ids = [str(trace.id) for trace in (failing_traces[:3] + baseline_traces[:2])]
-    baseline_prompt_content = (baseline_prompt.notes or baseline_prompt.label or "").strip()
-    failing_prompt_content = (failing_prompt.notes or failing_prompt.label or "").strip()
-    baseline_success_rate = (
-        sum(1 for trace in baseline_traces if trace.success) / len(baseline_traces)
-        if baseline_traces
-        else 0.0
-    )
-    current_success_rate = (
-        sum(1 for trace in failing_traces if trace.success) / len(failing_traces)
-        if failing_traces
-        else 0.0
-    )
-    baseline_percent = round(baseline_success_rate * 100, 1)
-    current_percent = round(current_success_rate * 100, 1)
-    delta_percent = (
-        round(((current_success_rate - baseline_success_rate) / baseline_success_rate) * 100, 1)
-        if baseline_success_rate > 0
-        else None
-    )
     return {
         "scope_type": "project",
         "scope_id": str(project.id),
@@ -335,15 +312,7 @@ def _onboarding_compare_metadata(
         "baseline_prompt_version": baseline_prompt.version,
         "current_prompt_version_id": str(failing_prompt.id),
         "current_prompt_version": failing_prompt.version,
-        "baseline_prompt_content": baseline_prompt_content or None,
-        "current_prompt_content": failing_prompt_content or None,
         "sample_trace_ids": sample_trace_ids,
-        "metric_unit": "%",
-        "current_value": f"{current_percent}%",
-        "baseline_value": f"{baseline_percent}%",
-        "current_value_number": current_success_rate,
-        "baseline_value_number": baseline_success_rate,
-        "delta_percent": delta_percent,
     }
 
 
@@ -432,11 +401,6 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
 
         model_name = str((simulation.analysis_json or {}).get("model_name") or "gpt-4o")
         prompt_type = str((simulation.analysis_json or {}).get("prompt_type") or "support_triage")
-        environment_name = None
-        if simulation.environment_id is not None:
-            environment = db.get(Environment, simulation.environment_id)
-            if environment is not None:
-                environment_name = environment.name
 
         logger.info(
             "onboarding simulation started",
@@ -483,7 +447,6 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
                 success=True,
                 output_text="{\"result\": \"Account access reset instructions\"}",
                 latency_ms=420,
-                environment_name=environment_name,
             )
             baseline_traces.append(baseline_trace)
             generated_trace_count += 1
@@ -514,7 +477,6 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
                     else "{\"result\": \"Please verify MFA and reset your password\"}"
                 ),
                 latency_ms=640 if is_failure else 480,
-                environment_name=environment_name,
             )
             failing_traces.append(failing_trace)
             last_trace_id = str(failing_trace.id)
@@ -610,16 +572,6 @@ def run_onboarding_simulation(simulation_id: UUID) -> None:
                 return
         else:
             merged_summary = _merge_incident_summary(incident.summary_json, compare_metadata)
-            for key in (
-                "baseline_prompt_version_id",
-                "baseline_prompt_version",
-                "current_prompt_version_id",
-                "current_prompt_version",
-                "baseline_prompt_content",
-                "current_prompt_content",
-            ):
-                if compare_metadata.get(key) is not None:
-                    merged_summary[key] = compare_metadata[key]
             if merged_summary != (incident.summary_json or {}):
                 incident.summary_json = merged_summary
                 db.add(incident)

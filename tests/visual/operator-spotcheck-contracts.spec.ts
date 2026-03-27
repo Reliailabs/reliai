@@ -1,6 +1,4 @@
 import { test } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
-import path from "node:path";
 
 const latencyIncidentId = "a27ae19b-51f1-4d12-984a-b587bd40c0d1";
 const recommendationIncidentId = "d2e61da3-3778-4487-bc66-f4ba3bbcdbab";
@@ -27,22 +25,19 @@ test("operator contract spot-check: latency metric and low-confidence recommenda
     ]);
   }
 
-  const outputDir = path.join(process.cwd(), "test-results", "visual-qa");
-  await mkdir(outputDir, { recursive: true });
-
   await page.goto(`/incidents/${latencyIncidentId}`, { waitUntil: "networkidle" });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(outputDir, "visual-qa-latency-incident.png"), fullPage: true });
+  await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-latency-incident.png", fullPage: true });
 
   await page.goto(`/incidents/${latencyIncidentId}/command`, { waitUntil: "networkidle" });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(outputDir, "visual-qa-latency-command.png"), fullPage: true });
+  await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-latency-command.png", fullPage: true });
 
   await page.goto(`/incidents/${recommendationIncidentId}`, { waitUntil: "networkidle" });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(outputDir, "visual-qa-recommend-incident.png"), fullPage: true });
+  await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-recommend-incident.png", fullPage: true });
 
   await page.goto(`/incidents/${recommendationIncidentId}/command`, { waitUntil: "networkidle" });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(outputDir, "visual-qa-recommend-command.png"), fullPage: true });
+  await page.screenshot({ path: "/Users/robert/Documents/Reliai/visual-qa-recommend-command.png", fullPage: true });
 });

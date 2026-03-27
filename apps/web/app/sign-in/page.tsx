@@ -1,27 +1,23 @@
 import { redirect } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
-import { getOperatorSession, getWorkosSignInUrl } from "@/lib/auth";
+import { getOperatorSession, getWorkosSignInUrl, signIn } from "@/lib/auth";
 import { devAuthEnabled, workosConfigured } from "@/lib/constants";
-
-const sanitizeReturnTo = (value?: string) =>
-  typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 
 export default async function SignInPage({
   searchParams
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const session = await getOperatorSession();
+  if (session) {
+    redirect("/dashboard");
+  }
+
   const params = (await searchParams) ?? {};
   const hasError = params.error === "1";
   const workosEnabled = workosConfigured();
-  const rawReturnTo = Array.isArray(params.return_to) ? params.return_to[0] : params.return_to;
-  const safeReturnTo = sanitizeReturnTo(rawReturnTo);
-  const session = await getOperatorSession();
-  if (session) {
-    redirect(safeReturnTo);
-  }
-  const workosSignInUrl = await getWorkosSignInUrl(safeReturnTo);
+  const workosSignInUrl = await getWorkosSignInUrl();
   const showDevFallback = devAuthEnabled();
   const authModeLabel = workosEnabled
     ? showDevFallback
@@ -30,6 +26,18 @@ export default async function SignInPage({
     : showDevFallback
       ? "Dev fallback only"
       : "Authentication unavailable";
+
+  async function signInAction(formData: FormData) {
+    "use server";
+
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+    const result = await signIn(email, password);
+    if (!result) {
+      redirect("/sign-in?error=1");
+    }
+    redirect("/dashboard");
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f3f4f6] px-6">
@@ -71,8 +79,7 @@ export default async function SignInPage({
           </div>
         ) : null}
         {showDevFallback ? (
-          <form method="post" action="/api/auth/dev-sign-in" className="mt-6 space-y-4">
-            <input type="hidden" name="return_to" value={safeReturnTo} />
+          <form action={signInAction} className="mt-6 space-y-4">
             <input
               name="email"
               type="email"
