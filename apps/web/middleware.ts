@@ -7,11 +7,10 @@ import { workosConfigured } from "@/lib/constants";
 const workosMiddleware = authkitMiddleware();
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
-  const response = workosConfigured()
-    ? workosMiddleware(request, event)
-    : NextResponse.next();
-
-  return response ?? NextResponse.next();
+  if (!workosConfigured()) {
+    return NextResponse.next();
+  }
+  return workosMiddleware(request, event);
 }
 
 export const config = {
