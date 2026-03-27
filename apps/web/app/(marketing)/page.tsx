@@ -169,7 +169,10 @@ export default function MarketingHomePage() {
 
       {/* ── Compatibility strip ───────────────────────────────────────────── */}
       <section className="border-b border-zinc-200 bg-white py-5">
-        <div className={`${marketingContainerClass} flex flex-wrap items-center justify-between gap-4`}>
+        <div
+          className={`${marketingContainerClass} flex flex-wrap items-center justify-between gap-4`}
+          data-marketing-container
+        >
           <p className="text-xs uppercase tracking-[0.28em] text-textMuted">Works with</p>
           <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
             {["OpenAI", "Anthropic", "LangChain", "LlamaIndex", "Custom pipelines"].map((name) => (
