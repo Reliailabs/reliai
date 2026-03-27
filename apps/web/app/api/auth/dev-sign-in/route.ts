@@ -47,4 +47,3 @@ export function GET() {
     { status: 405 }
   );
 }
-}
