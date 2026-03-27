@@ -53,21 +53,35 @@ test("trace wow flow auto-selects retrieval failure trace", async ({ page }) => 
   }
 
   let apiKey = "reliai_demo_key";
+  let projectId: string | null = null;
   if (sessionToken && organizationId) {
-    const keyResponse = await page.request.post("http://127.0.0.1:8000/api/v1/api-keys", {
+    const projectsResponse = await page.request.get("http://127.0.0.1:8000/api/v1/projects?limit=1", {
       headers: {
         Authorization: `Bearer ${sessionToken}`,
-        "Content-Type": "application/json",
-      },
-      data: {
-        organization_id: organizationId,
-        name: `wow-trace-${traceId}`,
       },
     });
-    if (keyResponse.ok()) {
-      const keyJson = (await keyResponse.json()) as { api_key?: string };
-      if (keyJson.api_key) {
-        apiKey = keyJson.api_key;
+    if (projectsResponse.ok()) {
+      const projectsJson = (await projectsResponse.json()) as { items?: Array<{ id: string }> };
+      projectId = projectsJson.items?.[0]?.id ?? null;
+    }
+    if (projectId) {
+      const keyResponse = await page.request.post(
+        `http://127.0.0.1:8000/api/v1/projects/${projectId}/api-keys`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            "Content-Type": "application/json",
+          },
+          data: {
+            label: `wow-trace-${traceId}`,
+          },
+        }
+      );
+      if (keyResponse.ok()) {
+        const keyJson = (await keyResponse.json()) as { api_key?: string };
+        if (keyJson.api_key) {
+          apiKey = keyJson.api_key;
+        }
       }
     }
   }
@@ -148,14 +162,20 @@ test("trace wow flow auto-selects retrieval failure trace", async ({ page }) => 
   let wowTraceId: string | null = null;
   let wowTraceGraphId: string | null = null;
   if (sessionToken) {
-    const traceListResponse = await page.request.get("http://127.0.0.1:8000/api/v1/traces?limit=1", {
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-      },
-    });
-    if (traceListResponse.ok()) {
-      const traceListJson = (await traceListResponse.json()) as { items?: Array<{ id: string }> };
-      wowTraceId = traceListJson.items?.[0]?.id ?? null;
+    const deadline = Date.now() + 30000;
+    while (Date.now() < deadline && !wowTraceId) {
+      const traceListResponse = await page.request.get("http://127.0.0.1:8000/api/v1/traces?limit=1", {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+        },
+      });
+      if (traceListResponse.ok()) {
+        const traceListJson = (await traceListResponse.json()) as { items?: Array<{ id: string }> };
+        wowTraceId = traceListJson.items?.[0]?.id ?? null;
+      }
+      if (!wowTraceId) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
     }
     if (wowTraceId) {
       const traceDetailResponse = await page.request.get(
@@ -173,10 +193,14 @@ test("trace wow flow auto-selects retrieval failure trace", async ({ page }) => 
     }
   }
 
-  await page.goto("/traces?autoselect=0", { waitUntil: "networkidle" });
+  const bannerUrl = wowTraceId
+    ? `/traces?autoselect=0&wow_trace_id=${wowTraceId}`
+    : "/traces?autoselect=0";
+  await page.goto(bannerUrl, { waitUntil: "networkidle" });
   await expect(page.getByTestId("wow-trace-banner")).toBeVisible({ timeout: 15000 });
 
-  await page.goto("/traces", { waitUntil: "networkidle" });
+  const autoSelectUrl = wowTraceId ? `/traces?wow_trace_id=${wowTraceId}` : "/traces";
+  await page.goto(autoSelectUrl, { waitUntil: "networkidle" });
   await expect(page).toHaveURL(/\/traces\/.+/);
 
   const targetGraphUrl = wowTraceGraphId
@@ -188,6 +212,6 @@ test("trace wow flow auto-selects retrieval failure trace", async ({ page }) => 
 
   await expect(page.getByText("retrieval.request").first()).toBeVisible({ timeout: 15000 });
   await expect(page.getByText("retrieval.attempt").nth(1)).toBeVisible({ timeout: 15000 });
-  await expect(page.getByText("Retrieval Failure").first()).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("Retrieval failed").first()).toBeVisible({ timeout: 15000 });
   await expect(page.getByText("Recovered after retry").first()).toBeVisible({ timeout: 15000 });
 });

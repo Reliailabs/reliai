@@ -58,10 +58,14 @@ function traceStatusTone(success: boolean) {
 
 export default async function TraceDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ traceId: string }>;
+  searchParams: Promise<{ incident_id?: string }>;
 }) {
   const { traceId } = await params;
+  const { incident_id: incidentId } = await searchParams;
+  const incidentQuery = typeof incidentId === "string" ? { incident_id: incidentId } : undefined;
   const trace = await getTraceDetail(traceId).catch(() => null);
 
   if (!trace) {
@@ -157,7 +161,7 @@ export default async function TraceDetailPage({
         <div className="mx-auto flex max-w-[1400px] flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <Link
-              href="/traces"
+              href={incidentQuery ? { pathname: "/traces", query: incidentQuery } : "/traces"}
               className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-steel hover:text-ink"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -175,7 +179,13 @@ export default async function TraceDetailPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href={`/traces/${trace.trace_id}/graph`}>
+              <Link
+                href={
+                  incidentQuery
+                    ? { pathname: `/traces/${trace.trace_id}/graph`, query: incidentQuery }
+                    : `/traces/${trace.trace_id}/graph`
+                }
+              >
                 <Waypoints className="mr-2 h-4 w-4" />
                 Graph
               </Link>
@@ -190,7 +200,13 @@ export default async function TraceDetailPage({
             ) : null}
             {trace.compare_path ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={trace.compare_path as Route}>
+                <Link
+                  href={
+                    incidentQuery
+                      ? { pathname: trace.compare_path, query: incidentQuery }
+                      : (trace.compare_path as Route)
+                  }
+                >
                   <GitCompareArrows className="mr-2 h-4 w-4" />
                   Compare
                 </Link>

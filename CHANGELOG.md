@@ -8,6 +8,35 @@ All notable changes to Reliai will be documented in this file.
 
 ---
 
+## [2026-03-26] - Demo-ready simulation flow and command center proof
+
+## Summary
+
+- This release hardens the simulation-first onboarding flow and ensures the founder demo shows real prompt diffs and numeric root-cause confidence.
+
+### Added
+
+- PR template for consistent merge summaries and validation reporting.
+
+### Changed
+
+- Simulation prompt seeding now writes deterministic, distinct prompt content for baseline vs. failing windows.
+- Onboarding simulation persists prompt content into incident summaries for prompt diff rendering.
+- Root-cause confidence now renders as a numeric percentage in the command center.
+
+### Fixed
+
+- Dev fallback sign-in now preserves return-to routing for the simulation onboarding path.
+
+### Validation
+
+- `pytest apps/api/tests/test_onboarding_and_prompt_diff.py`
+- `pnpm --filter web lint`
+- `pnpm --filter web build`
+- Browser verification: canonical simulation flow, command center confidence, prompt diff content.
+
+---
+
 ## [2026-03-25] - Onboarding -> Incident -> Prompt Diff Reliability Slice
 
 ## Summary

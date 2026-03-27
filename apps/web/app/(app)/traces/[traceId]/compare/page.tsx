@@ -19,10 +19,18 @@ function renderMetadata(value: Record<string, unknown> | null) {
 function TraceCard({
   trace,
   label,
+  incidentSuffix,
 }: {
   trace: Awaited<ReturnType<typeof getTraceCompare>>["pairs"][number]["current_trace"];
   label: string;
+  incidentSuffix: string;
 }) {
+  const incidentId = incidentSuffix.replace("?incident_id=", "");
+  const traceHref = trace
+    ? incidentId
+      ? { pathname: `/traces/${trace.id}`, query: { incident_id: incidentId } }
+      : { pathname: `/traces/${trace.id}` }
+    : { pathname: "/traces" };
   return (
     <div className="rounded-2xl border border-line bg-surface px-4 py-4">
       <p className="text-[11px] uppercase tracking-[0.2em] text-steel">{label}</p>
@@ -30,7 +38,10 @@ function TraceCard({
         <div className="mt-3 space-y-3 text-sm text-steel">
           <div>
             <p className="font-medium text-ink">{trace.request_id}</p>
-            <Link href={`/traces/${trace.id}`} className="mt-1 inline-block underline-offset-4 hover:underline">
+            <Link
+              href={traceHref}
+              className="mt-1 inline-block underline-offset-4 hover:underline"
+            >
               Open trace
             </Link>
           </div>
@@ -52,10 +63,14 @@ function TraceCard({
 
 export default async function TraceComparePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ traceId: string }>;
+  searchParams: Promise<{ incident_id?: string }>;
 }) {
   const { traceId } = await params;
+  const { incident_id: incidentId } = await searchParams;
+  const incidentSuffix = typeof incidentId === "string" ? `?incident_id=${incidentId}` : "";
   const compare = await getTraceCompare(traceId).catch(() => null);
 
   if (!compare) {
@@ -68,7 +83,11 @@ export default async function TraceComparePage({
         <div className="mx-auto flex max-w-[1400px] flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <Link
-              href={`/traces/${traceId}`}
+              href={
+                incidentId
+                  ? { pathname: `/traces/${traceId}`, query: { incident_id: incidentId } }
+                  : `/traces/${traceId}`
+              }
               className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-steel hover:text-ink"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -109,8 +128,8 @@ export default async function TraceComparePage({
             return (
               <div key={pair.pair_index} className="space-y-4">
                 <div className="grid gap-4 xl:grid-cols-2">
-                  <TraceCard trace={pair.current_trace} label="Current trace" />
-                  <TraceCard trace={pair.baseline_trace} label="Baseline peer" />
+                  <TraceCard trace={pair.current_trace} label="Current trace" incidentSuffix={incidentSuffix} />
+                  <TraceCard trace={pair.baseline_trace} label="Baseline peer" incidentSuffix={incidentSuffix} />
                 </div>
                 <div className="rounded-2xl border border-line bg-surface px-4 py-4">
                   <p className="text-xs uppercase tracking-[0.24em] text-steel">Focused differences</p>

@@ -22,10 +22,19 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: "pnpm --filter web dev --port 3000",
-    port: 3000,
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: "pnpm --filter web dev --port 3000",
+      port: 3000,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      command: "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
+      port: 8000,
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+      cwd: "apps/api",
+    },
+  ],
 });
