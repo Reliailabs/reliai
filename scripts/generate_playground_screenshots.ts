@@ -19,15 +19,28 @@ const shots = [
     route: "/marketing/screenshot/playground",
     file: "playground.png",
     signals: ["text=Hallucination spike", "text=System health under failure", "text=Recommended guardrail"],
+    readySelector: "[data-playground-container-ready]",
+    elementSelector: "[data-playground-container]",
     scrollY: 220,
   },
   {
     route: "/marketing/screenshot/control-panel",
     file: "control-panel.png",
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
+    readySelector: "[data-control-panel-ready]",
+    elementSelector: "[data-control-panel]",
     scrollY: 160,
   },
 ];
+
+const onlyShots = (process.env.SCREENSHOTS_ONLY ?? process.env.SCREENSHOT_ONLY ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const selectedShots = onlyShots.length
+  ? shots.filter((shot) => onlyShots.includes(shot.file))
+  : shots;
 
 async function isReady(url: string) {
   try {
@@ -69,13 +82,33 @@ async function captureShot(
     await page.waitForSelector(signal);
   }
 
+  if ("readySelector" in shot && shot.readySelector) {
+    await page.waitForSelector(shot.readySelector);
+  }
+
   await page.evaluate((scrollY) => {
     window.scrollTo({ top: scrollY, left: 0, behavior: "instant" });
   }, shot.scrollY);
   await page.waitForTimeout(250);
 
+  const outputPath = path.join(outputDir, shot.file);
+
+  if ("elementSelector" in shot && shot.elementSelector) {
+    const panel = page.locator(shot.elementSelector).first();
+    if (await panel.count()) {
+      const box = await panel.boundingBox();
+      if (box && box.width > 0 && box.height > 0) {
+        await panel.screenshot({
+          path: outputPath,
+          type: "png",
+        });
+        return;
+      }
+    }
+  }
+
   await page.screenshot({
-    path: path.join(outputDir, shot.file),
+    path: outputPath,
     type: "png",
   });
 }
@@ -84,7 +117,7 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
 
   let child: ChildProcess | null = null;
-  const healthRoute = `${baseUrl}${shots[0].route}`;
+  const healthRoute = `${baseUrl}${selectedShots[0].route}`;
   if (!(await isReady(healthRoute))) {
     child = startWebServer();
     await waitFor(healthRoute);
@@ -97,7 +130,7 @@ async function main() {
   });
 
   try {
-    for (const shot of shots) {
+    for (const shot of selectedShots) {
       await captureShot(page, shot);
       const outputPath = path.join(outputDir, shot.file);
       if (!existsSync(outputPath)) {

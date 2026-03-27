@@ -19,31 +19,44 @@ const shots = [
     route: "/marketing/screenshot/control-panel",
     file: "control-panel.png",
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
-    readySelector: "[data-control-panel-ready], [data-tour-id='metric-reliability-score']",
+    readySelector: "[data-control-panel-ready]",
+    elementSelector: "[data-control-panel]",
     scrollY: 0,
   },
   {
     route: "/marketing/screenshot/trace-graph",
     file: "trace-graph.png",
     signals: ["text=Execution graph", "text=Execution breakdown", "text=Slowest span"],
-    readySelector: "text=Execution graph",
+    readySelector: "[data-trace-graph-ready]",
+    elementSelector: "[data-trace-graph]",
     scrollY: 0,
   },
   {
     route: "/marketing/screenshot/incident",
     file: "incident.png",
     signals: ["text=Root cause", "text=Impact"],
-    readySelector: "text=Impact",
+    readySelector: "[data-incident-command-center-ready]",
+    elementSelector: "[data-incident-command-center]",
     scrollY: 0,
   },
   {
     route: "/marketing/screenshot/deployment",
     file: "deployment.png",
     signals: ["text=Deployment safety check", "text=Deployment risk factors"],
-    readySelector: "text=Deployment risk factors",
+    readySelector: "[data-deployment-detail-ready]",
+    elementSelector: "[data-deployment-detail]",
     scrollY: 0,
   },
 ];
+
+const onlyShots = (process.env.SCREENSHOTS_ONLY ?? process.env.SCREENSHOT_ONLY ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const selectedShots = onlyShots.length
+  ? shots.filter((shot) => onlyShots.includes(shot.file))
+  : shots;
 
 async function isReady(url: string) {
   try {
@@ -126,7 +139,7 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
 
   let child: ChildProcess | null = null;
-  const healthRoute = `${baseUrl}${shots[0].route}`;
+  const healthRoute = `${baseUrl}${selectedShots[0].route}`;
   if (!(await isReady(healthRoute))) {
     child = startWebServer();
     await waitFor(healthRoute);
@@ -139,7 +152,7 @@ async function main() {
   });
 
   try {
-    for (const shot of shots) {
+    for (const shot of selectedShots) {
       await captureShot(page, shot);
       const outputPath = path.join(outputDir, shot.file);
       if (!existsSync(outputPath)) {
