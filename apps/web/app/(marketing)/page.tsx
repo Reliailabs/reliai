@@ -31,35 +31,6 @@ const workflowSteps = [
   },
   {
     label: "Act",
-    urlSlug: "incidents",
-    title: "From signal to action — no log diving required.",
-    body: "The reliability control panel surfaces what needs attention next: active incidents, deployment risk, guardrail coverage, and specific operator guidance. When something degrades, the exact prompt version, retrieval failure, or guardrail gap is already surfaced. You go from alert to fix without writing a single query.",
-    image: "/screenshots/control-panel.png",
-    alt: "Reliability control panel showing active incidents, risk score, and operator guidance",
-  },
-];
-
-const signals = [
-  {
-    label: "LLM safety drift",
-    name: "Refusal detection",
-    description:
-      "Pattern-matches every trace output against evasion signals. When refusal rate spikes above threshold — 15% absolute, 50% relative — an incident opens at critical or high severity. The command center shows baseline vs. current rate and the contributing prompt version.",
-  },
-  {
-    label: "Policy violations",
-    name: "Custom metrics",
-    description:
-      "Define what bad output means for your system. Regex pattern or keyword list. Match as boolean or count. When your metric spikes above threshold, Reliai opens an incident the same way it does for built-in signals.",
-  },
-  {
-    label: "Contract breakage",
-    name: "Structured output failures",
-    description:
-      "If your AI is expected to return JSON, Reliai validates it on every trace. A drop in validity rate — even with no 5xx errors — opens an incident. No custom instrumentation required.",
-  },
-];
-
 const failures = [
   {
     icon: AlertTriangle,
@@ -87,7 +58,6 @@ const failures = [
   },
   {
     icon: Layers,
-    type: "Retrieval drift",
     what: "Your RAG pipeline started pulling off-topic chunks. Quality degraded gradually.",
     how: "Reliai's behavioral signals include custom retrieval quality metrics — you define the threshold, Reliai opens the incident.",
   },
@@ -108,6 +78,7 @@ export default function MarketingHomePage() {
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
         <div
+<<<<<<< HEAD
           className={`${marketingContainerClass} flex flex-col items-center pb-16 pt-24 text-center`}
           data-marketing-container
         >
@@ -135,6 +106,63 @@ export default function MarketingHomePage() {
           <div className="mt-12 w-full max-w-2xl">
             <HeroAnnotatedVisual />
           </div>
+=======
+          className={`${marketingContainerClass} grid gap-12 pb-16 pt-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start`}
+          data-marketing-container
+        >
+
+          {/* Left column */}
+          <div>
+            <p className="text-xs uppercase tracking-[0.32em] text-steel">AI incident response</p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
+              When your AI breaks in production, Reliai tells you what broke, why, and what to fix.
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-steel">
+              Reliai detects behavioral regressions — refusals, output failures, metric spikes — opens incidents automatically, and walks your team through root cause to resolution.
+            </p>
+            <p className="mt-3 text-sm font-medium text-textSecondary">
+              Not logs. Not dashboards. Real incidents with root cause and resolution — built for AI.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Button asChild>
+                <Link href="/onboarding?path=simulation">
+                  See your first incident in under 2 minutes
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/demo">View live demo</Link>
+              </Button>
+            </div>
+
+            {/* Proof stats */}
+            <div className="mt-10 mb-12 border-t border-line pt-6">
+              <p className="mb-4 text-xs uppercase tracking-[0.28em] text-textMuted">
+                What Reliai detects
+              </p>
+              <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-textMuted">Refusal spikes</div>
+                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">Built-in</div>
+                  <div className="mt-1 text-xs text-textSecondary">Pattern-matched on every trace</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-textMuted">Custom signals</div>
+                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">Operator-defined</div>
+                  <div className="mt-1 text-xs text-textSecondary">Regex or keyword, your rules</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-textMuted">Root cause</div>
+                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">6 causes scored</div>
+                  <div className="mt-1 text-xs text-textSecondary">Prompt, model, latency, retrieval, deployment, errors</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right column — annotated hero visual */}
+          <HeroAnnotatedVisual />
+>>>>>>> origin/main
 
         </div>
       </section>

@@ -12,10 +12,14 @@ const baseUrl = "http://127.0.0.1:3000";
 const viewport = {
   width: 1600,
   height: 1004,
+  height: 1004,
 } as const;
 const clipTarget = {
-  width: 1600,
   height: 1004,
+  height: 1004,
+=======
+  height: 1000,
+>>>>>>> origin/main
 } as const;
 
 const shots = [
@@ -30,10 +34,15 @@ const shots = [
   },
   {
     route: "/marketing/screenshot/incident",
-    file: "incident.png",
+    clipToRail: true,
+    scrollY: 0,
     signals: ["text=Root cause", "text=Impact"],
     readySelector: "[data-incident-command-center-ready]",
     elementSelector: "[data-incident-command-center]",
+<<<<<<< HEAD
+    clipToRail: true,
+=======
+>>>>>>> origin/main
     clipToRail: true,
     scrollY: 0,
   },
@@ -43,7 +52,10 @@ const shots = [
     signals: ["text=Execution graph", "text=Execution breakdown", "text=Slowest span"],
     readySelector: "[data-trace-graph-ready]",
     elementSelector: "[data-trace-graph]",
+<<<<<<< HEAD
     clipToRail: true,
+=======
+>>>>>>> origin/main
     scrollY: 0,
   },
 ];

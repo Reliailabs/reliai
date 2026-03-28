@@ -25,7 +25,10 @@ const shots = [
     signals: ["text=Hallucination spike", "text=System health under failure", "text=Recommended guardrail"],
     readySelector: "[data-playground-container-ready]",
     elementSelector: "[data-playground-container]",
+<<<<<<< HEAD
     clipToRail: true,
+=======
+>>>>>>> origin/main
     scrollY: 220,
   },
   {
@@ -34,7 +37,10 @@ const shots = [
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
     readySelector: "[data-control-panel-ready]",
     elementSelector: "[data-control-panel]",
+<<<<<<< HEAD
     clipToRail: true,
+=======
+>>>>>>> origin/main
     scrollY: 160,
   },
 ];
@@ -132,7 +138,6 @@ async function captureShot(
           });
           return;
         }
-
         await panel.screenshot({
           path: outputPath,
           type: "png",

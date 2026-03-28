@@ -156,7 +156,6 @@ async function captureShot(
           });
           return;
         }
-
         await panel.screenshot({
           path: outputPath,
           type: "png",

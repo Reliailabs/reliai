@@ -115,6 +115,7 @@ export default async function OnboardingPage({
               <p className="text-sm font-semibold text-green-700">Impact</p>
               <p className="mt-1 text-sm text-steel">Failure rate reduced from <span className="font-semibold text-red-600">19%</span> → <span className="font-semibold text-green-600">5%</span> after reverting prompt v42.</p>
             </div>
+            </div>
           </div>
         </Card>
       </div>

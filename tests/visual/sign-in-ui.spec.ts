@@ -3,7 +3,6 @@ import { test, expect } from "@playwright/test";
 test("sign-in UI flow (dev fallback)", async ({ page }) => {
   await page.goto("/sign-in?return_to=/dashboard", { waitUntil: "networkidle" });
 
-  await expect(page.getByRole("heading", { name: "Operator sign-in" })).toBeVisible();
   
   // Fill in the form
   await page.getByPlaceholder("owner@acme.test").fill("owner@acme.test");

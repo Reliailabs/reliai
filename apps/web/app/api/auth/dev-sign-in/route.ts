@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
 
-  if (typeof email !== "string" || typeof password !== "string") {
+    if (typeof email !== "string" || typeof password !== "string") {
     return NextResponse.redirect(new URL("/sign-in?error=1", request.url), { status: 303 });
   }
 
