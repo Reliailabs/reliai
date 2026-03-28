@@ -70,12 +70,12 @@ export default async function OnboardingPage({
   const autoStartSimulation = autostart === "1" || autostart === "true";
 
   const maybeSession = await getOperatorSession();
+  const returnTo = "/onboarding?path=simulation&autostart=1";
+  const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
+  if (!maybeSession && autoStartSimulation) {
+    redirect(signInHref);
+  }
   if (!maybeSession) {
-    const returnTo = "/onboarding?path=simulation&autostart=1";
-    const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
-    if (autoStartSimulation) {
-      redirect(signInHref);
-    }
     return (
       <div className="space-y-6">
         <Card className="p-6">
