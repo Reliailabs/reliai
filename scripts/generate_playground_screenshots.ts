@@ -11,7 +11,11 @@ const outputDir = path.join(root, "apps/web/public/screenshots");
 const baseUrl = "http://127.0.0.1:3000";
 const viewport = {
   width: 1600,
-  height: 1000,
+  height: 1004,
+} as const;
+const clipTarget = {
+  width: 1600,
+  height: 1004,
 } as const;
 
 const shots = [
@@ -21,6 +25,7 @@ const shots = [
     signals: ["text=Hallucination spike", "text=System health under failure", "text=Recommended guardrail"],
     readySelector: "[data-playground-container-ready]",
     elementSelector: "[data-playground-container]",
+    clipToRail: true,
     scrollY: 220,
   },
   {
@@ -29,6 +34,7 @@ const shots = [
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
     readySelector: "[data-control-panel-ready]",
     elementSelector: "[data-control-panel]",
+    clipToRail: true,
     scrollY: 160,
   },
 ];
@@ -98,6 +104,35 @@ async function captureShot(
     if (await panel.count()) {
       const box = await panel.boundingBox();
       if (box && box.width > 0 && box.height > 0) {
+        if ("clipToRail" in shot && shot.clipToRail) {
+          await page.evaluate(
+            ({ selector, minHeight }) => {
+              const element = document.querySelector<HTMLElement>(selector);
+              if (element) {
+                element.style.minHeight = `${minHeight}px`;
+                element.style.background = "#fff";
+              }
+              document.documentElement.style.background = "#fff";
+              document.body.style.background = "#fff";
+            },
+            { selector: shot.elementSelector, minHeight: clipTarget.height },
+          );
+          const clipY = Math.max(0, Math.floor(box.y));
+          const maxHeight = viewport.height - clipY;
+          const clipHeight = Math.min(Math.ceil(box.height), clipTarget.height, maxHeight);
+          await page.screenshot({
+            path: outputPath,
+            type: "png",
+            clip: {
+              x: Math.floor(box.x),
+              y: clipY,
+              width: clipTarget.width,
+              height: clipHeight,
+            },
+          });
+          return;
+        }
+
         await panel.screenshot({
           path: outputPath,
           type: "png",

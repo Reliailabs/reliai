@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { trackEvent } from "@/lib/analytics";
 
-type RunnerState = "idle" | "creating" | "running" | "failed";
+type RunnerState = "idle" | "creating" | "running" | "handoff" | "failed";
 
 interface SimulationCreateResponse {
   simulation_id: string;
@@ -99,9 +99,13 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
               simulation_id: simulationStatus.simulation_id,
               incident_id: simulationStatus.incident_id,
               status: simulationStatus.status,
+              simulation_type: "hallucination_spike",
             });
             hasNavigatedRef.current = true;
-            router.push(`/incidents/${simulationStatus.incident_id}/command`);
+            setState("handoff");
+            window.setTimeout(() => {
+              router.push(`/incidents/${simulationStatus.incident_id}/command`);
+            }, 1800);
             inFlight = false;
             return;
           }
@@ -167,7 +171,7 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
       project_name: projectName,
       model_name: modelName,
       prompt_type: promptType,
-      simulation_type: "refusal_spike",
+      simulation_type: "hallucination_spike",
     });
 
     try {
@@ -217,10 +221,10 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <Card className="p-6">
         <p className="text-xs uppercase tracking-[0.24em] text-steel">Guided simulation</p>
-        <h2 className="mt-3 text-2xl font-semibold text-ink">Generate a realistic incident walkthrough</h2>
+        <h2 className="mt-3 text-2xl font-semibold text-ink">Generate a hallucination spike — then fix it</h2>
         <p className="mt-3 text-sm leading-6 text-steel">
-          We generate healthy traces, inject a failure pattern, run regression detection, and open an
-          incident so you can investigate in command center.
+          We generate a healthy baseline, deploy prompt v42 to inject hallucinations, trigger incident detection,
+          and open the incident so you can investigate root cause and verify the fix.
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -251,11 +255,22 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
         </div>
 
         <div className="mt-6 space-y-3 text-sm text-steel">
-          <div className="rounded-xl border border-line bg-surface px-4 py-3">1. Creating healthy baseline traces</div>
-          <div className="rounded-xl border border-line bg-surface px-4 py-3">2. Injecting regression pattern</div>
-          <div className="rounded-xl border border-line bg-surface px-4 py-3">3. Running incident detection</div>
-          <div className="rounded-xl border border-line bg-surface px-4 py-3">4. Preparing investigation workspace</div>
+          <div className="rounded-xl border border-line bg-surface px-4 py-3">1. Generating 4% baseline — healthy traces</div>
+          <div className="rounded-xl border border-line bg-surface px-4 py-3">2. Deploying prompt v42 — injecting hallucination pattern</div>
+          <div className="rounded-xl border border-line bg-surface px-4 py-3">3. Hallucination spike detected — opening incident (19% failure rate)</div>
+          <div className="rounded-xl border border-line bg-surface px-4 py-3">4. Root cause scored — investigation ready (71% confidence)</div>
         </div>
+
+        {state === "handoff" ? (
+          <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-4 space-y-1">
+            <p className="text-sm font-semibold text-green-900">
+              Opening incident: Hallucination spike detected (19% failure rate)
+            </p>
+            <p className="text-xs text-green-700">
+              Redirecting to incident command center...
+            </p>
+          </div>
+        ) : null}
 
         <div className="mt-6 flex flex-wrap gap-2">
           {state === "idle" || state === "failed" ? (
@@ -264,7 +279,7 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
             </Button>
           ) : (
             <Button disabled>
-              {state === "creating" ? "Creating simulation..." : "Simulation running..."}
+              {state === "creating" ? "Creating simulation..." : state === "handoff" ? "Opening incident..." : "Simulation running..."}
             </Button>
           )}
           <Button asChild variant="outline">
@@ -295,9 +310,10 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
         </div>
 
         <p className="mt-5 text-sm leading-6 text-steel">
-          {state === "idle" && "Launch the simulation to create synthetic traces and trigger incident detection."}
+          {state === "idle" && "Launch the simulation to generate a hallucination spike and open an incident automatically."}
           {state === "creating" && "Allocating project context and enqueuing synthetic trace jobs."}
-          {state === "running" && "Generating traces and checking for a regression-triggered incident."}
+          {state === "running" && "Generating traces — hallucination pattern injecting after prompt v42 deployment."}
+          {state === "handoff" && "Incident opened. Taking you to command center to investigate."}
           {state === "failed" && "Simulation stopped before incident handoff. Adjust input values and try again."}
         </p>
       </Card>
