@@ -122,7 +122,7 @@ export default function MarketingHomePage() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button asChild>
               <Link href="/onboarding?path=simulation">
-                See your first incident — and fix it — in under 2 minutes
+                Run the 2-minute simulation
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -326,36 +326,36 @@ export default function MarketingHomePage() {
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-steel">See it live</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-              See it break. Understand why. In under two minutes.
+              A hallucination spike — detected, diagnosed, and fixed in 6 minutes.
             </h2>
             <p className="mt-4 text-sm leading-6 text-steel">
-              The demo runs a full incident scenario — no API key, no setup. Reliai generates synthetic traces with a clean baseline followed by a hallucination spike, opens a real incident, and walks you through the command center, trace graph, and root cause exactly as an operator would.
+              No API key, no setup. Reliai generates a clean baseline, injects a hallucination spike, opens a real incident, and walks through root cause to verified fix — exactly as an operator would see it in production.
             </p>
             <ol className="mt-6 space-y-3 text-sm leading-6 text-steel">
               <li className="flex gap-3">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">1</span>
-                Synthetic traces ingested — clean baseline, then hallucination spike window
+                Failure rate hits 19% — incident opens automatically, 4% baseline recorded
               </li>
               <li className="flex gap-3">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">2</span>
-                Incident auto-opens — reliability score drops, active incident surfaces in control panel
+                Root cause scored: prompt v42 deployed 82 minutes before incident — 71% confidence
               </li>
               <li className="flex gap-3">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">3</span>
-                Root cause: prompt update deployed 82 minutes before incident start — evidence linked automatically
+                Fix applied: revert to v41 — trace graph, cohort diff, and deployment gate all in one view
               </li>
               <li className="flex gap-3">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">4</span>
-                Trace graph, cohort diff, and deployment safety gate — full operator workflow, no steps skipped
+                Fix verified: failure rate drops from 19% → 5% — loop closes with proof, not assumption
               </li>
             </ol>
             <p className="mt-6 text-sm font-medium text-textPrimary">
-              In under 2 minutes, you go from &ldquo;something broke&rdquo; to &ldquo;we know exactly what to fix.&rdquo;
+              From &ldquo;something broke&rdquo; to fix verified — with the cause named and the numbers proved.
             </p>
             <div className="mt-6">
               <Button asChild>
                 <Link href="/demo">
-                  Run the demo
+                  Run this exact scenario
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -390,8 +390,8 @@ export default function MarketingHomePage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg" className="bg-white text-zinc-900 hover:bg-zinc-100">
-              <Link href="/demo">
-                Run the demo
+              <Link href="/onboarding?path=simulation">
+                Start your first simulation — free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -399,7 +399,7 @@ export default function MarketingHomePage() {
               <Link href="/pricing">View pricing</Link>
             </Button>
           </div>
-          <p className="text-xs text-zinc-600">No credit card. No setup. See your first incident in under 2 minutes.</p>
+          <p className="text-xs text-zinc-600">No credit card. No setup. First incident detected in under 2 minutes.</p>
         </div>
       </section>
 
