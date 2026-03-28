@@ -54,32 +54,41 @@ export function HeroAnnotatedVisual() {
       <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-xl">
 
         {/* A. Incident header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">Incident</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+              Incident <span className="ml-2 text-zinc-700">INC-1423</span>
+            </p>
             <p className="mt-0.5 text-sm font-semibold text-white">Hallucination spike detected</p>
+            <p className="mt-0.5 text-[10px] text-zinc-600">AI Support Copilot · Production · Mar 11, 10:22 AM</p>
           </div>
-          <span className="rounded-full bg-red-500/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-red-400">
+          <span className="shrink-0 rounded-full bg-red-500/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-red-400">
             CRITICAL
           </span>
         </div>
 
-        {/* B. 3-column metric row */}
+        {/* B. Metric row — Before → After Fix (dominant), Baseline as context */}
         <div className="mt-4 grid grid-cols-3 divide-x divide-zinc-800 rounded-xl border border-zinc-800 bg-zinc-900">
+          {/* Before — large, red, alarming */}
           <div className="px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500">Current</p>
+            <p className="text-[10px] uppercase tracking-wide text-zinc-500">Before</p>
             <p className="mt-1 text-2xl font-bold text-red-400">19%</p>
+            <p className="mt-0.5 text-[10px] text-zinc-600">failure rate</p>
           </div>
+          {/* Baseline — smaller, contextual */}
           <div className="px-4 py-3">
             <p className="text-[10px] uppercase tracking-wide text-zinc-500">Baseline</p>
-            <p className="mt-1 text-2xl font-bold text-zinc-300">4%</p>
+            <p className="mt-1 text-xl font-bold text-zinc-500">4%</p>
+            <p className="mt-0.5 text-[10px] text-zinc-600">healthy</p>
           </div>
-          <div className="px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500">After Fix</p>
-            <p className="mt-1 text-2xl font-bold text-green-400">
+          {/* After Fix — dominant, green, the proof */}
+          <div className="rounded-r-xl bg-green-950/40 px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-green-500">After Fix</p>
+            <p className="mt-1 text-4xl font-bold leading-none text-green-400">
               <AnimatedCounter from={19} to={5} duration={600} />
-              {" ✓"}
+              <span className="ml-1 text-2xl">✓</span>
             </p>
+            <p className="mt-0.5 text-[10px] text-green-600">near baseline</p>
           </div>
         </div>
 
@@ -119,28 +128,13 @@ export function HeroAnnotatedVisual() {
 
       </div>
 
-      {/* 3 callout cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {/* Trigger — neutral */}
-        <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-steel">Trigger</p>
-          <p className="mt-1 text-xs leading-5 text-zinc-600">
-            Incident opened automatically when behavior deviated
-          </p>
-        </div>
-        {/* Root Cause — amber */}
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Root Cause</p>
-          <p className="mt-1 text-xs leading-5 text-amber-900">
-            Prompt rollout identified as primary driver (71%)
-          </p>
-        </div>
-        {/* Impact — green, bold metric */}
-        <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-3 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-green-700">Impact</p>
-          <p className="mt-1 text-sm font-bold leading-5 text-green-900">19% → 5%</p>
-          <p className="text-xs text-green-700">Failure rate reduced</p>
-        </div>
+      {/* Single proof strip — replaces 3 cards */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-zinc-200 bg-white/80 px-4 py-2.5 text-[11px] shadow-sm">
+        <span className="text-zinc-500">⚡ Incident opened automatically</span>
+        <span className="text-zinc-300 hidden sm:inline">·</span>
+        <span className="text-zinc-500">🔍 Prompt v42 identified at 71% confidence</span>
+        <span className="text-zinc-300 hidden sm:inline">·</span>
+        <span className="font-semibold text-green-700">✅ 19% → 5% — resolved in 6 minutes</span>
       </div>
     </div>
   );
