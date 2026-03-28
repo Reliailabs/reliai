@@ -86,9 +86,9 @@ export default async function OnboardingPage({
             root cause and resolution impact. No SDK required.
           </p>
           <div className="mt-4 grid gap-2 text-sm text-steel">
-            <p>1. Generate a realistic regression and incident.</p>
-            <p>2. Review command center evidence and prompt diff.</p>
-            <p>3. Apply a fix and see the impact summary.</p>
+            <p>1. Hallucination spike detected — 19% failure rate vs 4% baseline.</p>
+            <p>2. Root cause scored — prompt v42 identified at 71% confidence.</p>
+            <p>3. Fix verified — failure rate reduced from 19% → 5% after reverting.</p>
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
             <Button asChild>
@@ -104,16 +104,16 @@ export default async function OnboardingPage({
           <p className="text-xs uppercase tracking-[0.24em] text-steel">What you will see</p>
           <div className="mt-3 grid gap-4 md:grid-cols-3">
             <div>
-              <p className="text-sm font-semibold text-ink">Incident opens</p>
-              <p className="mt-1 text-sm text-steel">A refusal spike triggers an incident automatically.</p>
+              <p className="text-sm font-semibold text-ink">Trigger</p>
+              <p className="mt-1 text-sm text-steel">A hallucination spike triggers an incident automatically when behavior deviates.</p>
             </div>
             <div>
-              <p className="text-sm font-semibold text-ink">Evidence + diff</p>
-              <p className="mt-1 text-sm text-steel">Command center shows prompt diff and root-cause scoring.</p>
+              <p className="text-sm font-semibold text-amber-700">Root Cause</p>
+              <p className="mt-1 text-sm text-steel">Prompt rollout identified as primary driver — 71% confidence, 82 minutes before incident.</p>
             </div>
             <div>
-              <p className="text-sm font-semibold text-ink">Impact proof</p>
-              <p className="mt-1 text-sm text-steel">Resolution impact shows the metric change after a fix.</p>
+              <p className="text-sm font-semibold text-green-700">Impact</p>
+              <p className="mt-1 text-sm text-steel">Failure rate reduced from <span className="font-semibold text-red-600">19%</span> → <span className="font-semibold text-green-600">5%</span> after reverting prompt v42.</p>
             </div>
           </div>
         </Card>
@@ -205,8 +205,8 @@ export default async function OnboardingPage({
               <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 2</p>
               <h2 className="mt-2 text-xl font-semibold text-ink">Try a guided simulation</h2>
               <p className="mt-2 text-sm leading-6 text-steel">
-                Generate synthetic traces and walk through incident detection, comparison, and root-cause
-                confirmation with realistic operator screens.
+                See a hallucination spike — detected at 19%, root-caused to prompt v42, and fixed in 6 minutes.
+                The same incident you saw on the homepage, live in the product.
               </p>
               <div className="mt-5">
                 <Button asChild>
