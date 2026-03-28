@@ -70,12 +70,12 @@ export default async function OnboardingPage({
   const autoStartSimulation = autostart === "1" || autostart === "true";
 
   const maybeSession = await getOperatorSession();
+  const returnTo = "/onboarding?path=simulation&autostart=1";
+  const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
+  if (!maybeSession && autoStartSimulation) {
+    redirect(signInHref);
+  }
   if (!maybeSession) {
-    const returnTo = "/onboarding?path=simulation&autostart=1";
-    const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
-    if (autoStartSimulation) {
-      redirect(signInHref);
-    }
     return (
       <div className="space-y-6">
         <Card className="p-6">
@@ -114,7 +114,6 @@ export default async function OnboardingPage({
             <div>
               <p className="text-sm font-semibold text-green-700">Impact</p>
               <p className="mt-1 text-sm text-steel">Failure rate reduced from <span className="font-semibold text-red-600">19%</span> → <span className="font-semibold text-green-600">5%</span> after reverting prompt v42.</p>
-            </div>
             </div>
           </div>
         </Card>
