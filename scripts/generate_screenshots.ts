@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import process from "node:process";
 
 import { chromium } from "@playwright/test";
@@ -85,6 +85,24 @@ async function waitFor(url: string, timeoutMs = 60_000) {
 }
 
 function startWebServer() {
+  const buildManifest = path.join(root, "apps/web/.next/build-manifest.json");
+  if (!existsSync(buildManifest)) {
+    const result = spawnSync(
+      "pnpm",
+      ["--filter", "web", "build"],
+      {
+        cwd: root,
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          PORT: "3000",
+        },
+      },
+    );
+    if (result.status !== 0) {
+      throw new Error("Failed to build web app before starting screenshot server.");
+    }
+  }
   return spawn(
     "pnpm",
     ["--filter", "web", "start", "--hostname", "127.0.0.1", "--port", "3000"],
