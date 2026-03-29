@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import process from "node:process";
 
 import { chromium } from "@playwright/test";
@@ -13,6 +13,10 @@ const viewport = {
   width: 1600,
   height: 1000,
 } as const;
+const clipTarget = {
+  width: 1600,
+  height: 1000,
+} as const;
 
 const shots = [
   {
@@ -21,6 +25,7 @@ const shots = [
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
     readySelector: "[data-control-panel-ready]",
     elementSelector: "[data-control-panel]",
+    clipToRail: true,
     scrollY: 0,
   },
   {
@@ -29,6 +34,7 @@ const shots = [
     signals: ["text=Execution graph", "text=Execution breakdown", "text=Slowest span"],
     readySelector: "[data-trace-graph-ready]",
     elementSelector: "[data-trace-graph]",
+    clipToRail: true,
     scrollY: 0,
   },
   {
@@ -37,6 +43,7 @@ const shots = [
     signals: ["text=Root cause", "text=Impact"],
     readySelector: "[data-incident-command-center-ready]",
     elementSelector: "[data-incident-command-center]",
+    clipToRail: true,
     scrollY: 0,
   },
   {
@@ -45,6 +52,7 @@ const shots = [
     signals: ["text=Deployment safety check", "text=Deployment risk factors"],
     readySelector: "[data-deployment-detail-ready]",
     elementSelector: "[data-deployment-detail]",
+    clipToRail: true,
     scrollY: 0,
   },
 ];
@@ -77,6 +85,24 @@ async function waitFor(url: string, timeoutMs = 60_000) {
 }
 
 function startWebServer() {
+  const buildManifest = path.join(root, "apps/web/.next/build-manifest.json");
+  if (!existsSync(buildManifest)) {
+    const result = spawnSync(
+      "pnpm",
+      ["--filter", "web", "build"],
+      {
+        cwd: root,
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          PORT: "3000",
+        },
+      },
+    );
+    if (result.status !== 0) {
+      throw new Error("Failed to build web app before starting screenshot server.");
+    }
+  }
   return spawn(
     "pnpm",
     ["--filter", "web", "start", "--hostname", "127.0.0.1", "--port", "3000"],
@@ -120,6 +146,34 @@ async function captureShot(
     if (await panel.count()) {
       const box = await panel.boundingBox();
       if (box && box.width > 0 && box.height > 0) {
+        if ("clipToRail" in shot && shot.clipToRail) {
+          await page.evaluate(
+            ({ selector, minHeight }) => {
+              const element = document.querySelector<HTMLElement>(selector);
+              if (element) {
+                element.style.minHeight = `${minHeight}px`;
+                element.style.background = "#fff";
+              }
+              document.documentElement.style.background = "#fff";
+              document.body.style.background = "#fff";
+            },
+            { selector: shot.elementSelector, minHeight: clipTarget.height },
+          );
+          const maxClipY = Math.max(0, viewport.height - clipTarget.height);
+          const clipY = Math.min(Math.max(0, Math.floor(box.y)), maxClipY);
+          await page.screenshot({
+            path: outputPath,
+            type: "png",
+            clip: {
+              x: Math.floor(box.x),
+              y: clipY,
+              width: clipTarget.width,
+              height: clipTarget.height,
+            },
+          });
+          return;
+        }
+
         await panel.screenshot({
           path: outputPath,
           type: "png",

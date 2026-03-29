@@ -15,11 +15,11 @@ import { Button } from "@/components/ui/button";
 const workflowSteps = [
   {
     label: "Detect",
-    urlSlug: "incidents",
-    title: "An incident opens before anyone files a ticket.",
-    body: "Reliai evaluates every trace against behavioral signals — refusal patterns, custom metrics, structured output validity, latency, cost. When behavior changes beyond baseline, Reliai opens an incident automatically. One incident per fingerprint; recurring regressions reopen the same incident rather than creating noise.",
-    image: "/screenshots/control-panel.png",
-    alt: "Reliai control panel showing an open refusal rate incident",
+    urlSlug: "deployments",
+    title: "Risk surfaces before a single user is affected.",
+    body: "Every deployment runs through the Reliai safety gate — scoring retrieval regression probability, guardrail gaps, and cross-organization failure patterns. A WARNING or BLOCK decision surfaces before rollout with a specific risk score and the exact factors driving it, so you catch issues before they reach production.",
+    image: "/screenshots/deployment.png",
+    alt: "Deployment safety gate showing WARNING decision with risk score and regression factors",
   },
   {
     label: "Compare",
@@ -30,12 +30,12 @@ const workflowSteps = [
     alt: "Cohort diff view showing current versus baseline trace comparison",
   },
   {
-    label: "Root cause",
-    urlSlug: "root-cause",
-    title: "Six causes scored. One recommendation surfaced.",
-    body: "The command center scores prompt version shift, model shift, latency change, retrieval shift, deployment risk, and error cluster dominance — then surfaces the highest-probability cause with a specific fix. Deterministic scoring, no LLM dependency, sub-second result.",
-    image: "/screenshots/incident.png",
-    alt: "Incident command center showing root cause analysis and fix recommendation",
+    label: "Act",
+    urlSlug: "incidents",
+    title: "From signal to action — no log diving required.",
+    body: "The reliability control panel surfaces what needs attention next: active incidents, deployment risk, guardrail coverage, and specific operator guidance. When something degrades, the exact prompt version, retrieval failure, or guardrail gap is already surfaced. You go from alert to fix without writing a single query.",
+    image: "/screenshots/control-panel.png",
+    alt: "Reliability control panel showing active incidents, risk score, and operator guidance",
   },
 ];
 
@@ -104,66 +104,34 @@ const failures = [
 export default function MarketingHomePage() {
   return (
     <main className="bg-[#f7f8fa] text-ink">
-
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
         <div
-          className={`${marketingContainerClass} grid gap-12 pb-16 pt-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start`}
+          className={`${marketingContainerClass} flex flex-col items-center pb-16 pt-24 text-center`}
           data-marketing-container
         >
-
-          {/* Left column */}
-          <div>
-            <p className="text-xs uppercase tracking-[0.32em] text-steel">AI incident response</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
-              When your AI breaks in production, Reliai tells you what broke, why, and what to fix.
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-steel">
-              Reliai detects behavioral regressions — refusals, output failures, metric spikes — opens incidents automatically, and walks your team through root cause to resolution.
-            </p>
-            <p className="mt-3 text-sm font-medium text-textSecondary">
-              Not logs. Not dashboards. Real incidents with root cause and resolution — built for AI.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button asChild>
-                <Link href="/onboarding?path=simulation">
-                  See your first incident in under 2 minutes
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/demo">View live demo</Link>
-              </Button>
-            </div>
-
-            {/* Proof stats */}
-            <div className="mt-10 mb-12 border-t border-line pt-6">
-              <p className="mb-4 text-xs uppercase tracking-[0.28em] text-textMuted">
-                What Reliai detects
-              </p>
-              <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-textMuted">Refusal spikes</div>
-                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">Built-in</div>
-                  <div className="mt-1 text-xs text-textSecondary">Pattern-matched on every trace</div>
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-textMuted">Custom signals</div>
-                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">Operator-defined</div>
-                  <div className="mt-1 text-xs text-textSecondary">Regex or keyword, your rules</div>
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-textMuted">Root cause</div>
-                  <div className="text-2xl font-semibold text-textPrimary md:text-3xl">6 causes scored</div>
-                  <div className="mt-1 text-xs text-textSecondary">Prompt, model, latency, retrieval, deployment, errors</div>
-                </div>
-              </div>
-            </div>
+          {/* Headline + CTAs */}
+          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
+            Find and fix AI failures before your users do.
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-steel">
+            Reliai turns regressions into incidents, shows you what changed, and proves the fix worked.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild>
+              <Link href="/onboarding?path=simulation">
+                Run the 2-minute simulation
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/demo">View demo</Link>
+            </Button>
           </div>
-
-          {/* Right column — annotated hero visual */}
-          <HeroAnnotatedVisual />
-
+          {/* Hero visual */}
+          <div className="mt-12 w-full max-w-2xl">
+            <HeroAnnotatedVisual />
+          </div>
         </div>
       </section>
 
@@ -173,12 +141,16 @@ export default function MarketingHomePage() {
           <p className="text-xs uppercase tracking-[0.28em] text-textMuted">Works with</p>
           <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
             {["OpenAI", "Anthropic", "LangChain", "LlamaIndex", "Custom pipelines"].map((name) => (
-              <span key={name} className="text-sm font-medium text-textSecondary">{name}</span>
+              <span key={name} className="text-sm font-medium text-textSecondary">
+                {name}
+              </span>
             ))}
           </div>
           <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-            <span className="text-xs font-medium text-textSecondary">First incident detected in under 30 seconds</span>
+            <span className="text-xs font-medium text-textSecondary">
+              First incident detected in under 30 seconds
+            </span>
           </div>
         </div>
       </section>
@@ -214,13 +186,13 @@ export default function MarketingHomePage() {
                     <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
                       app.reliai.dev/{step.urlSlug}
                     </div>
-                    <div className="aspect-[16/9] overflow-hidden">
+                    <div className="relative aspect-[16/9] overflow-hidden">
                       <Image
                         src={step.image}
                         alt={step.alt}
-                        width={3200}
-                        height={2000}
-                        className="h-full w-full object-cover object-top"
+                        fill
+                        sizes="(max-width: 1200px) 100vw, 1200px"
+                        className="object-cover object-top"
                       />
                     </div>
                   </div>
@@ -240,7 +212,8 @@ export default function MarketingHomePage() {
               Recognize any of these?
             </h2>
             <p className="mt-4 text-sm leading-6 text-steel">
-              These are the failures teams discover late — hours into a user-facing incident, long after the signal was detectable. Reliai catches each one as it happens.
+              These are the failures teams discover late — hours into a user-facing incident, long after the signal was
+              detectable. Reliai catches each one as it happens.
             </p>
           </div>
 
@@ -276,7 +249,8 @@ export default function MarketingHomePage() {
               The signals that actually break AI systems.
             </h2>
             <p className="mt-4 text-sm leading-6 text-steel">
-              Standard monitoring tells you a request succeeded. Reliai tells you whether the response was actually correct. These are not the same thing — and the gap is where production AI fails silently.
+              Standard monitoring tells you a request succeeded. Reliai tells you whether the response was actually
+              correct. These are not the same thing — and the gap is where production AI fails silently.
             </p>
           </div>
 
@@ -284,9 +258,7 @@ export default function MarketingHomePage() {
             {signals.map((signal) => (
               <div key={signal.name} className="rounded-2xl border border-line bg-white/80 p-5 md:p-6">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-textMuted">{signal.label}</p>
-                <h3 className="mt-2 text-base font-semibold leading-snug text-textPrimary">
-                  {signal.name}
-                </h3>
+                <h3 className="mt-2 text-base font-semibold leading-snug text-textPrimary">{signal.name}</h3>
                 <p className="mt-3 text-sm leading-6 text-textSecondary">{signal.description}</p>
               </div>
             ))}
@@ -326,7 +298,9 @@ export default function MarketingHomePage() {
                 <tr>
                   <td className="py-4 pr-6 font-medium text-textPrimary">Arize, Fiddler</td>
                   <td className="py-4 pr-6 text-textSecondary">ML observability dashboards. Charts that drift.</td>
-                  <td className="py-4 text-textSecondary">Not designed for LLM behavioral signals. No incident lifecycle.</td>
+                  <td className="py-4 text-textSecondary">
+                    Not designed for LLM behavioral signals. No incident lifecycle.
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-4 pr-6 font-medium text-textPrimary">Custom dashboards</td>
@@ -335,7 +309,9 @@ export default function MarketingHomePage() {
                 </tr>
                 <tr className="bg-white/60">
                   <td className="py-4 pr-6 font-semibold text-textPrimary">Reliai</td>
-                  <td className="py-4 pr-6 text-textSecondary">Opens incidents when behavior degrades. Walks you from failure to root cause to fix.</td>
+                  <td className="py-4 pr-6 text-textSecondary">
+                    Opens incidents when behavior degrades. Walks you from failure to root cause to fix.
+                  </td>
                   <td className="py-4 text-textSecondary">—</td>
                 </tr>
               </tbody>
@@ -343,7 +319,8 @@ export default function MarketingHomePage() {
           </div>
 
           <p className="mt-6 text-sm text-textSecondary">
-            If you&rsquo;re debugging AI with logs, you&rsquo;re already too late. Reliai turns failures into incidents before they become user-facing problems.
+            If you&rsquo;re debugging AI with logs, you&rsquo;re already too late. Reliai turns failures into incidents
+            before they become user-facing problems.
           </p>
         </div>
       </section>
@@ -354,36 +331,46 @@ export default function MarketingHomePage() {
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-steel">See it live</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-              See it break. Understand why. In under two minutes.
+              A hallucination spike — detected, diagnosed, and fixed in 6 minutes.
             </h2>
             <p className="mt-4 text-sm leading-6 text-steel">
-              The demo runs a full incident scenario — no API key, no setup. Reliai generates synthetic traces with a clean baseline followed by a hallucination spike, opens a real incident, and walks you through the command center, trace graph, and root cause exactly as an operator would.
+              No API key, no setup. Reliai generates a clean baseline, injects a hallucination spike, opens a real
+              incident, and walks through root cause to verified fix — exactly as an operator would see it in
+              production.
             </p>
             <ol className="mt-6 space-y-3 text-sm leading-6 text-steel">
               <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">1</span>
-                Synthetic traces ingested — clean baseline, then hallucination spike window
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">
+                  1
+                </span>
+                Failure rate hits 19% — incident opens automatically, 4% baseline recorded
               </li>
               <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">2</span>
-                Incident auto-opens — reliability score drops, active incident surfaces in control panel
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">
+                  2
+                </span>
+                Root cause scored: prompt v42 deployed 82 minutes before incident — 71% confidence
               </li>
               <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">3</span>
-                Root cause: prompt update deployed 82 minutes before incident start — evidence linked automatically
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">
+                  3
+                </span>
+                Fix applied: revert to v41 — trace graph, cohort diff, and deployment gate all in one view
               </li>
               <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">4</span>
-                Trace graph, cohort diff, and deployment safety gate — full operator workflow, no steps skipped
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">
+                  4
+                </span>
+                Fix verified: failure rate drops from 19% → 5% — loop closes with proof, not assumption
               </li>
             </ol>
             <p className="mt-6 text-sm font-medium text-textPrimary">
-              In under 2 minutes, you go from &ldquo;something broke&rdquo; to &ldquo;we know exactly what to fix.&rdquo;
+              From &ldquo;something broke&rdquo; to fix verified — with the cause named and the numbers proved.
             </p>
             <div className="mt-6">
               <Button asChild>
                 <Link href="/demo">
-                  Run the demo
+                  Run this exact scenario
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -391,15 +378,15 @@ export default function MarketingHomePage() {
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
-              app.reliai.dev/incidents/command
+              app.reliai.dev/playground
             </div>
-            <div className="aspect-[16/10] overflow-hidden">
+            <div className="relative aspect-[16/10] overflow-hidden">
               <Image
-                src="/screenshots/incident.png"
-                alt="Incident command center showing root cause analysis for a hallucination spike"
-                width={3200}
-                height={2000}
-                className="h-full w-full object-cover object-top"
+                src="/screenshots/playground.png"
+                alt="Simulation playground running a synthetic incident scenario with refusal spike"
+                fill
+                sizes="(max-width: 1200px) 100vw, 1200px"
+                className="object-cover object-top"
               />
             </div>
           </div>
@@ -414,23 +401,30 @@ export default function MarketingHomePage() {
             Your AI is already in production.<br className="hidden lg:block" /> Is anyone watching it?
           </h2>
           <p className="max-w-xl text-sm leading-6 text-zinc-400">
-            Reliai is the incident response layer for AI systems — the step between &ldquo;something degraded&rdquo; and &ldquo;we know what to fix.&rdquo;
+            Reliai is the incident response layer for AI systems — the step between &ldquo;something degraded&rdquo; and
+            &ldquo;we know what to fix.&rdquo;
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg" className="bg-white text-zinc-900 hover:bg-zinc-100">
-              <Link href="/demo">
-                Run the demo
+              <Link href="/onboarding?path=simulation">
+                Start your first simulation — free
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            >
               <Link href="/pricing">View pricing</Link>
             </Button>
           </div>
-          <p className="text-xs text-zinc-600">No credit card. No setup. See your first incident in under 2 minutes.</p>
+          <p className="text-xs text-zinc-600">
+            No credit card. No setup. First incident detected in under 2 minutes.
+          </p>
         </div>
       </section>
-
     </main>
   );
 }

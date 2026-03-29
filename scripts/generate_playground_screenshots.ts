@@ -13,6 +13,10 @@ const viewport = {
   width: 1600,
   height: 1000,
 } as const;
+const clipTarget = {
+  width: 1600,
+  height: 1000,
+} as const;
 
 const shots = [
   {
@@ -21,6 +25,7 @@ const shots = [
     signals: ["text=Hallucination spike", "text=System health under failure", "text=Recommended guardrail"],
     readySelector: "[data-playground-container-ready]",
     elementSelector: "[data-playground-container]",
+    clipToRail: true,
     scrollY: 220,
   },
   {
@@ -29,6 +34,7 @@ const shots = [
     signals: ["text=Reliability score", "text=Active incidents", "text=Operator guidance"],
     readySelector: "[data-control-panel-ready]",
     elementSelector: "[data-control-panel]",
+    clipToRail: true,
     scrollY: 160,
   },
 ];
@@ -98,6 +104,34 @@ async function captureShot(
     if (await panel.count()) {
       const box = await panel.boundingBox();
       if (box && box.width > 0 && box.height > 0) {
+        if ("clipToRail" in shot && shot.clipToRail) {
+          await page.evaluate(
+            ({ selector, minHeight }) => {
+              const element = document.querySelector<HTMLElement>(selector);
+              if (element) {
+                element.style.minHeight = `${minHeight}px`;
+                element.style.background = "#fff";
+              }
+              document.documentElement.style.background = "#fff";
+              document.body.style.background = "#fff";
+            },
+            { selector: shot.elementSelector, minHeight: clipTarget.height },
+          );
+          const maxClipY = Math.max(0, viewport.height - clipTarget.height);
+          const clipY = Math.min(Math.max(0, Math.floor(box.y)), maxClipY);
+          await page.screenshot({
+            path: outputPath,
+            type: "png",
+            clip: {
+              x: Math.floor(box.x),
+              y: clipY,
+              width: clipTarget.width,
+              height: clipTarget.height,
+            },
+          });
+          return;
+        }
+
         await panel.screenshot({
           path: outputPath,
           type: "png",
