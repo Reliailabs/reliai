@@ -176,7 +176,9 @@ export default async function OnboardingPage({
     if (!organizationId) return;
 
     const nameInput = String(formData.get("project_name") ?? "").trim();
-    const environment = String(formData.get("environment") ?? "prod").trim();
+    const environmentInput = String(formData.get("environment") ?? "prod").trim();
+    const environment =
+      environmentInput === "staging" || environmentInput === "dev" ? environmentInput : "prod";
     const fallbackName = "Production";
     const finalName = nameInput || fallbackName;
     const finalSlug = slugify(finalName);
