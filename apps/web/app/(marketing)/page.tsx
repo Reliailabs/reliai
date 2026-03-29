@@ -186,13 +186,13 @@ export default function MarketingHomePage() {
                     <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
                       app.reliai.dev/{step.urlSlug}
                     </div>
-                    <div className="aspect-[16/9] overflow-hidden">
+                    <div className="relative aspect-[16/9] overflow-hidden">
                       <Image
                         src={step.image}
                         alt={step.alt}
-                        width={3200}
-                        height={2000}
-                        className="h-full w-full object-cover object-top"
+                        fill
+                        sizes="(max-width: 1200px) 100vw, 1200px"
+                        className="object-cover object-top"
                       />
                     </div>
                   </div>
@@ -380,13 +380,13 @@ export default function MarketingHomePage() {
             <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
               app.reliai.dev/playground
             </div>
-            <div className="aspect-[16/10] overflow-hidden">
+            <div className="relative aspect-[16/10] overflow-hidden">
               <Image
                 src="/screenshots/playground.png"
                 alt="Simulation playground running a synthetic incident scenario with refusal spike"
-                width={3200}
-                height={1880}
-                className="h-full w-full object-cover object-top"
+                fill
+                sizes="(max-width: 1200px) 100vw, 1200px"
+                className="object-cover object-top"
               />
             </div>
           </div>
