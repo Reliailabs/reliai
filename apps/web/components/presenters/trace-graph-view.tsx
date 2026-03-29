@@ -529,18 +529,18 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
           </Card>
         </div>
         <aside className="space-y-6">
-          <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode ? "bg-gray-50" : "bg-surface")}>
+          <div className="rounded-2xl border border-line bg-surface px-4 py-4">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Key signals</p>
             <div className="mt-4 space-y-3">
-              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-steel", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
+              <div className="rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-sm text-steel">
                 <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Slowest span</p>
                 <p className="mt-1 text-sm text-ink">{analysis?.slowest_span?.span_name ?? "—"}</p>
               </div>
-              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-steel", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
+              <div className="rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-sm text-steel">
                 <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Token spike</p>
                 <p className="mt-1 text-sm text-ink">{analysis?.largest_token_span?.span_name ?? "—"}</p>
               </div>
-              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-steel", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
+              <div className="rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-sm text-steel">
                 <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Guardrail retries</p>
                 <p className="mt-1 text-sm text-ink">
                   {analysis?.most_guardrail_retries?.guardrail_policy ?? "—"}
@@ -548,7 +548,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
               </div>
             </div>
           </div>
-          <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode ? "bg-gray-50" : "bg-surface")}>
+          <div className="rounded-2xl border border-line bg-surface px-4 py-4">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Span legend</p>
             <div className="mt-4 space-y-3">
               {legend.map((item) => {
@@ -556,7 +556,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
                 return (
                   <div
                     key={item}
-                    className={cn(`flex items-center gap-3 rounded-lg border border-line px-3 py-2 text-sm ${spanTone(item)}`, screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}
+                    className={`flex items-center gap-3 rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-sm ${spanTone(item)}`}
                   >
                     <Icon className="h-4 w-4" />
                     <span className="font-medium">{spanLabel(item)}</span>

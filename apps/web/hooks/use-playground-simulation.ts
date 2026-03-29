@@ -29,9 +29,6 @@ export interface PlaygroundScenario {
   tokenHeavySpan: string;
   guardrailRetry: string;
   traceFailureNode: string;
-  failureRateCurrent?: number;
-  failureRateBaseline?: number;
-  failureRateAfterFix?: number;
 }
 
 export const playgroundScenarios: Record<PlaygroundFailureType, PlaygroundScenario> = {
@@ -40,13 +37,10 @@ export const playgroundScenarios: Record<PlaygroundFailureType, PlaygroundScenar
     label: "Hallucination spike",
     incidentTitle: "Hallucination spike detected",
     failureType: "hallucination",
-    impact: "19% failure rate",
+    impact: "23% incorrect responses",
     model: "gpt-4",
     reliabilityBefore: 92,
     reliabilityAfter: 68,
-    failureRateCurrent: 19,
-    failureRateBaseline: 4,
-    failureRateAfterFix: 5,
     activeIncidents: 1,
     guardrailActivity: 3,
     deploymentRisk: "LOW",

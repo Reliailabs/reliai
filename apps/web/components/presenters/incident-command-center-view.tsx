@@ -202,8 +202,7 @@ export function IncidentCommandCenterView({
     <div
       className={cn(
         "space-y-4",
-        screenshotMode &&
-          "mx-auto w-[1600px] max-w-[1600px] space-y-4 overflow-hidden bg-white p-8"
+        screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-4 overflow-hidden bg-white p-8"
       )}
       data-incident-command-center
       data-incident-command-center-ready={screenshotMode ? "" : undefined}
@@ -350,40 +349,8 @@ export function IncidentCommandCenterView({
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Trace evidence</p>
-            {screenshotMode && command.trace_compare.failing_trace_summary && command.trace_compare.baseline_trace_summary ? (
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                {([
-                  {
-                    label: "failing trace",
-                    latency: command.trace_compare.failing_trace_summary.latency_ms,
-                    retrieval: command.trace_compare.failing_trace_summary.retrieval?.retrieval_latency_ms ?? null,
-                    tokens: (command.trace_compare.failing_trace_summary.prompt_tokens ?? 0) + (command.trace_compare.failing_trace_summary.completion_tokens ?? 0),
-                    prompt: command.trace_compare.failing_trace_summary.prompt_version,
-                    tone: "border-rose-200 bg-rose-50",
-                    labelTone: "text-rose-600",
-                  },
-                  {
-                    label: "baseline trace",
-                    latency: command.trace_compare.baseline_trace_summary.latency_ms,
-                    retrieval: command.trace_compare.baseline_trace_summary.retrieval?.retrieval_latency_ms ?? null,
-                    tokens: (command.trace_compare.baseline_trace_summary.prompt_tokens ?? 0) + (command.trace_compare.baseline_trace_summary.completion_tokens ?? 0),
-                    prompt: command.trace_compare.baseline_trace_summary.prompt_version,
-                    tone: "border-zinc-200 bg-zinc-50",
-                    labelTone: "text-steel",
-                  },
-                ] as const).map((t) => (
-                  <div key={t.label} className={`rounded-lg border ${t.tone} px-3 py-3`}>
-                    <p className={`text-[11px] uppercase tracking-[0.2em] ${t.labelTone}`}>{t.label}</p>
-                    <div className="mt-2 space-y-1 text-xs text-steel">
-                      <p><span className="text-ink">{t.latency}ms</span> end-to-end latency</p>
-                      {t.retrieval !== null ? <p><span className="text-ink">{t.retrieval}ms</span> retrieval latency</p> : null}
-                      {t.tokens > 0 ? <p><span className="text-ink">{t.tokens}</span> tokens</p> : null}
-                      {t.prompt ? <p className="truncate text-steel">{t.prompt}</p> : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            <p className="mt-2 text-sm text-steel">Top failing trace is ready for review.</p>
+            {!screenshotMode ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button asChild size="sm">
                   <Link href={`/incidents/${incidentId}/command?tab=cohort-diff`}>
@@ -401,7 +368,7 @@ export function IncidentCommandCenterView({
                   </Button>
                 ) : null}
               </div>
-            )}
+            ) : null}
           </div>
 
           {resolutionImpact ? (

@@ -20,18 +20,16 @@ export async function POST(request: Request) {
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
 
-    if (typeof email !== "string" || typeof password !== "string") {
-    return NextResponse.redirect(new URL("/sign-in?error=1", request.url), { status: 303 });
+  if (typeof email !== "string" || typeof password !== "string") {
+    return NextResponse.redirect(new URL("/sign-in?error=1", request.url));
   }
 
   const result = await signIn(email, password);
-  
   if (!result) {
-    return NextResponse.redirect(new URL("/sign-in?error=1", request.url), { status: 303 });
+    return NextResponse.redirect(new URL("/sign-in?error=1", request.url));
   }
-  
-  const redirectTo = new URL(returnTo, request.url);
-  const response = NextResponse.redirect(redirectTo, { status: 303 });
+
+  const response = NextResponse.redirect(returnTo);
   const secureCookie = new URL(request.url).protocol === "https:";
   response.cookies.set(SESSION_COOKIE_NAME, result.session_token, {
     httpOnly: true,

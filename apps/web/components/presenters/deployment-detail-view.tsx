@@ -78,7 +78,7 @@ export function DeploymentDetailView({ detail, screenshotMode = false }: Deploym
               <p className="mt-2 text-sm font-medium text-ink">{detail.model_version?.model_name ?? "n/a"}</p>
             </div>
           </div>
-          <pre className={cn("mt-5 overflow-x-auto rounded-[24px] border border-zinc-200 px-4 py-4 text-xs leading-6", screenshotMode ? "bg-zinc-100 text-zinc-800" : "bg-zinc-950 text-zinc-100")}>
+          <pre className="mt-5 overflow-x-auto rounded-[24px] border border-zinc-200 bg-zinc-950 px-4 py-4 text-xs leading-6 text-zinc-100">
             {renderMetadata(detail.metadata_json as Record<string, unknown> | null | undefined)}
           </pre>
         </Card>
@@ -155,7 +155,6 @@ export function DeploymentDetailView({ detail, screenshotMode = false }: Deploym
                     <p className="mt-2">Graph correlations indicate elevated deployment risk for this change.</p>
                   )
                 }
-                className={screenshotMode ? "!bg-zinc-50 !border-zinc-200 [&_p]:!text-zinc-700 [&_li]:!text-zinc-700" : undefined}
               />
               {intelligence.graph_risk_patterns.length > 0 ? (
                 <div className="grid gap-3 md:grid-cols-2">

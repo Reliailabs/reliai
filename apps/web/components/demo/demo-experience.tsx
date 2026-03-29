@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ShieldAlert, ShieldCheck } from "lucide-react";
 
 import { ControlPanelView } from "@/components/presenters/control-panel-view";
+import { DeploymentDetailView } from "@/components/presenters/deployment-detail-view";
 import { IncidentCommandCenterView } from "@/components/presenters/incident-command-center-view";
 import { TraceGraphView } from "@/components/presenters/trace-graph-view";
 import { Card } from "@/components/ui/card";
 import {
   demoControlPanel,
+  demoDeploymentDetail,
   demoGuardrailSummary,
   demoIncident,
   demoIncidentCommand,
@@ -26,58 +28,58 @@ import { DemoTour, type DemoTourStep } from "./demo-tour";
 const demoSteps = [
   {
     id: "failure",
-    label: "Detect",
-    title: "Hallucination spike detected",
+    label: "Failure",
+    title: "Failure detected",
     description:
-      "INC-1423 opened automatically. Failure rate hit 19% — vs 4% baseline — within 82 minutes of a prompt rollout. Reliai caught it before a single user complaint arrived.",
+      "Start with the regression trigger. Reliai flags the failure state and opens an incident as soon as the signal crosses threshold.",
     targetId: "demo-failure-banner",
   },
   {
     id: "control",
-    label: "Understand",
+    label: "System Health",
     title: "System health overview",
     description:
-      "The control panel shows the full picture: reliability score, active incident, and what needs attention first. One screen answers whether the system is safe right now.",
+      "Start at the control panel. Reliability score, active incident count, and the recommended guardrail answer whether the system is safe right now.",
     targetId: "demo-control-panel",
   },
   {
     id: "incident",
     label: "Incident",
-    title: "Incident command center",
+    title: "Incident detection",
     description:
-      "INC-1423 surfaces deployment context, trace evidence, and a concrete fix — all in one place. No log diving required.",
+      "Reliai turned the failure into an incident with deployment context, trace evidence, and a clear mitigation path.",
     targetId: "demo-incident",
   },
   {
     id: "trace-graph",
-    label: "Compare",
-    title: "Trace comparison",
+    label: "Trace Graph",
+    title: "Trace execution graph",
     description:
-      "The failing trace (prompt v42) vs the baseline trace (prompt v41) side by side. Retrieval latency climbed 139%. The regression surface is immediately visible.",
+      "Inspect the exact failing request path across retrieval, prompt build, model execution, tool calls, and retries.",
     targetId: "demo-trace-graph",
   },
   {
     id: "root-cause",
     label: "Root Cause",
-    title: "Root cause — 71% confidence",
+    title: "Root cause explanation",
     description:
-      "Prompt v42 deployed 82 minutes before the incident. Confidence: 71%. The evidence chain connects deployment time, retrieval pressure, and hallucination concentration.",
+      "The likely cause is a prompt rollout that introduced unsupported references and increased retrieval pressure.",
     targetId: "demo-root-cause",
   },
   {
     id: "guardrail",
-    label: "Fix",
-    title: "Apply the fix",
+    label: "Guardrail",
+    title: "Guardrail recommendation",
     description:
-      "Revert to v41. Enable latency retry. The fix is specific and actionable — no ambiguity about what to do next.",
+      "Operators see which runtime protections should be enabled immediately to reduce blast radius.",
     targetId: "demo-guardrails",
   },
   {
     id: "deployment",
-    label: "Prove",
-    title: "Fix verified",
+    label: "Deployment Safety",
+    title: "Deployment safety gate",
     description:
-      "Failure rate dropped from 19% → 5% after reverting prompt v42. Resolved in 6 minutes. The loop is complete: detect, understand, fix, prove.",
+      "Close the loop at the rollout gate. Deployment risk explains whether the change is safe, warning, or blocked.",
     targetId: "demo-deployment-gate",
   },
 ] as const;
@@ -182,15 +184,12 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
                   <ShieldAlert className="h-5 w-5 text-error" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-error">Simulated failure · INC-1423</p>
+                  <p className="text-xs uppercase tracking-[0.24em] text-error">Simulated failure</p>
                   <h2 className="mt-2 text-3xl font-semibold tracking-tight text-textPrimary">
                     Hallucination spike detected
                   </h2>
-                  <p className="mt-1 text-xs text-textSecondary">
-                    AI Support Copilot · Production · Mar 11, 10:22 AM
-                  </p>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-textPrimary">
-                    Failure rate hit <span className="font-semibold text-error">19%</span> — vs <span className="font-semibold">4%</span> baseline. Reliai detected the regression, opened the incident, and identified the fix before users noticed.
+                    A prompt update introduced hallucinated responses. Reliai detected the regression, opened an incident, and recommended a guardrail before users noticed.
                   </p>
                 </div>
               </div>
@@ -199,14 +198,10 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">Demo scenario</p>
               <div className="mt-5 space-y-4 text-sm leading-7 text-textSecondary">
                 <p>
-                  This is <span className="font-medium text-textPrimary">INC-1423</span> — the same incident from the homepage, live in the product.
+                  <span className="font-medium text-textPrimary">{demoProject.name}</span> serves production support traffic.
                 </p>
-                <p>
-                  <span className="font-medium text-textPrimary">{demoProject.name}</span> · Production · Failure rate{" "}
-                  <span className="font-medium text-error">19%</span> vs{" "}
-                  <span className="font-medium text-textPrimary">4%</span> baseline.
-                </p>
-                <p>Follow the loop: Detect → Understand → Compare → Root Cause → Fix → Prove.</p>
+                <p>{demoIncident.title} appeared after a prompt rollout and surfaced before end-user complaints arrived.</p>
+                <p>This walkthrough shows the full operator loop: detect, explain, mitigate, and decide on rollout safety.</p>
               </div>
             </Card>
           </section>
@@ -224,7 +219,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">01</p>
-                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">Understand — System health</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">System health</h2>
               </div>
               <p className="text-sm text-textSecondary">Start at the control panel.</p>
             </div>
@@ -261,7 +256,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">03</p>
-                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">Compare — Trace graph</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">Trace graph</h2>
               </div>
               <p className="text-sm text-textSecondary">
                 Slowest span: {demoTrace.slowest_span} · Token heavy span: {demoTrace.token_heavy_span}
@@ -313,9 +308,9 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">05</p>
-                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">Fix</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">Guardrail recommendation</h2>
               </div>
-              <p className="text-sm text-textSecondary">Revert v42 → enable protections → failure rate returns to baseline.</p>
+              <p className="text-sm text-textSecondary">Recommended runtime protections before blast radius expands.</p>
             </div>
           ) : null}
           <div className="grid gap-4 lg:grid-cols-2">
@@ -339,45 +334,12 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">06</p>
-                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">Prove</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-textPrimary">Deployment safety</h2>
               </div>
-              <p className="text-sm text-textSecondary">Fix verified — the loop is complete.</p>
+              <p className="text-sm text-textSecondary">Finish at the rollout gate.</p>
             </div>
           ) : null}
-          <div className="rounded-[30px] border border-green-200 bg-green-50 px-6 py-8">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-green-100 p-3">
-                <CheckCircle2 className="h-6 w-6 text-green-700" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs uppercase tracking-[0.24em] text-green-700">Fix verified · INC-1423</p>
-                <h3 className="mt-2 text-3xl font-semibold tracking-tight text-green-900">
-                  Failure rate reduced from 19% → 5% ✓
-                </h3>
-                <p className="mt-2 text-sm text-green-800">After reverting prompt v42 · Resolved in 6 minutes</p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-green-200 bg-white/70 px-4 py-4 text-center">
-                    <p className="text-xs uppercase tracking-[0.18em] text-green-700">Before</p>
-                    <p className="mt-2 text-3xl font-bold text-red-600">19%</p>
-                    <p className="mt-1 text-xs text-green-700">failure rate</p>
-                  </div>
-                  <div className="rounded-2xl border border-green-200 bg-white/70 px-4 py-4 text-center">
-                    <p className="text-xs uppercase tracking-[0.18em] text-green-700">Baseline</p>
-                    <p className="mt-2 text-3xl font-bold text-zinc-500">4%</p>
-                    <p className="mt-1 text-xs text-green-700">healthy baseline</p>
-                  </div>
-                  <div className="rounded-2xl border border-green-200 bg-green-100 px-4 py-4 text-center">
-                    <p className="text-xs uppercase tracking-[0.18em] text-green-700">After Fix</p>
-                    <p className="mt-2 text-3xl font-bold text-green-700">5% ✓</p>
-                    <p className="mt-1 text-xs text-green-700">near baseline</p>
-                  </div>
-                </div>
-                <p className="mt-5 text-sm text-green-800">
-                  Based on live production traces · Root cause confidence 71% · Prompt v41 restored
-                </p>
-              </div>
-            </div>
-          </div>
+          <DeploymentDetailView detail={demoDeploymentDetail} screenshotMode />
         </section>
         </div>
 

@@ -265,42 +265,6 @@ export const demoTraceGraph: TraceGraphRead = {
       metadata_json: { dependency: "orders-api" },
     },
     {
-      id: "node_cache",
-      trace_id: "trace_demo_agent_94f3",
-      span_id: "span_cache",
-      parent_span_id: "span_retrieval",
-      span_name: "cache_lookup",
-      span_type: "retrieval",
-      model_name: "redis-cache",
-      model_provider: "internal",
-      latency_ms: 18,
-      prompt_tokens: 0,
-      completion_tokens: 0,
-      success: false,
-      guardrail_policy: null,
-      guardrail_action: null,
-      timestamp: "2026-03-11T10:24:00Z",
-      metadata_json: { miss: true, key: "refund_eligibility_hash" },
-    },
-    {
-      id: "node_guardrail",
-      trace_id: "trace_demo_agent_94f3",
-      span_id: "span_guardrail",
-      parent_span_id: "span_llm",
-      span_name: "validate_output",
-      span_type: "guardrail",
-      model_name: "structured-output-guard",
-      model_provider: "internal",
-      latency_ms: 95,
-      prompt_tokens: 0,
-      completion_tokens: 0,
-      success: true,
-      guardrail_policy: "structured_output",
-      guardrail_action: "retry",
-      timestamp: "2026-03-11T10:24:02Z",
-      metadata_json: { schema: "ticket_resolution_v3", retries: 1 },
-    },
-    {
       id: "node_postprocess",
       trace_id: "trace_demo_agent_94f3",
       span_id: "span_post",
@@ -321,11 +285,9 @@ export const demoTraceGraph: TraceGraphRead = {
   ],
   edges: [
     { parent_span_id: "span_root", child_span_id: "span_retrieval" },
-    { parent_span_id: "span_retrieval", child_span_id: "span_cache" },
     { parent_span_id: "span_root", child_span_id: "span_prompt" },
     { parent_span_id: "span_root", child_span_id: "span_llm" },
     { parent_span_id: "span_llm", child_span_id: "span_tool" },
-    { parent_span_id: "span_llm", child_span_id: "span_guardrail" },
     { parent_span_id: "span_root", child_span_id: "span_post" },
   ],
 };
@@ -374,11 +336,11 @@ export const demoIncidentCommand: IncidentCommandCenterRead = {
     project_id: demoProject.id,
     environment_id: "env_demo_prod",
     project_name: demoProject.name,
-    incident_type: "hallucination",
+    incident_type: "latency_regression",
     severity: "high",
-    title: "Hallucination spike detected",
+    title: "Retrieval latency regression after prompt rollout",
     status: "open",
-    fingerprint: "hallucination:prompt_rollout",
+    fingerprint: "latency_regression:retrieval",
     summary_json: {
       metric_name: "retrieval_latency_ms",
       scope_type: "environment",
@@ -486,22 +448,16 @@ export const demoIncidentCommand: IncidentCommandCenterRead = {
         evidence_json: { pattern: "long context retrieval timeout" },
       },
     ],
-    evidence: {
-      prompt_version: "support/refund-v42 (was v41)",
-      retrieval_p95_ms: 980,
-      chunk_count: "6 chunks (was 4)",
-      elapsed_since_deploy_min: 82,
-      affected_trace_sample: 128,
-    },
+    evidence: {},
     recommended_fix: {
       fix_type: "guardrail",
       summary: "Enable latency retry on retrieval and compare v42 against the previous prompt before expanding rollout.",
       metadata_json: null,
     },
-    top_root_cause_probability: 0.82,
-    recommendation_confidence: 0.82,
-    recommendation_kind: "action",
-    recommended_action_reason: "Root cause confidence 82% based on trace deltas — retrieval latency climbed 139% within 82 min of prompt v42 rollout.",
+    top_root_cause_probability: 0.71,
+    recommendation_confidence: 0.71,
+    recommendation_kind: "recommendation",
+    recommended_action_reason: "Root cause confidence 71% based on trace deltas from the retrieval latency window.",
   },
   metric: {
     metric_name: "retrieval_latency_ms",
@@ -643,16 +599,9 @@ export const demoIncidentCommand: IncidentCommandCenterRead = {
 };
 
 export const demoIncident = {
-  id: "INC-1423",
   title: "Hallucination spike detected",
-  impact: "19% failure rate — hallucinated responses",
-  root_cause: "Prompt v42 deployed 82 minutes before incident",
-  failure_rate_current: 19,
-  failure_rate_baseline: 4,
-  failure_rate_after_fix: 5,
-  project: "AI Support Copilot",
-  environment: "Production",
-  started_at_display: "Mar 11, 10:22 AM",
+  impact: "Responses referencing non-existent documentation",
+  root_cause: "Prompt update deployed earlier today",
 };
 
 export const demoDeploymentDetail: DeploymentDetailRead = {
@@ -745,9 +694,9 @@ export const demoGuardrailSummary = {
 };
 
 export const demoSuggestedFix = {
-  title: "Revert to v41 — prompt v42 is the primary cause (71% confidence)",
+  title: "Roll back prompt v42 after enabling retrieval retry",
   description:
-    "Prompt v42 expanded retrieval context from 4 to 6 chunks and introduced hallucination patterns. Revert to v41 immediately, enable latency retry, then verify failure rate returns to the 4% baseline before redeploying.",
+    "The likely change vector is the prompt rollout. Restore the previous prompt, enable latency retry, then compare baseline vs failing traces before redeploying.",
 };
 
 export const pythonSnippet = `from reliai import ReliaiClient
