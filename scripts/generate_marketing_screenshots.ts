@@ -11,7 +11,7 @@ const outputDir = path.join(root, "apps/web/public/screenshots");
 const baseUrl = "http://127.0.0.1:3000";
 const viewport = {
   width: 1600,
-  height: 1004,
+  height: 1000,
 } as const;
 const clipTarget = {
   width: 1600,

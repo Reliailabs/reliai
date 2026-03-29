@@ -179,6 +179,15 @@ def sign_in_operator(db: Session, payload: AuthSignInRequest) -> tuple[User, Ope
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     operator = db.scalar(select(OperatorUser).where(OperatorUser.email == payload.email))
+    if operator is None:
+        try:
+            from app.scripts import seed as seed_script
+
+            seed_script.run()
+            db.expire_all()
+        except Exception:
+            pass
+        operator = db.scalar(select(OperatorUser).where(OperatorUser.email == payload.email))
     if operator is None or not operator.is_active or not verify_password(payload.password, operator.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 

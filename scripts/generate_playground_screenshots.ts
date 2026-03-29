@@ -11,11 +11,11 @@ const outputDir = path.join(root, "apps/web/public/screenshots");
 const baseUrl = "http://127.0.0.1:3000";
 const viewport = {
   width: 1600,
-  height: 1004,
+  height: 1000,
 } as const;
 const clipTarget = {
   width: 1600,
-  height: 1004,
+  height: 1000,
 } as const;
 
 const shots = [
@@ -117,9 +117,8 @@ async function captureShot(
             },
             { selector: shot.elementSelector, minHeight: clipTarget.height },
           );
-          const clipY = Math.max(0, Math.floor(box.y));
-          const maxHeight = viewport.height - clipY;
-          const clipHeight = Math.min(Math.ceil(box.height), clipTarget.height, maxHeight);
+          const maxClipY = Math.max(0, viewport.height - clipTarget.height);
+          const clipY = Math.min(Math.max(0, Math.floor(box.y)), maxClipY);
           await page.screenshot({
             path: outputPath,
             type: "png",
@@ -127,7 +126,7 @@ async function captureShot(
               x: Math.floor(box.x),
               y: clipY,
               width: clipTarget.width,
-              height: clipHeight,
+              height: clipTarget.height,
             },
           });
           return;
