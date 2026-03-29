@@ -153,7 +153,7 @@ export default async function OnboardingPage({
     });
 
     await switchOrganization(organization.id);
-    redirect("/dashboard");
+    redirect("/onboarding?path=sdk");
   }
 
   return (
