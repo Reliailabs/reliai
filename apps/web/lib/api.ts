@@ -175,6 +175,39 @@ export async function createOrganization(payload: {
   });
 }
 
+export async function createProject(
+  organizationId: string,
+  payload: {
+    name: string;
+    slug: string;
+    environment: "prod" | "staging" | "dev";
+    description?: string | null;
+  }
+) {
+  return request<ProjectRead>(`/api/v1/organizations/${organizationId}/projects`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+type ApiKeyCreateResponse = {
+  api_key: string;
+  api_key_record: {
+    id: string;
+    label: string;
+    key_prefix: string;
+    created_at: string;
+    revoked_at: string | null;
+  };
+};
+
+export async function createApiKey(projectId: string, payload: { label: string }) {
+  return request<ApiKeyCreateResponse>(`/api/v1/projects/${projectId}/api-keys`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function getOrganization(organizationId: string) {
   return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`);
 }
@@ -380,6 +413,14 @@ export async function listProjects(filters: { organizationId?: string; limit?: n
   if (filters.limit) params.set("limit", String(filters.limit));
   const query = params.toString();
   return request<ProjectListResponse>(`/api/v1/projects${query ? `?${query}` : ""}`);
+}
+
+export async function listTraces(filters: { projectId?: string; limit?: number } = {}) {
+  const params = new URLSearchParams();
+  if (filters.projectId) params.set("project_id", filters.projectId);
+  if (filters.limit) params.set("limit", String(filters.limit));
+  const query = params.toString();
+  return request<TraceListResponse>(`/api/v1/traces${query ? `?${query}` : ""}`);
 }
 
 export interface TraceFilters {

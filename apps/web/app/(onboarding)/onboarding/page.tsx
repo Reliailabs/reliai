@@ -7,7 +7,7 @@ import { OnboardingPathTracker } from "@/components/onboarding/onboarding-path-t
 import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { createOrganization, listProjects } from "@/lib/api";
+import { createApiKey, createOrganization, createProject, listProjects, listTraces } from "@/lib/api";
 import { getOperatorSession, requireOperatorSession, switchOrganization } from "@/lib/auth";
 
 function slugify(value: string) {
@@ -26,28 +26,24 @@ function defaultOrgName(email?: string | null) {
   return `${label.charAt(0).toUpperCase()}${label.slice(1)} Workspace`;
 }
 
-const steps = [
+const stepConfig = [
   {
     label: "Create organization",
-    state: "current",
     icon: Network,
     detail: "Register the tenant root used to scope projects, members, and onboarding.",
   },
   {
     label: "Create project",
-    state: "next",
     icon: CircleDashed,
     detail: "Provision a production, staging, or development project inside the organization.",
   },
   {
     label: "Generate API key",
-    state: "next",
     icon: KeyRound,
     detail: "Issue a project-scoped ingest key. The secret is revealed once.",
   },
   {
     label: "Send first trace",
-    state: "next",
     icon: Radar,
     detail: "POST a minimal trace payload to the ingestion endpoint and verify acceptance.",
   },
@@ -63,11 +59,12 @@ function normalizePath(value: string | undefined): OnboardingPath {
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ path?: string; autostart?: string }>;
+  searchParams: Promise<{ path?: string; autostart?: string; api_key?: string }>;
 }) {
-  const { path, autostart } = await searchParams;
+  const { path, autostart, api_key: apiKeyParam } = await searchParams;
   const selectedPath = normalizePath(path);
   const autoStartSimulation = autostart === "1" || autostart === "true";
+  const apiKeyValue = typeof apiKeyParam === "string" && apiKeyParam.length ? apiKeyParam : null;
 
   const maybeSession = await getOperatorSession();
   const returnTo = "/onboarding?path=simulation&autostart=1";
@@ -129,6 +126,21 @@ export default async function OnboardingPage({
     ? await listProjects({ organizationId, limit: 1 }).catch(() => null)
     : null;
   const primaryProjectId = projectList?.items[0]?.id ?? null;
+  const primaryProject = projectList?.items[0] ?? null;
+  const traceList = primaryProjectId
+    ? await listTraces({ projectId: primaryProjectId, limit: 1 }).catch(() => null)
+    : null;
+  const hasOrganization = Boolean(organizationId);
+  const hasProject = Boolean(primaryProjectId);
+  const hasTrace = Boolean(traceList?.items?.length);
+  const apiKeyCreated = Boolean(apiKeyValue) || hasTrace;
+
+  const steps = [
+    { state: hasOrganization ? "done" : "current" },
+    { state: hasOrganization ? (hasProject ? "done" : "current") : "next" },
+    { state: hasOrganization && hasProject ? (apiKeyCreated ? "done" : "current") : "next" },
+    { state: hasOrganization && hasProject && apiKeyCreated ? (hasTrace ? "done" : "current") : "next" },
+  ] as const;
 
   async function createOrganizationAction(formData: FormData) {
     "use server";
@@ -153,7 +165,50 @@ export default async function OnboardingPage({
     });
 
     await switchOrganization(organization.id);
-    redirect("/dashboard");
+    redirect("/onboarding?path=sdk");
+  }
+
+  async function createProjectAction(formData: FormData) {
+    "use server";
+
+    const session = await requireOperatorSession();
+    const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
+    if (!organizationId) return;
+
+    const nameInput = String(formData.get("project_name") ?? "").trim();
+    const environment = String(formData.get("environment") ?? "prod").trim();
+    const fallbackName = "Production";
+    const finalName = nameInput || fallbackName;
+    const finalSlug = slugify(finalName);
+
+    await createProject(organizationId, {
+      name: finalName,
+      slug: finalSlug,
+      environment,
+      description: "Onboarding project",
+    });
+
+    redirect("/onboarding?path=sdk");
+  }
+
+  async function createApiKeyAction() {
+    "use server";
+
+    const session = await requireOperatorSession();
+    const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
+    if (!organizationId) return;
+
+    const projectList = await listProjects({ organizationId, limit: 1 }).catch(() => null);
+    const projectId = projectList?.items[0]?.id ?? null;
+    if (!projectId) return;
+
+    const apiKeyResponse = await createApiKey(projectId, { label: "Onboarding ingest" });
+    const apiKey = apiKeyResponse?.api_key;
+    if (!apiKey) {
+      redirect("/onboarding?path=sdk");
+    }
+
+    redirect(`/onboarding?path=sdk&api_key=${encodeURIComponent(apiKey)}`);
   }
 
   return (
@@ -252,9 +307,11 @@ export default async function OnboardingPage({
             </p>
 
             <div className="mt-8 space-y-4">
-              {steps.map((step, index) => {
+              {stepConfig.map((step, index) => {
+                const state = steps[index]?.state ?? "next";
                 const Icon = step.icon;
-                const isCurrent = step.state === "current";
+                const isCurrent = state === "current";
+                const isDone = state === "done";
                 return (
                   <div
                     key={step.label}
@@ -269,7 +326,11 @@ export default async function OnboardingPage({
                       <p className="mt-2 text-sm leading-6 text-steel">{step.detail}</p>
                     </div>
                     <div className="flex items-center">
-                      {isCurrent ? (
+                      {isDone ? (
+                        <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+                          Complete
+                        </span>
+                      ) : isCurrent ? (
                         <span className="rounded-full bg-accentSoft px-3 py-1 text-xs font-medium text-accent">
                           Current
                         </span>
@@ -284,39 +345,82 @@ export default async function OnboardingPage({
               })}
             </div>
 
-            <form action={createOrganizationAction} className="mt-6 grid gap-3 md:grid-cols-2">
-              <label className="block space-y-2 text-sm text-steel">
-                <span className="text-xs uppercase tracking-[0.24em] text-steel">Organization name</span>
-                <input
-                  name="name"
-                  defaultValue={defaultName}
-                  className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
-                />
-              </label>
+            {!hasOrganization ? (
+              <form action={createOrganizationAction} className="mt-6 grid gap-3 md:grid-cols-2">
+                <label className="block space-y-2 text-sm text-steel">
+                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Organization name</span>
+                  <input
+                    name="name"
+                    defaultValue={defaultName}
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                  />
+                </label>
 
-              <label className="block space-y-2 text-sm text-steel">
-                <span className="text-xs uppercase tracking-[0.24em] text-steel">Slug</span>
-                <input
-                  name="slug"
-                  defaultValue={defaultSlug}
-                  className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
-                />
-              </label>
+                <label className="block space-y-2 text-sm text-steel">
+                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Slug</span>
+                  <input
+                    name="slug"
+                    defaultValue={defaultSlug}
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                  />
+                </label>
 
-              <div className="md:col-span-2 flex flex-wrap gap-2">
-                <Button type="submit">Create organization</Button>
-                <Button asChild variant="outline" type="button">
-                  <Link href="/onboarding?path=simulation">Run simulation instead</Link>
-                </Button>
+                <div className="md:col-span-2 flex flex-wrap gap-2">
+                  <Button type="submit">Create organization</Button>
+                  <Button asChild variant="outline" type="button">
+                    <Link href="/onboarding?path=simulation">Run simulation instead</Link>
+                  </Button>
+                </div>
+              </form>
+            ) : null}
+
+            {hasOrganization && !hasProject ? (
+              <form action={createProjectAction} className="mt-6 grid gap-3 md:grid-cols-2">
+                <label className="block space-y-2 text-sm text-steel">
+                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Project name</span>
+                  <input
+                    name="project_name"
+                    defaultValue="Production"
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                  />
+                </label>
+                <label className="block space-y-2 text-sm text-steel">
+                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Environment</span>
+                  <select
+                    name="environment"
+                    defaultValue="prod"
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                  >
+                    <option value="prod">Production</option>
+                    <option value="staging">Staging</option>
+                    <option value="dev">Development</option>
+                  </select>
+                </label>
+                <div className="md:col-span-2 flex flex-wrap gap-2">
+                  <Button type="submit">Create project</Button>
+                </div>
+              </form>
+            ) : null}
+
+            {hasOrganization && hasProject && !apiKeyCreated ? (
+              <form action={createApiKeyAction} className="mt-6 flex flex-wrap gap-2">
+                <Button type="submit">Generate API key</Button>
+              </form>
+            ) : null}
+
+            {hasOrganization && hasProject && apiKeyValue ? (
+              <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-steel">API key (copy once)</p>
+                <p className="mt-2 break-all rounded-md bg-white px-3 py-2 text-sm text-ink">{apiKeyValue}</p>
               </div>
-            </form>
+            ) : null}
           </Card>
 
           <Card className="h-fit p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Ingest example</p>
             <div className="mt-4 rounded-xl bg-[#111827] p-4 text-sm text-zinc-100">
               <pre className="overflow-x-auto whitespace-pre-wrap font-mono">{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
-  -H "x-api-key: reliai_..." \\
+  -H "x-api-key: ${apiKeyValue ?? "reliai_..."}" \\
   -H "content-type: application/json" \\
   -d '{
     "timestamp":"2026-03-09T12:00:00Z",
@@ -334,15 +438,39 @@ export default async function OnboardingPage({
                 </p>
               </div>
             </div>
+            {hasTrace ? (
+              <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                First trace received for {primaryProject?.name ?? "your project"}. You can now open incidents and verify ingestion.
+              </div>
+            ) : null}
           </Card>
         </div>
       ) : null}
 
       {selectedPath === "simulation" ? (
-        <OnboardingSimulationRunner
-          defaultProjectName={`${defaultSlug}-simulation`}
-          autoStart={autoStartSimulation}
-        />
+        hasOrganization ? (
+          <OnboardingSimulationRunner
+            defaultProjectName={`${defaultSlug}-simulation`}
+            autoStart={autoStartSimulation}
+          />
+        ) : (
+          <Card className="p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Simulation blocked</p>
+            <h2 className="mt-3 text-2xl font-semibold text-ink">Create your organization to start the simulation</h2>
+            <p className="mt-2 text-sm leading-6 text-steel">
+              We need a workspace to scope the simulation data. Create your organization first, then return here to
+              run the guided incident.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button asChild>
+                <Link href="/onboarding?path=sdk">Create organization</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/onboarding">Choose path</Link>
+              </Button>
+            </div>
+          </Card>
+        )
       ) : null}
     </div>
   );
