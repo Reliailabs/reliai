@@ -13,9 +13,20 @@ env:
 jobs:
   operator-smoke:
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       DATABASE_URL: "sqlite+pysqlite:///:memory:"
+      REDIS_URL: redis://127.0.0.1:6379/0
       API_KEY_HASH_SECRET: test-secret
       AUTH_SESSION_HASH_SECRET: test-session-secret
       PYTHONPATH: ${{ github.workspace }}/apps/api
