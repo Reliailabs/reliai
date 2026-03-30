@@ -3421,7 +3421,12 @@ def generate_incident_ai_summary_endpoint(
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> AiIncidentSummaryResponse:
-    return generate_ai_incident_summary(db, operator, incident_id, payload)
+    return generate_ai_incident_summary(
+        db=db,
+        operator=operator,
+        incident_id=incident_id,
+        request=payload,
+    )
 
 
 @router.get("/incidents/{incident_id}/investigation", response_model=IncidentInvestigationRead)
