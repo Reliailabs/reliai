@@ -21,4 +21,4 @@ class AiIncidentSummaryResponse(BaseModel):
     evidence_used: list[str] = Field(default_factory=list)
     generated_at: datetime
     model: AiIncidentSummaryModelInfo | None = None
-    status: Literal["ok", "insufficient_evidence"] = "ok"
+    status: Literal["ok", "insufficient_evidence", "error"] = "ok"

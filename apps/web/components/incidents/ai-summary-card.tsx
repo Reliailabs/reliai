@@ -17,6 +17,9 @@ interface AiSummaryCardProps {
 }
 
 function buildCopy(summary: AiIncidentSummaryResponse) {
+  if (summary.status === "error") {
+    return "AI Summary\n\nAI summary unavailable right now.";
+  }
   if (summary.status !== "ok") {
     return "AI Summary\n\nThere isn’t enough evidence yet to generate a reliable summary.";
   }
@@ -50,7 +53,15 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
       })
         .then((response) => {
           setSummary(response);
-          setStatus(response.status === "ok" ? "ready" : "insufficient");
+          if (response.status === "ok") {
+            setStatus("ready");
+            return;
+          }
+          if (response.status === "error") {
+            setStatus("error");
+            return;
+          }
+          setStatus("insufficient");
         })
         .catch((_error: unknown) => {
           setStatus("error");
@@ -95,9 +106,9 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
 
       {status === "ready" && summary ? (
         <div className="mt-4 space-y-4">
-          <p className="text-sm leading-6 text-ink">{summary.summary}</p>
-          <p className="text-sm text-ink">
-            <span className="font-medium text-ink">Recommended next step:</span>{" "}
+          <p className="text-sm leading-6 text-zinc-950">{summary.summary}</p>
+          <p className="text-sm text-zinc-950">
+            <span className="font-medium text-zinc-950">Recommended next step:</span>{" "}
             {summary.recommended_next_step ?? "n/a"}
           </p>
           {isStale ? (
@@ -107,7 +118,7 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
           ) : null}
           <div className="rounded-xl bg-zinc-50 px-3 py-3">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Based on</p>
-            <ul className="mt-2 space-y-1 text-sm text-ink">
+            <ul className="mt-2 space-y-1 text-sm text-zinc-950">
               {evidence.map((item) => (
                 <li key={item}>• {item}</li>
               ))}
@@ -117,11 +128,11 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
       ) : null}
 
       {status === "insufficient" ? (
-        <div className="mt-4 space-y-3 text-sm text-ink">
+        <div className="mt-4 space-y-3 text-sm text-zinc-950">
           <p>There isn’t enough evidence yet to generate a reliable summary.</p>
           <div className="rounded-xl bg-zinc-50 px-3 py-3">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Based on</p>
-            <ul className="mt-2 space-y-1 text-sm text-ink">
+            <ul className="mt-2 space-y-1 text-sm text-zinc-950">
               {(summary?.evidence_used ?? ["Incident opened"]).map((item) => (
                 <li key={item}>• {item}</li>
               ))}
@@ -131,7 +142,7 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
       ) : null}
 
       {status === "error" ? (
-        <div className="mt-4 text-sm text-ink">
+        <div className="mt-4 text-sm text-zinc-950">
           <p>AI summary unavailable right now.</p>
           <div className="mt-3">
             <Button size="sm" variant="outline" onClick={() => fetchSummary()}>

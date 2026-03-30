@@ -1428,7 +1428,7 @@ export interface AiIncidentSummaryModelInfo {
 }
 
 export interface AiIncidentSummaryResponse {
-  status: "ok" | "insufficient_evidence";
+  status: "ok" | "insufficient_evidence" | "error";
   summary: string | null;
   recommended_next_step: string | null;
   evidence_used: string[];

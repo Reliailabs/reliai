@@ -104,7 +104,18 @@ export default async function IncidentCommandCenterPage({
     payload: AiIncidentSummaryRequest
   ): Promise<AiIncidentSummaryResponse> => {
     "use server";
-    return generateIncidentAiSummary(incidentId, payload);
+    try {
+      return await generateIncidentAiSummary(incidentId, payload);
+    } catch (_error) {
+      return {
+        summary: null,
+        recommended_next_step: null,
+        evidence_used: [],
+        generated_at: new Date().toISOString(),
+        model: null,
+        status: "error"
+      };
+    }
   };
 
   return (
