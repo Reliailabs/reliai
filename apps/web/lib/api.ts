@@ -415,14 +415,6 @@ export async function listProjects(filters: { organizationId?: string; limit?: n
   return request<ProjectListResponse>(`/api/v1/projects${query ? `?${query}` : ""}`);
 }
 
-export async function listTraces(filters: { projectId?: string; limit?: number } = {}) {
-  const params = new URLSearchParams();
-  if (filters.projectId) params.set("project_id", filters.projectId);
-  if (filters.limit) params.set("limit", String(filters.limit));
-  const query = params.toString();
-  return request<TraceListResponse>(`/api/v1/traces${query ? `?${query}` : ""}`);
-}
-
 export interface TraceFilters {
   projectId?: string;
   environment?: string;

@@ -35,6 +35,7 @@ class SchedulerJobState:
 
 _SCHEDULER = None
 _JOB_STATES: dict[str, SchedulerJobState] = {}
+_RELIABILITY_SWEEP_SCHEDULED = False
 
 
 def _enqueue_callable(func, *args) -> None:
@@ -111,12 +112,16 @@ def _run_and_track(job_name: str) -> None:
 
 def start_scheduler() -> None:
     global _SCHEDULER
+    global _RELIABILITY_SWEEP_SCHEDULED
     settings = get_settings()
     jobs = _register_default_jobs()
     if not settings.scheduler_enabled:
         for state in jobs.values():
             state.status = "disabled"
         return
+    if not _RELIABILITY_SWEEP_SCHEDULED:
+        schedule_reliability_sweep()
+        _RELIABILITY_SWEEP_SCHEDULED = True
     if BackgroundScheduler is None:
         for state in jobs.values():
             state.status = "configured"

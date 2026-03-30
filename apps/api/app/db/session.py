@@ -22,7 +22,8 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def get_redis() -> Redis:
-    return Redis.from_url(settings.redis_url, decode_responses=True)
+    # RQ expects raw bytes from Redis; decode_responses breaks worker cleanup.
+    return Redis.from_url(settings.redis_url, decode_responses=False)
 
 
 def get_queue():

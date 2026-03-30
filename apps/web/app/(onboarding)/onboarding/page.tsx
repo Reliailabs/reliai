@@ -122,6 +122,10 @@ export default async function OnboardingPage({
   const defaultName = defaultOrgName(session.operator.email);
   const defaultSlug = slugify(defaultName);
   const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
+  const activeMembership =
+    session.memberships.find((membership) => membership.organization_id === organizationId) ?? null;
+  const activeOrganizationLabel =
+    activeMembership?.organization_name ?? organizationId ?? "Active organization";
   const projectList = organizationId
     ? await listProjects({ organizationId, limit: 1 }).catch(() => null)
     : null;
@@ -347,8 +351,18 @@ export default async function OnboardingPage({
               })}
             </div>
 
-            {!hasOrganization ? (
-              <form action={createOrganizationAction} className="mt-6 grid gap-3 md:grid-cols-2">
+            <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4">
+              <p className="text-xs uppercase tracking-[0.24em] text-steel">Organization</p>
+              <p className="mt-2 text-sm text-steel">
+                Active: <span className="font-medium text-ink">{activeOrganizationLabel}</span>
+              </p>
+              <p className="mt-2 text-sm text-steel">
+                {hasOrganization
+                  ? "You can create another organization at any time. The new organization becomes active immediately."
+                  : "Create your first organization to start ingesting traces."}
+              </p>
+
+              <form action={createOrganizationAction} className="mt-4 grid gap-3 md:grid-cols-2">
                 <label className="block space-y-2 text-sm text-steel">
                   <span className="text-xs uppercase tracking-[0.24em] text-steel">Organization name</span>
                   <input
@@ -368,13 +382,16 @@ export default async function OnboardingPage({
                 </label>
 
                 <div className="md:col-span-2 flex flex-wrap gap-2">
-                  <Button type="submit">Create organization</Button>
+                  <Button type="submit">{hasOrganization ? "Create another organization" : "Create organization"}</Button>
+                  <Button asChild variant="outline" type="button">
+                    <Link href="/settings">Manage organizations</Link>
+                  </Button>
                   <Button asChild variant="outline" type="button">
                     <Link href="/onboarding?path=simulation">Run simulation instead</Link>
                   </Button>
                 </div>
               </form>
-            ) : null}
+            </div>
 
             {hasOrganization && !hasProject ? (
               <form action={createProjectAction} className="mt-6 grid gap-3 md:grid-cols-2">
