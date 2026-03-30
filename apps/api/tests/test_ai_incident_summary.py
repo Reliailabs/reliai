@@ -10,7 +10,7 @@ def test_ai_summary_endpoint_returns_summary(client, db_session, monkeypatch):
     owner_session, _, project, _ = _seed_success_rate_regression(client, db_session)
     incident = _incident_for_type(db_session, project["id"], "success_rate_drop")
 
-    def fake_call_openai(messages):  # noqa: ARG001
+    def fake_call_openai_compatible(*_args, **_kwargs):
         return {
             "choices": [
                 {
@@ -30,7 +30,7 @@ def test_ai_summary_endpoint_returns_summary(client, db_session, monkeypatch):
             ]
         }
 
-    monkeypatch.setattr(ai_incident_summary, "_call_openai", fake_call_openai)
+    monkeypatch.setattr(ai_incident_summary, "_call_openai_compatible", fake_call_openai_compatible)
 
     response = client.post(
         f"/api/v1/incidents/{incident.id}/ai-summary",

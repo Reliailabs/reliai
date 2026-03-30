@@ -51,9 +51,17 @@ class Settings(BaseSettings):
     stripe_usage_cost_per_million_team: float = 0.5
     stripe_usage_cost_per_million_production: float = 0.25
     workos_dev_auth_enabled: bool = True
+    ai_provider: str = "openai"
     openai_api_key: str | None = None
     openai_api_base: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4.1-mini"
+    anthropic_api_key: str | None = None
+    anthropic_api_base: str = "https://api.anthropic.com"
+    anthropic_model: str | None = None
+    anthropic_version: str = "2023-06-01"
+    deepseek_api_key: str | None = None
+    deepseek_api_base: str = "https://api.deepseek.com"
+    deepseek_model: str | None = None
     public_api_rate_limit_per_minute: int = 120
     ingest_rate_limit_per_minute: int = 600
     processor_dispatch_rate_limit_per_minute: int = 300
