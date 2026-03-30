@@ -6,6 +6,10 @@ All notable changes to Reliai will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- AI root-cause explanation panel that interprets deterministic evidence beneath the root-cause block.
+
 ### Fixed
 
 - AI Summary no longer reuses cached output when the provider changes, and failures now surface as a safe error state instead of breaking the command route.

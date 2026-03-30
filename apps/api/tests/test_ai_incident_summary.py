@@ -30,7 +30,7 @@ def test_ai_summary_endpoint_returns_summary(client, db_session, monkeypatch):
             ]
         }
 
-    monkeypatch.setattr(ai_incident_summary, "_call_openai_compatible", fake_call_openai_compatible)
+    monkeypatch.setattr(ai_incident_summary, "call_openai_compatible", fake_call_openai_compatible)
 
     response = client.post(
         f"/api/v1/incidents/{incident.id}/ai-summary",

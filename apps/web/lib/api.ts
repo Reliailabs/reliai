@@ -3,6 +3,8 @@ import "server-only";
 import type {
   AiIncidentSummaryRequest,
   AiIncidentSummaryResponse,
+  AiRootCauseExplanationRequest,
+  AiRootCauseExplanationResponse,
   AlertDeliveryListResponse,
   CustomerReliabilityDetailRead,
   CustomerReliabilityListRead,
@@ -508,6 +510,16 @@ export async function generateIncidentAiSummary(
   payload: AiIncidentSummaryRequest
 ) {
   return request<AiIncidentSummaryResponse>(`/api/v1/incidents/${incidentId}/ai-summary`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function generateIncidentAiRootCauseExplanation(
+  incidentId: string,
+  payload: AiRootCauseExplanationRequest
+) {
+  return request<AiRootCauseExplanationResponse>(`/api/v1/incidents/${incidentId}/ai-root-cause`, {
     method: "POST",
     body: JSON.stringify(payload)
   });

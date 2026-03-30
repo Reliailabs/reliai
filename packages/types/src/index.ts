@@ -1436,6 +1436,25 @@ export interface AiIncidentSummaryResponse {
   model: AiIncidentSummaryModelInfo | null;
 }
 
+export interface AiRootCauseExplanationRequest {
+  regenerate?: boolean;
+}
+
+export interface AiRootCauseExplanationModelInfo {
+  provider: string;
+  model: string;
+}
+
+export interface AiRootCauseExplanationResponse {
+  status: "ok" | "insufficient_evidence" | "error";
+  explanation: string | null;
+  what_to_check_next: string | null;
+  evidence_used: string[];
+  generated_at: string | null;
+  model: AiRootCauseExplanationModelInfo | null;
+  is_stale: boolean;
+}
+
 export interface IncidentCommandCenterMetricRead {
   metric_name: string;
   metric_type: string;
