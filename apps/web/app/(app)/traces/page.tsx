@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronRight, Filter, Radar, SearchSlash } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
-import { listTraces, type TraceFilters } from "@/lib/api";
+import { listProjectEnvironments, listTraces, type TraceFilters } from "@/lib/api";
 import { TraceWowBanner } from "@/components/traces/trace-wow-banner";
 
 function getStatusPill(success: boolean, errorType: string | null) {
@@ -57,6 +57,7 @@ export default async function TracesPage({
   const dateTo = normalizeUtcInputValue(readSearchParam(params.date_to), defaultDateTo);
   const filters: TraceFilters = {
     projectId: readSearchParam(params.project_id),
+    environment: readSearchParam(params.environment),
     promptVersionId: readSearchParam(params.prompt_version_id),
     modelVersionId: readSearchParam(params.model_version_id),
     modelName: readSearchParam(params.model_name),
@@ -69,12 +70,19 @@ export default async function TracesPage({
   };
 
   const traces = await listTraces(filters).catch(() => ({ items: [], next_cursor: null }));
+  const environments = filters.projectId
+    ? await listProjectEnvironments(filters.projectId).catch(() => null)
+    : null;
+  const environmentOptions = environments?.items?.length
+    ? environments.items.map((environment) => environment.name)
+    : ["production", "staging", "development"];
   const forcedWowTraceId = readSearchParam(params.wow_trace_id);
   const bestTraceId = forcedWowTraceId ?? traces.items[0]?.id;
   const disableAutoSelect = readSearchParam(params.autoselect) === "0";
   const hasCursor = Boolean(filters.cursor);
   const hasFilters =
     Boolean(filters.projectId) ||
+    Boolean(filters.environment) ||
     Boolean(filters.promptVersionId) ||
     Boolean(filters.modelVersionId) ||
     Boolean(filters.modelName) ||
@@ -115,6 +123,18 @@ export default async function TracesPage({
               placeholder="Project ID"
               className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-ink outline-none ring-0 placeholder:text-zinc-400"
             />
+            <select
+              name="environment"
+              defaultValue={filters.environment ?? ""}
+              className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-ink outline-none"
+            >
+              <option value="">Any environment</option>
+              {environmentOptions.map((environment) => (
+                <option key={environment} value={environment}>
+                  {environment}
+                </option>
+              ))}
+            </select>
             <input
               name="model_name"
               defaultValue={filters.modelName}

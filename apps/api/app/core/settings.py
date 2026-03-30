@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     trace_input_text_max_chars: int = 20000
     trace_output_text_max_chars: int = 20000
     trace_metadata_max_bytes: int = 16384
+    dev_inline_regression: bool = False
 
     model_config = SettingsConfigDict(
         env_file=(ROOT_DIR / ".env",),

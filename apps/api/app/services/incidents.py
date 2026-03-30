@@ -339,6 +339,23 @@ INCIDENT_RULES = (
     ),
 )
 
+def _dev_incident_tuning(rule: IncidentRule) -> IncidentRule:
+    settings = get_settings()
+    if settings.app_env.lower() not in {"development", "dev", "local"}:
+        return rule
+    percent_threshold = (
+        rule.percent_threshold * Decimal("0.2") if rule.percent_threshold is not None else None
+    )
+    return IncidentRule(
+        incident_type=rule.incident_type,
+        metric_name=rule.metric_name,
+        title_template=rule.title_template,
+        minimum_sample_size=1,
+        comparator=rule.comparator,
+        absolute_threshold=rule.absolute_threshold * Decimal("0.2"),
+        percent_threshold=percent_threshold,
+    )
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -378,6 +395,7 @@ def _severity(rule: IncidentRule, snapshot: RegressionSnapshot) -> str:
 
 
 def _snapshot_breaches(rule: IncidentRule, snapshot: RegressionSnapshot) -> bool:
+    rule = _dev_incident_tuning(rule)
     current_samples = (snapshot.metadata_json or {}).get("current_sample_size", 0)
     baseline_samples = (snapshot.metadata_json or {}).get("baseline_sample_size", 0)
     if current_samples < rule.minimum_sample_size or baseline_samples < rule.minimum_sample_size:
