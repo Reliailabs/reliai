@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import type { IncidentCommandCenterRead } from "@reliai/types";
+import type { AiIncidentSummaryRequest, AiIncidentSummaryResponse, IncidentCommandCenterRead } from "@reliai/types";
 
 import { ActionCallout } from "@/components/ui/action-callout";
 import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatTime, severityTone } from "@/components/presenters/ops-format";
+import { AiSummaryCard } from "@/components/incidents/ai-summary-card";
 import { cn } from "@/lib/utils";
 
 interface SuggestedFix {
@@ -21,6 +22,7 @@ interface IncidentCommandCenterViewProps {
   suggestedFix?: SuggestedFix | null;
   screenshotMode?: boolean;
   activeTab?: string;
+  aiSummaryAction?: (payload: AiIncidentSummaryRequest) => Promise<AiIncidentSummaryResponse>;
 }
 
 const TABS = [
@@ -140,6 +142,7 @@ export function IncidentCommandCenterView({
   suggestedFix = null,
   screenshotMode = false,
   activeTab = "overview",
+  aiSummaryAction,
 }: IncidentCommandCenterViewProps) {
   const incident = command.incident;
   const summary = incident.summary_json ?? {};
@@ -456,6 +459,14 @@ export function IncidentCommandCenterView({
               supporting={supportingText}
             />
           )}
+
+          {aiSummaryAction ? (
+            <AiSummaryCard
+              incidentId={incidentId}
+              incidentUpdatedAt={incident.updated_at ?? null}
+              generateSummary={aiSummaryAction}
+            />
+          ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Mitigations</p>

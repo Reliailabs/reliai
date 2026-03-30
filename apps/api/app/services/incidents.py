@@ -56,6 +56,7 @@ INCIDENT_EVENT_RESOLVED = "resolved"
 INCIDENT_EVENT_REOPENED = "reopened"
 INCIDENT_EVENT_CONFIG_APPLIED = "config_applied"
 INCIDENT_EVENT_CONFIG_UNDONE = "config_undone"
+INCIDENT_EVENT_AI_SUMMARY_GENERATED = "ai_summary_generated"
 TELEMETRY_FRESHNESS_INCIDENT_TYPE = "telemetry_freshness_stale"
 
 _RESOLUTION_DISPLAY_NAMES: dict[str, str] = {

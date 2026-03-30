@@ -20,6 +20,7 @@ from app.models.reliability_graph_node import ReliabilityGraphNode
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.archive_status import ArchiveStatusRead
+from app.schemas.ai import AiIncidentSummaryRequest, AiIncidentSummaryResponse
 from app.schemas.auth import (
     AuthSessionResponse,
     AuthSignInRequest,
@@ -332,6 +333,7 @@ from app.services.auth_workos import (
     handle_scim_user_deprovisioned,
     handle_scim_user_provisioned,
 )
+from app.services.ai_incident_summary import generate_ai_incident_summary
 from app.services.incident_command_center import get_incident_command_center
 from app.services.incident_investigation import compute_prompt_content_diff, get_incident_investigation
 from app.services.incidents import (
@@ -3410,6 +3412,16 @@ def get_incident_command_center_endpoint(
         ],
         recent_signals=list(command.recent_signals),
     )
+
+
+@router.post("/incidents/{incident_id}/ai-summary", response_model=AiIncidentSummaryResponse)
+def generate_incident_ai_summary_endpoint(
+    incident_id: UUID,
+    payload: AiIncidentSummaryRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AiIncidentSummaryResponse:
+    return generate_ai_incident_summary(db, operator, incident_id, payload)
 
 
 @router.get("/incidents/{incident_id}/investigation", response_model=IncidentInvestigationRead)

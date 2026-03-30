@@ -1,9 +1,16 @@
 import { notFound } from "next/navigation";
 
+import type { AiIncidentSummaryRequest, AiIncidentSummaryResponse } from "@reliai/types";
+
 import { IncidentCommandCenterView } from "@/components/presenters/incident-command-center-view";
 import { CohortDiffView } from "@/components/presenters/cohort-diff-view";
 import { PromptDiffView } from "@/components/presenters/prompt-diff-view";
-import { getIncidentCommandCenter, getIncidentTraceCompare, getProjectRecommendations } from "@/lib/api";
+import {
+  generateIncidentAiSummary,
+  getIncidentCommandCenter,
+  getIncidentTraceCompare,
+  getProjectRecommendations,
+} from "@/lib/api";
 
 const VALID_TABS = ["overview", "cohort-diff", "prompt-diff", "traces"] as const;
 type Tab = typeof VALID_TABS[number];
@@ -93,11 +100,19 @@ export default async function IncidentCommandCenterPage({
     typeof incident.summary_json.metric_name === "string" ? incident.summary_json.metric_name : null,
   );
 
+  const aiSummaryAction = async (
+    payload: AiIncidentSummaryRequest
+  ): Promise<AiIncidentSummaryResponse> => {
+    "use server";
+    return generateIncidentAiSummary(incidentId, payload);
+  };
+
   return (
     <IncidentCommandCenterView
       incidentId={incidentId}
       command={command}
       activeTab="overview"
+      aiSummaryAction={aiSummaryAction}
       suggestedFix={
         suggestedFix
           ? {
