@@ -6,6 +6,11 @@ All notable changes to Reliai will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- AI Summary no longer reuses cached output when the provider changes, and failures now surface as a safe error state instead of breaking the command route.
+- Increased AI Summary body text contrast for readability.
+
 ---
 
 ## [2026-03-26] - Demo-ready simulation flow and command center proof

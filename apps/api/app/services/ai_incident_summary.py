@@ -124,17 +124,28 @@ def _call_openai_compatible(*, base_url: str, api_key: str | None, model: str | 
     }
     if use_json_mode:
         payload["response_format"] = {"type": "json_object"}
-    response = httpx.post(
-        endpoint,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=30,
-    )
-    response.raise_for_status()
-    return response.json()
+    try:
+        response = httpx.post(
+            endpoint,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider request failed",
+        ) from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider request failed",
+        ) from exc
 
 
 def _call_anthropic(*, base_url: str, api_key: str | None, model: str | None, system_prompt: str, user_prompt: str, version: str) -> dict[str, Any]:
@@ -148,18 +159,29 @@ def _call_anthropic(*, base_url: str, api_key: str | None, model: str | None, sy
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
     }
-    response = httpx.post(
-        endpoint,
-        headers={
-            "x-api-key": api_key,
-            "anthropic-version": version,
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=30,
-    )
-    response.raise_for_status()
-    return response.json()
+    try:
+        response = httpx.post(
+            endpoint,
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": version,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider request failed",
+        ) from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI provider request failed",
+        ) from exc
 
 
 def _extract_openai_content(data: dict[str, Any]) -> str | None:
@@ -195,9 +217,16 @@ def generate_ai_incident_summary(
 ) -> AiIncidentSummaryResponse:
     command = get_incident_command_center(db, operator, incident_id)
     incident: Incident = command.incident
+    settings = get_settings()
     summary_json = dict(incident.summary_json or {})
     cached = summary_json.get("ai_summary")
-    if not request.regenerate and isinstance(cached, dict) and cached.get("status") == "ok":
+    cached_provider = cached.get("model", {}).get("provider") if isinstance(cached, dict) else None
+    if (
+        not request.regenerate
+        and isinstance(cached, dict)
+        and cached.get("status") == "ok"
+        and cached_provider == settings.ai_provider
+    ):
         return AiIncidentSummaryResponse(
             summary=cached.get("summary"),
             recommended_next_step=cached.get("recommended_next_step"),
@@ -205,7 +234,7 @@ def generate_ai_incident_summary(
             generated_at=datetime.fromisoformat(cached.get("generated_at")),
             model=AiIncidentSummaryModelInfo(
                 provider=cached.get("model", {}).get("provider", "openai"),
-                model=cached.get("model", {}).get("model", get_settings().openai_model),
+                model=cached.get("model", {}).get("model", settings.openai_model),
             ),
             status=cached.get("status", "ok"),
         )
@@ -242,7 +271,6 @@ def generate_ai_incident_summary(
         return response
 
     prompt = _build_prompt(command=command, evidence=evidence, request=request)
-    settings = get_settings()
     provider = settings.ai_provider.lower().strip()
     if provider == "openai":
         model_name = settings.openai_model
