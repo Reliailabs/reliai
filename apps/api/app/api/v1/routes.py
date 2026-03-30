@@ -20,7 +20,12 @@ from app.models.reliability_graph_node import ReliabilityGraphNode
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.archive_status import ArchiveStatusRead
-from app.schemas.ai import AiIncidentSummaryRequest, AiIncidentSummaryResponse
+from app.schemas.ai import (
+    AiIncidentSummaryRequest,
+    AiIncidentSummaryResponse,
+    AiRootCauseExplanationRequest,
+    AiRootCauseExplanationResponse,
+)
 from app.schemas.auth import (
     AuthSessionResponse,
     AuthSignInRequest,
@@ -334,6 +339,7 @@ from app.services.auth_workos import (
     handle_scim_user_provisioned,
 )
 from app.services.ai_incident_summary import generate_ai_incident_summary
+from app.services.ai_root_cause_explanation import generate_ai_root_cause_explanation
 from app.services.incident_command_center import get_incident_command_center
 from app.services.incident_investigation import compute_prompt_content_diff, get_incident_investigation
 from app.services.incidents import (
@@ -3422,6 +3428,21 @@ def generate_incident_ai_summary_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> AiIncidentSummaryResponse:
     return generate_ai_incident_summary(
+        db=db,
+        operator=operator,
+        incident_id=incident_id,
+        request=payload,
+    )
+
+
+@router.post("/incidents/{incident_id}/ai-root-cause", response_model=AiRootCauseExplanationResponse)
+def generate_incident_ai_root_cause_endpoint(
+    incident_id: UUID,
+    payload: AiRootCauseExplanationRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AiRootCauseExplanationResponse:
+    return generate_ai_root_cause_explanation(
         db=db,
         operator=operator,
         incident_id=incident_id,

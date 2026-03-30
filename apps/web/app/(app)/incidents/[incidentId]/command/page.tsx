@@ -1,12 +1,18 @@
 import { notFound } from "next/navigation";
 
-import type { AiIncidentSummaryRequest, AiIncidentSummaryResponse } from "@reliai/types";
+import type {
+  AiIncidentSummaryRequest,
+  AiIncidentSummaryResponse,
+  AiRootCauseExplanationRequest,
+  AiRootCauseExplanationResponse,
+} from "@reliai/types";
 
 import { IncidentCommandCenterView } from "@/components/presenters/incident-command-center-view";
 import { CohortDiffView } from "@/components/presenters/cohort-diff-view";
 import { PromptDiffView } from "@/components/presenters/prompt-diff-view";
 import {
   generateIncidentAiSummary,
+  generateIncidentAiRootCauseExplanation,
   getIncidentCommandCenter,
   getIncidentTraceCompare,
   getProjectRecommendations,
@@ -118,12 +124,32 @@ export default async function IncidentCommandCenterPage({
     }
   };
 
+  const aiRootCauseExplanationAction = async (
+    payload: AiRootCauseExplanationRequest
+  ): Promise<AiRootCauseExplanationResponse> => {
+    "use server";
+    try {
+      return await generateIncidentAiRootCauseExplanation(incidentId, payload);
+    } catch (_error) {
+      return {
+        explanation: null,
+        what_to_check_next: null,
+        evidence_used: [],
+        generated_at: new Date().toISOString(),
+        model: null,
+        status: "error",
+        is_stale: false
+      };
+    }
+  };
+
   return (
     <IncidentCommandCenterView
       incidentId={incidentId}
       command={command}
       activeTab="overview"
       aiSummaryAction={aiSummaryAction}
+      aiRootCauseExplanationAction={aiRootCauseExplanationAction}
       suggestedFix={
         suggestedFix
           ? {

@@ -22,3 +22,22 @@ class AiIncidentSummaryResponse(BaseModel):
     generated_at: datetime
     model: AiIncidentSummaryModelInfo | None = None
     status: Literal["ok", "insufficient_evidence", "error"] = "ok"
+
+
+class AiRootCauseExplanationRequest(BaseModel):
+    regenerate: bool = Field(default=False)
+
+
+class AiRootCauseExplanationModelInfo(BaseModel):
+    provider: str
+    model: str
+
+
+class AiRootCauseExplanationResponse(BaseModel):
+    explanation: str | None = None
+    what_to_check_next: str | None = None
+    evidence_used: list[str] = Field(default_factory=list)
+    generated_at: datetime
+    model: AiRootCauseExplanationModelInfo | None = None
+    status: Literal["ok", "insufficient_evidence", "error"] = "ok"
+    is_stale: bool = False

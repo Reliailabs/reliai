@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import type { AiIncidentSummaryRequest, AiIncidentSummaryResponse, IncidentCommandCenterRead } from "@reliai/types";
+import type {
+  AiIncidentSummaryRequest,
+  AiIncidentSummaryResponse,
+  AiRootCauseExplanationRequest,
+  AiRootCauseExplanationResponse,
+  IncidentCommandCenterRead,
+} from "@reliai/types";
 
 import { ActionCallout } from "@/components/ui/action-callout";
 import { RecommendationCallout } from "@/components/ui/recommendation-callout";
@@ -9,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/ui/status-dot";
 import { formatTime, severityTone } from "@/components/presenters/ops-format";
 import { AiSummaryCard } from "@/components/incidents/ai-summary-card";
+import { AiRootCauseExplanationCard } from "@/components/incidents/ai-root-cause-explanation-card";
 import { cn } from "@/lib/utils";
 
 interface SuggestedFix {
@@ -23,6 +30,9 @@ interface IncidentCommandCenterViewProps {
   screenshotMode?: boolean;
   activeTab?: string;
   aiSummaryAction?: (payload: AiIncidentSummaryRequest) => Promise<AiIncidentSummaryResponse>;
+  aiRootCauseExplanationAction?: (
+    payload: AiRootCauseExplanationRequest
+  ) => Promise<AiRootCauseExplanationResponse>;
 }
 
 const TABS = [
@@ -143,6 +153,7 @@ export function IncidentCommandCenterView({
   screenshotMode = false,
   activeTab = "overview",
   aiSummaryAction,
+  aiRootCauseExplanationAction,
 }: IncidentCommandCenterViewProps) {
   const incident = command.incident;
   const summary = incident.summary_json ?? {};
@@ -191,6 +202,8 @@ export function IncidentCommandCenterView({
     command.root_cause.top_root_cause_probability ??
     command.root_cause.root_cause_probabilities[0]?.probability ??
     null;
+  const canGenerateRootCauseExplanation =
+    command.root_cause.root_cause_probabilities.length > 0 && rootCauseProbability !== null;
   const recommendationKind =
     command.root_cause.recommendation_kind ??
     (typeof rootCauseProbability === "number" && rootCauseProbability >= 0.8 ? "action" : "recommendation");
@@ -350,6 +363,14 @@ export function IncidentCommandCenterView({
               </ul>
             ) : null}
           </div>
+
+          {aiRootCauseExplanationAction ? (
+            <AiRootCauseExplanationCard
+              incidentId={incidentId}
+              canGenerate={canGenerateRootCauseExplanation}
+              generateExplanation={aiRootCauseExplanationAction}
+            />
+          ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Trace evidence</p>
