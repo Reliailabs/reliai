@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     stripe_usage_cost_per_million_team: float = 0.5
     stripe_usage_cost_per_million_production: float = 0.25
     workos_dev_auth_enabled: bool = True
+    openai_api_key: str | None = None
+    openai_api_base: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-4.1-mini"
     public_api_rate_limit_per_minute: int = 120
     ingest_rate_limit_per_minute: int = 600
     processor_dispatch_rate_limit_per_minute: int = 300

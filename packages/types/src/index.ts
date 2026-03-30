@@ -1324,6 +1324,7 @@ export interface IncidentEventRead {
     | "owner_cleared"
     | "resolved"
     | "reopened"
+    | "ai_summary_generated"
     | "alert_attempted"
     | "alert_sent"
     | "alert_failed"
@@ -1415,6 +1416,24 @@ export interface IncidentCommandCenterRead {
   recommended_mitigations: string[];
   related_regressions: RegressionSnapshotRead[];
   recent_signals: TimelineEventRead[];
+}
+
+export interface AiIncidentSummaryRequest {
+  regenerate?: boolean;
+}
+
+export interface AiIncidentSummaryModelInfo {
+  provider: string;
+  model: string;
+}
+
+export interface AiIncidentSummaryResponse {
+  status: "ok" | "insufficient_evidence";
+  summary: string | null;
+  recommended_next_step: string | null;
+  evidence_used: string[];
+  generated_at: string | null;
+  model: AiIncidentSummaryModelInfo | null;
 }
 
 export interface IncidentCommandCenterMetricRead {

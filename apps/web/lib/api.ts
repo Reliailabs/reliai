@@ -1,6 +1,8 @@
 import "server-only";
 
 import type {
+  AiIncidentSummaryRequest,
+  AiIncidentSummaryResponse,
   AlertDeliveryListResponse,
   CustomerReliabilityDetailRead,
   CustomerReliabilityListRead,
@@ -499,6 +501,16 @@ export async function getIncidentDetail(incidentId: string) {
 
 export async function getIncidentCommandCenter(incidentId: string) {
   return request<IncidentCommandCenterRead>(`/api/v1/incidents/${incidentId}/command`);
+}
+
+export async function generateIncidentAiSummary(
+  incidentId: string,
+  payload: AiIncidentSummaryRequest
+) {
+  return request<AiIncidentSummaryResponse>(`/api/v1/incidents/${incidentId}/ai-summary`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }
 
 export async function getIncidentInvestigation(incidentId: string) {
