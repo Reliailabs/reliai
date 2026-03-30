@@ -27,6 +27,12 @@ class EvidenceBundle:
     refs: list[str]
 
 
+@dataclass(frozen=True)
+class PromptBundle:
+    system_prompt: str
+    user_prompt: str
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -75,7 +81,7 @@ def _build_evidence(command) -> EvidenceBundle:
     return EvidenceBundle(lines=evidence_lines, refs=list(dict.fromkeys(evidence_refs)))
 
 
-def _build_prompt(*, command, evidence: EvidenceBundle, request: AiIncidentSummaryRequest) -> list[dict[str, str]]:
+def _build_prompt(*, command, evidence: EvidenceBundle, request: AiIncidentSummaryRequest) -> PromptBundle:
     incident = command.incident
     summary = incident.summary_json or {}
     metric_name = summary.get("metric_name")
@@ -103,28 +109,25 @@ def _build_prompt(*, command, evidence: EvidenceBundle, request: AiIncidentSumma
         "evidence_lines": evidence.lines,
     }
 
-    return [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": json.dumps(user_prompt)},
-    ]
+    return PromptBundle(system_prompt=system_prompt, user_prompt=json.dumps(user_prompt))
 
 
-def _call_openai(messages: list[dict[str, str]]) -> dict[str, Any]:
-    settings = get_settings()
-    if not settings.openai_api_key:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="OpenAI is not configured")
-    endpoint = f"{settings.openai_api_base.rstrip('/')}/chat/completions"
+def _call_openai_compatible(*, base_url: str, api_key: str | None, model: str | None, messages: list[dict[str, str]], use_json_mode: bool) -> dict[str, Any]:
+    if not api_key or not model:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider is not configured")
+    endpoint = f"{base_url.rstrip('/')}/chat/completions"
     payload = {
-        "model": settings.openai_model,
+        "model": model,
         "messages": messages,
         "temperature": 0.2,
         "max_tokens": 800,
-        "response_format": {"type": "json_object"},
     }
+    if use_json_mode:
+        payload["response_format"] = {"type": "json_object"}
     response = httpx.post(
         endpoint,
         headers={
-            "Authorization": f"Bearer {settings.openai_api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
         json=payload,
@@ -132,6 +135,45 @@ def _call_openai(messages: list[dict[str, str]]) -> dict[str, Any]:
     )
     response.raise_for_status()
     return response.json()
+
+
+def _call_anthropic(*, base_url: str, api_key: str | None, model: str | None, system_prompt: str, user_prompt: str, version: str) -> dict[str, Any]:
+    if not api_key or not model:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider is not configured")
+    endpoint = f"{base_url.rstrip('/')}/v1/messages"
+    payload = {
+        "model": model,
+        "max_tokens": 800,
+        "temperature": 0.2,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    response = httpx.post(
+        endpoint,
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": version,
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def _extract_openai_content(data: dict[str, Any]) -> str | None:
+    return (data.get("choices") or [{}])[0].get("message", {}).get("content")
+
+
+def _extract_anthropic_content(data: dict[str, Any]) -> str | None:
+    content = data.get("content")
+    if isinstance(content, list):
+        parts = [item.get("text") for item in content if isinstance(item, dict) and item.get("type") == "text"]
+        return "".join(part for part in parts if part)
+    if isinstance(content, str):
+        return content
+    return None
 
 
 def _parse_summary(content: str) -> dict[str, Any]:
@@ -199,10 +241,51 @@ def generate_ai_incident_summary(
         db.commit()
         return response
 
-    messages = _build_prompt(command=command, evidence=evidence, request=request)
-    model = AiIncidentSummaryModelInfo(provider="openai", model=get_settings().openai_model)
-    data = _call_openai(messages)
-    content = (data.get("choices") or [{}])[0].get("message", {}).get("content")
+    prompt = _build_prompt(command=command, evidence=evidence, request=request)
+    settings = get_settings()
+    provider = settings.ai_provider.lower().strip()
+    if provider == "openai":
+        model_name = settings.openai_model
+        data = _call_openai_compatible(
+            base_url=settings.openai_api_base,
+            api_key=settings.openai_api_key,
+            model=model_name,
+            messages=[
+                {"role": "system", "content": prompt.system_prompt},
+                {"role": "user", "content": prompt.user_prompt},
+            ],
+            use_json_mode=True,
+        )
+        content = _extract_openai_content(data)
+        model = AiIncidentSummaryModelInfo(provider="openai", model=model_name)
+    elif provider == "deepseek":
+        model_name = settings.deepseek_model
+        data = _call_openai_compatible(
+            base_url=settings.deepseek_api_base,
+            api_key=settings.deepseek_api_key,
+            model=model_name,
+            messages=[
+                {"role": "system", "content": prompt.system_prompt},
+                {"role": "user", "content": prompt.user_prompt},
+            ],
+            use_json_mode=True,
+        )
+        content = _extract_openai_content(data)
+        model = AiIncidentSummaryModelInfo(provider="deepseek", model=model_name)
+    elif provider == "anthropic":
+        model_name = settings.anthropic_model
+        data = _call_anthropic(
+            base_url=settings.anthropic_api_base,
+            api_key=settings.anthropic_api_key,
+            model=model_name,
+            system_prompt=prompt.system_prompt,
+            user_prompt=prompt.user_prompt,
+            version=settings.anthropic_version,
+        )
+        content = _extract_anthropic_content(data)
+        model = AiIncidentSummaryModelInfo(provider="anthropic", model=model_name)
+    else:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI provider is not configured")
     if not content:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="AI summary returned empty content")
     parsed = _parse_summary(content)
