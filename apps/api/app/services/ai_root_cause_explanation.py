@@ -93,7 +93,6 @@ def _build_prompt(*, command, evidence: EvidenceBundle) -> PromptBundle:
         "incident_title": incident.title,
         "incident_type": incident.incident_type,
         "top_root_cause_label": top.get("label"),
-        "top_root_cause_probability": top.get("probability"),
         "recommended_fix": root_cause.recommended_fix,
         "evidence_lines": evidence.lines,
     }
