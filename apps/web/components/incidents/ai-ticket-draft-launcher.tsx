@@ -9,12 +9,14 @@ import { AiTicketDraftModal } from "@/components/incidents/ai-ticket-draft-modal
 
 interface AiTicketDraftLauncherProps {
   incidentId: string;
+  incidentTitle: string;
   incidentUpdatedAt: string | null;
   generateDraft: (payload: AiTicketDraftRequest) => Promise<AiTicketDraftResponse>;
 }
 
 export function AiTicketDraftLauncher({
   incidentId,
+  incidentTitle,
   incidentUpdatedAt,
   generateDraft,
 }: AiTicketDraftLauncherProps) {
@@ -29,6 +31,7 @@ export function AiTicketDraftLauncher({
         open={open}
         onClose={() => setOpen(false)}
         incidentId={incidentId}
+        incidentTitle={incidentTitle}
         incidentUpdatedAt={incidentUpdatedAt}
         generateDraft={generateDraft}
       />

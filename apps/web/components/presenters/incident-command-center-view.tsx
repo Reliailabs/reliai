@@ -245,7 +245,8 @@ export function IncidentCommandCenterView({
           {!screenshotMode && aiTicketDraftAction ? (
             <AiTicketDraftLauncher
               incidentId={incidentId}
-              incidentUpdatedAt={incident.updated_at}
+              incidentTitle={incident.title}
+              incidentUpdatedAt={incident.updated_at ?? null}
               generateDraft={aiTicketDraftAction}
             />
           ) : null}
