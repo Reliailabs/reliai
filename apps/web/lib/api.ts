@@ -1,6 +1,8 @@
 import "server-only";
 
 import type {
+  AiFixPrSummaryRequest,
+  AiFixPrSummaryResponse,
   AiIncidentSummaryRequest,
   AiIncidentSummaryResponse,
   AiRootCauseExplanationRequest,
@@ -532,6 +534,16 @@ export async function generateIncidentAiTicketDraft(
   payload: AiTicketDraftRequest
 ) {
   return request<AiTicketDraftResponse>(`/api/v1/incidents/${incidentId}/ai-ticket-draft`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function generateIncidentAiFixPrSummary(
+  incidentId: string,
+  payload: AiFixPrSummaryRequest
+) {
+  return request<AiFixPrSummaryResponse>(`/api/v1/incidents/${incidentId}/ai-fix-summary`, {
     method: "POST",
     body: JSON.stringify(payload)
   });

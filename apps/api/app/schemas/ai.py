@@ -60,3 +60,25 @@ class AiTicketDraftResponse(BaseModel):
     generated_at: datetime
     model: AiTicketDraftModelInfo | None = None
     status: Literal["ok", "insufficient_evidence", "error"] = "ok"
+
+
+class AiFixPrSummaryRequest(BaseModel):
+    regenerate: bool = Field(default=False)
+    action_event_id: str | None = Field(default=None)
+
+
+class AiFixPrSummaryModelInfo(BaseModel):
+    provider: str
+    model: str
+
+
+class AiFixPrSummaryResponse(BaseModel):
+    title: str | None = None
+    summary: str | None = None
+    change_applied: str | None = None
+    impact_observed: str | None = None
+    evidence_used: list[str] = Field(default_factory=list)
+    generated_at: datetime
+    model: AiFixPrSummaryModelInfo | None = None
+    status: Literal["ok", "insufficient_evidence", "error"] = "ok"
+    is_stale: bool = False

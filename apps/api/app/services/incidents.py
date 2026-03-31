@@ -59,6 +59,7 @@ INCIDENT_EVENT_CONFIG_UNDONE = "config_undone"
 INCIDENT_EVENT_AI_SUMMARY_GENERATED = "ai_summary_generated"
 INCIDENT_EVENT_AI_ROOT_CAUSE_EXPLANATION_GENERATED = "ai_root_cause_explanation_generated"
 INCIDENT_EVENT_AI_TICKET_DRAFT_GENERATED = "ai_ticket_draft_generated"
+INCIDENT_EVENT_AI_FIX_PR_SUMMARY_GENERATED = "ai_fix_pr_summary_generated"
 TELEMETRY_FRESHNESS_INCIDENT_TYPE = "telemetry_freshness_stale"
 
 _RESOLUTION_DISPLAY_NAMES: dict[str, str] = {

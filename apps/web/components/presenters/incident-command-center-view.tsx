@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import type {
+  AiFixPrSummaryRequest,
+  AiFixPrSummaryResponse,
   AiIncidentSummaryRequest,
   AiIncidentSummaryResponse,
   AiRootCauseExplanationRequest,
@@ -19,6 +21,7 @@ import { formatTime, severityTone } from "@/components/presenters/ops-format";
 import { AiSummaryCard } from "@/components/incidents/ai-summary-card";
 import { AiRootCauseExplanationCard } from "@/components/incidents/ai-root-cause-explanation-card";
 import { AiTicketDraftLauncher } from "@/components/incidents/ai-ticket-draft-launcher";
+import { AiFixSummaryLauncher } from "@/components/incidents/ai-fix-summary-launcher";
 import { cn } from "@/lib/utils";
 
 interface SuggestedFix {
@@ -37,6 +40,7 @@ interface IncidentCommandCenterViewProps {
     payload: AiRootCauseExplanationRequest
   ) => Promise<AiRootCauseExplanationResponse>;
   aiTicketDraftAction?: (payload: AiTicketDraftRequest) => Promise<AiTicketDraftResponse>;
+  aiFixPrSummaryAction?: (payload: AiFixPrSummaryRequest) => Promise<AiFixPrSummaryResponse>;
 }
 
 const TABS = [
@@ -159,6 +163,7 @@ export function IncidentCommandCenterView({
   aiSummaryAction,
   aiRootCauseExplanationAction,
   aiTicketDraftAction,
+  aiFixPrSummaryAction,
 }: IncidentCommandCenterViewProps) {
   const incident = command.incident;
   const summary = incident.summary_json ?? {};
@@ -446,7 +451,16 @@ export function IncidentCommandCenterView({
 
           {resolutionImpact ? (
             <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-steel">Resolution impact</p>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-steel">Resolution impact</p>
+                {!screenshotMode && aiFixPrSummaryAction ? (
+                  <AiFixSummaryLauncher
+                    incidentId={incidentId}
+                    incidentUpdatedAt={incident.updated_at ?? null}
+                    generateSummary={aiFixPrSummaryAction}
+                  />
+                ) : null}
+              </div>
               {resolutionImpact.summary ? (
                 <p className="mt-2 text-sm font-semibold text-ink">{resolutionImpact.summary}</p>
               ) : (
