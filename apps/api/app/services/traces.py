@@ -28,7 +28,7 @@ from app.services.trace_ingestion_control import apply_trace_ingestion_controls
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 from app.services.trace_query_router import WarehouseQueryViolation
 from app.core.settings import get_settings
-from app.services.rate_limiter import enforce_rate_limit
+from app.services.rate_limiter import enforce_rate_limit, record_limit_exceeded, record_limit_exceeded_count
 from app.services.usage_quotas import enforce_daily_trace_quota
 
 logger = logging.getLogger(__name__)
@@ -221,14 +221,30 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
             limit=settings.max_traces_per_second,
             window_seconds=1,
         )
-        enforce_rate_limit(
-            scope="trace_ingest_project",
-            key=f"{project.id}:{now.strftime('%Y%m%d%H%M%S')}",
-            limit=settings.max_project_ingest_rate,
-            window_seconds=1,
-        )
     except HTTPException:
+        record_limit_exceeded(scope="ingest_global", identifier="global", window_seconds=60)
+        record_limit_exceeded_count(scope="ingest_global", identifier="global", window_seconds=60)
         publish_event_after_commit = False
+    else:
+        try:
+            enforce_rate_limit(
+                scope="trace_ingest_project",
+                key=f"{project.id}:{now.strftime('%Y%m%d%H%M%S')}",
+                limit=settings.max_project_ingest_rate,
+                window_seconds=1,
+            )
+        except HTTPException:
+            record_limit_exceeded(
+                scope="ingest_project",
+                identifier=str(project.id),
+                window_seconds=60,
+            )
+            record_limit_exceeded_count(
+                scope="ingest_project",
+                identifier=str(project.id),
+                window_seconds=60,
+            )
+            publish_event_after_commit = False
     controlled = apply_trace_ingestion_controls(db, project=project, payload=payload)
     trace = create_trace(db, project, controlled.payload)
     if publish_event_after_commit and controlled.publish_event:

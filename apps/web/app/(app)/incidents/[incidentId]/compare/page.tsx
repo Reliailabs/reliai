@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, GitCompareArrows } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { getMetricDisplayName } from "@/components/presenters/ops-format";
+import { LimitStatusInlineSlot } from "@/components/system/limit-status-inline-slot";
 import { getIncidentTraceCompare } from "@/lib/api";
 
 function renderMetadata(value: Record<string, unknown> | null) {
@@ -48,6 +49,12 @@ function TraceCompareCard({
       <p className="text-xs uppercase tracking-[0.18em] text-steel">{label}</p>
       {trace ? (
         <div className="mt-3 space-y-3 text-sm text-steel">
+          {trace.payload_truncated ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <p>Trace truncated — full payload not stored.</p>
+              <p className="mt-1 text-[11px] text-amber-800">Some evidence may be missing due to payload size limits.</p>
+            </div>
+          ) : null}
           <div>
             <p className="font-medium text-ink">{trace.request_id}</p>
             <p className="mt-1">
@@ -159,6 +166,8 @@ export default async function IncidentComparePage({
           </div>
         </div>
       </header>
+
+      <LimitStatusInlineSlot projectId={compare.project_id} types={["sampling"]} />
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Card className="rounded-[24px] border-zinc-300 p-5">

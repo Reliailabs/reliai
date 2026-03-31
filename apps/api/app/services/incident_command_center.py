@@ -66,6 +66,7 @@ class IncidentCommandCenterResult:
     related_regressions: list[RegressionSnapshot]
     recent_signals: list[TimelineEventRead]
     resolution_impact: dict | None = None
+    fix_action_recorded: bool = False
 
 
 def _coerce_utc_datetime(value: datetime) -> datetime:
@@ -347,6 +348,11 @@ def get_incident_command_center(
             resolution_impact = impact
             break
 
+    fix_action_recorded = any(
+        event.event_type in {INCIDENT_EVENT_CONFIG_APPLIED, INCIDENT_EVENT_CONFIG_UNDONE}
+        for event in events
+    )
+
     anchor_trace = _select_anchor_trace(representative_traces)
     trace_compare = get_trace_compare(db, operator, anchor_trace.id) if anchor_trace is not None else None
     compare_link = f"/traces/{anchor_trace.id}/compare" if anchor_trace is not None else f"/incidents/{incident.id}/compare"
@@ -385,4 +391,5 @@ def get_incident_command_center(
         related_regressions=_related_regressions(db, incident=incident),
         recent_signals=_recent_signals(db, incident=incident),
         resolution_impact=resolution_impact,
+        fix_action_recorded=fix_action_recorded,
     )

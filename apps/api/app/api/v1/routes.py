@@ -108,6 +108,7 @@ from app.schemas.platform_extension import (
     PlatformExtensionRead,
 )
 from app.schemas.platform_metrics import PlatformMetricsRead
+from app.schemas.limits import LimitStatusResponse
 from app.schemas.public_api_key import (
     PublicAPIKeyCreate,
     PublicAPIKeyCreateResponse,
@@ -446,6 +447,7 @@ from app.services.reliability_intelligence import (
 from app.services.sdk_metrics import record_sdk_event
 from app.services.support_debug import get_support_debug_snapshot
 from app.services.platform_metrics import get_platform_metrics
+from app.services.limit_status import get_limit_statuses
 from app.services.registry import (
     build_model_version_path,
     build_prompt_version_path,
@@ -771,12 +773,27 @@ def _project_from_session_or_api_key(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
         if project.organization_id != public_key.organization_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-        enforce_rate_limit(
-            scope="public_api",
-            key=str(public_key.organization_id),
-            limit=get_settings().public_api_rate_limit_per_minute,
-            window_seconds=60,
-        )
+        try:
+            enforce_rate_limit(
+                scope="public_api",
+                key=str(public_key.organization_id),
+                limit=get_settings().public_api_rate_limit_per_minute,
+                window_seconds=60,
+            )
+        except HTTPException as exc:
+            from app.services.rate_limiter import record_limit_exceeded, record_limit_exceeded_count
+
+            record_limit_exceeded(
+                scope="api_rate",
+                identifier=str(public_key.organization_id),
+                window_seconds=60,
+            )
+            record_limit_exceeded_count(
+                scope="api_rate",
+                identifier=str(public_key.organization_id),
+                window_seconds=60,
+            )
+            raise exc
         enforce_daily_api_quota(db, organization_id=public_key.organization_id)
         return project
 
@@ -826,12 +843,27 @@ def _trace_replay_access_from_headers(
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
         if public_key.organization_id != trace_organization_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-        enforce_rate_limit(
-            scope="public_api",
-            key=str(public_key.organization_id),
-            limit=get_settings().public_api_rate_limit_per_minute,
-            window_seconds=60,
-        )
+        try:
+            enforce_rate_limit(
+                scope="public_api",
+                key=str(public_key.organization_id),
+                limit=get_settings().public_api_rate_limit_per_minute,
+                window_seconds=60,
+            )
+        except HTTPException as exc:
+            from app.services.rate_limiter import record_limit_exceeded, record_limit_exceeded_count
+
+            record_limit_exceeded(
+                scope="api_rate",
+                identifier=str(public_key.organization_id),
+                window_seconds=60,
+            )
+            record_limit_exceeded_count(
+                scope="api_rate",
+                identifier=str(public_key.organization_id),
+                window_seconds=60,
+            )
+            raise exc
         enforce_daily_api_quota(db, organization_id=public_key.organization_id)
         return
 
@@ -1266,6 +1298,8 @@ def _trace_detail_item(trace, registry_pivots, compare_path: str | None) -> Trac
             }
         )
 
+    payload_truncated = bool((trace.metadata_json or {}).get("_reliai_payload_truncated"))
+
     return TraceDetailRead(
         id=trace.id,
         organization_id=trace.organization_id,
@@ -1295,6 +1329,7 @@ def _trace_detail_item(trace, registry_pivots, compare_path: str | None) -> Trac
         guardrail_policy=trace.guardrail_policy,
         guardrail_action=trace.guardrail_action,
         metadata_json=trace.metadata_json,
+        payload_truncated=payload_truncated or None,
         created_at=trace.created_at,
         prompt_version_record=PromptVersionRead.model_validate(trace.prompt_version_record)
         if trace.prompt_version_record is not None
@@ -1713,6 +1748,19 @@ def get_system_platform_endpoint(
 ) -> PlatformMetricsRead:
     require_system_admin(operator)
     return PlatformMetricsRead.model_validate(get_platform_metrics(db))
+
+
+@router.get("/system/limits", response_model=LimitStatusResponse)
+def get_system_limits_endpoint(
+    project_id: UUID | None = Query(default=None),
+    operator: OperatorContext = Depends(require_operator),
+    db: Session = Depends(get_db),
+) -> LimitStatusResponse:
+    project = None
+    if project_id is not None:
+        project = require_project_access(db, operator, project_id)
+    limits = get_limit_statuses(db, operator=operator, project=project)
+    return LimitStatusResponse(limits=limits)
 
 
 @router.get("/system/scheduler", response_model=SchedulerStatusResponse)
@@ -3403,6 +3451,7 @@ def get_incident_command_center_endpoint(
         root_cause=_incident_command_root_cause_item(command.root_cause_report),
         metric=_incident_command_metric_item(command.incident),
         resolution_impact=command.resolution_impact,
+        fix_action_recorded=command.fix_action_recorded,
         trace_compare=IncidentCommandTraceCompareRead(
             failing_trace_summary=_trace_compare_item(command.trace_compare.trace)
             if command.trace_compare is not None

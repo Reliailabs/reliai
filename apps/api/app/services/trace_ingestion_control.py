@@ -270,6 +270,11 @@ def apply_trace_ingestion_controls(
         trace=sanitized_payload,
         policy=policy,
     )
+    if dropped_metadata_fields:
+        metadata = dict(limited_payload.metadata_json or {})
+        metadata["_reliai_payload_truncated"] = True
+        metadata["_reliai_dropped_metadata_fields"] = len(dropped_metadata_fields)
+        limited_payload = limited_payload.model_copy(update={"metadata_json": metadata})
     return TraceIngestionControlResult(
         payload=limited_payload,
         policy=policy,

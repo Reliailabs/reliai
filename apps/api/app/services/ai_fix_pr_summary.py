@@ -223,12 +223,22 @@ def generate_ai_fix_pr_summary(
             is_stale=is_stale,
         )
 
-    enforce_rate_limit(
-        scope="ai_fix_pr_summary",
-        key=str(incident.id),
-        limit=3,
-        window_seconds=600,
-    )
+    try:
+        enforce_rate_limit(
+            scope="ai_fix_pr_summary",
+            key=str(incident.id),
+            limit=3,
+            window_seconds=600,
+        )
+    except HTTPException as exc:
+        from app.services.rate_limiter import record_limit_exceeded
+
+        record_limit_exceeded(
+            scope="llm_provider",
+            identifier="ai_fix_summary",
+            window_seconds=600,
+        )
+        raise exc
 
     # Locate the fix event
     fix_event = _find_fix_event(command)

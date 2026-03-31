@@ -7,6 +7,7 @@ import type { AiFixPrSummaryRequest, AiFixPrSummaryResponse } from "@reliai/type
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { formatTime } from "@/components/presenters/ops-format";
+import { useLimitStatus } from "@/hooks/use-limit-status";
 
 type SummaryStatus = "idle" | "loading" | "ready" | "insufficient" | "error";
 
@@ -15,6 +16,7 @@ interface AiFixSummaryModalProps {
   onClose: () => void;
   incidentId: string;
   incidentUpdatedAt: string | null;
+  projectId?: string | null;
   generateSummary: (payload: AiFixPrSummaryRequest) => Promise<AiFixPrSummaryResponse>;
 }
 
@@ -63,13 +65,20 @@ export function AiFixSummaryModal({
   onClose,
   incidentId,
   incidentUpdatedAt,
+  projectId,
   generateSummary,
 }: AiFixSummaryModalProps) {
   const [status, setStatus] = useState<SummaryStatus>("idle");
   const [result, setResult] = useState<AiFixPrSummaryResponse | null>(null);
+  const [lastSuccessAt, setLastSuccessAt] = useState<string | null>(null);
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [copiedFull, setCopiedFull] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { byType } = useLimitStatus(projectId ?? undefined);
+  const providerLimits = byType.llm_provider ?? [];
+  const processorLimits = byType.processor_dispatch ?? [];
+  const isProviderLimited = providerLimits.some((limit) => limit.scope?.feature === "ai_fix_summary");
+  const isProcessorDelayed = processorLimits.length > 0;
 
   const resetState = useCallback(() => {
     setStatus("idle");
@@ -93,6 +102,9 @@ export function AiFixSummaryModal({
           setResult(response);
           if (response.status === "ok") {
             setStatus("ready");
+            if (response.generated_at) {
+              setLastSuccessAt(response.generated_at);
+            }
             return;
           }
           if (response.status === "error") {
@@ -163,6 +175,22 @@ export function AiFixSummaryModal({
 
         {/* ── Scrollable content ─────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
+          {isProcessorDelayed ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Queued — generation is delayed.
+            </div>
+          ) : null}
+
+          {isProviderLimited ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <p>Provider limit hit — try again shortly.</p>
+              {lastSuccessAt ? (
+                <p className="mt-1 text-[11px] text-amber-800/90">
+                  Last successful generation: {formatTime(lastSuccessAt)}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Loading skeleton */}
           {isLoading ? (
@@ -219,14 +247,14 @@ export function AiFixSummaryModal({
               ) : null}
 
               {/* Impact observed */}
-              {result.impact_observed ? (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-500">Impact Observed</p>
-                  <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-                    <p className="text-sm leading-6 text-zinc-800">{result.impact_observed}</p>
-                  </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Impact Observed</p>
+                <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                  <p className="text-sm leading-6 text-zinc-800">
+                    {result.impact_observed ?? "Post-fix impact not yet verified."}
+                  </p>
                 </div>
-              ) : null}
+              </div>
 
               {/* Evidence */}
               <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
@@ -305,7 +333,7 @@ export function AiFixSummaryModal({
                     result.title ?? "",
                     result.summary ?? "",
                     result.change_applied ?? "",
-                    result.impact_observed ?? "",
+                    result.impact_observed ?? "Post-fix impact not yet verified.",
                     evidence,
                   ),
                   setCopiedFull,

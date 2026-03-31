@@ -979,6 +979,7 @@ export interface TraceDetailRead {
   guardrail_policy: string | null;
   guardrail_action: string | null;
   metadata_json: Record<string, unknown> | null;
+  payload_truncated?: boolean | null;
   created_at: string;
   prompt_version_record: PromptVersionRead | null;
   model_version_record: ModelVersionRead | null;
@@ -1193,6 +1194,7 @@ export interface TraceCompareItemRead {
   custom_metric_results?: TraceSignalResultRead[];
   retrieval: TraceCompareRetrievalRead | null;
   metadata_excerpt_json: Record<string, unknown> | null;
+  payload_truncated?: boolean | null;
 }
 
 export interface TraceComparePairRead {
@@ -1406,6 +1408,7 @@ export interface IncidentCommandCenterRead {
   };
   metric?: IncidentCommandCenterMetricRead | null;
   resolution_impact?: IncidentResolutionImpactRead | null;
+  fix_action_recorded?: boolean;
   trace_compare: {
     failing_trace_summary: TraceCompareItemRead | null;
     baseline_trace_summary: TraceCompareItemRead | null;
@@ -1557,4 +1560,69 @@ export interface IncidentInvestigationRead {
   recommendations: InvestigationRecommendationRead[];
   guardrail_activity: GuardrailActivityRead[];
   possible_root_causes: Record<string, unknown>[];
+}
+
+export type LimitStatusType =
+  | "ingest_global"
+  | "ingest_project"
+  | "api_rate"
+  | "processor_dispatch"
+  | "sampling"
+  | "queue_lag"
+  | "storage"
+  | "llm_provider"
+  | "payload_truncation";
+
+export type LimitStatusValue = "ok" | "warning" | "limited" | "delayed";
+export type LimitSeverity = "info" | "warning" | "critical";
+
+export interface LimitScope {
+  level: "global" | "project" | "incident" | "trace" | "ai_feature";
+  project_id?: string;
+  incident_id?: string;
+  trace_id?: string;
+  feature?: "ai_summary" | "ai_root_cause" | "ai_ticket_draft" | "ai_fix_summary";
+}
+
+export interface LimitMetrics {
+  dropped?: number;
+  blocked?: number;
+  delayed?: number;
+  rate?: number;
+  lag_ms?: number;
+  quota_used_pct?: number;
+  used?: number;
+  limit?: number;
+  truncated?: number;
+}
+
+export interface LimitActionable {
+  primary: string;
+  secondary?: string;
+}
+
+export interface LimitCTA {
+  label: string;
+  href: string;
+  type: "upgrade" | "settings" | "docs";
+}
+
+export interface LimitStatus {
+  type: LimitStatusType;
+  status: LimitStatusValue;
+  severity: LimitSeverity;
+  message: string;
+  scope?: LimitScope;
+  metrics?: LimitMetrics;
+  window?: "1m" | "5m" | "15m" | "1h";
+  actionable?: LimitActionable;
+  is_plan_related?: boolean;
+  cta_priority?: "settings_first" | "upgrade_first" | "none";
+  cta?: LimitCTA;
+  cta_secondary?: LimitCTA;
+  updated_at: string;
+}
+
+export interface LimitStatusResponse {
+  limits: LimitStatus[];
 }

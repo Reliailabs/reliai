@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { LimitStatusInlineSlot } from "@/components/system/limit-status-inline-slot";
 import { getTraceCompare } from "@/lib/api";
 
 function renderMetadata(value: Record<string, unknown> | null) {
@@ -36,6 +37,12 @@ function TraceCard({
       <p className="text-[11px] uppercase tracking-[0.2em] text-steel">{label}</p>
       {trace ? (
         <div className="mt-3 space-y-3 text-sm text-steel">
+          {trace.payload_truncated ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <p>Trace truncated — full payload not stored.</p>
+              <p className="mt-1 text-[11px] text-amber-800">Some evidence may be missing due to payload size limits.</p>
+            </div>
+          ) : null}
           <div>
             <p className="font-medium text-ink">{trace.request_id}</p>
             <Link
@@ -109,6 +116,7 @@ export default async function TraceComparePage({
 
       <section className="mx-auto grid max-w-[1400px] gap-6 px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
+          <LimitStatusInlineSlot projectId={compare.project_id} types={["sampling"]} />
           <div className="rounded-2xl border border-line bg-surface px-4 py-3">
             <div className="flex flex-wrap items-center gap-6 text-sm text-steel">
               <div>

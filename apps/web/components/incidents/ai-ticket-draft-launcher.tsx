@@ -11,6 +11,7 @@ interface AiTicketDraftLauncherProps {
   incidentId: string;
   incidentTitle: string;
   incidentUpdatedAt: string | null;
+  projectId?: string | null;
   generateDraft: (payload: AiTicketDraftRequest) => Promise<AiTicketDraftResponse>;
 }
 
@@ -18,6 +19,7 @@ export function AiTicketDraftLauncher({
   incidentId,
   incidentTitle,
   incidentUpdatedAt,
+  projectId,
   generateDraft,
 }: AiTicketDraftLauncherProps) {
   const [open, setOpen] = useState(false);
@@ -33,6 +35,7 @@ export function AiTicketDraftLauncher({
         incidentId={incidentId}
         incidentTitle={incidentTitle}
         incidentUpdatedAt={incidentUpdatedAt}
+        projectId={projectId}
         generateDraft={generateDraft}
       />
     </>

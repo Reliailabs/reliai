@@ -7,6 +7,7 @@ import { CopyButton } from "@/components/copy-button";
 import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { Button } from "@/components/ui/button";
 import { MetadataBar, MetadataItem } from "@/components/ui/metadata-bar";
+import { LimitStatusInlineSlot } from "@/components/system/limit-status-inline-slot";
 import { getTraceAnalysis, getTraceCompare, getTraceDetail, getTraceGraph, getTraceReplay, listProjectCustomMetrics } from "@/lib/api";
 import { buildComparison, extractMetrics } from "@/lib/trace-compare-engine";
 
@@ -218,6 +219,14 @@ export default async function TraceDetailPage({
 
       <section className="mx-auto grid max-w-[1400px] gap-6 px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
+          <LimitStatusInlineSlot projectId={trace.project_id} types={["sampling"]} />
+          {trace.payload_truncated ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="text-xs uppercase tracking-[0.24em] text-amber-700">Trace truncated</p>
+              <p className="mt-1">Full input/output payload was not stored due to size limits.</p>
+              <p className="mt-1 text-xs text-amber-800">Some evidence may be missing due to payload size limits.</p>
+            </div>
+          ) : null}
           <div className="rounded-2xl border border-line bg-surface px-4 py-3">
             <div className="flex flex-wrap items-center gap-6 text-sm text-steel">
               <div>

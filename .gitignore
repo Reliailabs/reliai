@@ -14,3 +14,4 @@ dist/
 coverage/
 apps/api/.pytest_cache/
 apps/api/.ruff_cache/
+data/warehouse-archive/2026-02-14.json

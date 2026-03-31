@@ -249,12 +249,22 @@ def _dispatch_processor_targets(
         extension = extension_for_processor(db, processor_id=processor.id)
         if not extension_allows_event(extension, event_type=event.event_type):
             continue
-        enforce_rate_limit(
-            scope="processor_dispatch",
-            key=f"{parsed_project_id}:{processor.id}",
-            limit=get_settings().processor_dispatch_rate_limit_per_minute,
-            window_seconds=60,
-        )
+        try:
+            enforce_rate_limit(
+                scope="processor_dispatch",
+                key=f"{parsed_project_id}:{processor.id}",
+                limit=get_settings().processor_dispatch_rate_limit_per_minute,
+                window_seconds=60,
+            )
+        except HTTPException:
+            from app.services.rate_limiter import record_limit_exceeded
+
+            record_limit_exceeded(
+                scope="processor_dispatch",
+                identifier=str(parsed_project_id),
+                window_seconds=60,
+            )
+            raise
         timeout_seconds, max_retries = extension_runtime_limits(extension)
         attempts = 0
         last_error: str | None = None

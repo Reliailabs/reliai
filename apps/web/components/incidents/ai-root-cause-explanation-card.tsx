@@ -9,12 +9,14 @@ import type {
 
 import { Button } from "@/components/ui/button";
 import { formatTime } from "@/components/presenters/ops-format";
+import { useLimitStatus } from "@/hooks/use-limit-status";
 
 type ExplanationStatus = "idle" | "loading" | "ready" | "insufficient" | "error";
 
 interface AiRootCauseExplanationCardProps {
   incidentId: string;
   canGenerate: boolean;
+  projectId?: string | null;
   generateExplanation: (payload: AiRootCauseExplanationRequest) => Promise<AiRootCauseExplanationResponse>;
 }
 
@@ -40,12 +42,19 @@ function buildCopy(explanation: AiRootCauseExplanationResponse) {
 export function AiRootCauseExplanationCard({
   incidentId,
   canGenerate,
+  projectId,
   generateExplanation,
 }: AiRootCauseExplanationCardProps) {
   const [status, setStatus] = useState<ExplanationStatus>("idle");
   const [explanation, setExplanation] = useState<AiRootCauseExplanationResponse | null>(null);
+  const [lastSuccessAt, setLastSuccessAt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { byType } = useLimitStatus(projectId ?? undefined);
+  const providerLimits = byType.llm_provider ?? [];
+  const processorLimits = byType.processor_dispatch ?? [];
+  const isProviderLimited = providerLimits.some((limit) => limit.scope?.feature === "ai_root_cause");
+  const isProcessorDelayed = processorLimits.length > 0;
 
   const requestPayload = useMemo<AiRootCauseExplanationRequest>(() => ({}), []);
 
@@ -65,6 +74,9 @@ export function AiRootCauseExplanationCard({
           setExplanation(response);
           if (response.status === "ok") {
             setStatus("ready");
+            if (response.generated_at) {
+              setLastSuccessAt(response.generated_at);
+            }
             return;
           }
           if (response.status === "error") {
@@ -103,6 +115,23 @@ export function AiRootCauseExplanationCard({
           Draft
         </span>
       </div>
+
+      {isProcessorDelayed ? (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Queued — generation is delayed.
+        </div>
+      ) : null}
+
+      {isProviderLimited ? (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <p>Provider limit hit — try again shortly.</p>
+          {lastSuccessAt ? (
+            <p className="mt-1 text-[11px] text-amber-800/90">
+              Last successful generation: {formatTime(lastSuccessAt)}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="mt-4 space-y-4">

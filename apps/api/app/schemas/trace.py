@@ -186,6 +186,7 @@ class TraceDetailRead(APIModel):
     guardrail_policy: str | None
     guardrail_action: str | None
     metadata_json: dict[str, Any] | None
+    payload_truncated: bool | None = None
     created_at: datetime
     prompt_version_record: PromptVersionRead | None
     model_version_record: ModelVersionRead | None
@@ -309,6 +310,7 @@ class TraceCompareItemRead(APIModel):
     custom_metric_results: list[TraceSignalResultRead] = []
     retrieval: TraceCompareRetrievalRead | None
     metadata_excerpt_json: dict[str, Any] | None
+    payload_truncated: bool | None = None
 
 
 class TraceComparePairRead(APIModel):
