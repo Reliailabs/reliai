@@ -130,7 +130,7 @@ export function AiTicketDraftModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 px-4 py-6"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm">
+      <div className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-xl border border-white/10 bg-zinc-950/95 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-md ring-1 ring-white/5">
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between border-b border-white/10 px-6 py-5">
           <div>
@@ -156,7 +156,7 @@ export function AiTicketDraftModal({
         </div>
 
         {/* Meta bar */}
-        <div className="flex shrink-0 flex-col gap-1 border-b border-white/10 bg-white/5 px-6 py-3">
+        <div className="flex shrink-0 flex-col gap-1 border-b border-white/10 bg-zinc-900/60 px-6 py-3">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-medium text-zinc-100 truncate">{incidentId} · {incidentTitle}</span>
             <span className="shrink-0 text-zinc-500">·</span>
@@ -192,7 +192,7 @@ export function AiTicketDraftModal({
               </div>
               <div className="space-y-2">
                 <div className="h-3 w-12 animate-pulse rounded bg-white/10" />
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 space-y-2.5">
+                <div className="rounded-2xl border border-white/10 bg-zinc-900/60 px-4 py-4 space-y-2.5">
                   {[1, 1, 0.9, 0.8, 1, 0.65].map((w, i) => (
                     <div
                       key={i}
@@ -202,7 +202,7 @@ export function AiTicketDraftModal({
                   ))}
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 space-y-2">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/60 px-4 py-4 space-y-2">
                 <div className="h-2.5 w-16 animate-pulse rounded bg-white/10" />
                 <div className="h-3 w-3/4 animate-pulse rounded bg-white/10" />
                 <div className="h-3 w-2/3 animate-pulse rounded bg-white/10" />
@@ -217,7 +217,7 @@ export function AiTicketDraftModal({
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base font-medium text-zinc-100 caret-white outline-none transition placeholder:text-zinc-400 focus:border-white/20 focus:ring-2 focus:ring-white/10"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-base font-medium text-white caret-white outline-none transition placeholder:text-zinc-400 focus:border-white/20 focus:ring-1 focus:ring-white/20"
                 />
               </div>
               <div>
@@ -225,11 +225,11 @@ export function AiTicketDraftModal({
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  className="mt-2 w-full resize-y rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-zinc-100 caret-white outline-none transition placeholder:text-zinc-400 focus:border-white/20 focus:ring-2 focus:ring-white/10 [scrollbar-color:rgba(255,255,255,0.2)_transparent]"
+                  className="mt-2 w-full resize-y rounded-2xl border border-white/10 bg-zinc-900 px-4 py-4 text-sm leading-6 text-zinc-100 caret-white outline-none transition placeholder:text-zinc-400 focus:border-white/20 focus:ring-1 focus:ring-white/20 [scrollbar-color:rgba(255,255,255,0.2)_transparent]"
                   style={{ minHeight: "320px" }}
                 />
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/60 px-4 py-4">
                 <p className="text-xs uppercase tracking-wide text-zinc-300">Based on</p>
                 <ul className="mt-2 space-y-1.5">
                   {evidence.map((item) => (
@@ -245,7 +245,7 @@ export function AiTicketDraftModal({
               <p className="text-sm text-zinc-100">
                 There isn&apos;t enough evidence yet to draft a reliable ticket.
               </p>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/60 px-4 py-4">
                 <p className="text-xs uppercase tracking-wide text-zinc-300">Based on</p>
                 <ul className="mt-2 space-y-1.5">
                   {(evidence.length > 0 ? evidence : INSUFFICIENT_EVIDENCE_BULLETS).map((item) => (
