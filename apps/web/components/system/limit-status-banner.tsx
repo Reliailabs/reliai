@@ -241,11 +241,11 @@ export function LimitStatusBanner() {
             ) : null}
             {expanded && remainingCount > 0 ? (
               <div className="mt-2 space-y-2">
-                {otherLimits?.map((item) => {
+                {otherLimits?.map((item, index) => {
                   const itemCta = item.cta_priority === "none" ? null : filterUpgradeCtas(item, item.cta);
                   return (
                     <div
-                      key={`${item.type}-${item.scope?.project_id ?? item.scope?.feature ?? "global"}`}
+                      key={`${item.type}-${item.scope?.project_id ?? item.scope?.feature ?? "global"}-${index}`}
                       className="rounded-lg border border-zinc-200 bg-white/60 px-2 py-2 text-xs text-zinc-700"
                     >
                       <div className="font-medium">[{otherLimitLabel(item.type)}] {item.message}</div>
