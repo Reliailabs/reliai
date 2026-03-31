@@ -45,6 +45,14 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _to_utc(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def _build_evidence(command) -> EvidenceBundle:
     evidence_lines: list[str] = []
     evidence_refs: list[str] = []
@@ -118,8 +126,9 @@ def generate_ai_root_cause_explanation(
         and cached.get("status") == "ok"
         and cached_provider == settings.ai_provider
     ):
-        generated_at = datetime.fromisoformat(cached.get("generated_at"))
-        is_stale = bool(incident.updated_at and generated_at < incident.updated_at)
+        generated_at = _to_utc(datetime.fromisoformat(cached.get("generated_at")))
+        incident_updated_at = _to_utc(incident.updated_at)
+        is_stale = bool(generated_at and incident_updated_at and generated_at < incident_updated_at)
         return AiRootCauseExplanationResponse(
             explanation=cached.get("explanation"),
             what_to_check_next=cached.get("what_to_check_next"),
@@ -246,7 +255,8 @@ def generate_ai_root_cause_explanation(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="AI explanation returned empty content")
 
     generated_at = _now()
-    is_stale = bool(incident.updated_at and generated_at < incident.updated_at)
+    incident_updated_at = _to_utc(incident.updated_at)
+    is_stale = bool(incident_updated_at and generated_at < incident_updated_at)
     response = AiRootCauseExplanationResponse(
         explanation=explanation,
         what_to_check_next=what_to_check_next,

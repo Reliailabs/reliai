@@ -606,7 +606,11 @@ def _sync_single_rule(
     extra_summary_fields: dict[str, Any] | None = None,
 ) -> None:
     fingerprint = _fingerprint(scope, rule)
-    incident = db.scalar(select(Incident).where(Incident.fingerprint == fingerprint))
+    incident = db.scalar(
+        select(Incident)
+        .where(Incident.fingerprint == fingerprint)
+        .order_by(desc(Incident.updated_at), desc(Incident.id))
+    )
     breaches = _snapshot_breaches(rule, snapshot)
 
     if not breaches:
@@ -795,7 +799,9 @@ def sync_telemetry_freshness_incident(
     result = IncidentSyncResult()
     threshold_minutes = telemetry_freshness_threshold_minutes()
     incident = db.scalar(
-        select(Incident).where(Incident.fingerprint == _telemetry_freshness_fingerprint(project))
+        select(Incident)
+        .where(Incident.fingerprint == _telemetry_freshness_fingerprint(project))
+        .order_by(desc(Incident.updated_at), desc(Incident.id))
     )
     is_stale = freshness_minutes is not None and freshness_minutes > threshold_minutes
 
