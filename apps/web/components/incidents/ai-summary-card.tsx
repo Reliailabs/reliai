@@ -85,30 +85,30 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
     <div className="rounded-[18px] border border-zinc-200 bg-white px-5 py-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-zinc-900">AI Summary</p>
+          <p className="text-sm font-semibold text-zinc-950">AI Summary</p>
           <p className="text-xs text-zinc-500">Based on incident evidence</p>
         </div>
-        <span className="text-xs text-zinc-400">Draft</span>
+        <span className="text-xs text-zinc-500">Draft</span>
       </div>
 
       {isLoading ? (
         <div className="mt-4 space-y-3">
-          <div className="h-4 w-full animate-pulse rounded bg-zinc-100" />
-          <div className="h-4 w-5/6 animate-pulse rounded bg-zinc-100" />
-          <div className="h-4 w-4/6 animate-pulse rounded bg-zinc-100" />
-          <div className="mt-4 rounded-xl bg-zinc-50 px-3 py-3">
-            <div className="h-3 w-1/3 animate-pulse rounded bg-zinc-100" />
-            <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
-            <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-zinc-100" />
+          <div className="h-4 w-full animate-pulse rounded bg-zinc-200" />
+          <div className="h-4 w-5/6 animate-pulse rounded bg-zinc-200" />
+          <div className="h-4 w-4/6 animate-pulse rounded bg-zinc-200" />
+          <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
+            <div className="h-3 w-1/3 animate-pulse rounded bg-zinc-200" />
+            <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-zinc-200" />
+            <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-zinc-200" />
           </div>
         </div>
       ) : null}
 
       {status === "ready" && summary ? (
         <div className="mt-4 space-y-4">
-          <p className="text-sm leading-6 text-ink">{summary.summary}</p>
-          <p className="text-sm text-ink">
-            <span className="font-medium text-ink">Recommended next step:</span>{" "}
+          <p className="text-sm leading-6 text-zinc-800">{summary.summary}</p>
+          <p className="text-sm text-zinc-800">
+            <span className="font-medium text-zinc-800">Recommended next step:</span>{" "}
             {summary.recommended_next_step ?? "n/a"}
           </p>
           {isStale ? (
@@ -116,9 +116,9 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
               Summary may be outdated — regenerate.
             </div>
           ) : null}
-          <div className="rounded-xl bg-zinc-50 px-3 py-3">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Based on</p>
-            <ul className="mt-2 space-y-1 text-sm text-ink">
+            <ul className="mt-2 space-y-1 text-sm text-zinc-700">
               {evidence.map((item) => (
                 <li key={item}>• {item}</li>
               ))}
@@ -128,11 +128,13 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
       ) : null}
 
       {status === "insufficient" ? (
-        <div className="mt-4 space-y-3 text-sm text-ink">
-          <p>There isn’t enough evidence yet to generate a reliable summary.</p>
-          <div className="rounded-xl bg-zinc-50 px-3 py-3">
+        <div className="mt-4 space-y-3">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+            There isn’t enough evidence yet to generate a reliable summary.
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Based on</p>
-            <ul className="mt-2 space-y-1 text-sm text-ink">
+            <ul className="mt-2 space-y-1 text-sm text-zinc-700">
               {(summary?.evidence_used ?? ["Incident opened"]).map((item) => (
                 <li key={item}>• {item}</li>
               ))}
@@ -142,9 +144,11 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
       ) : null}
 
       {status === "error" ? (
-        <div className="mt-4 text-sm text-ink">
-          <p>AI summary unavailable right now.</p>
-          <div className="mt-3">
+        <div className="mt-4 space-y-3">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            AI summary unavailable right now.
+          </div>
+          <div>
             <Button size="sm" variant="outline" onClick={() => fetchSummary()}>
               Retry
             </Button>
@@ -176,7 +180,7 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
         </div>
       ) : null}
 
-      <div className={cn("mt-1 text-[10px] uppercase tracking-wide text-zinc-400", status === "loading" && "opacity-0")}>
+      <div className={cn("mt-1 text-[10px] uppercase tracking-wide text-zinc-500", status === "loading" && "opacity-0")}>
         {summary?.model ? `${summary.model.provider} · ${summary.model.model}` : ""}
       </div>
     </div>
