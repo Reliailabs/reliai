@@ -781,9 +781,14 @@ def _project_from_session_or_api_key(
                 window_seconds=60,
             )
         except HTTPException as exc:
-            from app.services.rate_limiter import record_limit_exceeded
+            from app.services.rate_limiter import record_limit_exceeded, record_limit_exceeded_count
 
             record_limit_exceeded(
+                scope="api_rate",
+                identifier=str(public_key.organization_id),
+                window_seconds=60,
+            )
+            record_limit_exceeded_count(
                 scope="api_rate",
                 identifier=str(public_key.organization_id),
                 window_seconds=60,
@@ -846,9 +851,14 @@ def _trace_replay_access_from_headers(
                 window_seconds=60,
             )
         except HTTPException as exc:
-            from app.services.rate_limiter import record_limit_exceeded
+            from app.services.rate_limiter import record_limit_exceeded, record_limit_exceeded_count
 
             record_limit_exceeded(
+                scope="api_rate",
+                identifier=str(public_key.organization_id),
+                window_seconds=60,
+            )
+            record_limit_exceeded_count(
                 scope="api_rate",
                 identifier=str(public_key.organization_id),
                 window_seconds=60,

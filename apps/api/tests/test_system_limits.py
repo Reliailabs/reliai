@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.services.rate_limiter import record_limit_exceeded
 
 from .test_api import auth_headers, create_operator, create_organization, create_project, sign_in
@@ -52,10 +54,23 @@ def test_system_limits_project_scope(client, db_session):
 
 def test_system_limits_sampling_status(client, db_session):
     session_payload, _organization, project = _setup_org_project(client, db_session)
+    current = client.get(
+        f"/api/v1/projects/{project['id']}/ingestion-policy",
+        headers=auth_headers(session_payload),
+    )
+    assert current.status_code == 200
+    payload = current.json()
     response = client.put(
         f"/api/v1/projects/{project['id']}/ingestion-policy",
         headers=auth_headers(session_payload),
-        json={"sampling_success_rate": 0.5, "sampling_error_rate": 1.0},
+        json={
+            "sampling_success_rate": 0.5,
+            "sampling_error_rate": 1.0,
+            "max_metadata_fields": payload["max_metadata_fields"],
+            "max_cardinality_per_field": payload["max_cardinality_per_field"],
+            "retention_days_success": payload["retention_days_success"],
+            "retention_days_error": payload["retention_days_error"],
+        },
     )
     assert response.status_code == 200
 
@@ -70,7 +85,7 @@ def test_system_limits_sampling_status(client, db_session):
     assert sampling["is_plan_related"] is False
     assert sampling["cta_priority"] == "settings_first"
     assert sampling["cta"]["label"] == "View ingestion policy"
-    assert sampling["cta_secondary"]["label"] == "Adjust sampling"
+    assert sampling["cta_secondary"]["label"] == "Reduce ingest rate (sampling)"
 
 
 def test_system_limits_storage_status(client, db_session):
@@ -78,12 +93,13 @@ def test_system_limits_storage_status(client, db_session):
     from app.models.usage_quota import UsageQuota
     from app.models.organization import Organization
 
-    quota = db_session.query(UsageQuota).filter(UsageQuota.organization_id == organization["id"]).one_or_none()
+    organization_id = UUID(organization["id"])
+    quota = db_session.query(UsageQuota).filter(UsageQuota.organization_id == organization_id).one_or_none()
     if quota is None:
-        quota = UsageQuota(organization_id=organization["id"])
+        quota = UsageQuota(organization_id=organization_id)
         db_session.add(quota)
     quota.max_traces_per_day = 1
-    org = db_session.query(Organization).filter(Organization.id == organization["id"]).one()
+    org = db_session.query(Organization).filter(Organization.id == organization_id).one()
     org.monthly_traces = 100
     db_session.commit()
 
@@ -108,5 +124,5 @@ def test_system_limits_limit_flag_produces_status(client, db_session):
     ingest_global = next(limit for limit in limits if limit["type"] == "ingest_global")
     assert ingest_global["is_plan_related"] is True
     assert ingest_global["cta_priority"] == "settings_first"
-    assert ingest_global["cta"]["label"] == "Adjust sampling"
+    assert ingest_global["cta"]["label"] == "Reduce ingest rate (sampling)"
     assert ingest_global["cta_secondary"]["label"] == "Upgrade ingest capacity"

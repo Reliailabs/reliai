@@ -10,7 +10,7 @@ from app.models.project import Project
 from app.schemas.limits import LimitCTA, LimitScope, LimitStatus, LimitStatusResponse
 from app.services.auth import OperatorContext
 from app.services.environments import get_default_environment
-from app.services.rate_limiter import get_limit_exceeded_timestamp
+from app.services.rate_limiter import get_limit_exceeded_count, get_limit_exceeded_timestamp
 from app.services.trace_ingestion_control import get_effective_ingestion_policy
 from app.services.usage_quotas import get_usage_status
 
@@ -36,6 +36,7 @@ def _storage_limit(db: Session, *, organization_id: UUID) -> LimitStatus | None:
     percent_used = float(usage.get("percent_used") or 0)
     projected_usage = usage.get("projected_usage")
     limit = usage.get("limit")
+    used = usage.get("used")
     if not limit:
         return None
 
@@ -46,9 +47,13 @@ def _storage_limit(db: Session, *, organization_id: UUID) -> LimitStatus | None:
             severity="critical",
             message="Storage limit reached — older traces may be removed.",
             scope=LimitScope(level="global"),
-            metrics={"quota_used_pct": round(percent_used, 3)},
+            metrics={
+                "quota_used_pct": round(percent_used, 3),
+                "used": int(used) if used is not None else None,
+                "limit": int(limit) if limit is not None else None,
+            },
             window="1h",
-            actionable={"primary": "Keep full incident history available for investigations and postmortems."},
+            actionable={"primary": "Free up space or increase retention now."},
             is_plan_related=True,
             cta_priority="settings_first",
             cta=LimitCTA(
@@ -71,9 +76,13 @@ def _storage_limit(db: Session, *, organization_id: UUID) -> LimitStatus | None:
             severity="warning",
             message="Storage nearing limit — retention may be constrained soon.",
             scope=LimitScope(level="global"),
-            metrics={"quota_used_pct": round(percent_used, 3)},
+            metrics={
+                "quota_used_pct": round(percent_used, 3),
+                "used": int(used) if used is not None else None,
+                "limit": int(limit) if limit is not None else None,
+            },
             window="1h",
-            actionable={"primary": "Keep full incident history available for investigations and postmortems."},
+            actionable={"primary": "Stored trace volume is approaching your retention limit."},
             is_plan_related=True,
             cta_priority="settings_first",
             cta=LimitCTA(
@@ -112,7 +121,7 @@ def _sampling_limit(db: Session, *, project: Project) -> LimitStatus | None:
             type="settings",
         ),
         cta_secondary=LimitCTA(
-            label="Adjust sampling",
+            label="Reduce ingest rate (sampling)",
             href=f"/projects/{project.id}/ingestion",
             type="settings",
         ),
@@ -176,9 +185,9 @@ def get_limit_statuses(
         window="1m",
         is_plan_related=True,
         cta_priority="settings_first",
-        actionable={"primary": "Increase trace capacity so incidents and comparisons stay complete."},
+        actionable={"primary": "High trace volume exceeded your ingest rate."},
         cta=LimitCTA(
-            label="Adjust sampling",
+            label="Reduce ingest rate (sampling)",
             href=_ingestion_policy_href(project),
             type="settings",
         ),
@@ -189,6 +198,9 @@ def get_limit_statuses(
         ),
     )
     if ingest_global:
+        count = get_limit_exceeded_count(scope="ingest_global", identifier="global")
+        if count:
+            ingest_global.metrics = {**(ingest_global.metrics or {}), "dropped": count}
         limits.append(ingest_global)
 
     if project is not None:
@@ -202,9 +214,9 @@ def get_limit_statuses(
             window="1m",
             is_plan_related=True,
             cta_priority="settings_first",
-            actionable={"primary": "Increase trace capacity so incidents and comparisons stay complete."},
+            actionable={"primary": "High trace volume exceeded your ingest rate."},
             cta=LimitCTA(
-                label="View ingestion policy",
+                label="Reduce ingest rate (sampling)",
                 href=f"/projects/{project.id}/ingestion",
                 type="settings",
             ),
@@ -215,6 +227,9 @@ def get_limit_statuses(
             ),
         )
         if ingest_project:
+            count = get_limit_exceeded_count(scope="ingest_project", identifier=str(project.id))
+            if count:
+                ingest_project.metrics = {**(ingest_project.metrics or {}), "dropped": count}
             limits.append(ingest_project)
 
     api_rate = _limit_from_flag(
@@ -234,6 +249,9 @@ def get_limit_statuses(
         ),
     )
     if api_rate:
+        count = get_limit_exceeded_count(scope="api_rate", identifier=str(organization_id))
+        if count:
+            api_rate.metrics = {**(api_rate.metrics or {}), "blocked": count}
         limits.append(api_rate)
 
     if project is not None:

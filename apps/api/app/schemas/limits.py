@@ -34,10 +34,13 @@ class LimitScope(APIModel):
 
 class LimitMetrics(APIModel):
     dropped: int | None = None
+    blocked: int | None = None
     delayed: int | None = None
     rate: float | None = None
     lag_ms: int | None = None
     quota_used_pct: float | None = None
+    used: int | None = None
+    limit: int | None = None
     truncated: int | None = None
 
 

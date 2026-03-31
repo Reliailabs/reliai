@@ -1586,10 +1586,13 @@ export interface LimitScope {
 
 export interface LimitMetrics {
   dropped?: number;
+  blocked?: number;
   delayed?: number;
   rate?: number;
   lag_ms?: number;
   quota_used_pct?: number;
+  used?: number;
+  limit?: number;
   truncated?: number;
 }
 

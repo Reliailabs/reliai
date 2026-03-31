@@ -14,6 +14,7 @@ _fallback_limit_flags: dict[str, tuple[datetime, datetime]] = {}
 _fallback_limit_lock = Lock()
 
 _LIMIT_FLAG_PREFIX = "limit_exceeded"
+_LIMIT_COUNT_PREFIX = "limit_exceeded_count"
 
 
 def _bucket_expiry(seconds: int) -> int:
@@ -50,6 +51,10 @@ def _limit_flag_key(scope: str, identifier: str) -> str:
     return f"{_LIMIT_FLAG_PREFIX}:{scope}:{identifier}"
 
 
+def _limit_count_key(scope: str, identifier: str) -> str:
+    return f"{_LIMIT_COUNT_PREFIX}:{scope}:{identifier}"
+
+
 def record_limit_exceeded(*, scope: str, identifier: str, window_seconds: int) -> datetime:
     now = datetime.now(timezone.utc)
     key = _limit_flag_key(scope, identifier)
@@ -61,6 +66,11 @@ def record_limit_exceeded(*, scope: str, identifier: str, window_seconds: int) -
             expiry = now + timedelta(seconds=max(int(window_seconds), 1))
             _fallback_limit_flags[key] = (now, expiry)
     return now
+
+
+def record_limit_exceeded_count(*, scope: str, identifier: str, window_seconds: int) -> int:
+    key = _limit_count_key(scope, identifier)
+    return _increment_with_fallback(key=key, amount=1, window_seconds=window_seconds)
 
 
 def get_limit_exceeded_timestamp(*, scope: str, identifier: str) -> datetime | None:
@@ -82,6 +92,16 @@ def get_limit_exceeded_timestamp(*, scope: str, identifier: str) -> datetime | N
                 _fallback_limit_flags.pop(key, None)
                 return None
             return recorded_at
+
+
+def get_limit_exceeded_count(*, scope: str, identifier: str) -> int:
+    key = _limit_count_key(scope, identifier)
+    try:
+        redis = get_redis()
+        value = redis.get(key)
+        return int(value) if value is not None else 0
+    except RedisError:
+        return _fallback_counts.get(key, 0)
 
 
 def day_bucket_key(*, prefix: str, identifier: str, now: datetime | None = None) -> str:

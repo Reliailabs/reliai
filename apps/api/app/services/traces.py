@@ -28,7 +28,7 @@ from app.services.trace_ingestion_control import apply_trace_ingestion_controls
 from app.services.trace_query_adapter import TraceWindowQuery, query_trace_window
 from app.services.trace_query_router import WarehouseQueryViolation
 from app.core.settings import get_settings
-from app.services.rate_limiter import enforce_rate_limit, record_limit_exceeded
+from app.services.rate_limiter import enforce_rate_limit, record_limit_exceeded, record_limit_exceeded_count
 from app.services.usage_quotas import enforce_daily_trace_quota
 
 logger = logging.getLogger(__name__)
@@ -223,6 +223,7 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
         )
     except HTTPException:
         record_limit_exceeded(scope="ingest_global", identifier="global", window_seconds=60)
+        record_limit_exceeded_count(scope="ingest_global", identifier="global", window_seconds=60)
         publish_event_after_commit = False
     else:
         try:
@@ -234,6 +235,11 @@ def ingest_trace(db: Session, api_key, payload: TraceIngestRequest) -> Trace:
             )
         except HTTPException:
             record_limit_exceeded(
+                scope="ingest_project",
+                identifier=str(project.id),
+                window_seconds=60,
+            )
+            record_limit_exceeded_count(
                 scope="ingest_project",
                 identifier=str(project.id),
                 window_seconds=60,
