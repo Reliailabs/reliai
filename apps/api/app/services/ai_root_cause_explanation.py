@@ -97,7 +97,7 @@ def _build_prompt(*, command, evidence: EvidenceBundle) -> PromptBundle:
         "evidence_lines": evidence.lines,
     }
 
-    return PromptBundle(system_prompt=system_prompt, user_prompt=json.dumps(user_prompt))
+    return PromptBundle(system_prompt=system_prompt, user_prompt=json.dumps(user_prompt, default=str))
 
 
 def generate_ai_root_cause_explanation(
@@ -172,7 +172,13 @@ def generate_ai_root_cause_explanation(
         db.commit()
         return response
 
-    prompt = _build_prompt(command=command, evidence=evidence)
+    try:
+        prompt = _build_prompt(command=command, evidence=evidence)
+    except Exception as exc:  # pragma: no cover - defensive guard
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI explanation request failed",
+        ) from exc
     provider = settings.ai_provider.lower().strip()
     if provider == "openai":
         model_name = settings.openai_model
