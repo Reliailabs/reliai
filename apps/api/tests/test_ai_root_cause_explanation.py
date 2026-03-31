@@ -10,24 +10,37 @@ def test_ai_root_cause_explanation_returns_explanation(client, db_session, monke
     owner_session, _, project, _ = _seed_success_rate_regression(client, db_session)
     incident = _incident_for_type(db_session, project["id"], "success_rate_drop")
 
+    payload = json.dumps(
+        {
+            "explanation": "Trace evidence points to a prompt change that shifted outputs.",
+            "what_to_check_next": "Review the diff between baseline and failing prompts.",
+            "evidence_used": ["this should be ignored"],
+        }
+    )
+
     def fake_call_openai_compatible(*_args, **_kwargs):
         return {
             "choices": [
                 {
                     "message": {
-                        "content": json.dumps(
-                            {
-                                "explanation": "Trace evidence points to a prompt change that shifted outputs.",
-                                "what_to_check_next": "Review the diff between baseline and failing prompts.",
-                                "evidence_used": ["this should be ignored"],
-                            }
-                        )
+                        "content": payload
                     }
                 }
             ]
         }
 
+    def fake_call_anthropic(*_args, **_kwargs):
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": payload,
+                }
+            ]
+        }
+
     monkeypatch.setattr(ai_root_cause_explanation, "call_openai_compatible", fake_call_openai_compatible)
+    monkeypatch.setattr(ai_root_cause_explanation, "call_anthropic", fake_call_anthropic)
     monkeypatch.setattr(
         ai_root_cause_explanation,
         "_build_evidence",
