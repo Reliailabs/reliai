@@ -20,6 +20,8 @@ All notable changes to Reliai will be documented in this file.
 - Refined AI root-cause explanation card hierarchy and readability to stay clearly subordinate to deterministic root-cause evidence.
 - Improved AI Ticket Draft modal clarity and readability, plus contrast fixes for AI Summary and Explanation cards.
 - AI ticket drafts now include deterministic root-cause confidence, omit generic impact filler, and improve copy + staleness UX.
+- Incident reopen now deterministically reuses the most recently updated incident for a given fingerprint.
+- AI root-cause explanation staleness now compares UTC-aware timestamps to avoid naive datetime drift.
 - Trace detail now surfaces payload truncation when metadata limits are applied.
 - Limit CTAs now respect settings-first hierarchy and remove upgrade prompts for operational limits.
 
