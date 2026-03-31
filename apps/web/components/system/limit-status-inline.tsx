@@ -74,7 +74,7 @@ export function LimitStatusInline({ limits }: { limits: LimitStatus[] }) {
 
   return (
     <div className="space-y-2">
-      {limits.map((limit) => {
+      {limits.map((limit, index) => {
         const Icon = statusIcon(limit.status);
         const showCtas = limit.cta_priority !== "none";
         const primaryCta = showCtas ? filterUpgradeCtas(limit, limit.cta) : null;
@@ -84,7 +84,7 @@ export function LimitStatusInline({ limits }: { limits: LimitStatus[] }) {
         const isApiRate = limit.type === "api_rate";
         return (
           <div
-            key={`${limit.type}-${limit.scope?.feature ?? limit.scope?.project_id ?? "global"}`}
+            key={`${limit.type}-${limit.scope?.feature ?? limit.scope?.project_id ?? "global"}-${index}`}
             className={cn("rounded-lg border px-3 py-2 text-xs", severityTone(limit.severity))}
           >
             <div className="flex items-center gap-2 font-medium">
