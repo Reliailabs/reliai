@@ -5,6 +5,8 @@ import type {
   AiIncidentSummaryResponse,
   AiRootCauseExplanationRequest,
   AiRootCauseExplanationResponse,
+  AiTicketDraftRequest,
+  AiTicketDraftResponse,
 } from "@reliai/types";
 
 import { IncidentCommandCenterView } from "@/components/presenters/incident-command-center-view";
@@ -13,6 +15,7 @@ import { PromptDiffView } from "@/components/presenters/prompt-diff-view";
 import {
   generateIncidentAiSummary,
   generateIncidentAiRootCauseExplanation,
+  generateIncidentAiTicketDraft,
   getIncidentCommandCenter,
   getIncidentTraceCompare,
   getProjectRecommendations,
@@ -143,6 +146,24 @@ export default async function IncidentCommandCenterPage({
     }
   };
 
+  const aiTicketDraftAction = async (
+    payload: AiTicketDraftRequest
+  ): Promise<AiTicketDraftResponse> => {
+    "use server";
+    try {
+      return await generateIncidentAiTicketDraft(incidentId, payload);
+    } catch (_error) {
+      return {
+        title: null,
+        body: null,
+        evidence_used: [],
+        generated_at: new Date().toISOString(),
+        model: null,
+        status: "error"
+      };
+    }
+  };
+
   return (
     <IncidentCommandCenterView
       incidentId={incidentId}
@@ -150,6 +171,7 @@ export default async function IncidentCommandCenterPage({
       activeTab="overview"
       aiSummaryAction={aiSummaryAction}
       aiRootCauseExplanationAction={aiRootCauseExplanationAction}
+      aiTicketDraftAction={aiTicketDraftAction}
       suggestedFix={
         suggestedFix
           ? {

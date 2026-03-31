@@ -25,6 +25,8 @@ from app.schemas.ai import (
     AiIncidentSummaryResponse,
     AiRootCauseExplanationRequest,
     AiRootCauseExplanationResponse,
+    AiTicketDraftRequest,
+    AiTicketDraftResponse,
 )
 from app.schemas.auth import (
     AuthSessionResponse,
@@ -340,6 +342,7 @@ from app.services.auth_workos import (
 )
 from app.services.ai_incident_summary import generate_ai_incident_summary
 from app.services.ai_root_cause_explanation import generate_ai_root_cause_explanation
+from app.services.ai_ticket_drafts import generate_ai_ticket_draft
 from app.services.incident_command_center import get_incident_command_center
 from app.services.incident_investigation import compute_prompt_content_diff, get_incident_investigation
 from app.services.incidents import (
@@ -3443,6 +3446,21 @@ def generate_incident_ai_root_cause_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> AiRootCauseExplanationResponse:
     return generate_ai_root_cause_explanation(
+        db=db,
+        operator=operator,
+        incident_id=incident_id,
+        request=payload,
+    )
+
+
+@router.post("/incidents/{incident_id}/ai-ticket-draft", response_model=AiTicketDraftResponse)
+def generate_incident_ai_ticket_draft_endpoint(
+    incident_id: UUID,
+    payload: AiTicketDraftRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AiTicketDraftResponse:
+    return generate_ai_ticket_draft(
         db=db,
         operator=operator,
         incident_id=incident_id,

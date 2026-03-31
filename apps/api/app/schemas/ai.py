@@ -41,3 +41,22 @@ class AiRootCauseExplanationResponse(BaseModel):
     model: AiRootCauseExplanationModelInfo | None = None
     status: Literal["ok", "insufficient_evidence", "error"] = "ok"
     is_stale: bool = False
+
+
+class AiTicketDraftRequest(BaseModel):
+    destination: Literal["jira", "github"] = Field(default="jira")
+    regenerate: bool = Field(default=False)
+
+
+class AiTicketDraftModelInfo(BaseModel):
+    provider: str
+    model: str
+
+
+class AiTicketDraftResponse(BaseModel):
+    title: str | None = None
+    body: str | None = None
+    evidence_used: list[str] = Field(default_factory=list)
+    generated_at: datetime
+    model: AiTicketDraftModelInfo | None = None
+    status: Literal["ok", "insufficient_evidence", "error"] = "ok"

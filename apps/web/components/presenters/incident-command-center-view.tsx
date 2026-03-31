@@ -6,6 +6,8 @@ import type {
   AiIncidentSummaryResponse,
   AiRootCauseExplanationRequest,
   AiRootCauseExplanationResponse,
+  AiTicketDraftRequest,
+  AiTicketDraftResponse,
   IncidentCommandCenterRead,
 } from "@reliai/types";
 
@@ -16,6 +18,7 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { formatTime, severityTone } from "@/components/presenters/ops-format";
 import { AiSummaryCard } from "@/components/incidents/ai-summary-card";
 import { AiRootCauseExplanationCard } from "@/components/incidents/ai-root-cause-explanation-card";
+import { AiTicketDraftLauncher } from "@/components/incidents/ai-ticket-draft-launcher";
 import { cn } from "@/lib/utils";
 
 interface SuggestedFix {
@@ -33,6 +36,7 @@ interface IncidentCommandCenterViewProps {
   aiRootCauseExplanationAction?: (
     payload: AiRootCauseExplanationRequest
   ) => Promise<AiRootCauseExplanationResponse>;
+  aiTicketDraftAction?: (payload: AiTicketDraftRequest) => Promise<AiTicketDraftResponse>;
 }
 
 const TABS = [
@@ -154,6 +158,7 @@ export function IncidentCommandCenterView({
   activeTab = "overview",
   aiSummaryAction,
   aiRootCauseExplanationAction,
+  aiTicketDraftAction,
 }: IncidentCommandCenterViewProps) {
   const incident = command.incident;
   const summary = incident.summary_json ?? {};
@@ -225,17 +230,25 @@ export function IncidentCommandCenterView({
       data-incident-command-center-ready={screenshotMode ? "" : undefined}
     >
       <header className="rounded-[20px] border border-zinc-300 bg-white px-5 py-4">
-        {!screenshotMode ? (
-          <Link
-            href={`/incidents/${incidentId}`}
-            className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to incident
-          </Link>
-        ) : (
-          <p className="text-xs uppercase tracking-[0.24em] text-steel">Reliai incident command center</p>
-        )}
+        <div className="flex items-center justify-between gap-4">
+          {!screenshotMode ? (
+            <Link
+              href={`/incidents/${incidentId}`}
+              className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to incident
+            </Link>
+          ) : (
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Reliai incident command center</p>
+          )}
+          {!screenshotMode && aiTicketDraftAction ? (
+            <AiTicketDraftLauncher
+              incidentId={incidentId}
+              generateDraft={aiTicketDraftAction}
+            />
+          ) : null}
+        </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
           <StatusDot status={incident.severity === "critical" ? "critical" : "neutral"} />
@@ -255,6 +268,7 @@ export function IncidentCommandCenterView({
           ))}
         </div>
       </header>
+
 
       {!screenshotMode ? (
         <nav className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1">
