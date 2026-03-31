@@ -5,6 +5,8 @@ import type {
   AiIncidentSummaryResponse,
   AiRootCauseExplanationRequest,
   AiRootCauseExplanationResponse,
+  AiTicketDraftRequest,
+  AiTicketDraftResponse,
   AlertDeliveryListResponse,
   CustomerReliabilityDetailRead,
   CustomerReliabilityListRead,
@@ -520,6 +522,16 @@ export async function generateIncidentAiRootCauseExplanation(
   payload: AiRootCauseExplanationRequest
 ) {
   return request<AiRootCauseExplanationResponse>(`/api/v1/incidents/${incidentId}/ai-root-cause`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function generateIncidentAiTicketDraft(
+  incidentId: string,
+  payload: AiTicketDraftRequest
+) {
+  return request<AiTicketDraftResponse>(`/api/v1/incidents/${incidentId}/ai-ticket-draft`, {
     method: "POST",
     body: JSON.stringify(payload)
   });

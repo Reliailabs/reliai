@@ -9,6 +9,7 @@ All notable changes to Reliai will be documented in this file.
 ### Added
 
 - AI root-cause explanation panel that interprets deterministic evidence beneath the root-cause block.
+- AI ticket draft modal that generates editable incident tickets from deterministic evidence.
 
 ### Fixed
 

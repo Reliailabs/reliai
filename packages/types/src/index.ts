@@ -1455,6 +1455,25 @@ export interface AiRootCauseExplanationResponse {
   is_stale: boolean;
 }
 
+export interface AiTicketDraftRequest {
+  destination: "jira" | "github";
+  regenerate?: boolean;
+}
+
+export interface AiTicketDraftModelInfo {
+  provider: string;
+  model: string;
+}
+
+export interface AiTicketDraftResponse {
+  status: "ok" | "insufficient_evidence" | "error";
+  title: string | null;
+  body: string | null;
+  evidence_used: string[];
+  generated_at: string | null;
+  model: AiTicketDraftModelInfo | null;
+}
+
 export interface IncidentCommandCenterMetricRead {
   metric_name: string;
   metric_type: string;
