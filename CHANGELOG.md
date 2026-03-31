@@ -15,6 +15,7 @@ All notable changes to Reliai will be documented in this file.
 
 - AI Summary no longer reuses cached output when the provider changes, and failures now surface as a safe error state instead of breaking the command route.
 - Increased AI Summary body text contrast for readability.
+- Refined AI root-cause explanation card hierarchy and readability to stay clearly subordinate to deterministic root-cause evidence.
 - Improved AI Ticket Draft modal clarity and readability, plus contrast fixes for AI Summary and Explanation cards.
 - AI ticket drafts now include deterministic root-cause confidence, omit generic impact filler, and improve copy + staleness UX.
 
