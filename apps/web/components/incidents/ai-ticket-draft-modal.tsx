@@ -167,26 +167,23 @@ export function AiTicketDraftModal({
           <p className="text-xs text-zinc-400">Ready to paste into Jira or GitHub. Edit before use.</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5 [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
           {isProcessorDelayed ? (
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
               Queued — generation is delayed.
             </div>
           ) : null}
 
-      {isProviderLimited ? (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          <p>Provider limit hit — try again shortly.</p>
-          {lastSuccessAt ? (
-            <p className="mt-1 text-[11px] text-amber-800/90">
-              Last successful generation: {formatTime(lastSuccessAt)}
-            </p>
+          {isProviderLimited ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <p>Provider limit hit — try again shortly.</p>
+              {lastSuccessAt ? (
+                <p className="mt-1 text-[11px] text-amber-800/90">
+                  Last successful generation: {formatTime(lastSuccessAt)}
+                </p>
+              ) : null}
+            </div>
           ) : null}
-        </div>
-      ) : null}
-
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
           {isLoading ? (
             <div className="space-y-5">
               <div className="space-y-2">
