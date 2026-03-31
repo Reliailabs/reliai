@@ -6,12 +6,14 @@ import type { AiIncidentSummaryRequest, AiIncidentSummaryResponse } from "@relia
 
 import { Button } from "@/components/ui/button";
 import { formatTime } from "@/components/presenters/ops-format";
+import { useLimitStatus } from "@/hooks/use-limit-status";
 import { cn } from "@/lib/utils";
 
 type AiSummaryStatus = "idle" | "loading" | "ready" | "insufficient" | "error";
 
 interface AiSummaryCardProps {
   incidentId: string;
+  projectId?: string | null;
   incidentUpdatedAt: string | null;
   generateSummary: (payload: AiIncidentSummaryRequest) => Promise<AiIncidentSummaryResponse>;
 }
@@ -35,11 +37,17 @@ function buildCopy(summary: AiIncidentSummaryResponse) {
     .join("\n\n");
 }
 
-export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }: AiSummaryCardProps) {
+export function AiSummaryCard({ incidentId, projectId, incidentUpdatedAt, generateSummary }: AiSummaryCardProps) {
   const [status, setStatus] = useState<AiSummaryStatus>("idle");
   const [summary, setSummary] = useState<AiIncidentSummaryResponse | null>(null);
+  const [lastSuccessAt, setLastSuccessAt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { byType } = useLimitStatus(projectId ?? undefined);
+  const providerLimits = byType.llm_provider ?? [];
+  const processorLimits = byType.processor_dispatch ?? [];
+  const isProviderLimited = providerLimits.some((limit) => limit.scope?.feature === "ai_summary");
+  const isProcessorDelayed = processorLimits.length > 0;
 
   const requestPayload = useMemo<AiIncidentSummaryRequest>(() => ({}), []);
 
@@ -55,6 +63,9 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
           setSummary(response);
           if (response.status === "ok") {
             setStatus("ready");
+            if (response.generated_at) {
+              setLastSuccessAt(response.generated_at);
+            }
             return;
           }
           if (response.status === "error") {
@@ -90,6 +101,23 @@ export function AiSummaryCard({ incidentId, incidentUpdatedAt, generateSummary }
         </div>
         <span className="text-xs text-zinc-300">Draft</span>
       </div>
+
+      {isProcessorDelayed ? (
+        <div className="mt-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+          Queued — generation is delayed.
+        </div>
+      ) : null}
+
+      {isProviderLimited ? (
+        <div className="mt-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+          <p>Provider limit hit — try again shortly.</p>
+          {lastSuccessAt ? (
+            <p className="mt-1 text-[11px] text-amber-100/90">
+              Last successful generation: {formatTime(lastSuccessAt)}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="mt-4 space-y-3">

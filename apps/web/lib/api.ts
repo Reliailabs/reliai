@@ -27,6 +27,7 @@ import type {
   IncidentInvestigationRead,
   IncidentEventListResponse,
   IncidentListResponse,
+  LimitStatusResponse,
   ModelVersionDetailRead,
   ModelVersionListResponse,
   OrganizationAlertTargetRead,
@@ -168,6 +169,13 @@ export async function getDashboardTriage() {
 
 export async function getDashboardChanges() {
   return request<DashboardChangeFeedRead>("/api/v1/dashboard/changes");
+}
+
+export async function getSystemLimits(projectId?: string) {
+  const params = new URLSearchParams();
+  if (projectId) params.set("project_id", projectId);
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<LimitStatusResponse>(`/api/v1/system/limits${query}`);
 }
 
 export async function createOrganization(payload: {

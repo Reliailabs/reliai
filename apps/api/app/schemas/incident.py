@@ -162,6 +162,7 @@ class IncidentCommandCenterRead(APIModel):
     root_cause: IncidentCommandCenterRootCauseRead
     metric: IncidentCommandCenterMetricRead | None = None
     resolution_impact: IncidentResolutionImpactRead | None = None
+    fix_action_recorded: bool = False
     trace_compare: IncidentCommandTraceCompareRead
     deployment_context: IncidentDeploymentContextRead | None
     guardrail_activity: list[GuardrailActivityRead]

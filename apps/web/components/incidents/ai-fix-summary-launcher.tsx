@@ -10,12 +10,14 @@ import { AiFixSummaryModal } from "@/components/incidents/ai-fix-summary-modal";
 interface AiFixSummaryLauncherProps {
   incidentId: string;
   incidentUpdatedAt: string | null;
+  projectId?: string | null;
   generateSummary: (payload: AiFixPrSummaryRequest) => Promise<AiFixPrSummaryResponse>;
 }
 
 export function AiFixSummaryLauncher({
   incidentId,
   incidentUpdatedAt,
+  projectId,
   generateSummary,
 }: AiFixSummaryLauncherProps) {
   const [open, setOpen] = useState(false);
@@ -30,6 +32,7 @@ export function AiFixSummaryLauncher({
         onClose={() => setOpen(false)}
         incidentId={incidentId}
         incidentUpdatedAt={incidentUpdatedAt}
+        projectId={projectId}
         generateSummary={generateSummary}
       />
     </>

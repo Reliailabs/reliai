@@ -2257,6 +2257,7 @@ def derive_root_cause_hints(
 def build_trace_compare_item(trace: Trace) -> dict[str, Any]:
     structured_output_label = _structured_output_label(trace)
     structured_output_reason = _structured_output_reason(trace)
+    metadata_json = trace.metadata_json or {}
     custom_metric_results = []
     for evaluation in getattr(trace, "evaluations", []):
         if not evaluation.eval_type.startswith("custom_metric:"):
@@ -2309,6 +2310,7 @@ def build_trace_compare_item(trace: Trace) -> dict[str, Any]:
         if trace.retrieval_span is not None
         else None,
         "metadata_excerpt_json": _selected_metadata(trace),
+        "payload_truncated": bool(metadata_json.get("_reliai_payload_truncated")) or None,
     }
 
 

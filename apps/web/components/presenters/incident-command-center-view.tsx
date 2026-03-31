@@ -22,6 +22,7 @@ import { AiSummaryCard } from "@/components/incidents/ai-summary-card";
 import { AiRootCauseExplanationCard } from "@/components/incidents/ai-root-cause-explanation-card";
 import { AiTicketDraftLauncher } from "@/components/incidents/ai-ticket-draft-launcher";
 import { AiFixSummaryLauncher } from "@/components/incidents/ai-fix-summary-launcher";
+import { LimitStatusInlineSlot } from "@/components/system/limit-status-inline-slot";
 import { cn } from "@/lib/utils";
 
 interface SuggestedFix {
@@ -174,6 +175,7 @@ export function IncidentCommandCenterView({
   const baselineValue = metric?.baseline_value ?? (summary.baseline_value ? String(summary.baseline_value) : "n/a");
   const deltaPercent = metric?.delta_percent ?? (summary.delta_percent ? String(summary.delta_percent) : "n/a");
   const resolutionImpact = command.resolution_impact ?? null;
+  const fixActionRecorded = command.fix_action_recorded ?? false;
   const compareLink = command.trace_compare.compare_link
     ? (command.trace_compare.compare_link.includes("?")
       ? `${command.trace_compare.compare_link}&incident_id=${incidentId}`
@@ -252,6 +254,7 @@ export function IncidentCommandCenterView({
               incidentId={incidentId}
               incidentTitle={incident.title}
               incidentUpdatedAt={incident.updated_at ?? null}
+              projectId={incident.project_id}
               generateDraft={aiTicketDraftAction}
             />
           ) : null}
@@ -385,16 +388,41 @@ export function IncidentCommandCenterView({
             ) : null}
           </div>
 
+          {!screenshotMode ? (
+            <LimitStatusInlineSlot
+              projectId={incident.project_id}
+              types={["processor_dispatch", "queue_lag"]}
+            />
+          ) : null}
+
           {aiRootCauseExplanationAction ? (
+            <div className="space-y-3">
+              {!screenshotMode ? (
+                <LimitStatusInlineSlot
+                  projectId={incident.project_id}
+                  types={["llm_provider"]}
+                  feature="ai_root_cause"
+                />
+              ) : null}
             <AiRootCauseExplanationCard
               incidentId={incidentId}
               canGenerate={canGenerateRootCauseExplanation}
+              projectId={incident.project_id}
               generateExplanation={aiRootCauseExplanationAction}
             />
+            </div>
           ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
             <p className="text-xs uppercase tracking-[0.2em] text-steel">Trace evidence</p>
+            {!screenshotMode ? (
+              <div className="mt-3">
+                <LimitStatusInlineSlot
+                  projectId={incident.project_id}
+                  types={["sampling"]}
+                />
+              </div>
+            ) : null}
             {screenshotMode && command.trace_compare.failing_trace_summary && command.trace_compare.baseline_trace_summary ? (
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {([
@@ -449,38 +477,47 @@ export function IncidentCommandCenterView({
             )}
           </div>
 
-          {resolutionImpact ? (
+          {resolutionImpact || fixActionRecorded ? (
             <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
               <div className="flex items-start justify-between gap-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-steel">Resolution impact</p>
-                {!screenshotMode && aiFixPrSummaryAction ? (
+                {!screenshotMode && aiFixPrSummaryAction && fixActionRecorded ? (
                   <AiFixSummaryLauncher
                     incidentId={incidentId}
                     incidentUpdatedAt={incident.updated_at ?? null}
+                    projectId={incident.project_id}
                     generateSummary={aiFixPrSummaryAction}
                   />
                 ) : null}
               </div>
-              {resolutionImpact.summary ? (
-                <p className="mt-2 text-sm font-semibold text-ink">{resolutionImpact.summary}</p>
+              {resolutionImpact ? (
+                <>
+                  {resolutionImpact.summary ? (
+                    <p className="mt-2 text-sm font-semibold text-ink">{resolutionImpact.summary}</p>
+                  ) : (
+                    <p className="mt-2 text-sm text-steel">Waiting for post-fix data.</p>
+                  )}
+                  <ul className="mt-2 text-sm text-steel">
+                    <li>
+                      • before: {formatImpactValue(resolutionImpact.before_value, resolutionImpact.unit)}
+                    </li>
+                    {resolutionImpact.after_value !== null && resolutionImpact.after_value !== undefined ? (
+                      <li>
+                        • after: {formatImpactValue(resolutionImpact.after_value, resolutionImpact.unit)}
+                      </li>
+                    ) : null}
+                    {resolutionImpact.delta !== null && resolutionImpact.delta !== undefined ? (
+                      <li>
+                        • delta: {formatImpactValue(resolutionImpact.delta, resolutionImpact.unit)}
+                      </li>
+                    ) : null}
+                  </ul>
+                </>
               ) : (
-                <p className="mt-2 text-sm text-steel">Waiting for post-fix data.</p>
+                <p className="mt-2 text-sm text-steel">
+                  Fix action recorded — post-fix impact not yet verified.
+                </p>
               )}
-              <ul className="mt-2 text-sm text-steel">
-                <li>
-                  • before: {formatImpactValue(resolutionImpact.before_value, resolutionImpact.unit)}
-                </li>
-                {resolutionImpact.after_value !== null && resolutionImpact.after_value !== undefined ? (
-                  <li>
-                    • after: {formatImpactValue(resolutionImpact.after_value, resolutionImpact.unit)}
-                  </li>
-                ) : null}
-                {resolutionImpact.delta !== null && resolutionImpact.delta !== undefined ? (
-                  <li>
-                    • delta: {formatImpactValue(resolutionImpact.delta, resolutionImpact.unit)}
-                  </li>
-                ) : null}
-              </ul>
             </div>
           ) : null}
 
@@ -512,11 +549,21 @@ export function IncidentCommandCenterView({
           )}
 
           {aiSummaryAction ? (
-            <AiSummaryCard
-              incidentId={incidentId}
-              incidentUpdatedAt={incident.updated_at ?? null}
-              generateSummary={aiSummaryAction}
-            />
+            <div className="space-y-3">
+              {!screenshotMode ? (
+                <LimitStatusInlineSlot
+                  projectId={incident.project_id}
+                  types={["llm_provider", "processor_dispatch"]}
+                  feature="ai_summary"
+                />
+              ) : null}
+              <AiSummaryCard
+                incidentId={incidentId}
+                projectId={incident.project_id}
+                incidentUpdatedAt={incident.updated_at ?? null}
+                generateSummary={aiSummaryAction}
+              />
+            </div>
           ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">

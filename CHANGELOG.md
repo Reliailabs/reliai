@@ -10,6 +10,7 @@ All notable changes to Reliai will be documented in this file.
 
 - AI root-cause explanation panel that interprets deterministic evidence beneath the root-cause block.
 - AI ticket draft modal that generates editable incident tickets from deterministic evidence.
+- Limit visibility system with /system/limits endpoint, global banner, and contextual limit states.
 
 ### Fixed
 
@@ -18,6 +19,8 @@ All notable changes to Reliai will be documented in this file.
 - Refined AI root-cause explanation card hierarchy and readability to stay clearly subordinate to deterministic root-cause evidence.
 - Improved AI Ticket Draft modal clarity and readability, plus contrast fixes for AI Summary and Explanation cards.
 - AI ticket drafts now include deterministic root-cause confidence, omit generic impact filler, and improve copy + staleness UX.
+- Trace detail now surfaces payload truncation when metadata limits are applied.
+- Limit CTAs now respect settings-first hierarchy and remove upgrade prompts for operational limits.
 
 ---
 

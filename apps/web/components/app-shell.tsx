@@ -9,6 +9,7 @@ import { OrgSwitcher } from "@/components/org-switcher";
 import { DensityToggle } from "@/components/density-toggle";
 import { WarRoomToggle } from "@/components/war-room-toggle";
 import { AppShellTransition } from "@/components/app-shell-transition";
+import { LimitStatusBanner } from "@/components/system/limit-status-banner";
 
 const navItems = [
   { href: "/dashboard" as Route, label: "Overview", icon: Activity },
@@ -75,6 +76,7 @@ export async function AppShell({
           </div>
         </aside>
         <main className="px-4 py-4 lg:px-8 lg:py-6">
+          <LimitStatusBanner />
           <AppShellTransition>{children}</AppShellTransition>
         </main>
       </div>
