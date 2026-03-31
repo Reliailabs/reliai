@@ -286,9 +286,9 @@ export default async function TraceDetailPage({
             <div className="rounded-2xl border border-line bg-surface px-5 py-4">
               <p className="text-xs uppercase tracking-[0.24em] text-steel">Key findings</p>
               <div className="mt-4 space-y-3">
-                {keyFindings.map((item) => (
+                {keyFindings.map((item, index) => (
                   <a
-                    key={`${item.id}-${item.label}`}
+                    key={`${item.id}-${item.label}-${index}`}
                     href={`#span-${item.id}`}
                     className="block rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-sm text-ink transition hover:border-textSecondary"
                   >
@@ -308,14 +308,14 @@ export default async function TraceDetailPage({
               <p className="text-xs uppercase tracking-[0.24em] text-steel">Trace breakdown</p>
             </div>
             <div className="divide-y divide-line">
-              {orderedSteps.map((span) => {
+              {orderedSteps.map((span, index) => {
                 const attrs = (span.metadata_json as { otel?: { attributes?: Record<string, unknown> } } | null)?.otel
                   ?.attributes;
                 const statusTone = span.success ? "bg-success" : "bg-error";
                 const duration = span.latency_ms ?? 0;
                 const width = Math.max((duration / maxDuration) * 100, 4);
                 return (
-                  <details key={span.span_id} id={`span-${span.span_id}`} className="group px-5 py-4">
+                  <details key={`${span.span_id}-${index}`} id={`span-${span.span_id}`} className="group px-5 py-4">
                     <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm text-ink">
                       <div className="flex items-center gap-3">
                         <span className={`h-2 w-2 rounded-full ${statusTone}`} />
@@ -471,9 +471,9 @@ export default async function TraceDetailPage({
                     : trace.model_name}
                 </p>
               </div>
-              {trace.registry_pivots.map((pivot) => (
+              {trace.registry_pivots.map((pivot, index) => (
                 <a
-                  key={pivot.pivot_type}
+                  key={`${pivot.pivot_type}-${pivot.path ?? index}`}
                   href={pivot.path}
                   className="block rounded-lg border border-line bg-surfaceAlt px-3 py-2 font-medium text-ink underline-offset-4 hover:underline"
                 >
