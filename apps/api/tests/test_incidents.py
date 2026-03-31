@@ -274,13 +274,16 @@ def test_deterministic_reopen_behavior_reuses_same_incident(client, db_session, 
 
     _run_signal_pipeline(db_session, latest_trace_id)
 
-    reopened = _incident_for_type(db_session, project["id"], "success_rate_drop")
-    assert reopened.id == original_id
-    assert reopened.status == "open"
+    # Refresh the exact incident object instead of re-querying by type, which
+    # is non-deterministic when multiple incidents share the same incident_type
+    # (one per rollup scope — project and prompt_version).
+    db_session.refresh(incident)
+    assert incident.id == original_id
+    assert incident.status == "open"
     reopen_event = db_session.scalar(
         select(IncidentEvent)
         .where(
-            IncidentEvent.incident_id == reopened.id,
+            IncidentEvent.incident_id == incident.id,
             IncidentEvent.event_type == "reopened",
         )
         .order_by(desc(IncidentEvent.created_at))

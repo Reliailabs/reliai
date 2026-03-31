@@ -1,4 +1,5 @@
 import json
+import types
 
 from app.services import ai_root_cause_explanation
 
@@ -6,9 +7,23 @@ from .test_api import auth_headers
 from .test_incidents import _incident_for_type, _seed_success_rate_regression
 
 
+def _patch_settings_openai(monkeypatch) -> None:
+    """Force ai_provider=openai so tests bypass Anthropic and avoid 503s."""
+    fake_settings = types.SimpleNamespace(
+        ai_provider="openai",
+        openai_api_key="sk-test",
+        openai_api_base="https://api.openai.com/v1",
+        openai_model="gpt-4o-mini",
+        anthropic_api_key=None,
+    )
+    monkeypatch.setattr(ai_root_cause_explanation, "get_settings", lambda: fake_settings)
+
+
 def test_ai_root_cause_explanation_returns_explanation(client, db_session, monkeypatch):
     owner_session, _, project, _ = _seed_success_rate_regression(client, db_session)
     incident = _incident_for_type(db_session, project["id"], "success_rate_drop")
+
+    _patch_settings_openai(monkeypatch)
 
     def fake_call_openai_compatible(*_args, **_kwargs):
         return {
