@@ -217,6 +217,19 @@ Use this when production credibility or demo reliability is at risk.
 
 Do not bundle queued feature work into hotfixes.
 
+## Code Modification Workflow
+
+For every code modification, agents must:
+
+1. **Create a branch first** — no modifications on `main`, no exceptions.
+   Branch before making any file changes.
+2. **Implement on the branch** — all modifications, fixes, and tests go on the branch.
+3. **Validate** — run the required validation gate before requesting merge.
+4. **Merge and close the branch** — after validation passes, merge the PR into `main` and delete the branch.
+   Short-lived branches only. Never leave branches open after their change has landed.
+
+This workflow applies to every change regardless of size: one-line fix, major feature, or docs update.
+
 ## Agent Behavior Rules
 
 Agents must:

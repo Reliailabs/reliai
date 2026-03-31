@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
 import type {
+  AiFixPrSummaryRequest,
+  AiFixPrSummaryResponse,
   AiIncidentSummaryRequest,
   AiIncidentSummaryResponse,
   AiRootCauseExplanationRequest,
@@ -13,6 +15,7 @@ import { IncidentCommandCenterView } from "@/components/presenters/incident-comm
 import { CohortDiffView } from "@/components/presenters/cohort-diff-view";
 import { PromptDiffView } from "@/components/presenters/prompt-diff-view";
 import {
+  generateIncidentAiFixPrSummary,
   generateIncidentAiSummary,
   generateIncidentAiRootCauseExplanation,
   generateIncidentAiTicketDraft,
@@ -164,6 +167,27 @@ export default async function IncidentCommandCenterPage({
     }
   };
 
+  const aiFixPrSummaryAction = async (
+    payload: AiFixPrSummaryRequest
+  ): Promise<AiFixPrSummaryResponse> => {
+    "use server";
+    try {
+      return await generateIncidentAiFixPrSummary(incidentId, payload);
+    } catch (_error) {
+      return {
+        title: null,
+        summary: null,
+        change_applied: null,
+        impact_observed: null,
+        evidence_used: [],
+        generated_at: new Date().toISOString(),
+        model: null,
+        status: "error",
+        is_stale: false,
+      };
+    }
+  };
+
   return (
     <IncidentCommandCenterView
       incidentId={incidentId}
@@ -172,6 +196,7 @@ export default async function IncidentCommandCenterPage({
       aiSummaryAction={aiSummaryAction}
       aiRootCauseExplanationAction={aiRootCauseExplanationAction}
       aiTicketDraftAction={aiTicketDraftAction}
+      aiFixPrSummaryAction={aiFixPrSummaryAction}
       suggestedFix={
         suggestedFix
           ? {

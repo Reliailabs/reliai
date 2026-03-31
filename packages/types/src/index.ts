@@ -1325,6 +1325,9 @@ export interface IncidentEventRead {
     | "resolved"
     | "reopened"
     | "ai_summary_generated"
+    | "ai_root_cause_explanation_generated"
+    | "ai_ticket_draft_generated"
+    | "ai_fix_pr_summary_generated"
     | "alert_attempted"
     | "alert_sent"
     | "alert_failed"
@@ -1472,6 +1475,28 @@ export interface AiTicketDraftResponse {
   evidence_used: string[];
   generated_at: string | null;
   model: AiTicketDraftModelInfo | null;
+}
+
+export interface AiFixPrSummaryRequest {
+  regenerate?: boolean;
+  action_event_id?: string | null;
+}
+
+export interface AiFixPrSummaryModelInfo {
+  provider: string;
+  model: string;
+}
+
+export interface AiFixPrSummaryResponse {
+  status: "ok" | "insufficient_evidence" | "error";
+  title: string | null;
+  summary: string | null;
+  change_applied: string | null;
+  impact_observed: string | null;
+  evidence_used: string[];
+  generated_at: string | null;
+  model: AiFixPrSummaryModelInfo | null;
+  is_stale: boolean;
 }
 
 export interface IncidentCommandCenterMetricRead {
