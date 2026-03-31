@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 import type { AiTicketDraftRequest, AiTicketDraftResponse } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
 import { formatTime } from "@/components/presenters/ops-format";
-import { cn } from "@/lib/utils";
 
 type DraftStatus = "idle" | "loading" | "ready" | "insufficient" | "error";
 
@@ -14,40 +13,34 @@ interface AiTicketDraftModalProps {
   open: boolean;
   onClose: () => void;
   incidentId: string;
+  incidentUpdatedAt: string | null;
   generateDraft: (payload: AiTicketDraftRequest) => Promise<AiTicketDraftResponse>;
 }
 
-function buildCopy(draft: AiTicketDraftResponse) {
-  if (draft.status === "error") {
-    return "AI Ticket Draft\n\nAI ticket draft unavailable right now.";
-  }
-  if (draft.status !== "ok") {
-    return "AI Ticket Draft\n\nThere isn’t enough evidence yet to generate a reliable ticket draft.";
-  }
-  return [
-    draft.title ?? "",
-    "",
-    draft.body ?? "",
-  ].join("\n");
-}
-
-export function AiTicketDraftModal({ open, onClose, incidentId, generateDraft }: AiTicketDraftModalProps) {
+export function AiTicketDraftModal({
+  open,
+  onClose,
+  incidentId,
+  incidentUpdatedAt,
+  generateDraft,
+}: AiTicketDraftModalProps) {
   const [status, setStatus] = useState<DraftStatus>("idle");
   const [draft, setDraft] = useState<AiTicketDraftResponse | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [destination, setDestination] = useState<AiTicketDraftRequest["destination"]>("jira");
+  const [copiedTitle, setCopiedTitle] = useState(false);
+  const [copiedBody, setCopiedBody] = useState(false);
+  const [copiedFull, setCopiedFull] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  const basePayload = useMemo<AiTicketDraftRequest>(() => ({ destination }), [destination]);
-
   const fetchDraft = useCallback((override?: Partial<AiTicketDraftRequest>) => {
-    setCopied(false);
+    setCopiedTitle(false);
+    setCopiedBody(false);
+    setCopiedFull(false);
     setStatus("loading");
     startTransition(() => {
       generateDraft({
-        ...basePayload,
+        destination: "jira",
         ...(override ?? {}),
       })
         .then((response) => {
@@ -68,7 +61,7 @@ export function AiTicketDraftModal({ open, onClose, incidentId, generateDraft }:
           setStatus("error");
         });
     });
-  }, [basePayload, generateDraft]);
+  }, [generateDraft]);
 
   useEffect(() => {
     if (!open) return;
@@ -80,6 +73,17 @@ export function AiTicketDraftModal({ open, onClose, incidentId, generateDraft }:
   const isLoading = status === "loading" || isPending;
   const evidence = draft?.evidence_used ?? [];
   const generatedAt = draft?.generated_at ?? null;
+  const isStale =
+    generatedAt && incidentUpdatedAt
+      ? new Date(generatedAt).getTime() < new Date(incidentUpdatedAt).getTime()
+      : false;
+
+  function copyText(text: string, set: (value: boolean) => void) {
+    void navigator.clipboard?.writeText(text).then(() => {
+      set(true);
+      setTimeout(() => set(false), 1500);
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
@@ -98,27 +102,6 @@ export function AiTicketDraftModal({ open, onClose, incidentId, generateDraft }:
         </div>
 
         <div className="space-y-4 px-6 py-5">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-steel">Destination</span>
-            <div className="inline-flex rounded-full border border-zinc-200 bg-zinc-50 p-1">
-              {(["jira", "github"] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => {
-                    setDestination(option);
-                    fetchDraft({ destination: option, regenerate: true });
-                  }}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium transition",
-                    destination === option ? "bg-white text-ink shadow-sm" : "text-steel"
-                  )}
-                >
-                  {option.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {isLoading ? (
             <div className="space-y-3">
@@ -132,6 +115,7 @@ export function AiTicketDraftModal({ open, onClose, incidentId, generateDraft }:
             <>
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-steel">Title</label>
+                <p className="mt-1 text-xs text-steel">Plain text — ready for Jira or GitHub.</p>
                 <input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
@@ -184,6 +168,14 @@ export function AiTicketDraftModal({ open, onClose, incidentId, generateDraft }:
           ) : null}
         </div>
 
+        {isStale && !isLoading ? (
+          <div className="px-6 pb-3">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Draft may be outdated — incident evidence changed since generation.
+            </div>
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 px-6 py-4 text-xs text-zinc-500">
           <span>{generatedAt ? `Generated ${formatTime(generatedAt)}` : "Generated time unavailable"}</span>
           <div className="flex flex-wrap items-center gap-2">
@@ -193,41 +185,23 @@ export function AiTicketDraftModal({ open, onClose, incidentId, generateDraft }:
             <Button
               size="sm"
               variant="subtle"
-              onClick={() => {
-                if (!draft) return;
-                void navigator.clipboard?.writeText(title).then(() => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                });
-              }}
+              onClick={() => copyText(title, setCopiedTitle)}
             >
-              {copied ? "Copied" : "Copy title"}
+              {copiedTitle ? "Copied" : "Copy title"}
             </Button>
             <Button
               size="sm"
               variant="subtle"
-              onClick={() => {
-                if (!draft) return;
-                void navigator.clipboard?.writeText(body).then(() => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                });
-              }}
+              onClick={() => copyText(body, setCopiedBody)}
             >
-              {copied ? "Copied" : "Copy body"}
+              {copiedBody ? "Copied" : "Copy body"}
             </Button>
             <Button
               size="sm"
               variant="subtle"
-              onClick={() => {
-                if (!draft) return;
-                void navigator.clipboard?.writeText(buildCopy(draft)).then(() => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                });
-              }}
+              onClick={() => copyText([title, "", body].join("\n"), setCopiedFull)}
             >
-              {copied ? "Copied" : "Copy full ticket"}
+              {copiedFull ? "Copied" : "Copy full ticket"}
             </Button>
           </div>
         </div>

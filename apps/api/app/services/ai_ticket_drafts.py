@@ -151,12 +151,21 @@ def _build_ticket_body(
     evidence_lines: list[str],
     incident_title: str,
     root_cause_label: str | None,
+    root_cause_probability: float | None,
     recommended_fix_summary: str | None,
     resolution_summary: str | None,
 ) -> str:
     summary_text = _section_body(draft_body, "Summary:") or f"{incident_title}."
-    impact_text = _section_body(draft_body, "Impact:") or "Impact observed in production."
-    root_cause_text = f"The evidence suggests {root_cause_label}." if root_cause_label else ""
+    impact_text = _section_body(draft_body, "Impact:")
+    if root_cause_label:
+        confidence = (
+            f" ({round(root_cause_probability * 100)}% confidence)"
+            if isinstance(root_cause_probability, (int, float))
+            else ""
+        )
+        root_cause_text = f"The evidence suggests {root_cause_label}{confidence}."
+    else:
+        root_cause_text = ""
     recommended_action = recommended_fix_summary
     metric_statement = next((line for line in evidence_lines if "current" in line and "baseline" in line), None)
     if metric_statement and metric_statement not in summary_text:
@@ -165,10 +174,11 @@ def _build_ticket_body(
     lines: list[str] = []
     lines.append("Summary:")
     lines.append(summary_text)
-    lines.append("")
-    lines.append("Impact:")
-    lines.append(impact_text)
-    lines.append("")
+    if impact_text:
+        lines.append("")
+        lines.append("Impact:")
+        lines.append(impact_text)
+        lines.append("")
     if root_cause_label:
         lines.append("Root Cause (based on evidence):")
         lines.append(root_cause_text)
@@ -308,6 +318,11 @@ def generate_ai_ticket_draft(
         if command.root_cause_report.root_cause_probabilities
         else None
     )
+    root_cause_probability = (
+        command.root_cause_report.root_cause_probabilities[0].get("probability")
+        if command.root_cause_report.root_cause_probabilities
+        else None
+    )
     resolution_summary = command.resolution_impact.get("summary") if command.resolution_impact else None
     recommended_fix_summary = (
         command.root_cause_report.recommended_fix.get("summary")
@@ -319,6 +334,7 @@ def generate_ai_ticket_draft(
         evidence_lines=evidence.lines,
         incident_title=incident.title,
         root_cause_label=root_cause_label,
+        root_cause_probability=root_cause_probability,
         recommended_fix_summary=recommended_fix_summary,
         resolution_summary=resolution_summary,
     )

@@ -56,6 +56,9 @@ def test_ai_ticket_draft_uses_deterministic_evidence(client, db_session, monkeyp
     assert "Evidence:" in payload["body"]
     assert "- Success rate current 0.20 vs baseline 0.95" in payload["body"]
     assert "- Root cause signal: Prompt update" in payload["body"]
+    body_lines = payload["body"].splitlines()
+    root_cause_index = body_lines.index("Root Cause (based on evidence):")
+    assert "confidence" in body_lines[root_cause_index + 1]
 
 
 def test_ai_ticket_draft_title_body_limits(client, db_session, monkeypatch):
@@ -118,3 +121,42 @@ def test_ai_ticket_draft_insufficient_evidence(client, db_session, monkeypatch):
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "insufficient_evidence"
+
+
+def test_ai_ticket_draft_omits_impact_when_missing(client, db_session, monkeypatch):
+    owner_session, _, project, _ = _seed_success_rate_regression(client, db_session)
+    incident = _incident_for_type(db_session, project["id"], "success_rate_drop")
+
+    def fake_call_openai_compatible(*_args, **_kwargs):
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "title": "[Incident] Impact omitted",
+                                "body": "Summary:\nIssue observed.",
+                            }
+                        )
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(ai_ticket_drafts, "call_openai_compatible", fake_call_openai_compatible)
+    monkeypatch.setattr(
+        ai_ticket_drafts,
+        "_build_evidence",
+        lambda *_args, **_kwargs: ai_ticket_drafts.EvidenceBundle(
+            lines=["Metric delta", "Root cause signal: Prompt update"], refs=["metric_delta", "root_cause"]
+        ),
+    )
+
+    response = client.post(
+        f"/api/v1/incidents/{incident.id}/ai-ticket-draft",
+        headers=auth_headers(owner_session),
+        json={"destination": "jira"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert "Impact:" not in payload["body"]
