@@ -1,0 +1,117 @@
+import { WorkflowSteps } from "@/components/docs/workflow-steps";
+import { IncidentProofCard } from "@/components/docs/incident-proof-card";
+import { AiTrustCard } from "@/components/docs/ai-trust-card";
+
+export const metadata = { title: "Guardrails — Example" };
+
+# Guardrails & Compliance
+
+A guardrail layer intercepts model outputs before delivery and enforces safety, policy, and compliance rules. Too loose and unsafe content passes. Too strict and valid user requests are blocked. Both directions cause incidents.
+
+<WorkflowSteps />
+
+---
+
+## System architecture
+
+- **Moderation layer** — classifier or rule-based filter on outputs
+- **Policy engine** — configurable thresholds per content category
+- **LLM output** — raw text before guardrail evaluation
+- **Delivery layer** — only receives output that passes guardrails
+
+---
+
+## What can go wrong
+
+**Over-blocking (false positives)**
+
+- Policy threshold tightened unintentionally
+- Classifier update changes score distribution
+- New content categories catch legitimate queries
+
+**Under-blocking (false negatives)**
+
+- Policy threshold loosened in error
+- Adversarial inputs bypass classifier
+- Edge cases not covered by policy rules
+
+**Policy drift**
+
+- Guardrail config changes not tracked alongside prompt changes
+- Different thresholds in staging vs production
+
+---
+
+## Detect
+
+Reliai identifies:
+
+- refusal rate spike (over-blocking)
+- refusal rate drop combined with flagged content increase (under-blocking)
+- policy threshold change in deployment records
+- classifier version update correlated with rate change
+
+---
+
+## Understand
+
+### Incident example — over-blocking
+
+Customer-facing chatbot refusal rate spikes. Legitimate queries about account management are being blocked.
+
+- Refusal rate: **2.1% → 11.4%** over 15 minutes
+- Trigger: guardrail policy config update `v8 → v9`
+- Impact: 600 valid support queries refused
+
+### Root cause
+
+Policy v9 lowered the toxicity threshold from `0.65` to `0.45` across all content categories. This was intended to apply only to the `violence` category but was applied globally due to a config error. Financial and account-related queries that previously scored `0.50–0.60` on the toxicity classifier were now being blocked.
+
+Reliai identified via:
+
+- refusal rate spike aligned with deployment timestamp
+- policy diff between v8 and v9
+- trace clustering: all blocked traces shared a toxicity score in the `0.45–0.65` range
+
+<AiTrustCard />
+
+---
+
+## Fix
+
+- Revert policy config to v8
+- Apply threshold change only to the `violence` category
+- Add category-level threshold configuration to prevent global overrides
+
+---
+
+## Prove
+
+<IncidentProofCard
+  title="INC-4102 — Guardrail over-blocking spike"
+  before="11.4%"
+  after="2.2%"
+  resolvedIn="9 minutes"
+  note="600 blocked queries · Refusal rate measured across chatbot traffic"
+/>
+
+---
+
+## Understand — under-blocking variant
+
+Under-blocking incidents are lower-frequency but higher-severity.
+
+Signs:
+- refusal rate drops significantly without a corresponding query volume change
+- content flagging rate drops while output length or topic range increases
+- policy threshold increase in deployment records
+
+Root cause pattern: threshold loosened in error, or classifier update changed score distribution downward.
+
+---
+
+## Key takeaway
+
+**Guardrail failures are policy tuning issues, not model failures.**
+
+The model is doing what it was told. The guardrail is blocking or passing based on a threshold that may no longer be correct. Tracking policy config changes alongside model changes is the only way to isolate the cause.
