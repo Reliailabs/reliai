@@ -1,0 +1,118 @@
+export const metadata = { title: "Connect a Structured Output System" };
+
+# Connect a Structured Output System
+
+This guide covers systems where the model returns JSON or schema-constrained output.
+
+Reliai helps detect:
+
+- invalid JSON
+- schema drift
+- partial structured outputs
+- model-version regressions
+
+---
+
+## What to send
+
+For each request, send:
+
+- input (`input_text`)
+- model output (`output_text`)
+- schema name or version
+- validation result if available
+- model and prompt metadata
+
+Helpful metadata:
+
+- `model`
+- `prompt_version`
+- `schema_name`
+- `schema_version`
+- `validation_passed`
+- `environment`
+
+---
+
+## Node SDK (recommended)
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "gpt-4.1-mini",
+  input: prompt,
+  output: rawModelOutput,
+  success: true,
+  promptVersion: "extract-v12",
+  requestId: `struct_${Date.now()}`,
+  metadata: {
+    schema_name: "invoice_record",
+    schema_version: "3",
+    validation_passed: isValid,
+    environment: "production",
+  },
+});
+```
+
+---
+
+## Raw HTTP
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"struct_123",
+    "model_name":"gpt-4.1-mini",
+    "success":true,
+    "input_text":"Extract invoice fields from this document",
+    "output_text":"{\"invoice_id\":\"123\", \"total\": 149.20}",
+    "prompt_version":"extract-v12",
+    "metadata_json":{
+      "schema_name":"invoice_record",
+      "schema_version":"3",
+      "validation_passed":true,
+      "environment":"production"
+    }
+  }'
+```
+
+---
+
+## What Reliai will detect
+
+Reliai can help identify:
+
+- validation failures
+- schema-related regressions
+- model updates that alter output structure
+- spikes in downstream queueing caused by malformed records
+
+---
+
+## Best practice
+
+If you already validate outputs, include the result in trace metadata. That makes incidents much easier to detect and explain.
+
+---
+
+## See an example
+
+- [Structured output example](/docs/examples/structured-output)
+
+---
+
+## Next
+
+After sending traces:
+
+- open your project in Reliai
+- confirm traces are arriving
+- review your first incident in the command center
+
+Follow the incident workflow: [/docs/incident-workflow](/docs/incident-workflow)

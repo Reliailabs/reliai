@@ -1,0 +1,111 @@
+import { WorkflowSteps } from "@/components/docs/workflow-steps";
+import { IncidentProofCard } from "@/components/docs/incident-proof-card";
+import { AiTrustCard } from "@/components/docs/ai-trust-card";
+import { LimitStateExample } from "@/components/docs/limit-state-example";
+
+export const metadata = { title: "Agent Workflows — Example" };
+
+# Agent Workflows
+
+An agent system extends a model with tools, memory, and multi-step planning. Each step produces an output that becomes the input for the next. Failures cascade — a single bad tool call can consume all remaining context, drive up latency, and never complete the user's request.
+
+<WorkflowSteps />
+
+---
+
+## System architecture
+
+- **Planner** — decomposes task into steps
+- **Executor** — calls tools and processes results
+- **Tools** — APIs, code execution, search, databases
+- **Memory** — short-term context window, optional long-term store
+- **Termination condition** — how the agent decides it is done
+
+---
+
+## What can go wrong
+
+- Infinite loops (planner re-calls the same tool repeatedly)
+- Step explosion (task decomposed into too many steps)
+- Tool failure propagation (bad tool output poisons downstream steps)
+- Context overflow (execution history fills context window)
+- Termination failure (agent never decides task is complete)
+
+---
+
+## Detect
+
+Reliai identifies:
+
+- execution depth increase (steps per request rising)
+- latency spike (agent running longer without completing)
+- tool call repetition patterns (same call appearing 3+ times)
+- trace length explosion (context window consumption)
+
+<LimitStateExample
+  message="Sampling active — agent traces are high volume"
+  detail="Dropping ~400 spans/min during loop incidents"
+/>
+
+When sampling is active during an agent loop incident, evidence may be partial. Root cause will note this.
+
+---
+
+## Understand
+
+### Incident example
+
+Production research agent enters a loop, repeatedly calling a web search tool with the same query. Each iteration consumes 2,000–4,000 tokens. Requests never complete.
+
+- Latency: **4s → 38s** average
+- Cost: **3x increase** in token spend
+- Completion rate: **91% → 58%**
+- Trigger: updated tool response format for search API v3
+
+### Root cause
+
+Search API v3 changed its response schema. The planner was configured to retry if results did not contain a specific field that no longer existed in the new schema. It retried indefinitely.
+
+Reliai identified via:
+
+- tool call sequence comparison (v2 traces vs v3 traces)
+- detection of repeated tool call signatures
+- prompt diff showing unchanged termination condition
+
+<AiTrustCard />
+
+---
+
+## Fix
+
+- Update planner termination condition to handle missing field gracefully
+- Add max step limit (hard cap at 12 steps)
+- Update tool output parser for API v3 schema
+
+---
+
+## Prove
+
+<IncidentProofCard
+  title="INC-2204 — Agent execution loop"
+  before="38s avg latency"
+  after="5s avg latency"
+  resolvedIn="22 minutes"
+  note="Completion rate restored to 90% · Measured across 800 requests"
+/>
+
+---
+
+## Key takeaway
+
+**Agent failures are systemic, not single-response errors.**
+
+A single bad tool output can cascade across every step of every request in flight. The only way to detect loop patterns is trace-level analysis — log lines and error rates alone won't show you the execution structure.
+
+---
+
+## Try this in your system
+
+Connect your system to Reliai and detect issues like this in real time.
+
+- **Connect your system:** [/docs/getting-started/agents](/docs/getting-started/agents)

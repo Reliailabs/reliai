@@ -1,0 +1,86 @@
+export const metadata = { title: "Limits & Behavior" };
+
+# Limits & System Behavior
+
+Reliai always surfaces system limits so operators understand what they are seeing.
+
+---
+
+## Types of limits
+
+### Ingest limits
+
+Traces may be dropped when ingest volume exceeds capacity.
+
+Shown as: **"Dropping ~X traces/min"**
+
+When this is active, you are seeing a sample of system activity, not all of it.
+
+### API rate limits
+
+Requests may be blocked when rate limits are reached.
+
+Shown as: **"Blocked X requests in last minute"**
+
+### Sampling
+
+Some traces are not stored when sampling is active. This gives you partial visibility into the full trace population.
+
+Shown as: **"Sampling active"**
+
+### Processing delays
+
+Analysis may be queued during high load. Root cause and pattern analysis will appear once processing completes.
+
+Shown as: **"Queued — generation is delayed"**
+
+### Storage limits
+
+Trace history may be truncated when storage is near capacity.
+
+Shown as usage: **"X used / Y limit traces"**
+
+---
+
+## Partial data signals
+
+When system state is degraded, you may see inline indicators:
+
+- **Sampling active** — some traces are not stored
+- **Payload truncated** — some fields are incomplete
+- **Processing delayed** — analysis is queued
+- **Rate limited** — some data may be delayed or dropped
+
+These mean the system is **degraded but operational**. Core functionality continues. Investigation may be limited.
+
+---
+
+## Where limits are surfaced
+
+- **Global banner** — active when a limit affects the current view
+- **Inline indicators** — on specific data panels when partial data is shown
+- **Incident context** — noted when evidence is derived from sampled data
+
+---
+
+## Recovery
+
+When a limit clears:
+
+- a recovery banner is shown briefly (~1–2 minutes)
+- data resumes at full fidelity
+- queued analysis completes automatically
+
+You do not need to take action when a limit clears.
+
+---
+
+## Important
+
+Reliai always tells you when:
+
+- data is incomplete
+- analysis is delayed
+- limits affect what you are seeing
+
+If no limit indicator is shown, data is complete and analysis is current.

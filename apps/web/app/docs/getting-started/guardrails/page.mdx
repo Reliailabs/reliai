@@ -1,0 +1,117 @@
+export const metadata = { title: "Connect a Guardrails System" };
+
+# Connect a Guardrails / Compliance System
+
+This guide covers systems with moderation, safety, policy, or compliance controls.
+
+Reliai helps detect:
+
+- refusal spikes
+- policy over-blocking
+- under-blocking
+- runtime protection regressions
+
+---
+
+## What to send
+
+For each guarded request, send:
+
+- input (`input_text`)
+- output or refusal (`output_text`)
+- policy / guardrail decision metadata
+- model and prompt metadata
+
+Helpful metadata:
+
+- `model`
+- `prompt_version`
+- `policy_name`
+- `policy_action`
+- `refused`
+- `environment`
+
+---
+
+## Node SDK (recommended)
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "claude-3.7-sonnet",
+  input: userInput,
+  output: finalOutput,
+  success: true,
+  promptVersion: "policy-v9",
+  requestId: `guard_${Date.now()}`,
+  metadata: {
+    policy_name: "customer-support-safety",
+    policy_action: "allow",
+    refused: false,
+    environment: "production",
+  },
+});
+```
+
+---
+
+## Raw HTTP
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"guard_123",
+    "model_name":"claude-3.7-sonnet",
+    "success":true,
+    "input_text":"Can you explain our returns policy?",
+    "output_text":"I cannot help with that request.",
+    "prompt_version":"policy-v9",
+    "metadata_json":{
+      "policy_name":"customer-support-safety",
+      "policy_action":"refuse",
+      "refused":true,
+      "environment":"production"
+    }
+  }'
+```
+
+---
+
+## What Reliai will detect
+
+Reliai can help identify:
+
+- excessive refusals
+- policy regressions
+- threshold misconfiguration
+- drift in runtime protection behavior
+
+---
+
+## Best practice
+
+Include explicit guardrail outcomes like `policy_action` and `refused`. These are critical for explaining safety incidents.
+
+---
+
+## See an example
+
+- [Guardrails example](/docs/examples/guardrails)
+
+---
+
+## Next
+
+After sending traces:
+
+- open your project in Reliai
+- confirm traces are arriving
+- review your first incident in the command center
+
+Follow the incident workflow: [/docs/incident-workflow](/docs/incident-workflow)

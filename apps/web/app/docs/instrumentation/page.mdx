@@ -1,0 +1,88 @@
+export const metadata = { title: "Instrumentation" };
+
+# Instrumentation Basics
+
+Reliai ingests trace events from your system. Start with a minimal payload, then add more fields as you learn what you want to investigate.
+
+---
+
+## Required fields
+
+Every trace must include:
+
+- `timestamp`
+- `request_id`
+- `model_name`
+- `success`
+
+---
+
+## Recommended fields
+
+These make investigations dramatically easier:
+
+- `input_text` — what the user asked
+- `output_text` — what the model produced
+- `prompt_version` — prompt or template version
+- `model_provider` — optional provider label
+- `metadata_json` — version, feature flags, request context
+- `latency_ms`, `prompt_tokens`, `completion_tokens`, `total_cost_usd`
+
+**Metadata limits**
+
+- `metadata_json` supports up to 50 top-level keys.
+- Metadata size is capped (keep it concise and structured).
+
+---
+
+## Retrieval span (RAG)
+
+If your system does retrieval, include a `retrieval` object:
+
+- `retrieval_latency_ms`
+- `source_count`
+- `top_k`
+- `query_text`
+- `retrieved_chunks_json` (up to 100 chunks)
+
+SDK field mapping:
+
+- `retrievalLatencyMs` → `retrieval_latency_ms`
+- `sourceCount` → `source_count`
+- `topK` → `top_k`
+- `queryText` → `query_text`
+- `retrievedChunks` → `retrieved_chunks_json`
+
+---
+
+## Smallest possible payload
+
+### Node SDK (recommended)
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "gpt-4.1-mini",
+  input: "How do I reset my password?",
+  output: "Go to settings and click reset password.",
+  success: true,
+  requestId: `req_${Date.now()}`,
+});
+```
+
+### Raw HTTP
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"req_123",
+    "model_name":"gpt-4.1-mini",
+    "success":true
+  }'
+```

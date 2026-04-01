@@ -1,0 +1,124 @@
+export const metadata = { title: "Connect an AI Copilot" };
+
+# Connect an AI Copilot
+
+This guide shows how to connect an AI copilot or assistant to Reliai.
+
+Typical copilot systems include:
+
+- user prompt
+- retrieval and context assembly
+- internal APIs / tools
+- model response
+- final answer shown to the user
+
+Reliai helps detect:
+
+- hallucinated answers
+- refusal spikes
+- wrong tool usage
+- prompt regressions
+
+---
+
+## What to send
+
+For each copilot interaction, send:
+
+- user input (`input_text`)
+- model output (`output_text`)
+- tool-call metadata if available
+- prompt / version metadata
+- model and environment metadata
+
+Helpful metadata:
+
+- `model`
+- `prompt_version`
+- `tool_names`
+- `tool_call_count`
+- `environment`
+- `customer_tier` or `workspace_id`
+
+---
+
+## Node SDK (recommended)
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "claude-3.7-sonnet",
+  input: userMessage,
+  output: assistantReply,
+  success: true,
+  promptVersion: "support-v41",
+  requestId: `copilot_${Date.now()}`,
+  metadata: {
+    tool_names: calledTools,
+    tool_call_count: calledTools.length,
+    environment: "production",
+  },
+});
+```
+
+---
+
+## Raw HTTP
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"copilot_123",
+    "model_name":"claude-3.7-sonnet",
+    "success":true,
+    "input_text":"Can you cancel my subscription today?",
+    "output_text":"Yes, I have cancelled it for you.",
+    "prompt_version":"support-v41",
+    "metadata_json":{
+      "tool_names":["billing.lookup","subscription.cancel"],
+      "tool_call_count":2,
+      "environment":"production"
+    }
+  }'
+```
+
+---
+
+## What Reliai will detect
+
+Reliai can help identify:
+
+- hallucination spikes
+- behavioral drift after prompt changes
+- broken or inconsistent tool-calling patterns
+- support-quality regressions
+
+---
+
+## Best practice
+
+If your copilot uses tools, log tool metadata as part of the trace. This makes incidents much easier to interpret.
+
+---
+
+## See an example
+
+- [AI Support Copilot example](/docs/examples/copilot)
+
+---
+
+## Next
+
+After sending traces:
+
+- open your project in Reliai
+- confirm traces are arriving
+- review your first incident in the command center
+
+Follow the incident workflow: [/docs/incident-workflow](/docs/incident-workflow)

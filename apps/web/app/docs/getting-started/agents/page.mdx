@@ -1,0 +1,127 @@
+export const metadata = { title: "Connect an Agent Workflow" };
+
+# Connect an Agent Workflow
+
+This guide shows how to connect a multi-step agent workflow to Reliai.
+
+Agent systems often include:
+
+- planner
+- executor
+- tool loop
+- memory / state
+- final output
+
+Reliai helps detect:
+
+- loops
+- step explosion
+- tool misuse
+- degraded completion rate
+
+---
+
+## What to send
+
+For each agent run, send:
+
+- initial user request
+- final result or terminal failure
+- step count
+- tool names used
+- duration / latency
+- model and prompt metadata
+
+Helpful metadata:
+
+- `model`
+- `prompt_version`
+- `step_count`
+- `tool_names`
+- `agent_name`
+- `environment`
+
+---
+
+## Node SDK (recommended)
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "gpt-4.1",
+  input: taskInput,
+  output: finalResult,
+  success: true,
+  promptVersion: "agent-v18",
+  requestId: `agent_${Date.now()}`,
+  metadata: {
+    agent_name: "research-agent",
+    step_count: steps.length,
+    tool_names: steps.map((s) => s.tool).filter(Boolean),
+    environment: "production",
+  },
+});
+```
+
+---
+
+## Raw HTTP
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"agent_123",
+    "model_name":"gpt-4.1",
+    "success":true,
+    "input_text":"Summarize the latest customer escalations",
+    "output_text":"Agent failed after repeated lookup loops",
+    "prompt_version":"agent-v18",
+    "metadata_json":{
+      "agent_name":"research-agent",
+      "step_count":14,
+      "tool_names":["search","ticket.lookup","ticket.lookup"],
+      "environment":"production"
+    }
+  }'
+```
+
+---
+
+## What Reliai will detect
+
+Reliai can help identify:
+
+- abnormal step depth
+- looping behavior
+- degraded completion
+- suspicious tool usage sequences
+
+---
+
+## Best practice
+
+Always send `step_count` for agent systems. It is one of the most useful early signals for agent regressions.
+
+---
+
+## See an example
+
+- [Agent workflow example](/docs/examples/agents)
+
+---
+
+## Next
+
+After sending traces:
+
+- open your project in Reliai
+- confirm traces are arriving
+- review your first incident in the command center
+
+Follow the incident workflow: [/docs/incident-workflow](/docs/incident-workflow)

@@ -1,0 +1,106 @@
+export const metadata = { title: "Instrumentation" };
+
+# Instrumentation
+
+This guide explains the minimum event shape needed to connect your system to Reliai.
+
+Reliai works from traces. A trace is a record of one AI system execution or interaction.
+
+---
+
+## Minimum payload
+
+At minimum, send:
+
+- `timestamp`
+- `request_id`
+- `model_name`
+- `success`
+- `input_text`
+- `output_text`
+
+Recommended metadata:
+
+- `prompt_version`
+- `environment`
+- `model_provider`
+
+---
+
+## Node SDK (recommended)
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "gpt-4.1",
+  input: "How do I reset my password?",
+  output: "Go to Settings -> Security -> Reset password.",
+  success: true,
+  promptVersion: "v42",
+  requestId: `req_${Date.now()}`,
+  metadata: {
+    environment: "production",
+  },
+});
+```
+
+---
+
+## Raw HTTP
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"req_123",
+    "model_name":"gpt-4.1",
+    "success":true,
+    "input_text":"How do I reset my password?",
+    "output_text":"Go to Settings -> Security -> Reset password.",
+    "prompt_version":"v42",
+    "metadata_json":{
+      "environment":"production"
+    }
+  }'
+```
+
+---
+
+## Strongly recommended metadata
+
+Depending on your system, include:
+
+- retrieval metadata
+- tool metadata
+- validation outcome
+- guardrail decisions
+- step count
+- tenant or workspace scope
+
+---
+
+## Why this matters
+
+The richer your metadata, the better Reliai can:
+
+- group failures
+- compare traces
+- explain incidents
+- verify fixes
+
+---
+
+## Important
+
+Reliai does not require:
+
+- retraining
+- prompt rewriting
+- model changes
+
+You only need to send trace data consistently.

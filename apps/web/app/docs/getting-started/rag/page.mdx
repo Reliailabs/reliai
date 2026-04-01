@@ -1,0 +1,125 @@
+export const metadata = { title: "Connect a RAG System" };
+
+# Connect a RAG System
+
+This guide shows how to connect a retrieval-augmented generation system to Reliai.
+
+A typical RAG stack includes:
+
+- user query
+- retrieval step
+- retrieved documents
+- prompt assembly
+- LLM generation
+- final response
+
+Reliai helps you detect failures like:
+
+- wrong document retrieval
+- empty retrieval
+- stale context
+- hallucinated answers
+
+---
+
+## What to send
+
+For each request, send:
+
+- the user query (`input_text`)
+- the final model output (`output_text`)
+- retrieval metadata
+- prompt / version metadata
+- latency / status if available
+
+Helpful metadata fields:
+
+- `model`
+- `prompt_version`
+- `retrieval_k`
+- `retrieved_doc_ids`
+- `environment`
+- `tenant` or `project_scope`
+
+---
+
+## Node SDK (recommended)
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "gpt-4.1",
+  input: query,
+  output: answer,
+  success: true,
+  promptVersion: "rag-v42",
+  requestId: `rag_${Date.now()}`,
+  metadata: {
+    retrieval_k: docs.length,
+    retrieved_doc_ids: docs.map((d) => d.id),
+    environment: "production",
+  },
+});
+```
+
+---
+
+## Raw HTTP
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"rag_123",
+    "model_name":"gpt-4.1",
+    "success":true,
+    "input_text":"What is our refund policy?",
+    "output_text":"Refunds are processed within 14 days.",
+    "prompt_version":"rag-v42",
+    "metadata_json":{
+      "retrieval_k":4,
+      "retrieved_doc_ids":["doc_12","doc_77","doc_91","doc_104"],
+      "environment":"production"
+    }
+  }'
+```
+
+---
+
+## What Reliai will detect
+
+Once connected, Reliai can help identify:
+
+- spikes in hallucinated answers
+- retrieval mismatches
+- prompt regressions
+- degraded grounding in retrieved context
+
+---
+
+## Best practice
+
+Include retrieval metadata whenever possible. Without it, Reliai can still observe output quality and incident patterns, but root-cause analysis will be less precise.
+
+---
+
+## See an example
+
+- [RAG example system](/docs/examples/rag)
+
+---
+
+## Next
+
+After sending traces:
+
+- open your project in Reliai
+- confirm traces are arriving
+- review your first incident in the command center
+
+Follow the incident workflow: [/docs/incident-workflow](/docs/incident-workflow)

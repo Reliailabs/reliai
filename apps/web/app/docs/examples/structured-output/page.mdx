@@ -1,0 +1,106 @@
+import { WorkflowSteps } from "@/components/docs/workflow-steps";
+import { IncidentProofCard } from "@/components/docs/incident-proof-card";
+import { LimitStateExample } from "@/components/docs/limit-state-example";
+
+export const metadata = { title: "Structured Output — Example" };
+
+# Structured Output Systems
+
+A structured output system instructs the model to return data in a specific format — JSON, XML, or a custom schema. Downstream APIs parse and act on this output. When the format breaks, downstream systems break silently or loudly depending on how much validation exists.
+
+<WorkflowSteps />
+
+---
+
+## System architecture
+
+- **LLM** — generates output constrained to a schema
+- **Schema definition** — JSON schema, Pydantic model, or TypeScript type
+- **Validation layer** — parses and validates before passing downstream
+- **Downstream APIs** — consume the structured output
+
+---
+
+## What can go wrong
+
+- Invalid JSON (model outputs trailing commas, unquoted keys)
+- Schema mismatch (unexpected field names, wrong types)
+- Partial outputs (model stops mid-object, context window exhausted)
+- Extra text outside the schema (preamble, explanation, apology)
+- Silent corruption (valid JSON, wrong values — harder to detect)
+
+---
+
+## Detect
+
+Reliai identifies:
+
+- validation error rate spike
+- schema mismatch patterns across model versions
+- increase in output length without schema justification (sign of extra-schema text)
+- downstream API error rate increase correlated with model changes
+
+---
+
+## Understand
+
+### Incident example
+
+An extraction pipeline begins failing downstream validation. Customer records are not being processed.
+
+- Validation error rate: **0.3% → 14%** over 30 minutes
+- Trigger: model version update (`gpt-4o-2024-05-13` → `gpt-4o-2024-08-06`)
+- Impact: 2,800 records queued but unprocessable
+
+<LimitStateExample
+  message="Processing delayed — queued records await analysis"
+  detail="High validation error volume can delay Reliai's pattern detection"
+/>
+
+### Root cause
+
+The new model version changed its formatting behavior for nested objects. It began including a brief explanation before the JSON block (`"Here is the extracted data: {\n...}`), which caused JSON parsers to fail on the prefix string.
+
+The schema was unchanged. The prompt was unchanged. The model's output style shifted.
+
+Reliai identified via:
+
+- output comparison between old and new model version traces
+- pattern detection on output prefix strings
+- model version diff in deployment records
+
+---
+
+## Fix
+
+- Add output parser to strip non-JSON prefix text
+- Add explicit prompt instruction: "Respond with only the JSON object. No explanation."
+- Pin model version until behavior is validated
+
+---
+
+## Prove
+
+<IncidentProofCard
+  title="INC-3017 — Structured output validation failures"
+  before="14%"
+  after="0.4%"
+  resolvedIn="11 minutes"
+  note="2,800 queued records reprocessed · Measured across extraction pipeline"
+/>
+
+---
+
+## Key takeaway
+
+**Structured output failures are format integrity issues, not reasoning failures.**
+
+The model often knows the right answer. It fails to express it in the required format. Model version updates are the most common silent trigger — they change formatting behavior without changing task performance.
+
+---
+
+## Try this in your system
+
+Connect your system to Reliai and detect issues like this in real time.
+
+- **Connect your system:** [/docs/getting-started/structured-output](/docs/getting-started/structured-output)

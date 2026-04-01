@@ -12,6 +12,7 @@ All notable changes to Reliai will be documented in this file.
 - AI ticket draft modal that generates editable incident tickets from deterministic evidence.
 - Limit visibility system with /system/limits endpoint, global banner, and contextual limit states.
 - Limit banners now show window-grounded counters, storage impact context, and a recovery confirmation message.
+- Getting started docs, system-specific integration quickstarts, and instrumentation basics for trace ingestion.
 
 ### Fixed
 

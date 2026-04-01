@@ -1,0 +1,73 @@
+export const metadata = { title: "Incident Workflow" };
+
+# Incident Workflow
+
+Reliai is built around a single operational loop: **Detect → Understand → Fix → Prove → Share**.
+
+Use this guide when an incident is open and you need to move through it systematically.
+
+---
+
+## Detect
+
+Reliai identifies regressions automatically using:
+
+- metric changes (latency, error rate, refusal rate)
+- failure pattern clustering across traces
+- threshold breaches on tracked signals
+
+When a regression is detected, an incident is opened and signals are grouped into a single investigation unit.
+
+---
+
+## Understand
+
+Use the incident command center to understand what happened.
+
+**Start with metrics** — identify what changed and when.
+
+**Inspect traces** — compare failing traces against baseline traces from before the regression.
+
+**Review root cause** — the root cause panel is computed deterministically from:
+
+- trace comparisons
+- prompt or model version changes
+- clustering of failure signatures
+
+**The root cause is not AI-generated.** It is computed from system signals.
+
+You may optionally use the AI explanation to get a plain-language summary of the evidence, but this is grounded in the same deterministic signals.
+
+---
+
+## Fix
+
+Apply a fix based on:
+
+- the recommended action shown in the command center
+- your own trace inspection and judgment
+
+Common fixes include prompt changes, model version rollbacks, and guardrail policy updates.
+
+---
+
+## Prove
+
+After applying a fix, Reliai measures resolution impact:
+
+- whether the failure rate declined
+- whether metric signals recovered
+- how the post-fix traces compare to pre-regression baseline
+
+This is the **Fix Verified** step. Do not close an incident until you have reviewed the resolution impact.
+
+---
+
+## Share
+
+Export incident context using:
+
+- **Ticket draft** — an AI-generated draft grounded in the evidence, ready to paste into Jira or GitHub
+- **Fix summary** — a short description of what changed and what was measured
+
+These are AI-assisted drafts. Review before sending.

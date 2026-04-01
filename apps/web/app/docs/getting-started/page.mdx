@@ -1,0 +1,120 @@
+export const metadata = { title: "Getting Started" };
+
+# Getting Started
+
+Connect your system to Reliai and start detecting production AI issues in minutes.
+
+Reliai works by receiving **trace data** from your system. Once traces are flowing, Reliai can:
+
+- detect regressions
+- group failures into incidents
+- show root-cause evidence
+- help your team resolve and document issues
+
+Reliai treats raw traces as the source of truth. Richer metadata improves incident understanding and root-cause clarity.
+
+---
+
+## Start here
+
+### 1. Create a project
+
+In Reliai:
+
+- create or select an organization
+- create a project
+- generate an API key
+
+### 2. Send traces
+
+At minimum, each trace should include:
+
+- `request_id`
+- `model_name`
+- `input_text`
+- `output_text`
+- `timestamp`
+- `success`
+- `metadata_json` like model, prompt version, environment
+
+### 3. Choose your system guide
+
+Use the guide that matches your architecture:
+
+- [Connect a RAG system](/docs/getting-started/rag)
+- [Connect an AI copilot](/docs/getting-started/copilot)
+- [Connect an agent workflow](/docs/getting-started/agents)
+- [Connect a structured output system](/docs/getting-started/structured-output)
+- [Connect a guardrails / compliance system](/docs/getting-started/guardrails)
+
+### 4. Understand instrumentation
+
+Read the [instrumentation guide](/docs/getting-started/instrumentation) for the core event model and payload shape.
+
+---
+
+## Node SDK (recommended)
+
+Use the SDK when you want the fastest path from application code to traces in Reliai.
+
+```ts
+import { ReliaiClient } from "reliai";
+
+const client = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await client.trace({
+  model: "gpt-4.1",
+  input: "How do I reset my password?",
+  output: "Go to Settings -> Security -> Reset password.",
+  success: true,
+  promptVersion: "v42",
+  requestId: `req_${Date.now()}`,
+  metadata: {
+    environment: "production",
+  },
+});
+```
+
+---
+
+## Raw HTTP
+
+Use raw HTTP when you want a language-agnostic integration or want to inspect the payload directly.
+
+```bash
+curl -X POST https://api.reliai.ai/api/v1/ingest/traces \
+  -H "X-API-Key: $RELIAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp":"2026-04-01T12:00:00Z",
+    "request_id":"req_123",
+    "model_name":"gpt-4.1",
+    "success":true,
+    "input_text":"How do I reset my password?",
+    "output_text":"Go to Settings -> Security -> Reset password.",
+    "prompt_version":"v42",
+    "metadata_json":{
+      "environment":"production"
+    }
+  }'
+```
+
+---
+
+## What happens next
+
+Once traces are flowing:
+
+1. Reliai stores request/response behavior
+2. Metrics and regressions begin to form
+3. Incidents appear when meaningful changes are detected
+4. Your team can investigate in the command center
+
+---
+
+## Next steps
+
+- [Incident workflow](/docs/incident-workflow)
+- [Core concepts](/docs/concepts)
+- [How AI works in Reliai](/docs/ai)
+- [Limits and partial data](/docs/limits)

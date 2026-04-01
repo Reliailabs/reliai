@@ -1,0 +1,111 @@
+import { WorkflowSteps } from "@/components/docs/workflow-steps";
+import { IncidentProofCard } from "@/components/docs/incident-proof-card";
+import { AiTrustCard } from "@/components/docs/ai-trust-card";
+import { LimitStateExample } from "@/components/docs/limit-state-example";
+
+export const metadata = { title: "RAG System — Example" };
+
+# RAG System
+
+A retrieval-augmented generation system pairs an LLM with a vector database. The model only knows what the retriever surfaces. When retrieval breaks, generation breaks — but the output looks like a hallucination.
+
+<WorkflowSteps />
+
+---
+
+## System architecture
+
+- **LLM** — generates responses from retrieved context
+- **Vector database** — stores and retrieves document embeddings
+- **Embeddings pipeline** — converts documents and queries to vectors
+- **Prompt** — structures the retrieved context for the model
+
+Each layer is a failure point. Reliai traces through all of them.
+
+---
+
+## What can go wrong
+
+- Incorrect documents retrieved (wrong namespace, stale embeddings)
+- Empty retrieval results (query vector mismatch)
+- Context window overflow (too many chunks, model ignores most)
+- Hallucinated answers when retrieval returns nothing relevant
+- Prompt change alters how retrieved context is consumed
+
+---
+
+## Detect
+
+Reliai identifies:
+
+- spike in failure rate or refusal rate
+- divergence in trace patterns between baseline and failing requests
+- drop in retrieval hit rate (if tracked as a span)
+- increase in output length without proportional input context
+
+<LimitStateExample
+  message="Sampling active — retrieval traces may be incomplete"
+  detail="Partial trace coverage can mask whether retrieval or generation caused the failure"
+/>
+
+---
+
+## Understand
+
+### Incident example
+
+A production support assistant begins returning confidently incorrect answers.
+
+- Failure rate: **4% → 19%** over 40 minutes
+- Trigger: prompt version v12 deployed
+- Impact: hallucinated product documentation
+
+### Root cause
+
+Prompt v12 restructured the system message. The new format placed retrieved context after the instruction block, which caused the model to weight its parametric memory over the retrieved text.
+
+The retriever was functioning normally. The failure was in how the model consumed its output.
+
+Reliai identified this via:
+
+- trace comparison (v11 vs v12 requests)
+- prompt diff between versions
+- clustering of failures by query type
+
+<AiTrustCard />
+
+---
+
+## Fix
+
+- Revert prompt to v11
+- Adjust context placement in the prompt structure
+- Add retrieval grounding instruction
+
+---
+
+## Prove
+
+<IncidentProofCard
+  title="INC-0891 — RAG hallucination spike"
+  before="19%"
+  after="4%"
+  resolvedIn="18 minutes"
+  note="Measured across 1,200 production traces"
+/>
+
+---
+
+## Key takeaway
+
+**RAG failures are often retrieval-consumption failures, not retrieval failures.**
+
+The retriever returned documents. The model ignored them. Tracing through both layers is the only way to distinguish the two.
+
+---
+
+## Try this in your system
+
+Connect your system to Reliai and detect issues like this in real time.
+
+- **Connect your system:** [/docs/getting-started/rag](/docs/getting-started/rag)
