@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 
-import type { ReliaiGuardrailEvent } from "./guardrails.ts";
-import type { ReliaiTraceEvent } from "./tracing.ts";
+import type { ReliaiGuardrailEvent } from "./guardrails";
+import type { ReliaiTraceEvent } from "./tracing";
 
 type EventEnvelope =
   | { kind: "trace"; payload: ReliaiTraceEvent }

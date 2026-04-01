@@ -1,4 +1,4 @@
-import type { ReliaiClient } from "../client.ts";
+import type { ReliaiClient } from "../client";
 
 function getHeader(headers: Headers | Record<string, string> | string[][], key: string): string | null {
   if (headers instanceof Headers) {

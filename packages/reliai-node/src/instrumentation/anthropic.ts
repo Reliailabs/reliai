@@ -1,4 +1,4 @@
-import type { ReliaiTraceEvent } from "../tracing.ts";
+import type { ReliaiTraceEvent } from "../tracing";
 
 function coerceBlocks(content: unknown): string {
   if (typeof content === "string") {

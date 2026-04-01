@@ -1,9 +1,9 @@
-import { ReliaiClient, type ReliaiClientOptions } from "./client.ts";
-import { costBudget, latencyRetry, structuredOutput } from "./guardrails.ts";
-import { buildAnthropicTrace, isAnthropicRequest } from "./instrumentation/anthropic.ts";
-import { detectFrameworkFromHeaders, instrumentLangChain } from "./instrumentation/langchain.ts";
-import { instrumentLlamaIndex } from "./instrumentation/llamaindex.ts";
-import { buildOpenAITrace, isOpenAIRequest } from "./instrumentation/openai.ts";
+import { ReliaiClient, type ReliaiClientOptions } from "./client";
+import { costBudget, latencyRetry, structuredOutput } from "./guardrails";
+import { buildAnthropicTrace, isAnthropicRequest } from "./instrumentation/anthropic";
+import { detectFrameworkFromHeaders, instrumentLangChain } from "./instrumentation/langchain";
+import { instrumentLlamaIndex } from "./instrumentation/llamaindex";
+import { buildOpenAITrace, isOpenAIRequest } from "./instrumentation/openai";
 
 let autoClient: ReliaiClient | null = null;
 let originalFetch: typeof fetch | null = null;

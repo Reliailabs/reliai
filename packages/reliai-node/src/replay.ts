@@ -1,4 +1,4 @@
-import { getDefaultClient, type ReliaiClient } from "./client.ts";
+import { getDefaultClient, type ReliaiClient } from "./client";
 
 export interface ReliaiReplayStep {
   span_id: string;

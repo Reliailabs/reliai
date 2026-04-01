@@ -1,4 +1,4 @@
-import { getDefaultClient, type ReliaiSpanScope } from "./client.ts";
+import { getDefaultClient, type ReliaiSpanScope } from "./client";
 
 export interface ReliaiPipelineMetadata {
   spanType?: string;

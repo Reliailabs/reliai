@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { ReliaiClient } from "./client.ts";
+import type { ReliaiClient } from "./client";
 
 export type GuardrailAction = "block" | "retry" | "fallback_model" | "log_only";
 

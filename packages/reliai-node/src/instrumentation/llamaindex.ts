@@ -1,4 +1,4 @@
-import type { ReliaiClient } from "../client.ts";
+import type { ReliaiClient } from "../client";
 
 const dynamicImport = new Function("specifier", "return import(specifier)") as (
   specifier: string,
