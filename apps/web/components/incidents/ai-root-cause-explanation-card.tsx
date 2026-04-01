@@ -8,6 +8,7 @@ import type {
 } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
+import { DocsLink } from "@/components/docs/docs-link";
 import { formatTime } from "@/components/presenters/ops-format";
 import { useLimitStatus } from "@/hooks/use-limit-status";
 
@@ -110,6 +111,7 @@ export function AiRootCauseExplanationCard({
         <div>
           <p className="text-sm font-semibold text-zinc-900">AI Explanation</p>
           <p className="text-xs text-zinc-500">Interprets the current root-cause evidence</p>
+        <DocsLink href="/docs/ai" label="How AI works in Reliai" variant="light" />
         </div>
         <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
           Draft

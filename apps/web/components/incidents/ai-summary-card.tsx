@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import type { AiIncidentSummaryRequest, AiIncidentSummaryResponse } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
+import { DocsLink } from "@/components/docs/docs-link";
 import { formatTime } from "@/components/presenters/ops-format";
 import { useLimitStatus } from "@/hooks/use-limit-status";
 import { cn } from "@/lib/utils";
@@ -98,6 +99,7 @@ export function AiSummaryCard({ incidentId, projectId, incidentUpdatedAt, genera
         <div>
           <p className="text-sm font-semibold text-white">AI Summary</p>
           <p className="text-xs text-zinc-300">Based on incident evidence</p>
+        <DocsLink href="/docs/ai" label="How AI works in Reliai" variant="dark" />
         </div>
         <span className="text-xs text-zinc-300">Draft</span>
       </div>

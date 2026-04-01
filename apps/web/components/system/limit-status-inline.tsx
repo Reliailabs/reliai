@@ -5,6 +5,7 @@ import { AlertTriangle, Clock } from "lucide-react";
 
 import type { LimitStatus } from "@reliai/types";
 
+import { DocsLink } from "@/components/docs/docs-link";
 import { cn } from "@/lib/utils";
 
 const standardNumber = new Intl.NumberFormat("en-US");
@@ -111,6 +112,9 @@ export function LimitStatusInline({ limits }: { limits: LimitStatus[] }) {
                 Incident evidence may be partial due to sampling.
               </p>
             ) : null}
+            <div className="mt-1">
+              <DocsLink href="/docs/limits" label="Learn how limits affect data" variant="light" />
+            </div>
             {primaryCta || secondaryCta ? (
               <div className="mt-1 text-xs">
                 {primaryCta ? (

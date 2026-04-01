@@ -1,4 +1,5 @@
-import type { Metadata, ReactNode } from "next";
+import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     "Detect, investigate, and resolve AI system issues using real-time telemetry, deterministic root cause analysis, and AI-assisted workflows.",
 };
 
-const navItems = [
+const navItems: { label: string; href: string }[] = [
   { label: "Overview", href: "/docs" },
   { label: "Incident Workflow", href: "/docs/incident-workflow" },
   { label: "Core Concepts", href: "/docs/concepts" },
@@ -31,7 +32,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
           {navItems.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              href={item.href as never}
               className="block rounded px-[8px] py-[6px] text-sm text-textSecondary hover:bg-surface hover:text-textPrimary transition-colors"
             >
               {item.label}

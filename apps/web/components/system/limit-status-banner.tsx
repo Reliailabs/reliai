@@ -7,6 +7,7 @@ import { AlertTriangle } from "lucide-react";
 import type { LimitStatus } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
+import { DocsLink } from "@/components/docs/docs-link";
 import { useLimitStatus } from "@/hooks/use-limit-status";
 import { cn } from "@/lib/utils";
 
@@ -230,6 +231,9 @@ export function LimitStatusBanner() {
                 {limit!.actionable.primary}
               </div>
             ) : null}
+            <div className="mt-2">
+              <DocsLink href="/docs/limits" label="Why am I seeing this?" variant="light" />
+            </div>
             {remainingCount > 0 ? (
               <button
                 type="button"

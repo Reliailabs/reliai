@@ -39,6 +39,9 @@ importers:
       '@reliai/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@types/mdx':
+        specifier: ^2.0.13
+        version: 2.0.13
       '@workos-inc/authkit-nextjs':
         specifier: ^2.15.0
         version: 2.15.0(next@15.1.11(@playwright/test@1.58.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)

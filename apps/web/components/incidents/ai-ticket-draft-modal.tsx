@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import type { AiTicketDraftRequest, AiTicketDraftResponse } from "@reliai/types";
 
 import { Button } from "@/components/ui/button";
+import { DocsLink } from "@/components/docs/docs-link";
 import { formatTime } from "@/components/presenters/ops-format";
 import { useLimitStatus } from "@/hooks/use-limit-status";
 import { cn } from "@/lib/utils";
@@ -137,6 +138,7 @@ export function AiTicketDraftModal({
             <p className="text-xl font-semibold text-white">Draft Ticket</p>
             <p className="mt-0.5 text-sm text-zinc-300">Based on incident evidence</p>
             <p className="mt-1 text-xs text-zinc-400">Built from current incident evidence. Review before use.</p>
+            <DocsLink href="/docs/ai" label="How AI works in Reliai" variant="dark" />
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-zinc-200">

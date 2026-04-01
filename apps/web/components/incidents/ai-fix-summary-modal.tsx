@@ -6,6 +6,7 @@ import type { AiFixPrSummaryRequest, AiFixPrSummaryResponse } from "@reliai/type
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { DocsLink } from "@/components/docs/docs-link";
 import { formatTime } from "@/components/presenters/ops-format";
 import { useLimitStatus } from "@/hooks/use-limit-status";
 
@@ -155,6 +156,7 @@ export function AiFixSummaryModal({
             <p className="mt-0.5 text-sm text-zinc-500">
               Built from fix event and incident evidence. Review before sharing.
             </p>
+            <DocsLink href="/docs/ai" label="How AI works in Reliai" variant="light" />
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
