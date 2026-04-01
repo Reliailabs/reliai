@@ -10,6 +10,9 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@mdx-js/loader": "^3.1.1",
+    "@mdx-js/react": "^3.1.1",
+    "@next/mdx": "^16.2.2",
     "@radix-ui/react-slot": "^1.1.2",
     "@reliai/types": "workspace:*",
     "@workos-inc/authkit-nextjs": "^2.15.0",

@@ -1,11 +1,15 @@
 import type { NextConfig } from "next";
+import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  pageExtensions: ["ts", "tsx", "mdx"],
   experimental: {
-    typedRoutes: true
+    typedRoutes: true,
   },
-  transpilePackages: ["@reliai/types"]
+  transpilePackages: ["@reliai/types"],
 };
 
-export default nextConfig;
+const withMDX = createMDX({});
+
+export default withMDX(nextConfig);

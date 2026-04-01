@@ -1,0 +1,72 @@
+export const metadata = { title: "AI Guide" };
+
+# AI in Reliai
+
+Reliai uses AI to help operators move faster — not to replace system truth.
+
+---
+
+## What AI does
+
+- Summarizes incidents in plain language
+- Explains root cause evidence
+- Drafts tickets for export to Jira or GitHub
+- Drafts fix summaries for post-mortems
+
+These outputs are always optional and always grounded in deterministic signals.
+
+---
+
+## What AI does NOT do
+
+- Generate or modify traces
+- Determine root cause
+- Trigger actions or write system data
+- Replace metric signals or pattern analysis
+
+---
+
+## Why AI is not used on traces
+
+Traces are raw system evidence. They must remain exact, complete, and inspectable.
+
+AI is applied only **after** signals are computed:
+
+1. Traces are ingested and stored unmodified
+2. Patterns and metrics are computed from traces
+3. Root cause is determined from those patterns
+4. AI is then applied to explain or summarize the result
+
+AI never touches the evidence — only the explanation of it.
+
+---
+
+## Trust model
+
+Reliai separates two layers:
+
+**Deterministic signals → source of truth**
+
+- traces, metrics, pattern analysis, root cause
+
+**AI → interpretation layer**
+
+- summaries, explanations, draft exports
+
+AI outputs are:
+
+- drafts, not decisions
+- optional, not required
+- grounded in evidence, not hallucinated
+
+---
+
+## How to use AI safely
+
+**Use AI summaries** to orient quickly during an incident. They save time, but verify against the raw evidence.
+
+**Use AI explanations** to understand root cause in plain language. They are grounded in the same signals you can inspect directly.
+
+**Use ticket drafts** as a starting point. They are not ready to send — review and edit before sharing.
+
+**Do not rely on AI** to decide whether an incident is resolved. Use resolution impact metrics for that.
