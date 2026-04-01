@@ -9,8 +9,9 @@
     },
     {
       "name": "Web (Next.js)",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "web", "dev"],
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "env": { "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" },
+      "runtimeArgs": ["/opt/homebrew/Cellar/pnpm/10.26.0/libexec/lib/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web", "dev"],
       "port": 3000
     }
   ]
