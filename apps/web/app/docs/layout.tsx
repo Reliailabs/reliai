@@ -11,12 +11,18 @@ export const metadata: Metadata = {
     "Detect, investigate, and resolve AI system issues using real-time telemetry, deterministic root cause analysis, and AI-assisted workflows.",
 };
 
-const navItems: { label: string; href: string }[] = [
+const navItems: { label: string; href: string; group?: string }[] = [
   { label: "Overview", href: "/docs" },
   { label: "Incident Workflow", href: "/docs/incident-workflow" },
   { label: "Core Concepts", href: "/docs/concepts" },
   { label: "AI Guide", href: "/docs/ai" },
   { label: "Limits & Behavior", href: "/docs/limits" },
+  { label: "Examples", href: "/docs/examples", group: "examples" },
+  { label: "RAG System", href: "/docs/examples/rag", group: "examples" },
+  { label: "AI Copilot", href: "/docs/examples/copilot", group: "examples" },
+  { label: "Agents", href: "/docs/examples/agents", group: "examples" },
+  { label: "Structured Output", href: "/docs/examples/structured-output", group: "examples" },
+  { label: "Guardrails", href: "/docs/examples/guardrails", group: "examples" },
 ];
 
 export default function DocsLayout({ children }: { children: ReactNode }) {
@@ -33,7 +39,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href as never}
-              className="block rounded px-[8px] py-[6px] text-sm text-textSecondary hover:bg-surface hover:text-textPrimary transition-colors"
+              className={`block rounded px-[8px] py-[6px] text-sm text-textSecondary hover:bg-surface hover:text-textPrimary transition-colors${item.group === "examples" && item.href !== "/docs/examples" ? " pl-[20px] text-xs" : ""}`}
             >
               {item.label}
             </Link>
