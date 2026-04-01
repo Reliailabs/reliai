@@ -1,6 +1,6 @@
 import { WorkflowSteps } from "@/components/docs/workflow-steps";
 import { IncidentProofCard } from "@/components/docs/incident-proof-card";
-import { AiTrustCard } from "@/components/docs/ai-trust-card";
+import { LimitStateExample } from "@/components/docs/limit-state-example";
 
 export const metadata = { title: "Structured Output — Example" };
 
@@ -52,6 +52,11 @@ An extraction pipeline begins failing downstream validation. Customer records ar
 - Trigger: model version update (`gpt-4o-2024-05-13` → `gpt-4o-2024-08-06`)
 - Impact: 2,800 records queued but unprocessable
 
+<LimitStateExample
+  message="Processing delayed — queued records await analysis"
+  detail="High validation error volume can delay Reliai's pattern detection"
+/>
+
 ### Root cause
 
 The new model version changed its formatting behavior for nested objects. It began including a brief explanation before the JSON block (`"Here is the extracted data: {\n...}`), which caused JSON parsers to fail on the prefix string.
@@ -63,8 +68,6 @@ Reliai identified via:
 - output comparison between old and new model version traces
 - pattern detection on output prefix strings
 - model version diff in deployment records
-
-<AiTrustCard />
 
 ---
 

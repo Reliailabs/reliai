@@ -1,6 +1,7 @@
 import { WorkflowSteps } from "@/components/docs/workflow-steps";
 import { IncidentProofCard } from "@/components/docs/incident-proof-card";
 import { AiTrustCard } from "@/components/docs/ai-trust-card";
+import { LimitStateExample } from "@/components/docs/limit-state-example";
 
 export const metadata = { title: "RAG System — Example" };
 
@@ -41,6 +42,11 @@ Reliai identifies:
 - divergence in trace patterns between baseline and failing requests
 - drop in retrieval hit rate (if tracked as a span)
 - increase in output length without proportional input context
+
+<LimitStateExample
+  message="Sampling active — retrieval traces may be incomplete"
+  detail="Partial trace coverage can mask whether retrieval or generation caused the failure"
+/>
 
 ---
 
