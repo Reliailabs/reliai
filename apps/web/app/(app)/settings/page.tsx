@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { BellRing, RadioTower, ShieldCheck, Slash } from "lucide-react";
@@ -9,7 +10,10 @@ import {
   enableOrgAlertTarget,
   getOrganization,
   getOrgAlertTarget,
+  listProjects,
   testOrgAlertTarget,
+  updateOrganization,
+  updateProject,
   upsertOrgAlertTarget
 } from "@/lib/api";
 import { requireOperatorSession } from "@/lib/auth";
@@ -32,9 +36,19 @@ export default async function SettingsPage({
   );
   const requestedOrganizationId =
     typeof params.organizationId === "string" ? params.organizationId : undefined;
+  const requestedTab = typeof params.tab === "string" ? params.tab : undefined;
+  const requestedProjectId = typeof params.projectId === "string" ? params.projectId : undefined;
   const selectedOrganization =
     availableOrganizations.find((organization) => organization.id === requestedOrganizationId) ??
     availableOrganizations[0] ??
+    null;
+  const selectedTab = requestedTab === "alerts" || requestedTab === "organization" ? requestedTab : "project";
+  const projectList = selectedOrganization
+    ? await listProjects({ organizationId: selectedOrganization.id, limit: 200 }).catch(() => null)
+    : null;
+  const selectedProject =
+    projectList?.items.find((project) => project.id === requestedProjectId) ??
+    projectList?.items[0] ??
     null;
   const currentTarget = selectedOrganization
     ? await getOrgAlertTarget(selectedOrganization.id).catch(() => null)
@@ -86,6 +100,39 @@ export default async function SettingsPage({
     );
   }
 
+  async function updateOrganizationAction(formData: FormData) {
+    "use server";
+    const organizationId = String(formData.get("organization_id") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const slug = String(formData.get("slug") ?? "").trim();
+
+    await updateOrganization(organizationId, {
+      name: name || undefined,
+      slug: slug || undefined,
+    });
+
+    revalidatePath("/settings");
+    redirect(`/settings?tab=organization&organizationId=${encodeURIComponent(organizationId)}`);
+  }
+
+  async function updateProjectAction(formData: FormData) {
+    "use server";
+    const projectId = String(formData.get("project_id") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const slug = String(formData.get("slug") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+
+    await updateProject(projectId, {
+      name: name || undefined,
+      slug: slug || undefined,
+      description: description || null,
+    });
+
+    revalidatePath("/settings");
+    revalidatePath(`/projects/${projectId}/settings`);
+    redirect(`/settings?tab=project&projectId=${encodeURIComponent(projectId)}`);
+  }
+
   return (
     <div className="space-y-6">
       <header className="rounded-[28px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
@@ -93,11 +140,10 @@ export default async function SettingsPage({
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Settings</p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-              Operator alert target settings
+              Operator settings
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-steel">
-              Manage the org-level Slack destination used for deterministic incident alerts.
-              Webhook secrets are never returned in full after write.
+              Manage project and organization profile data alongside the org-level alert target.
             </p>
           </div>
           {selectedOrganization ? (
@@ -108,156 +154,346 @@ export default async function SettingsPage({
         </div>
       </header>
 
-      {availableOrganizations.length > 1 ? (
-        <Card className="rounded-[24px] border-zinc-300 p-5">
-          <form action="/settings" className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-sm font-medium text-ink">Organization</p>
-              <p className="mt-1 text-sm text-steel">Switch the org context for Slack target management.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <select
-                name="organizationId"
-                defaultValue={selectedOrganization?.id}
-                className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
-              >
-                {availableOrganizations.map((organization) => (
-                  <option key={organization.id} value={organization.id}>
-                    {organization.name}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" variant="outline">
-                Switch
-              </Button>
-            </div>
-          </form>
-        </Card>
-      ) : null}
-
-      {testMessage ? (
-        <Card
-          className={`rounded-[24px] p-4 ${
-            testSuccess ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50"
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href={`/settings?tab=project${selectedProject ? `&projectId=${encodeURIComponent(selectedProject.id)}` : ""}`}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            selectedTab === "project"
+              ? "bg-ink text-white"
+              : "border border-zinc-300 bg-white text-ink hover:bg-zinc-50"
           }`}
         >
-          <p className="text-sm font-medium text-ink">{testSuccess ? "Slack test succeeded" : "Slack test failed"}</p>
-          <p className="mt-2 text-sm text-steel">{testMessage}</p>
-        </Card>
-      ) : null}
+          Project settings
+        </Link>
+        <Link
+          href={`/settings?tab=organization${selectedOrganization ? `&organizationId=${encodeURIComponent(selectedOrganization.id)}` : ""}`}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            selectedTab === "organization"
+              ? "bg-ink text-white"
+              : "border border-zinc-300 bg-white text-ink hover:bg-zinc-50"
+          }`}
+        >
+          Organization settings
+        </Link>
+        <Link
+          href={`/settings?tab=alerts${selectedOrganization ? `&organizationId=${encodeURIComponent(selectedOrganization.id)}` : ""}`}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            selectedTab === "alerts"
+              ? "bg-ink text-white"
+              : "border border-zinc-300 bg-white text-ink hover:bg-zinc-50"
+          }`}
+        >
+          Alert settings
+        </Link>
+      </div>
 
-      {selectedOrganization ? (
+      {selectedTab === "project" ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_360px]">
           <Card className="rounded-[28px] border-zinc-300 p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Slack target</p>
-                <h2 className="mt-2 text-2xl font-semibold text-ink">
-                  {currentTarget ? currentTarget.channel_target : "No target configured"}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-steel">
-                  Save one org-level Slack webhook. Leave the webhook field blank during update to keep
-                  the existing secret unchanged.
-                </p>
-              </div>
-              <BellRing className="h-5 w-5 text-steel" />
-            </div>
-
-            <form action={saveTargetAction} className="mt-6 space-y-4">
-              <input type="hidden" name="organization_id" value={selectedOrganization.id} />
-              <div className="grid gap-4 lg:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="text-sm font-medium text-ink">Target label</span>
-                  <input
-                    name="channel_target"
-                    required
-                    defaultValue={currentTarget?.channel_target ?? "org:primary-slack"}
-                    className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-medium text-ink">Webhook URL</span>
-                  <input
-                    name="slack_webhook_url"
-                    type="url"
-                    placeholder={currentTarget?.has_secret ? "Leave blank to keep current webhook" : "https://hooks.slack.com/..."}
-                    className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
-                  />
-                </label>
-              </div>
-
-              <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  defaultChecked={currentTarget?.is_active ?? true}
-                  className="h-4 w-4 rounded border-zinc-400"
-                />
-                Enable this org-level Slack target for incident alerts
-              </label>
-
-              <Button type="submit">Save target</Button>
-            </form>
-          </Card>
-
-          <div className="space-y-6">
-            <Card className="rounded-[28px] border-zinc-300 p-6">
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Current state</p>
-              <div className="mt-4 space-y-4">
-                <div className="rounded-2xl border border-zinc-200 px-4 py-3">
-                  <p className="text-sm font-medium text-ink">Delivery status</p>
-                  <p className="mt-2 text-sm text-steel">
-                    {currentTarget
-                      ? currentTarget.is_active
-                        ? "Enabled for incident delivery"
-                        : "Configured but disabled"
-                      : "No Slack target configured"}
-                  </p>
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Project settings</p>
+            <p className="mt-2 text-sm leading-6 text-steel">
+              Update project name, slug, and description for the active workspace.
+            </p>
+            {projectList && projectList.items.length > 1 ? (
+              <form action="/settings" className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-ink">Project</p>
+                  <p className="mt-1 text-sm text-steel">Choose a project to edit.</p>
                 </div>
-                <div className="rounded-2xl border border-zinc-200 px-4 py-3">
-                  <p className="text-sm font-medium text-ink">Stored secret</p>
-                  <p className="mt-2 text-sm text-steel">{currentTarget?.webhook_masked ?? "No webhook stored"}</p>
+                <div className="flex items-center gap-3">
+                  <input type="hidden" name="tab" value="project" />
+                  <select
+                    name="projectId"
+                    defaultValue={selectedProject?.id}
+                    className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                  >
+                    {projectList.items.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" variant="outline">
+                    Switch
+                  </Button>
+                </div>
+              </form>
+            ) : null}
+
+            {selectedProject ? (
+              <form action={updateProjectAction} className="mt-6 space-y-4">
+                <input type="hidden" name="project_id" value={selectedProject.id} />
+                <label className="block space-y-2 text-sm text-steel">
+                  <span className="text-xs uppercase tracking-[0.2em] text-steel">Name</span>
+                  <input
+                    name="name"
+                    defaultValue={selectedProject.name}
+                    className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                  />
+                </label>
+                <label className="block space-y-2 text-sm text-steel">
+                  <span className="text-xs uppercase tracking-[0.2em] text-steel">Slug</span>
+                  <input
+                    name="slug"
+                    defaultValue={selectedProject.slug}
+                    className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                  />
+                </label>
+                <label className="block space-y-2 text-sm text-steel">
+                  <span className="text-xs uppercase tracking-[0.2em] text-steel">Description</span>
+                  <textarea
+                    name="description"
+                    defaultValue={selectedProject.description ?? ""}
+                    rows={4}
+                    className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-ink"
+                  />
+                </label>
+                <Button type="submit">Save project</Button>
+              </form>
+            ) : (
+              <p className="mt-6 text-sm text-steel">No projects are available for this organization yet.</p>
+            )}
+          </Card>
+          {selectedProject ? (
+            <Card className="rounded-[28px] border-zinc-300 p-6">
+              <p className="text-xs uppercase tracking-[0.24em] text-steel">Project metadata</p>
+              <div className="mt-4 space-y-3 text-sm text-steel">
+                <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                  <span className="text-xs uppercase tracking-[0.2em] text-steel">Project ID</span>
+                  <span className="text-sm font-medium text-ink">{selectedProject.id}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                  <span className="text-xs uppercase tracking-[0.2em] text-steel">Environment</span>
+                  <span className="text-sm font-medium text-ink">{selectedProject.environment}</span>
                 </div>
               </div>
             </Card>
-
-            {currentTarget ? (
-              <Card className="rounded-[28px] border-zinc-300 p-6">
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Quick actions</p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <form action={currentTarget.is_active ? disableTargetAction : enableTargetAction}>
-                    <input type="hidden" name="organization_id" value={selectedOrganization.id} />
-                    <Button variant={currentTarget.is_active ? "outline" : "default"}>
-                      {currentTarget.is_active ? (
-                        <>
-                          <Slash className="mr-2 h-4 w-4" />
-                          Disable target
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="mr-2 h-4 w-4" />
-                          Enable target
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                  <form action={testTargetAction}>
-                    <input type="hidden" name="organization_id" value={selectedOrganization.id} />
-                    <Button variant="subtle">
-                      <RadioTower className="mr-2 h-4 w-4" />
-                      Send test
-                    </Button>
-                  </form>
-                </div>
-              </Card>
-            ) : null}
-          </div>
+          ) : null}
         </div>
-      ) : (
-        <Card className="rounded-[28px] border-zinc-300 p-6">
-          <p className="text-sm text-steel">No organization memberships were found for this operator.</p>
-        </Card>
-      )}
+      ) : null}
+
+      {selectedTab === "organization" && selectedOrganization ? (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_360px]">
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Organization settings</p>
+            <p className="mt-2 text-sm leading-6 text-steel">
+              Update the workspace profile used for billing and alert ownership.
+            </p>
+            {availableOrganizations.length > 1 ? (
+              <form action="/settings" className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-ink">Organization</p>
+                  <p className="mt-1 text-sm text-steel">Choose the organization to edit.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input type="hidden" name="tab" value="organization" />
+                  <select
+                    name="organizationId"
+                    defaultValue={selectedOrganization.id}
+                    className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                  >
+                    {availableOrganizations.map((organization) => (
+                      <option key={organization.id} value={organization.id}>
+                        {organization.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" variant="outline">
+                    Switch
+                  </Button>
+                </div>
+              </form>
+            ) : null}
+            <form action={updateOrganizationAction} className="mt-6 space-y-4">
+              <input type="hidden" name="organization_id" value={selectedOrganization.id} />
+              <label className="block space-y-2 text-sm text-steel">
+                <span className="text-xs uppercase tracking-[0.2em] text-steel">Name</span>
+                <input
+                  name="name"
+                  defaultValue={selectedOrganization.name}
+                  className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                />
+              </label>
+              <label className="block space-y-2 text-sm text-steel">
+                <span className="text-xs uppercase tracking-[0.2em] text-steel">Slug</span>
+                <input
+                  name="slug"
+                  defaultValue={selectedOrganization.slug}
+                  className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                />
+              </label>
+              <Button type="submit">Save organization</Button>
+            </form>
+          </Card>
+          <Card className="rounded-[28px] border-zinc-300 p-6">
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">Organization metadata</p>
+            <div className="mt-4 space-y-3 text-sm text-steel">
+              <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                <span className="text-xs uppercase tracking-[0.2em] text-steel">Organization ID</span>
+                <span className="text-sm font-medium text-ink">{selectedOrganization.id}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                <span className="text-xs uppercase tracking-[0.2em] text-steel">Plan</span>
+                <span className="text-sm font-medium text-ink">{selectedOrganization.plan}</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+
+      {selectedTab === "alerts" ? (
+        <>
+          {testMessage ? (
+            <Card
+              className={`rounded-[24px] p-4 ${
+                testSuccess ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50"
+              }`}
+            >
+              <p className="text-sm font-medium text-ink">{testSuccess ? "Slack test succeeded" : "Slack test failed"}</p>
+              <p className="mt-2 text-sm text-steel">{testMessage}</p>
+            </Card>
+          ) : null}
+
+          {selectedOrganization ? (
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_360px]">
+              <Card className="rounded-[28px] border-zinc-300 p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-steel">Slack target</p>
+                    <h2 className="mt-2 text-2xl font-semibold text-ink">
+                      {currentTarget ? currentTarget.channel_target : "No target configured"}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-steel">
+                      Save one org-level Slack webhook. Leave the webhook field blank during update to keep
+                      the existing secret unchanged.
+                    </p>
+                  </div>
+                  <BellRing className="h-5 w-5 text-steel" />
+                </div>
+
+                {availableOrganizations.length > 1 ? (
+                  <form action="/settings" className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-ink">Organization</p>
+                      <p className="mt-1 text-sm text-steel">Choose the org for alert settings.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input type="hidden" name="tab" value="alerts" />
+                      <select
+                        name="organizationId"
+                        defaultValue={selectedOrganization.id}
+                        className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                      >
+                        {availableOrganizations.map((organization) => (
+                          <option key={organization.id} value={organization.id}>
+                            {organization.name}
+                          </option>
+                        ))}
+                      </select>
+                      <Button type="submit" variant="outline">
+                        Switch
+                      </Button>
+                    </div>
+                  </form>
+                ) : null}
+
+                <form action={saveTargetAction} className="mt-6 space-y-4">
+                  <input type="hidden" name="organization_id" value={selectedOrganization.id} />
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-sm font-medium text-ink">Target label</span>
+                      <input
+                        name="channel_target"
+                        required
+                        defaultValue={currentTarget?.channel_target ?? "org:primary-slack"}
+                        className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-medium text-ink">Webhook URL</span>
+                      <input
+                        name="slack_webhook_url"
+                        type="url"
+                        placeholder={currentTarget?.has_secret ? "Leave blank to keep current webhook" : "https://hooks.slack.com/..."}
+                        className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="flex items-center gap-3 rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      defaultChecked={currentTarget?.is_active ?? true}
+                      className="h-4 w-4 rounded border-zinc-400"
+                    />
+                    Enable this org-level Slack target for incident alerts
+                  </label>
+
+                  <Button type="submit">Save target</Button>
+                </form>
+              </Card>
+
+              <div className="space-y-6">
+                <Card className="rounded-[28px] border-zinc-300 p-6">
+                  <p className="text-xs uppercase tracking-[0.24em] text-steel">Current state</p>
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-2xl border border-zinc-200 px-4 py-3">
+                      <p className="text-sm font-medium text-ink">Delivery status</p>
+                      <p className="mt-2 text-sm text-steel">
+                        {currentTarget
+                          ? currentTarget.is_active
+                            ? "Enabled for incident delivery"
+                            : "Configured but disabled"
+                          : "No Slack target configured"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-zinc-200 px-4 py-3">
+                      <p className="text-sm font-medium text-ink">Stored secret</p>
+                      <p className="mt-2 text-sm text-steel">{currentTarget?.webhook_masked ?? "No webhook stored"}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                {currentTarget ? (
+                  <Card className="rounded-[28px] border-zinc-300 p-6">
+                    <p className="text-xs uppercase tracking-[0.24em] text-steel">Quick actions</p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <form action={currentTarget.is_active ? disableTargetAction : enableTargetAction}>
+                        <input type="hidden" name="organization_id" value={selectedOrganization.id} />
+                        <Button variant={currentTarget.is_active ? "outline" : "default"}>
+                          {currentTarget.is_active ? (
+                            <>
+                              <Slash className="mr-2 h-4 w-4" />
+                              Disable target
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                              Enable target
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                      <form action={testTargetAction}>
+                        <input type="hidden" name="organization_id" value={selectedOrganization.id} />
+                        <Button variant="subtle">
+                          <RadioTower className="mr-2 h-4 w-4" />
+                          Send test
+                        </Button>
+                      </form>
+                    </div>
+                  </Card>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <Card className="rounded-[28px] border-zinc-300 p-6">
+              <p className="text-sm text-steel">No organization memberships were found for this operator.</p>
+            </Card>
+          )}
+        </>
+      ) : null}
     </div>
   );
 }

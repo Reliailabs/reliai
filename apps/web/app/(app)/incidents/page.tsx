@@ -19,6 +19,7 @@ export default async function IncidentsPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await requireOperatorSession();
+  const activeOrganizationId = session.active_organization_id;
   const params = searchParams ? await searchParams : {};
   const status = typeof params.status === "string" ? params.status : "";
   const severity = typeof params.severity === "string" ? params.severity : "";
@@ -41,7 +42,10 @@ export default async function IncidentsPage({
     ...(dateTo ? { dateTo } : {}),
     limit: 50
   }).catch(() => ({ items: [] }));
-  const projects = await listProjects({ limit: 200 }).catch(() => ({ items: [] }));
+  const projects = await listProjects({
+    organizationId: activeOrganizationId ?? undefined,
+    limit: 200
+  }).catch(() => ({ items: [] }));
   const activeCount = incidents.items.filter((incident) => incident.status === "open").length;
 
   return (
