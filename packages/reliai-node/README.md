@@ -5,10 +5,35 @@ Reliai SDK for trace ingestion and runtime instrumentation.
 ## Install
 
 ```bash
+pnpm add @reliai/sdk
+# or
 npm install @reliai/sdk
 ```
 
-## Quick start
+## Set your API key
+
+Create an API key in **Settings -> API Keys**, then export it:
+
+```bash
+export RELIAI_API_KEY=reliai_your_key
+```
+
+## Hello trace (minimal)
+
+```ts
+import { ReliaiClient } from "@reliai/sdk";
+
+const reliai = new ReliaiClient({ apiKey: process.env.RELIAI_API_KEY });
+
+await reliai.trace({
+  model: "gpt-4.1-mini",
+  input: "User question",
+  output: "Model response",
+  success: true,
+});
+```
+
+## Full example
 
 ```ts
 import { ReliaiClient } from "@reliai/sdk";
