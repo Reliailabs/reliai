@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.onboarding_checklist import OnboardingChecklist
 from app.models.organization import Organization
 from app.models.organization_member import OrganizationMember
-from app.schemas.organization import OrganizationCreate
+from app.schemas.organization import OrganizationCreate, OrganizationUpdate
 from app.services.workos_roles import normalize_org_role
 from app.services.stripe_billing import ensure_stripe_customer
 
@@ -48,4 +48,26 @@ def get_organization(db: Session, organization_id) -> Organization:
     organization = db.get(Organization, organization_id)
     if organization is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+    return organization
+
+
+def update_organization(
+    db: Session, organization: Organization, payload: OrganizationUpdate
+) -> Organization:
+    if payload.name is not None:
+        organization.name = payload.name
+    if payload.slug is not None:
+        slug = payload.slug.strip()
+        if slug:
+            organization.slug = slug
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Organization slug already exists",
+        ) from exc
+    db.commit()
+    db.refresh(organization)
     return organization

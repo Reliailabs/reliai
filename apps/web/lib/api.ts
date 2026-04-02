@@ -228,12 +228,39 @@ export async function getOrganization(organizationId: string) {
   return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`);
 }
 
+export async function updateOrganization(
+  organizationId: string,
+  payload: {
+    name?: string | null;
+    slug?: string | null;
+  }
+) {
+  return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function getOrganizationUsageQuota(organizationId: string) {
   return request<UsageQuotaStatus>(`/api/v1/organizations/${organizationId}/usage-quota`);
 }
 
 export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
+}
+
+export async function updateProject(
+  projectId: string,
+  payload: {
+    name?: string | null;
+    slug?: string | null;
+    description?: string | null;
+  }
+) {
+  return request<ProjectRead>(`/api/v1/projects/${projectId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
 }
 
 export async function listProjectEnvironments(projectId: string) {

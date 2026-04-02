@@ -18,6 +18,11 @@ class OrganizationCreate(BaseModel):
     owner_role: RoleType = "owner"
 
 
+class OrganizationUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=255)
+    slug: str | None = Field(default=None, min_length=2, max_length=80, pattern=r"^[a-z0-9-]+$")
+
+
 class OrganizationRead(APIModel):
     id: UUID
     name: str
