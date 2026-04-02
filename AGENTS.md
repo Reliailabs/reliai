@@ -10,6 +10,7 @@ Keep `main` deployable, changes traceable, and releases safe without adding heav
 
 1. Never commit directly to `main`.
 2. Create a new branch for every task.
+3. Never make changes on `main`. Always switch to a task branch before modifying files.
 3. Merge only after the required validation passes.
 4. Keep branches short-lived and scoped to one change.
 5. Leave the repo production-clean after every merge.
