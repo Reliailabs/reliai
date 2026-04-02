@@ -198,7 +198,7 @@ export default async function ProjectReliabilityPage({
               regression snapshots, rollups, and trace completeness.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <a
               href={`/projects/${projectId}/timeline${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
               className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
@@ -206,6 +206,20 @@ export default async function ProjectReliabilityPage({
               <History className="h-4 w-4" />
               Timeline
             </a>
+            <Link
+              href={`/projects/${projectId}/metrics`}
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+            >
+              Manage custom metrics
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/projects/${projectId}/ingestion`}
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+            >
+              Manage ingestion policy
+              <ArrowRight className="h-4 w-4" />
+            </Link>
             <ScorePill score={reliability.reliability_score} />
             <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
               {environment ?? project.environment}
@@ -287,13 +301,19 @@ export default async function ProjectReliabilityPage({
               </div>
             </div>
             {behavioralSignals.length === 0 ? (
-              <p className="mt-5 text-sm leading-6 text-steel">
-                No behavioral signals are tracked yet.{" "}
-                <Link href={`/projects/${projectId}/metrics`} className="underline hover:text-ink">
-                  Create a custom metric
-                </Link>{" "}
-                to see behavior trends here.
-              </p>
+              <div className="mt-5 rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-6 text-sm text-steel">
+                <p className="text-sm font-medium text-ink">No custom metrics yet</p>
+                <p className="mt-2 text-sm text-steel">
+                  Track behaviors like refusals, hallucinations, or policy violations.
+                </p>
+                <Link
+                  href={`/projects/${projectId}/metrics`}
+                  className="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink hover:underline"
+                >
+                  Create your first metric
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             ) : (
               <div className="mt-5 space-y-3">
                 {behavioralSignals.map(({ metric, series, latestPoint }) => {

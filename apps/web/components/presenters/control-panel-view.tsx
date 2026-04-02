@@ -156,6 +156,26 @@ export function ControlPanelView({
     },
   ];
 
+  const projectControls = [
+    {
+      label: "Manage custom metrics",
+      href: `/projects/${projectId}/metrics`,
+    },
+    {
+      label: "Manage ingestion policy",
+      href: `/projects/${projectId}/ingestion`,
+    },
+    {
+      label: "Manage processors",
+      href: `/projects/${projectId}/processors`,
+      helper: "Send events to external systems and downstream workflows.",
+    },
+    {
+      label: "Edit project",
+      href: `/projects/${projectId}/settings`,
+    },
+  ];
+
   return (
     <div
       className={cn("space-y-6", screenshotMode && "mx-auto space-y-4 overflow-hidden bg-white p-6")}
@@ -189,17 +209,39 @@ export function ControlPanelView({
               </p>
 
               {!screenshotMode ? (
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {quickLinks.map((item) => (
-                    <a
-                      key={item.label}
-                      href={item.href}
-                      className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
-                    >
-                      {item.label}
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
-                  ))}
+                <div className="mt-5 space-y-4">
+                  <div className="flex flex-wrap gap-3">
+                    {quickLinks.map((item) => (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+                      >
+                        {item.label}
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    ))}
+                  </div>
+                  <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-steel">Project controls</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {projectControls.map((item) => (
+                        <a
+                          key={item.label}
+                          href={item.href}
+                          className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-ink transition hover:border-zinc-300"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span>{item.label}</span>
+                            <ArrowRight className="h-4 w-4 text-steel" />
+                          </div>
+                          {item.helper ? (
+                            <p className="mt-2 text-xs font-normal text-steel">{item.helper}</p>
+                          ) : null}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </div>

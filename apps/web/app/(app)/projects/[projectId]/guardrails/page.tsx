@@ -92,6 +92,22 @@ export default async function ProjectGuardrailsPage({
             </div>
           </div>
         </div>
+        <div className="flex flex-wrap gap-3 px-6 pb-5">
+          <Link
+            href={`/projects/${projectId}/metrics`}
+            className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+          >
+            Manage custom metrics
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href={`/projects/${projectId}/ingestion`}
+            className="inline-flex items-center gap-2 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-ink transition hover:bg-zinc-50"
+          >
+            Manage ingestion policy
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </header>
 
       <Card className="rounded-[28px] border-zinc-300 p-6">
@@ -106,6 +122,13 @@ export default async function ProjectGuardrailsPage({
           <div className="mt-6 rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-10 text-sm leading-6 text-steel">
             No guardrail policies are configured for this project yet. Create structured output, cost, latency,
             or hallucination policies before expecting runtime protection coverage.
+            <Link
+              href={`/projects/${projectId}/metrics`}
+              className="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-ink hover:underline"
+            >
+              Manage custom metrics
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         ) : (
           <div className="mt-6 overflow-hidden rounded-[24px] border border-zinc-200">

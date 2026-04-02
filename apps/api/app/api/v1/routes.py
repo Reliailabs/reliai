@@ -175,7 +175,7 @@ from app.schemas.membership import (
     ProjectMemberListResponse,
     ProjectMemberRead,
 )
-from app.schemas.organization import OrganizationCreate, OrganizationRead
+from app.schemas.organization import OrganizationCreate, OrganizationRead, OrganizationUpdate
 from app.schemas.organization_alert_target import (
     OrganizationAlertTargetRead,
     OrganizationAlertTargetTestResponse,
@@ -200,6 +200,7 @@ from app.schemas.project import (
     ProjectListQuery,
     ProjectListResponse,
     ProjectRead,
+    ProjectUpdate,
     PromptVersionDetailRead,
     PromptVersionListResponse,
     PromptVersionRead,
@@ -386,7 +387,7 @@ from app.services.authorization import (
     require_system_admin,
 )
 from app.services.rbac import has_required_role
-from app.services.organizations import create_organization, get_organization
+from app.services.organizations import create_organization, get_organization, update_organization
 from app.services.organization_alert_targets import (
     get_org_alert_target,
     org_alert_target_read_model,
@@ -398,7 +399,7 @@ from app.services.organization_guardrails import (
     list_active_organization_guardrail_policies,
     require_api_key_organization_access,
 )
-from app.services.projects import create_project, list_projects
+from app.services.projects import create_project, list_projects, update_project
 from app.services.public_api import (
     authenticate_public_api_key,
     create_public_api_key,
@@ -2286,6 +2287,18 @@ def get_organization_endpoint(
     return get_organization(db, organization_id)
 
 
+@router.patch("/organizations/{organization_id}", response_model=OrganizationRead)
+def update_organization_endpoint(
+    organization_id: UUID,
+    payload: OrganizationUpdate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationRead:
+    require_org_role(operator, organization_id, "org_admin")
+    organization = get_organization(db, organization_id)
+    return update_organization(db, organization, payload)
+
+
 @router.get(
     "/organizations/{organization_id}/policies",
     response_model=OrganizationGuardrailPolicyListResponse,
@@ -2576,6 +2589,18 @@ def get_project_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> ProjectRead:
     return require_project_access(db, operator, project_id)
+
+
+@router.patch("/projects/{project_id}", response_model=ProjectRead)
+def update_project_endpoint(
+    project_id: UUID,
+    payload: ProjectUpdate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectRead:
+    project = require_project_access(db, operator, project_id)
+    require_org_role(operator, project.organization_id, "org_admin")
+    return update_project(db, project, payload)
 
 
 @router.get("/projects/{project_id}/members", response_model=ProjectMemberListResponse)

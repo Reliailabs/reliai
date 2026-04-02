@@ -34,6 +34,10 @@ export function ProjectEnvironmentShell({
     { label: "Timeline", href: `/projects/${projectId}/timeline`, active: pathname.endsWith("/timeline") },
     { label: "Deployments", href: `/projects/${projectId}/deployments`, active: pathname.endsWith("/deployments") },
     { label: "Guardrails", href: `/projects/${projectId}/guardrails`, active: pathname.endsWith("/guardrails") },
+    { label: "Metrics", href: `/projects/${projectId}/metrics`, active: pathname.endsWith("/metrics") },
+    { label: "Ingestion", href: `/projects/${projectId}/ingestion`, active: pathname.endsWith("/ingestion") },
+    { label: "Processors", href: `/projects/${projectId}/processors`, active: pathname.endsWith("/processors") },
+    { label: "Project settings", href: `/projects/${projectId}/settings`, active: pathname.endsWith("/settings") },
     { label: "Incidents", href: `/incidents?projectId=${projectId}&environment=${selectedEnvironment}`, active: pathname === "/incidents" },
   ];
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 
 import {
   marketingCardClass,
@@ -71,7 +72,7 @@ const startHere = [
   { label: "Incident workflow", href: "/demo", note: "debug issues step by step" },
   { label: "Core concepts", href: "/docs", note: "traces, incidents, and evidence" },
   { label: "AI guide", href: "/docs", note: "how to use AI safely in Reliai" },
-];
+] satisfies { label: string; href: Route; note: string }[];
 
 export default function DocsPage() {
   return (

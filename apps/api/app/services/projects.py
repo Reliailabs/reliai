@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.organization import Organization
 from app.models.project import Project
-from app.schemas.project import ProjectCreate, ProjectListQuery
+from app.schemas.project import ProjectCreate, ProjectListQuery, ProjectUpdate
 from app.services.auth import OperatorContext
 from app.services.authorization import authorized_project_ids, require_organization_membership
 from app.services.environments import ensure_project_bootstrap_environments, normalize_environment_name
@@ -69,3 +69,27 @@ def list_projects(db: Session, operator: OperatorContext, query: ProjectListQuer
     for project in projects:
         project.environment = normalize_environment_name(project.environment)
     return projects
+
+
+def update_project(db: Session, project: Project, payload: ProjectUpdate) -> Project:
+    if payload.name is not None:
+        project.name = payload.name
+    if payload.slug is not None:
+        slug = payload.slug.strip()
+        if slug:
+            project.slug = slug
+    if payload.description is not None:
+        description = payload.description.strip()
+        project.description = description if description else None
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project slug already exists for this organization",
+        ) from exc
+    db.commit()
+    db.refresh(project)
+    project.environment = normalize_environment_name(project.environment)
+    return project
