@@ -20,6 +20,7 @@ All notable changes to Reliai will be documented in this file.
 
 - Migrated key marketing, onboarding, and core product surfaces to semantic design tokens for higher readability.
 - Refined incident timeline and recent signals feeds to prioritize event prefixes, data deltas, and readable metadata.
+- Polished investigation timeline cards with delta formatting, category accents, and clickable affordances.
 
 ### Fixed
 
