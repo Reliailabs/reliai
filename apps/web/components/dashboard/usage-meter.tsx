@@ -135,7 +135,7 @@ export function UsageMeter({
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border border-default bg-surface-elevated p-4 shadow-sm">
       <button type="button" className="w-full text-left" onClick={() => setOpen((prev) => !prev)}>
         <div className="flex items-center justify-between">
           <div className="text-sm font-medium text-secondary">Usage (This Month)</div>
@@ -223,7 +223,7 @@ export function UsageMeter({
               <span className="font-medium text-primary">{formatMoney(estimatedUsageCost)}</span>
             </div>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3">
+          <div className="rounded-xl border border-default bg-surface-elevated px-3 py-3">
             <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Billing</p>
             <div className="mt-2 space-y-2 text-sm">
               <div className="flex items-center justify-between">

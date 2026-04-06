@@ -229,7 +229,7 @@ export default async function DashboardPage() {
         </div>
 
         <aside className="space-y-4">
-          <Card className="p-5">
+          <Card className="bg-surface-elevated p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">System state</p>
             <div className="mt-4 space-y-2 text-sm text-secondary">
               <div className="flex items-center justify-between">
@@ -256,7 +256,7 @@ export default async function DashboardPage() {
             />
           ) : null}
 
-          <Card className="p-5">
+          <Card className="bg-surface-elevated p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">Recent alert deliveries</p>
             <div className="mt-4 text-sm leading-6 text-secondary">
               Alert deliveries remain available in incident detail views until dashboard-level delivery

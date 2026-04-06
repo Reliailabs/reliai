@@ -124,7 +124,7 @@ export default function MarketingHomePage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="border-zinc-300 text-ink hover:bg-zinc-50">
               <Link href="/demo">View demo</Link>
             </Button>
           </div>
@@ -432,7 +432,7 @@ export default function MarketingHomePage() {
               asChild
               size="lg"
               variant="outline"
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+              className="border-zinc-700 text-white hover:bg-zinc-800"
             >
               <Link href="/pricing">View pricing</Link>
             </Button>
