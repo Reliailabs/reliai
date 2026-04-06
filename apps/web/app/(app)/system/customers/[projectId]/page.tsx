@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { AlertTriangle, ArrowLeft, Boxes, GitCommitHorizontal, ShieldAlert, Workflow } from "lucide-react";
 import { notFound } from "next/navigation";
 
@@ -23,6 +24,35 @@ function severityTone(severity: string) {
   if (severity === "high") return "bg-amber-100 text-amber-800 ring-1 ring-amber-200";
   if (severity === "medium") return "bg-sky-100 text-sky-700 ring-1 ring-sky-200";
   return "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200";
+}
+
+function timelinePrefix(eventType: string) {
+  if (eventType === "incident") return "Incident";
+  if (eventType === "regression") return "Regression";
+  if (eventType === "deployment") return "Deployment";
+  if (eventType === "guardrail" || eventType === "guardrail_runtime_enforced") return "Guardrail";
+  return eventType.replaceAll("_", " ");
+}
+
+function timelinePrefixTone(eventType: string) {
+  if (eventType === "incident") return "text-danger";
+  if (eventType === "regression") return "text-warning";
+  return "text-secondary";
+}
+
+function emphasizeNumbers(summary: string) {
+  const pattern = /(\d+(?:\.\d+)?)/g;
+  const parts = summary.split(pattern);
+  if (parts.length === 1) return summary;
+  return parts.map((part, index) =>
+    index % 2 === 1 ? (
+      <span key={`${part}-${index}`} className="metric-value text-mono-data">
+        {part}
+      </span>
+    ) : (
+      <Fragment key={`${part}-${index}`}>{part}</Fragment>
+    )
+  );
 }
 
 function maxPoint(points: { trace_volume: number }[]) {
@@ -264,23 +294,23 @@ export default async function SystemCustomerDetailPage({
           </Card>
 
           <Card className="rounded-[28px] border-zinc-300 p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Recent signals</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Recent signals</p>
             <div className="mt-5 space-y-3">
               {detail.recent_timeline.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-5 text-sm text-steel">
+                <div className="rounded-2xl border border-dashed border-zinc-300 px-4 py-5 text-sm text-secondary">
                   No timeline events have been recorded for this project yet.
                 </div>
               ) : (
                 detail.recent_timeline.map((event, index) => (
-                  <div key={`${event.timestamp}-${index}`} className="rounded-2xl border border-zinc-200 px-4 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-ink">{event.title}</p>
-                      <span className="text-xs uppercase tracking-[0.16em] text-steel">{event.event_type}</span>
+                  <div key={`${event.timestamp}-${index}`} className="rounded-2xl border border-default bg-surface-elevated px-4 py-4">
+                    <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.16em]">
+                      <span className={`font-semibold ${timelinePrefixTone(event.event_type)}`}>
+                        {timelinePrefix(event.event_type)}
+                      </span>
+                      <span className="text-secondary">{new Date(event.timestamp).toLocaleString()}</span>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-steel">{event.summary}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-steel">
-                      {new Date(event.timestamp).toLocaleString()}
-                    </p>
+                    <p className="mt-2 text-sm font-semibold text-primary">{event.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-secondary">{emphasizeNumbers(event.summary)}</p>
                   </div>
                 ))
               )}
