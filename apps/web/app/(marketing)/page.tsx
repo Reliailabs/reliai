@@ -132,6 +132,23 @@ export default function MarketingHomePage() {
           <div className="mt-12 w-full max-w-2xl">
             <HeroAnnotatedVisual />
           </div>
+          <div className="mt-10 w-full max-w-3xl">
+            <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-left shadow-sm md:flex-row md:items-center">
+              <div>
+                <p className="text-xs uppercase tracking-[0.32em] text-steel">AI Reliability Audit</p>
+                <p className="mt-1 text-sm text-steel">
+                  7-day done-for-you audit to surface hidden failure modes before they reach users.
+                </p>
+              </div>
+              <Link
+                href="/ai-reliability-audit"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4"
+              >
+                See the audit offer
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

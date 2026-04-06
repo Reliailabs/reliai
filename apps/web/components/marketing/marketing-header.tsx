@@ -80,6 +80,15 @@ export function MarketingHeader() {
             Pricing
           </Link>
           <Link
+            href="/ai-reliability-audit"
+            className={cn(
+              "text-sm font-medium transition",
+              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-steel hover:text-ink"
+            )}
+          >
+            Audit
+          </Link>
+          <Link
             href="/login"
             className={cn(
               "text-sm font-medium transition",

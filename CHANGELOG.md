@@ -13,6 +13,7 @@ All notable changes to Reliai will be documented in this file.
 - Limit visibility system with /system/limits endpoint, global banner, and contextual limit states.
 - Limit banners now show window-grounded counters, storage impact context, and a recovery confirmation message.
 - Projects hub page that lists project controls with direct links to key project surfaces.
+- AI Reliability Audit landing page with dedicated conversion flow and homepage audit CTA.
 
 ### Fixed
 
