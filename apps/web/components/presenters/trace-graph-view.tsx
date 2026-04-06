@@ -531,7 +531,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false, screen
           </Card>
         </div>
         <aside className="space-y-6 bg-transparent">
-          <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode && screenshotWidth ? "bg-gray-50" : "bg-surface")}>
+          <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode && screenshotWidth ? "bg-gray-50" : "")}>
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">Key signals</p>
             <div className="mt-4 space-y-3">
               <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-secondary", screenshotMode && screenshotWidth ? "bg-gray-100" : "bg-surfaceAlt")}>
@@ -550,7 +550,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false, screen
               </div>
             </div>
           </div>
-          <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode && screenshotWidth ? "bg-gray-50" : "bg-surface")}>
+          <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode && screenshotWidth ? "bg-gray-50" : "")}>
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">Span legend</p>
             <div className="mt-4 space-y-3">
               {legend.map((item) => {
