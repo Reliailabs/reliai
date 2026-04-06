@@ -125,7 +125,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
     () => (isActive: boolean) =>
       cn(
         "rounded-[34px] border border-transparent transition-all duration-300",
-        isActive && !screenshotMode && !visualTestMode && "border-line bg-surface-alt",
+        isActive && !screenshotMode && !visualTestMode && "border-line bg-transparent",
       ),
     [screenshotMode, visualTestMode],
   );
@@ -133,9 +133,9 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
   return (
     <main className="app-shell war-room min-h-screen bg-bg text-textPrimary">
       <div className={cn("mx-auto max-w-7xl px-6 py-12", screenshotMode && "max-w-none px-0 py-0")}>
-        <div className="grid gap-10">
+        <div className="grid gap-10 demo-no-gray">
           {!screenshotMode ? (
-          <section className="sticky top-[73px] z-20 rounded-[28px] border border-line bg-surface/95 px-5 py-4 backdrop-blur">
+          <section className="sticky top-[73px] z-20 rounded-[28px] border border-line bg-bg/95 px-5 py-4 backdrop-blur">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-textSecondary">Reliai Demo</p>
@@ -156,7 +156,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
                       "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition",
                       currentStep === index
                         ? "border-textPrimary bg-textPrimary text-bg"
-                        : "border-line bg-surface text-textSecondary hover:text-textPrimary",
+                        : "border-line bg-transparent text-textSecondary hover:text-textPrimary",
                     )}
                   >
                     <span className="font-medium">{index + 1}</span>
@@ -195,7 +195,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
                 </div>
               </div>
             </div>
-            <Card className="rounded-[28px] border-line p-6">
+            <Card className="rounded-[28px] border-line bg-transparent p-6">
               <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">Demo scenario</p>
               <div className="mt-5 space-y-4 text-sm leading-7 text-textSecondary">
                 <p>
@@ -229,8 +229,8 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-sm text-textSecondary">Start at the control panel.</p>
             </div>
           ) : null}
-          <div className="rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
-            <div className="app-shell-light overflow-hidden rounded-[24px] bg-surface">
+          <div className="rounded-[30px] border border-demo-preview-frame bg-transparent p-3 shadow-demo-preview-frame">
+            <div className="app-shell demo-no-gray overflow-hidden rounded-[24px] bg-bg">
               <ControlPanelView
                 projectId={demoProject.id}
                 projectName={demoProject.name}
@@ -252,8 +252,8 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-sm text-textSecondary">{demoIncident.impact}</p>
             </div>
           ) : null}
-          <div className="rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
-            <div className="app-shell-light overflow-hidden rounded-[24px] bg-surface">
+          <div className="rounded-[30px] border border-demo-preview-frame bg-transparent p-3 shadow-demo-preview-frame">
+            <div className="app-shell demo-no-gray overflow-hidden rounded-[24px] bg-bg">
               <IncidentCommandCenterView
                 incidentId={demoIncidentCommand.incident.id}
                 command={demoIncidentCommand}
@@ -276,8 +276,8 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               </p>
             </div>
           ) : null}
-          <div className="demo-trace-war-room rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
-            <div className="app-shell-light overflow-hidden rounded-[24px] bg-surface px-3 py-3">
+          <div className="demo-trace-war-room rounded-[30px] border border-demo-preview-frame bg-transparent p-3 shadow-demo-preview-frame">
+            <div className="app-shell demo-no-gray overflow-hidden rounded-[24px] bg-bg px-3 py-3">
               <TraceGraphView graph={demoTraceGraph} analysis={demoTraceAnalysis} screenshotMode />
             </div>
           </div>
@@ -293,9 +293,9 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-sm text-textSecondary">{demoIncident.root_cause}</p>
             </div>
           ) : null}
-          <Card className="rounded-[30px] border-line p-6">
+          <Card className="rounded-[30px] border-line bg-transparent p-6">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,0.55fr)]">
-              <div className="rounded-[24px] border border-line bg-surface-alt px-5 py-5">
+              <div className="rounded-[24px] border border-line bg-transparent px-5 py-5">
                 <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">Likely cause</p>
                 <h3 className="mt-3 text-2xl font-semibold text-textPrimary">{demoIncident.root_cause}</h3>
                 <p className="mt-3 text-sm leading-7 text-textSecondary">
@@ -303,11 +303,11 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
                 </p>
               </div>
               <div className="space-y-3">
-                <div className="rounded-[24px] border border-line px-4 py-4">
+                <div className="rounded-[24px] border border-line bg-transparent px-4 py-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-textSecondary">Failure surface</p>
                   <p className="mt-2 text-sm font-medium text-textPrimary">{demoIncident.impact}</p>
                 </div>
-                <div className="rounded-[24px] border border-line px-4 py-4">
+                <div className="rounded-[24px] border border-line bg-transparent px-4 py-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-textSecondary">Linked signal</p>
                   <p className="mt-2 text-sm font-medium text-textPrimary">Prompt update deployed 82 minutes before incident start.</p>
                 </div>
@@ -330,7 +330,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
           ) : null}
           <div className="grid gap-4 lg:grid-cols-2">
             {demoGuardrailSummary.policies.map((policy) => (
-              <Card key={policy.title} className="rounded-[28px] border-line p-6">
+              <Card key={policy.title} className="rounded-[28px] border-line bg-transparent p-6">
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="h-5 w-5 text-textSecondary" />
                   <div>
@@ -344,7 +344,9 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
           </div>
         </section>
 
-        <section data-tour-id="demo-deployment-gate" className={cn("space-y-4", sectionTone(isActive("deployment")))}>
+        </div>
+
+        <section data-tour-id="demo-deployment-gate" className={cn("mt-10 space-y-4", sectionTone(isActive("deployment")))}>
           {!screenshotMode ? (
             <div className="flex items-center justify-between">
               <div>
@@ -354,7 +356,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-sm text-textSecondary">Fix verified — the loop is complete.</p>
             </div>
           ) : null}
-          <div className="rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
+          <div className="rounded-[30px] border border-demo-preview-frame bg-transparent p-3 shadow-demo-preview-frame">
             <div className="rounded-[24px] border border-green-200 bg-green-50 px-6 py-8">
               <div className="flex items-start gap-4">
                 <div className="rounded-2xl bg-green-100 p-3">
@@ -391,7 +393,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             </div>
           </div>
         </section>
-        </div>
+      </div>
 
       {showTour && !screenshotMode && !visualTestMode ? (
         <DemoTour
@@ -401,7 +403,6 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
           onClose={() => setShowTour(false)}
         />
       ) : null}
-      </div>
     </main>
   );
 }
