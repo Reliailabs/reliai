@@ -530,7 +530,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false, screen
             </div>
           </Card>
         </div>
-        <aside className="space-y-6">
+        <aside className="space-y-6 bg-transparent">
           <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode && screenshotWidth ? "bg-gray-50" : "bg-surface")}>
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">Key signals</p>
             <div className="mt-4 space-y-3">
