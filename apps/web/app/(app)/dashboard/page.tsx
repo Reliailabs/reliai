@@ -228,7 +228,7 @@ export default async function DashboardPage() {
           </section>
         </div>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4 !bg-transparent">
           <Card className="bg-surface-elevated p-5">
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">System state</p>
             <div className="mt-4 space-y-2 text-sm text-secondary">
