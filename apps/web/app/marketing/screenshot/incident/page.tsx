@@ -8,6 +8,7 @@ export default function MarketingIncidentScreenshotPage() {
       command={demoIncidentCommand}
       suggestedFix={demoSuggestedFix}
       screenshotMode
+      screenshotWidth={1600}
     />
   );
 }

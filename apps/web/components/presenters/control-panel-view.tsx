@@ -109,7 +109,7 @@ export function ControlPanelView({
   panel,
   environment,
   screenshotMode = false,
-  screenshotWidth = 1600,
+  screenshotWidth,
   highlightedMetrics = [],
 }: ControlPanelViewProps) {
   const status = statusSummary(panel);
@@ -181,7 +181,7 @@ export function ControlPanelView({
       className={cn("space-y-6", screenshotMode && "mx-auto space-y-4 overflow-hidden bg-white p-6")}
       data-control-panel-ready=""
       data-control-panel=""
-      style={screenshotMode ? { width: screenshotWidth, maxWidth: screenshotWidth } : undefined}
+      style={screenshotMode && screenshotWidth ? { width: screenshotWidth, maxWidth: screenshotWidth } : undefined}
     >
       <header className="overflow-hidden rounded-[32px] border border-zinc-300 bg-white shadow-sm">
         <div

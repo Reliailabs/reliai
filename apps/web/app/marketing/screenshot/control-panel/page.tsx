@@ -9,6 +9,7 @@ export default function MarketingControlPanelScreenshotPage() {
       environment={demoProject.environment}
       panel={demoControlPanel}
       screenshotMode
+      screenshotWidth={1600}
     />
   );
 }

@@ -35,6 +35,7 @@ interface IncidentCommandCenterViewProps {
   command: IncidentCommandCenterRead;
   suggestedFix?: SuggestedFix | null;
   screenshotMode?: boolean;
+  screenshotWidth?: number;
   activeTab?: string;
   aiSummaryAction?: (payload: AiIncidentSummaryRequest) => Promise<AiIncidentSummaryResponse>;
   aiRootCauseExplanationAction?: (
@@ -160,6 +161,7 @@ export function IncidentCommandCenterView({
   command,
   suggestedFix = null,
   screenshotMode = false,
+  screenshotWidth,
   activeTab = "overview",
   aiSummaryAction,
   aiRootCauseExplanationAction,
@@ -231,7 +233,10 @@ export function IncidentCommandCenterView({
       className={cn(
         "space-y-4",
         screenshotMode &&
-          "mx-auto w-[1600px] max-w-[1600px] space-y-4 overflow-hidden bg-white p-8"
+          cn(
+            "mx-auto space-y-4 overflow-hidden bg-white p-8",
+            screenshotWidth && "w-[1600px] max-w-[1600px]"
+          )
       )}
       data-incident-command-center
       data-incident-command-center-ready={screenshotMode ? "" : undefined}

@@ -94,9 +94,10 @@ interface TraceGraphViewProps {
   graph: TraceGraphRead;
   analysis: TraceGraphAnalysisRead | null;
   screenshotMode?: boolean;
+  screenshotWidth?: number;
 }
 
-export function TraceGraphView({ graph, analysis, screenshotMode = false }: TraceGraphViewProps) {
+export function TraceGraphView({ graph, analysis, screenshotMode = false, screenshotWidth }: TraceGraphViewProps) {
   const [incidentId, setIncidentId] = useState<string | null>(null);
   const parentByChild = new Map(graph.edges.map((edge) => [edge.child_span_id, edge.parent_span_id]));
   const orderedNodes = [...graph.nodes].sort((left, right) => {
@@ -257,7 +258,8 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
     <div
       className={cn(
         "space-y-6",
-        screenshotMode && "mx-auto w-[1600px] max-w-[1600px] space-y-5 overflow-hidden bg-white p-8"
+        screenshotMode &&
+          cn("mx-auto space-y-5 overflow-hidden bg-white p-8", screenshotWidth && "w-[1600px] max-w-[1600px]")
       )}
       data-trace-graph
       data-trace-graph-ready={screenshotMode ? "" : undefined}
