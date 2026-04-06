@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
@@ -85,18 +86,40 @@ function eventLabel(eventType: IncidentEventRead["event_type"]) {
   }
 }
 
-function eventTone(eventType: IncidentEventRead["event_type"]) {
-  if (eventType === "resolved") return "border-emerald-200 bg-emerald-50";
-  if (eventType === "reopened" || eventType === "alert_failed") return "border-rose-200 bg-rose-50";
-  if (eventType === "acknowledged" || eventType === "owner_assigned") return "border-sky-200 bg-sky-50";
-  return "border-zinc-200 bg-white";
+function eventPrefix(eventType: IncidentEventRead["event_type"]) {
+  if (eventType.startsWith("alert")) return "Alert";
+  if (eventType.startsWith("config")) return "Config";
+  return "Incident";
+}
+
+function eventPrefixTone(eventType: IncidentEventRead["event_type"]) {
+  if (eventType.startsWith("alert")) return "text-warning";
+  if (eventType.startsWith("config")) return "text-secondary";
+  return "text-danger";
+}
+
+function emphasizeNumbers(summary: string) {
+  const pattern = /(\d+(?:\.\d+)?)/g;
+  const parts = summary.split(pattern);
+  if (parts.length === 1) return summary;
+  return parts.map((part, index) =>
+    index % 2 === 1 ? (
+      <span key={`${part}-${index}`} className="metric-value text-mono-data">
+        {part}
+      </span>
+    ) : (
+      <Fragment key={`${part}-${index}`}>{part}</Fragment>
+    )
+  );
 }
 
 function renderEventSummary(event: IncidentEventRead) {
   const metadata = event.metadata_json ?? {};
 
   if (event.event_type === "owner_assigned") {
-    return String(metadata.owner_operator_email ?? metadata.owner_operator_user_id ?? "Owner updated");
+    return emphasizeNumbers(
+      String(metadata.owner_operator_email ?? metadata.owner_operator_user_id ?? "Owner updated")
+    );
   }
   if (event.event_type === "owner_cleared") {
     return "Incident owner cleared";
@@ -106,22 +129,32 @@ function renderEventSummary(event: IncidentEventRead) {
     return `${String(metadata.error_message ?? "Slack delivery failed")}${retry}`;
   }
   if (event.event_type === "alert_attempted") {
-    return `Slack delivery to ${String(metadata.channel_target ?? "slack")} · attempt ${String(
-      metadata.attempt_count ?? 0
-    )}`;
+    return (
+      <>
+        Slack delivery to {String(metadata.channel_target ?? "slack")} · attempt{" "}
+        {emphasizeNumbers(String(metadata.attempt_count ?? 0))}
+      </>
+    );
   }
   if (event.event_type === "alert_sent") {
-    return `Slack sent to ${String(metadata.channel_target ?? "slack")} · attempt ${String(
-      metadata.attempt_count ?? 0
-    )}`;
+    return (
+      <>
+        Slack sent to {String(metadata.channel_target ?? "slack")} · attempt{" "}
+        {emphasizeNumbers(String(metadata.attempt_count ?? 0))}
+      </>
+    );
   }
   if (event.event_type === "resolved" || event.event_type === "reopened") {
     return String(metadata.reason ?? "Manual lifecycle action");
   }
   if (event.event_type === "updated" || event.event_type === "opened") {
-    return `${String(metadata.metric_name ?? "metric")} · ${String(metadata.current_value ?? "n/a")} vs ${String(
-      metadata.baseline_value ?? "n/a"
-    )}`;
+    return (
+      <>
+        {String(metadata.metric_name ?? "metric")} ·{" "}
+        {emphasizeNumbers(String(metadata.current_value ?? "n/a"))} vs{" "}
+        {emphasizeNumbers(String(metadata.baseline_value ?? "n/a"))}
+      </>
+    );
   }
   if (event.event_type === "config_applied" || event.event_type === "config_undone") {
     const impact = metadata.resolution_impact as
@@ -799,38 +832,41 @@ export default async function IncidentDetailPage({
             </div>
           </Card>
 
-          <Card className="rounded-[28px] border-zinc-300 p-6">
+          <Card className="rounded-[28px] border-default p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">Timeline</p>
-                <p className="mt-2 text-sm text-steel">
+                <p className="text-xs uppercase tracking-[0.24em] text-secondary">Timeline</p>
+                <p className="mt-2 text-sm text-secondary">
                   Every lifecycle and alert event on this incident, newest first.
                 </p>
               </div>
-              <BellRing className="h-5 w-5 text-steel" />
+              <BellRing className="h-5 w-5 text-secondary" />
             </div>
             {incident.events.length > 0 ? (
               <div className="mt-5 space-y-3">
                 {incident.events.map((event) => (
                   <div
                     key={event.id}
-                    className={`rounded-2xl border px-4 py-3 ${eventTone(event.event_type)}`}
+                    className="rounded-2xl border border-default bg-surface-elevated px-4 py-3"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-ink">{eventLabel(event.event_type)}</p>
-                        <p className="mt-1 text-sm text-steel">{renderEventSummary(event)}</p>
-                      </div>
-                      <p className="text-xs text-steel">{new Date(event.created_at).toLocaleString()}</p>
+                    <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em]">
+                      <span className={`font-semibold ${eventPrefixTone(event.event_type)}`}>
+                        {eventPrefix(event.event_type)}
+                      </span>
+                      <span className="text-secondary">
+                        {new Date(event.created_at).toLocaleString()}
+                      </span>
                     </div>
-                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-steel">
+                    <p className="mt-2 text-sm font-semibold text-primary">{eventLabel(event.event_type)}</p>
+                    <p className="mt-1 text-sm text-secondary">{renderEventSummary(event)}</p>
+                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-secondary">
                       Actor · {event.actor_operator_user_email ?? "system"}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm leading-6 text-steel">
+              <p className="mt-4 text-sm leading-6 text-secondary">
                 No incident events have been recorded yet.
               </p>
             )}
