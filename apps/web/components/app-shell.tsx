@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Activity, KeyRound, ScanSearch, Settings2, ShieldAlert } from "lucide-react";
+import { Activity, FolderKanban, KeyRound, ScanSearch, Settings2, ShieldAlert } from "lucide-react";
 
 import { signOut } from "@/lib/auth";
 import { OrgSwitcher } from "@/components/org-switcher";
@@ -13,6 +13,7 @@ import { LimitStatusBanner } from "@/components/system/limit-status-banner";
 
 const navItems = [
   { href: "/dashboard" as Route, label: "Overview", icon: Activity },
+  { href: "/projects" as Route, label: "Projects", icon: FolderKanban },
   { href: "/traces" as Route, label: "Traces", icon: ScanSearch },
   { href: "/onboarding" as Route, label: "Onboarding", icon: KeyRound },
   { href: "/incidents" as Route, label: "Incidents", icon: ShieldAlert },
