@@ -41,6 +41,12 @@
   --banner-warning-border: rgba(217, 119, 6, 0.25);
   --banner-info-bg: rgba(148, 163, 184, 0.08);
   --banner-info-border: rgba(148, 163, 184, 0.25);
+  --demo-preview-frame-bg: #0f172a;
+  --demo-preview-frame-border: rgba(15, 23, 42, 0.35);
+  --demo-preview-frame-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  --demo-overlay-bg: rgba(15, 23, 42, 0.92);
+  --demo-overlay-border: rgba(148, 163, 184, 0.35);
+  --demo-overlay-glass: rgba(15, 23, 42, 0.84);
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);
   --surface: var(--color-surface);
@@ -117,9 +123,58 @@ body {
     --banner-warning-border: rgba(251, 191, 36, 0.35);
     --banner-info-bg: rgba(148, 163, 184, 0.08);
     --banner-info-border: rgba(148, 163, 184, 0.3);
+    --demo-preview-frame-bg: #0f172a;
+    --demo-preview-frame-border: rgba(51, 65, 85, 0.8);
+    --demo-preview-frame-shadow: 0 24px 70px rgba(2, 6, 23, 0.45);
+    --demo-overlay-bg: rgba(15, 23, 42, 0.92);
+    --demo-overlay-border: rgba(100, 116, 139, 0.6);
+    --demo-overlay-glass: rgba(15, 23, 42, 0.86);
     background: var(--color-bg);
     color: var(--color-text-primary);
     font-family: var(--font-body);
+  }
+
+  .app-shell-light {
+    --color-bg: #f7f8fa;
+    --color-surface: #ffffff;
+    --color-surface-elevated: #f8fafc;
+    --color-border: #e5e7eb;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #4b5563;
+    --color-text-muted: #9ca3af;
+    --color-text-data: #0f172a;
+    --color-accent: #111827;
+    --color-success: #16a34a;
+    --color-danger: #dc2626;
+    --color-warning: #d97706;
+    --color-info: #2563eb;
+    --color-code-bg: #0b0f14;
+    --color-code-text: #e2e8f0;
+    --color-code-border: rgba(148, 163, 184, 0.2);
+    --tab-accent: #111827;
+    --badge-critical-bg: rgba(220, 38, 38, 0.12);
+    --badge-critical-border: rgba(220, 38, 38, 0.35);
+    --badge-critical-text: #991b1b;
+    --badge-high-bg: rgba(217, 119, 6, 0.12);
+    --badge-high-border: rgba(217, 119, 6, 0.3);
+    --badge-high-text: #92400e;
+    --badge-medium-bg: rgba(245, 158, 11, 0.12);
+    --badge-medium-border: rgba(245, 158, 11, 0.3);
+    --badge-medium-text: #92400e;
+    --badge-low-bg: rgba(37, 99, 235, 0.12);
+    --badge-low-border: rgba(37, 99, 235, 0.3);
+    --badge-low-text: #1d4ed8;
+    --badge-resolved-bg: rgba(22, 163, 74, 0.12);
+    --badge-resolved-border: rgba(22, 163, 74, 0.3);
+    --badge-resolved-text: #166534;
+    --banner-critical-bg: rgba(220, 38, 38, 0.08);
+    --banner-critical-border: rgba(220, 38, 38, 0.25);
+    --banner-warning-bg: rgba(217, 119, 6, 0.08);
+    --banner-warning-border: rgba(217, 119, 6, 0.25);
+    --banner-info-bg: rgba(148, 163, 184, 0.08);
+    --banner-info-border: rgba(148, 163, 184, 0.25);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
   }
 
   .app-shell .text-steel {
@@ -298,6 +353,30 @@ body {
 
   .bg-surface-elevated {
     background-color: var(--color-surface-elevated);
+  }
+
+  .bg-demo-preview-frame {
+    background-color: var(--demo-preview-frame-bg);
+  }
+
+  .border-demo-preview-frame {
+    border-color: var(--demo-preview-frame-border);
+  }
+
+  .shadow-demo-preview-frame {
+    box-shadow: var(--demo-preview-frame-shadow);
+  }
+
+  .bg-demo-overlay {
+    background-color: var(--demo-overlay-bg);
+  }
+
+  .bg-demo-overlay-glass {
+    background-color: var(--demo-overlay-glass);
+  }
+
+  .border-demo-overlay {
+    border-color: var(--demo-overlay-border);
   }
 
   .bg-code {

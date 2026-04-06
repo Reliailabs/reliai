@@ -184,7 +184,15 @@ export function ControlPanelView({
       style={screenshotMode ? { width: screenshotWidth, maxWidth: screenshotWidth } : undefined}
     >
       <header className="overflow-hidden rounded-[32px] border border-zinc-300 bg-white shadow-sm">
-        <div className={cn("border-b border-zinc-200 bg-[linear-gradient(135deg,rgba(248,250,252,0.98),rgba(255,255,255,1)_55%,rgba(244,244,245,0.9))]", headerPaddingClass)}>
+        <div
+          className={cn(
+            "border-b border-zinc-200",
+            screenshotMode
+              ? "bg-surface-elevated"
+              : "bg-[linear-gradient(135deg,rgba(248,250,252,0.98),rgba(255,255,255,1)_55%,rgba(244,244,245,0.9))]",
+            headerPaddingClass,
+          )}
+        >
           {!screenshotMode ? (
             <a
               href={`/projects/${projectId}/timeline${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}

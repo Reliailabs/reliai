@@ -59,33 +59,33 @@ export function DemoTour({ steps, currentStep, onStepChange, onClose }: DemoTour
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-0 z-40 bg-[rgba(15,23,42,0.18)]" />
+      <div className="pointer-events-none fixed inset-0 z-40 bg-[rgba(2,6,23,0.4)]" />
       {highlightStyle ? (
         <div
-          className="pointer-events-none fixed z-50 rounded-[28px] border-2 border-sky-400 bg-transparent shadow-[0_0_0_9999px_rgba(255,255,255,0.02)] transition-all duration-300"
+          className="pointer-events-none fixed z-50 rounded-[28px] border-2 border-sky-400 bg-transparent shadow-[0_0_0_9999px_rgba(2,6,23,0.15)] transition-all duration-300"
           style={highlightStyle}
         />
       ) : null}
-      <div className="fixed bottom-6 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-[28px] border border-zinc-300 bg-white p-5 shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
+      <div className="fixed bottom-6 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-[28px] border border-demo-overlay bg-demo-overlay-glass p-5 text-textPrimary shadow-[0_24px_64px_rgba(2,6,23,0.45)] backdrop-blur">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">
+            <p className="text-xs uppercase tracking-[0.24em] text-textSecondary">
               Step {currentStep + 1} of {steps.length}
             </p>
-            <h3 className="mt-2 text-xl font-semibold text-ink">{step.title}</h3>
+            <h3 className="mt-2 text-xl font-semibold text-textPrimary">{step.title}</h3>
           </div>
           {onClose ? (
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-zinc-300 p-2 text-steel transition hover:bg-zinc-50 hover:text-ink"
+              className="rounded-full border border-demo-overlay p-2 text-textSecondary transition hover:bg-demo-overlay hover:text-textPrimary"
               aria-label="Close tour"
             >
               <X className="h-4 w-4" />
             </button>
           ) : null}
         </div>
-        <p className="mt-4 text-sm leading-7 text-steel">{step.description}</p>
+        <p className="mt-4 text-sm leading-7 text-textSecondary">{step.description}</p>
         <div className="mt-5 flex items-center justify-between">
           <Button
             type="button"
