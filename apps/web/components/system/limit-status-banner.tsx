@@ -14,19 +14,19 @@ import { cn } from "@/lib/utils";
 function severityStyles(severity: LimitStatus["severity"]) {
   if (severity === "critical") {
     return {
-      wrapper: "border-red-200 bg-red-50 text-red-900",
-      badge: "bg-red-100 text-red-700",
+      wrapper: "banner-critical",
+      badge: "badge badge-danger",
     };
   }
   if (severity === "warning") {
     return {
-      wrapper: "border-amber-200 bg-amber-50 text-amber-900",
-      badge: "bg-amber-100 text-amber-700",
+      wrapper: "banner-warning",
+      badge: "badge badge-warning",
     };
   }
   return {
-    wrapper: "border-zinc-200 bg-white text-ink",
-    badge: "bg-zinc-100 text-zinc-600",
+    wrapper: "banner-info",
+    badge: "badge badge-neutral",
   };
 }
 
@@ -182,10 +182,10 @@ export function LimitStatusBanner() {
     return (
       <div className={cn("mb-4 rounded-xl border px-4 py-3", styles.wrapper)}>
         <div className="flex items-start gap-3">
-          <div className={cn("mt-0.5 rounded-full px-2 py-1 text-xs font-semibold uppercase", styles.badge)}>
+          <div className={cn("mt-0.5", styles.badge)}>
             Recovery
           </div>
-          <div className="text-sm font-semibold">{recoveryMessage}</div>
+          <div className="text-sm font-semibold text-primary">{recoveryMessage}</div>
         </div>
       </div>
     );
@@ -205,29 +205,29 @@ export function LimitStatusBanner() {
     <div className={cn("mb-4 rounded-xl border px-4 py-3", styles.wrapper)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-[240px] flex-1 items-start gap-3">
-          <div className={cn("mt-0.5 rounded-full px-2 py-1 text-xs font-semibold uppercase", styles.badge)}>
+          <div className={cn("mt-0.5", styles.badge)}>
             Limit
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-semibold">
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary">
               <AlertTriangle className="h-4 w-4" />
               <span>{limit!.message}</span>
             </div>
-            <div className="mt-1 text-xs text-zinc-600">
+            <div className="mt-1 text-xs text-secondary">
               {scopeLine}{impact ? ` · ${impact}` : ""}
             </div>
             {isStorage ? (
-              <div className="mt-1 text-xs text-zinc-600">
+              <div className="mt-1 text-xs text-secondary">
                 Retention window may shrink as usage increases
               </div>
             ) : null}
             {isApiRate ? (
-              <div className="mt-1 text-xs text-zinc-600">
+              <div className="mt-1 text-xs text-secondary">
                 Reduce request frequency or retry rate
               </div>
             ) : null}
             {limit!.actionable?.primary ? (
-              <div className="mt-1 text-xs text-zinc-600">
+              <div className="mt-1 text-xs text-secondary">
                 {limit!.actionable.primary}
               </div>
             ) : null}
@@ -237,7 +237,7 @@ export function LimitStatusBanner() {
             {remainingCount > 0 ? (
               <button
                 type="button"
-                className="mt-2 text-xs font-medium text-zinc-700 hover:text-zinc-900"
+                className="mt-2 text-xs font-medium text-secondary hover:text-primary"
                 onClick={() => setExpanded((prev) => !prev)}
               >
                 {expanded ? "Hide other limits" : `+${remainingCount} other limits active`}
@@ -250,9 +250,9 @@ export function LimitStatusBanner() {
                   return (
                     <div
                       key={`${item.type}-${item.scope?.project_id ?? item.scope?.feature ?? "global"}-${index}`}
-                      className="rounded-lg border border-zinc-200 bg-white/60 px-2 py-2 text-xs text-zinc-700"
+                      className="rounded-lg border border-default bg-surface-elevated px-2 py-2 text-xs text-secondary"
                     >
-                      <div className="font-medium">[{otherLimitLabel(item.type)}] {item.message}</div>
+                      <div className="font-medium text-primary">[{otherLimitLabel(item.type)}] {item.message}</div>
                       {itemCta ? (
                         <div className="mt-1">
                           <Link href={{ pathname: itemCta.href }} className="underline underline-offset-4">
@@ -280,7 +280,7 @@ export function LimitStatusBanner() {
           ) : null}
           <button
             type="button"
-            className="text-xs text-zinc-500 hover:text-zinc-700"
+            className="text-xs text-muted hover:text-secondary"
             onClick={() => setDismissed(true)}
             aria-label="Dismiss limit banner"
           >

@@ -23,10 +23,10 @@ export function WarRoomToggle() {
     <button
       type="button"
       onClick={() => setEnabled((prev) => !prev)}
-      className="war-room-toggle flex w-full items-center justify-between gap-2 rounded-lg border border-line bg-white px-3 py-2 text-xs text-steel"
+      className="war-room-toggle flex w-full items-center justify-between gap-2 rounded-lg border border-line bg-white px-3 py-2 text-xs text-secondary"
     >
-      <span className="text-[10px] uppercase tracking-[0.2em] text-steel">War room</span>
-      <span className={`text-xs font-medium ${enabled ? "text-ink" : "text-steel"}`}>
+      <span className="text-[10px] uppercase tracking-[0.2em] text-secondary">War room</span>
+      <span className={`text-xs font-medium ${enabled ? "text-primary" : "text-secondary"}`}>
         {enabled ? "On" : "Off"}
       </span>
     </button>

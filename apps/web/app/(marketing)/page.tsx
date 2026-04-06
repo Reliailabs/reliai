@@ -103,7 +103,7 @@ const failures = [
 
 export default function MarketingHomePage() {
   return (
-    <main className="bg-[#f7f8fa] text-ink">
+    <main className="bg-page text-primary">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
         <div
@@ -111,10 +111,10 @@ export default function MarketingHomePage() {
           data-marketing-container
         >
           {/* Headline + CTAs */}
-          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
+          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-primary lg:text-5xl">
             Find and fix AI failures before your users do.
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-steel">
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-secondary">
             Reliai turns regressions into incidents, shows you what changed, and proves the fix worked.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -135,14 +135,14 @@ export default function MarketingHomePage() {
           <div className="mt-10 w-full max-w-3xl">
             <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-left shadow-sm md:flex-row md:items-center">
               <div>
-                <p className="text-xs uppercase tracking-[0.32em] text-steel">AI Reliability Audit</p>
-                <p className="mt-1 text-sm text-steel">
+                <p className="text-xs uppercase tracking-[0.32em] text-secondary">AI Reliability Audit</p>
+                <p className="mt-1 text-sm text-secondary">
                   7-day done-for-you audit to surface hidden failure modes before they reach users.
                 </p>
               </div>
               <Link
                 href="/ai-reliability-audit"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-primary underline underline-offset-4"
               >
                 See the audit offer
                 <ArrowRight className="h-4 w-4" />
@@ -155,17 +155,17 @@ export default function MarketingHomePage() {
       {/* ── Compatibility strip ───────────────────────────────────────────── */}
       <section className="border-b border-zinc-200 bg-white py-5">
         <div className={`${marketingContainerClass} flex flex-wrap items-center justify-between gap-4`}>
-          <p className="text-xs uppercase tracking-[0.28em] text-textMuted">Works with</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-muted">Works with</p>
           <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
             {["OpenAI", "Anthropic", "LangChain", "LlamaIndex", "Custom pipelines"].map((name) => (
-              <span key={name} className="text-sm font-medium text-textSecondary">
+              <span key={name} className="text-sm font-medium text-secondary">
                 {name}
               </span>
             ))}
           </div>
           <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-            <span className="text-xs font-medium text-textSecondary">
+            <span className="text-xs font-medium text-secondary">
               First incident detected in under 30 seconds
             </span>
           </div>
@@ -176,11 +176,11 @@ export default function MarketingHomePage() {
       <section className={`border-b border-zinc-200 ${marketingSectionClass}`}>
         <div className={`${marketingContainerClass} space-y-14`}>
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">How it works</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+            <p className="text-xs uppercase tracking-[0.28em] text-secondary">How it works</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-primary">
               From failure to fix — without manual triage.
             </h2>
-            <p className="mt-4 text-sm leading-6 text-steel">
+            <p className="mt-4 text-sm leading-6 text-secondary">
               Observability tells you something changed. Reliai tells you what broke and why.
             </p>
           </div>
@@ -194,13 +194,13 @@ export default function MarketingHomePage() {
                 }`}
               >
                 <div className={index % 2 === 1 ? "lg:order-2" : ""}>
-                  <p className="text-xs uppercase tracking-[0.28em] text-steel">{step.label}</p>
-                  <h3 className="mt-3 text-2xl font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-4 text-sm leading-6 text-steel">{step.body}</p>
+                  <p className="text-xs uppercase tracking-[0.28em] text-secondary">{step.label}</p>
+                  <h3 className="mt-3 text-2xl font-semibold text-primary">{step.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-secondary">{step.body}</p>
                 </div>
                 <div className={index % 2 === 1 ? "lg:order-1" : ""}>
                   <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                    <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
+                    <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-secondary">
                       app.reliai.dev/{step.urlSlug}
                     </div>
                     <div className="relative aspect-[16/9] overflow-hidden">
@@ -224,11 +224,11 @@ export default function MarketingHomePage() {
       <section className={`border-b border-zinc-200 ${marketingSectionClass}`}>
         <div className={`${marketingContainerClass}`}>
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">Failure coverage</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+            <p className="text-xs uppercase tracking-[0.28em] text-secondary">Failure coverage</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-primary">
               Recognize any of these?
             </h2>
-            <p className="mt-4 text-sm leading-6 text-steel">
+            <p className="mt-4 text-sm leading-6 text-secondary">
               These are the failures teams discover late — hours into a user-facing incident, long after the signal was
               detectable. Reliai catches each one as it happens.
             </p>
@@ -241,14 +241,14 @@ export default function MarketingHomePage() {
                 <div key={f.type} className="rounded-2xl border border-line bg-white p-5">
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50">
-                      <Icon className="h-4 w-4 text-textSecondary" />
+                      <Icon className="h-4 w-4 text-secondary" />
                     </div>
-                    <p className="text-sm font-semibold text-textPrimary">{f.type}</p>
+                    <p className="text-sm font-semibold text-primary">{f.type}</p>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-textSecondary">{f.what}</p>
+                  <p className="mt-3 text-sm leading-6 text-secondary">{f.what}</p>
                   <div className="mt-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2.5">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-textMuted">What Reliai does</p>
-                    <p className="mt-1 text-xs leading-5 text-textSecondary">{f.how}</p>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-muted">What Reliai does</p>
+                    <p className="mt-1 text-xs leading-5 text-secondary">{f.how}</p>
                   </div>
                 </div>
               );
@@ -261,11 +261,11 @@ export default function MarketingHomePage() {
       <section className={`border-b border-zinc-200 ${marketingSectionClass}`}>
         <div className={`${marketingContainerClass}`}>
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">Behavioral signals</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+            <p className="text-xs uppercase tracking-[0.28em] text-secondary">Behavioral signals</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-primary">
               The signals that actually break AI systems.
             </h2>
-            <p className="mt-4 text-sm leading-6 text-steel">
+            <p className="mt-4 text-sm leading-6 text-secondary">
               Standard monitoring tells you a request succeeded. Reliai tells you whether the response was actually
               correct. These are not the same thing — and the gap is where production AI fails silently.
             </p>
@@ -274,14 +274,14 @@ export default function MarketingHomePage() {
           <div className="mt-10 grid gap-5 md:grid-cols-3 md:gap-6">
             {signals.map((signal) => (
               <div key={signal.name} className="rounded-2xl border border-line bg-white/80 p-5 md:p-6">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-textMuted">{signal.label}</p>
-                <h3 className="mt-2 text-base font-semibold leading-snug text-textPrimary">{signal.name}</h3>
-                <p className="mt-3 text-sm leading-6 text-textSecondary">{signal.description}</p>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-muted">{signal.label}</p>
+                <h3 className="mt-2 text-base font-semibold leading-snug text-primary">{signal.name}</h3>
+                <p className="mt-3 text-sm leading-6 text-secondary">{signal.description}</p>
               </div>
             ))}
           </div>
 
-          <p className="mt-6 text-sm text-textSecondary">
+          <p className="mt-6 text-sm text-secondary">
             Evals test before you deploy. Reliai catches what evals miss — in production, in real traffic, in real time.
           </p>
         </div>
@@ -291,8 +291,8 @@ export default function MarketingHomePage() {
       <section className={`border-b border-zinc-200 ${marketingSectionClass}`}>
         <div className={`${marketingContainerClass}`}>
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">Positioning</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+            <p className="text-xs uppercase tracking-[0.28em] text-secondary">Positioning</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-primary">
               Not observability. Not evals. Incident response.
             </h2>
           </div>
@@ -300,7 +300,7 @@ export default function MarketingHomePage() {
           <div className="mt-8 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line text-left text-xs uppercase tracking-[0.22em] text-textMuted">
+                <tr className="border-b border-line text-left text-xs uppercase tracking-[0.22em] text-muted">
                   <th className="pb-3 pr-6 font-medium">Tool</th>
                   <th className="pb-3 pr-6 font-medium">What it does</th>
                   <th className="pb-3 font-medium">What&rsquo;s missing</th>
@@ -308,34 +308,34 @@ export default function MarketingHomePage() {
               </thead>
               <tbody className="divide-y divide-line">
                 <tr>
-                  <td className="py-4 pr-6 font-medium text-textPrimary">Langfuse, LangSmith</td>
-                  <td className="py-4 pr-6 text-textSecondary">Logs traces. Shows you what happened.</td>
-                  <td className="py-4 text-textSecondary">No incidents. No root cause.</td>
+                  <td className="py-4 pr-6 font-medium text-primary">Langfuse, LangSmith</td>
+                  <td className="py-4 pr-6 text-secondary">Logs traces. Shows you what happened.</td>
+                  <td className="py-4 text-secondary">No incidents. No root cause.</td>
                 </tr>
                 <tr>
-                  <td className="py-4 pr-6 font-medium text-textPrimary">Arize, Fiddler</td>
-                  <td className="py-4 pr-6 text-textSecondary">ML observability dashboards. Charts that drift.</td>
-                  <td className="py-4 text-textSecondary">
+                  <td className="py-4 pr-6 font-medium text-primary">Arize, Fiddler</td>
+                  <td className="py-4 pr-6 text-secondary">ML observability dashboards. Charts that drift.</td>
+                  <td className="py-4 text-secondary">
                     Not designed for LLM behavioral signals. No incident lifecycle.
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-4 pr-6 font-medium text-textPrimary">Custom dashboards</td>
-                  <td className="py-4 pr-6 text-textSecondary">You build the queries. You set the thresholds.</td>
-                  <td className="py-4 text-textSecondary">Ongoing maintenance. No root cause. No workflow.</td>
+                  <td className="py-4 pr-6 font-medium text-primary">Custom dashboards</td>
+                  <td className="py-4 pr-6 text-secondary">You build the queries. You set the thresholds.</td>
+                  <td className="py-4 text-secondary">Ongoing maintenance. No root cause. No workflow.</td>
                 </tr>
                 <tr className="bg-white/60">
-                  <td className="py-4 pr-6 font-semibold text-textPrimary">Reliai</td>
-                  <td className="py-4 pr-6 text-textSecondary">
+                  <td className="py-4 pr-6 font-semibold text-primary">Reliai</td>
+                  <td className="py-4 pr-6 text-secondary">
                     Opens incidents when behavior degrades. Walks you from failure to root cause to fix.
                   </td>
-                  <td className="py-4 text-textSecondary">—</td>
+                  <td className="py-4 text-secondary">—</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <p className="mt-6 text-sm text-textSecondary">
+          <p className="mt-6 text-sm text-secondary">
             If you&rsquo;re debugging AI with logs, you&rsquo;re already too late. Reliai turns failures into incidents
             before they become user-facing problems.
           </p>
@@ -346,16 +346,16 @@ export default function MarketingHomePage() {
       <section className={`border-b border-zinc-200 ${marketingSectionClass}`}>
         <div className={`${marketingContainerClass} grid gap-10 lg:grid-cols-2 lg:items-center`}>
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">See it live</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+            <p className="text-xs uppercase tracking-[0.28em] text-secondary">See it live</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-primary">
               A hallucination spike — detected, diagnosed, and fixed in 6 minutes.
             </h2>
-            <p className="mt-4 text-sm leading-6 text-steel">
+            <p className="mt-4 text-sm leading-6 text-secondary">
               No API key, no setup. Reliai generates a clean baseline, injects a hallucination spike, opens a real
               incident, and walks through root cause to verified fix — exactly as an operator would see it in
               production.
             </p>
-            <ol className="mt-6 space-y-3 text-sm leading-6 text-steel">
+            <ol className="mt-6 space-y-3 text-sm leading-6 text-secondary">
               <li className="flex gap-3">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-[10px] font-semibold text-zinc-600">
                   1
@@ -381,7 +381,7 @@ export default function MarketingHomePage() {
                 Fix verified: failure rate drops from 19% → 5% — loop closes with proof, not assumption
               </li>
             </ol>
-            <p className="mt-6 text-sm font-medium text-textPrimary">
+            <p className="mt-6 text-sm font-medium text-primary">
               From &ldquo;something broke&rdquo; to fix verified — with the cause named and the numbers proved.
             </p>
             <div className="mt-6">
@@ -394,7 +394,7 @@ export default function MarketingHomePage() {
             </div>
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-steel">
+            <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-[11px] text-secondary">
               app.reliai.dev/playground
             </div>
             <div className="relative aspect-[16/10] overflow-hidden">

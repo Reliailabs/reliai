@@ -42,19 +42,19 @@ export function ProjectEnvironmentShell({
   ];
 
   return (
-    <div className="rounded-[24px] border border-line bg-surface px-5 py-4 shadow-none">
+    <div className="rounded-[24px] border border-default bg-surface px-5 py-4 shadow-none">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.24em] text-steel">Project scope</p>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-secondary">Project scope</p>
           <div className="mt-2 flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-ink">{projectName}</h1>
-            <span className="rounded-full border border-line bg-surfaceAlt px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-steel">
+            <h1 className="text-lg font-semibold text-primary">{projectName}</h1>
+            <span className="rounded-full border border-default bg-surface-elevated px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-secondary">
               {selectedEnvironment}
             </span>
           </div>
         </div>
-        <label className="flex items-center gap-3 rounded-2xl border border-line bg-surfaceAlt px-4 py-3 text-sm text-steel">
-          <span className="font-medium text-ink">Environment</span>
+        <label className="flex items-center gap-3 rounded-2xl border border-default bg-surface-elevated px-4 py-3 text-sm text-secondary">
+          <span className="font-medium text-primary">Environment</span>
           <select
             value={selectedEnvironment}
             onChange={(event) => {
@@ -62,7 +62,7 @@ export function ProjectEnvironmentShell({
               params.set("environment", event.target.value);
               window.location.assign(`${pathname}?${params.toString()}`);
             }}
-            className="min-w-44 rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink outline-none"
+            className="min-w-44 rounded-md border border-default bg-surface px-3 py-2 text-sm text-primary outline-none"
           >
             {environments.map((environment) => (
               <option key={environment.id} value={environment.name}>
@@ -77,10 +77,10 @@ export function ProjectEnvironmentShell({
           <a
             key={tab.label}
             href={tab.href.startsWith("/incidents") ? tab.href : withEnvironment(tab.href, selectedEnvironment)}
-            className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+            className={`rounded-full border border-transparent px-3 py-2 text-sm font-medium transition ${
               tab.active
-                ? "bg-ink text-white"
-                : "border border-line bg-surfaceAlt text-steel hover:border-border hover:text-ink"
+                ? "tab-active border-default"
+                : "tab-inactive bg-surface-elevated hover:border-default"
             }`}
           >
             {tab.label}

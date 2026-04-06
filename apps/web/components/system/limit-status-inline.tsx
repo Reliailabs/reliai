@@ -60,9 +60,9 @@ function filterUpgradeCtas(limit: LimitStatus, cta?: LimitStatus["cta"] | null) 
 }
 
 function severityTone(severity: LimitStatus["severity"]) {
-  if (severity === "critical") return "border-red-200 bg-red-50 text-red-900";
-  if (severity === "warning") return "border-amber-200 bg-amber-50 text-amber-900";
-  return "border-zinc-200 bg-zinc-50 text-zinc-800";
+  if (severity === "critical") return "banner-critical";
+  if (severity === "warning") return "banner-warning";
+  return "banner-info";
 }
 
 function statusIcon(status: LimitStatus["status"]) {
@@ -88,27 +88,27 @@ export function LimitStatusInline({ limits }: { limits: LimitStatus[] }) {
             key={`${limit.type}-${limit.scope?.feature ?? limit.scope?.project_id ?? "global"}-${index}`}
             className={cn("rounded-lg border px-3 py-2 text-xs", severityTone(limit.severity))}
           >
-            <div className="flex items-center gap-2 font-medium">
+            <div className="flex items-center gap-2 font-medium text-primary">
               <Icon className="h-3.5 w-3.5" />
               <span>{limit.message}</span>
             </div>
             {quant ? (
-              <p className="mt-1 text-[11px] opacity-80">
+              <p className="mt-1 text-[11px] text-secondary">
                 {quant}
               </p>
             ) : null}
             {isStorage ? (
-              <p className="mt-1 text-[11px] opacity-80">
+              <p className="mt-1 text-[11px] text-secondary">
                 Retention window may shrink as usage increases
               </p>
             ) : null}
             {isApiRate ? (
-              <p className="mt-1 text-[11px] opacity-80">
+              <p className="mt-1 text-[11px] text-secondary">
                 Reduce request frequency or retry rate
               </p>
             ) : null}
             {limit.type === "sampling" ? (
-              <p className="mt-1 text-[11px] opacity-80">
+              <p className="mt-1 text-[11px] text-secondary">
                 Incident evidence may be partial due to sampling.
               </p>
             ) : null}

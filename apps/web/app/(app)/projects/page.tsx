@@ -34,17 +34,17 @@ export default async function ProjectsPage() {
   return (
     <div className="space-y-6">
       <header className="rounded-2xl border border-line bg-surface px-6 py-5">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Projects</p>
+        <p className="text-xs uppercase tracking-[0.24em] text-secondary">Projects</p>
         <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-ink">Workspace projects</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
+            <h1 className="text-lg font-semibold text-primary">Workspace projects</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-secondary">
               Jump into a project control panel or open a specific reliability surface for the active
               organization.
             </p>
           </div>
           {activeOrganizationId ? (
-            <div className="rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-xs text-steel">
+            <div className="rounded-lg border border-line bg-surfaceAlt px-3 py-2 text-xs text-secondary">
               Active org · {activeOrganizationName}
             </div>
           ) : null}
@@ -53,9 +53,9 @@ export default async function ProjectsPage() {
 
       {projects.length === 0 ? (
         <Card className="rounded-2xl border-line bg-surface p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-steel">No projects yet</p>
-          <h2 className="mt-3 text-lg font-semibold text-ink">Create your first project workspace</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
+          <p className="text-xs uppercase tracking-[0.24em] text-secondary">No projects yet</p>
+          <h2 className="mt-3 text-lg font-semibold text-primary">Create your first project workspace</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-secondary">
             Start by creating a project, run the guided simulation, or connect your system to send
             traces directly.
           </p>
@@ -74,9 +74,9 @@ export default async function ProjectsPage() {
       ) : (
         <Card className="rounded-2xl border-line bg-surface p-6">
           <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-y-4 text-left text-sm text-steel">
+            <table className="w-full border-separate border-spacing-y-4 text-left text-sm text-secondary">
               <thead>
-                <tr className="text-xs uppercase tracking-[0.24em] text-steel">
+                <tr className="text-xs uppercase tracking-[0.24em] text-secondary">
                   <th className="px-2 py-2 font-medium">Project</th>
                   <th className="px-2 py-2 font-medium">Environment</th>
                   <th className="px-2 py-2 font-medium">Actions</th>
@@ -126,19 +126,19 @@ export default async function ProjectsPage() {
                   return (
                     <tr key={project.id} className="rounded-2xl border border-line bg-white">
                       <td className="px-4 py-4 align-top">
-                        <div className="text-xs uppercase tracking-[0.24em] text-steel">Project</div>
-                        <div className="mt-2 text-base font-semibold text-ink">{project.name}</div>
-                        <p className="mt-2 text-sm text-steel">
+                        <div className="text-xs uppercase tracking-[0.24em] text-secondary">Project</div>
+                        <div className="mt-2 text-base font-semibold text-primary">{project.name}</div>
+                        <p className="mt-2 text-sm text-secondary">
                           {project.description || "Production scope for reliability operations."}
                         </p>
                       </td>
                       <td className="px-4 py-4 align-top">
                         {environment ? (
-                          <span className="rounded-full border border-line bg-surfaceAlt px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-steel">
+                          <span className="rounded-full border border-line bg-surfaceAlt px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-secondary">
                             {environment}
                           </span>
                         ) : (
-                          <span className="text-xs text-steel">Not set</span>
+                          <span className="text-xs text-secondary">Not set</span>
                         )}
                       </td>
                       <td className="px-4 py-4 align-top">
@@ -152,7 +152,7 @@ export default async function ProjectsPage() {
                             <Link
                               key={`${project.id}-${tab.label}`}
                               href={tab.href as Route}
-                              className="rounded-full border border-line bg-surfaceAlt px-3 py-1.5 text-xs font-medium text-steel transition hover:border-border hover:text-ink"
+                              className="rounded-full border border-line bg-surfaceAlt px-3 py-1.5 text-xs font-medium text-secondary transition hover:border-border hover:text-primary"
                             >
                               {tab.label}
                             </Link>

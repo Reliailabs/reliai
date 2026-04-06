@@ -112,14 +112,14 @@ function TracePairDrawer({
       <aside className="fixed right-0 top-0 z-50 flex h-full w-full max-w-2xl flex-col border-l border-zinc-200 bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-steel">Trace pair #{pair.pair_index + 1}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-secondary">Trace pair #{pair.pair_index + 1}</p>
             {current ? (
-              <p className="mt-1 font-mono text-sm text-ink">{shortId(current.id)}</p>
+              <p className="mt-1 font-mono text-sm text-primary">{shortId(current.id)}</p>
             ) : null}
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-steel transition hover:bg-zinc-100 hover:text-ink"
+            className="rounded-md p-1.5 text-secondary transition hover:bg-zinc-100 hover:text-primary"
           >
             <X className="h-4 w-4" />
           </button>
@@ -128,51 +128,51 @@ function TracePairDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
           {/* Output comparison */}
           <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-steel">Output comparison</p>
+            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-secondary">Output comparison</p>
             <div className="grid gap-3 xl:grid-cols-2">
               <div className="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-[0.15em] text-rose-600">Failing</p>
                 {current ? (
-                  <div className="space-y-1 text-sm text-steel">
-                    <p><span className="font-medium text-ink">model:</span> {current.model_name}</p>
+                  <div className="space-y-1 text-sm text-secondary">
+                    <p><span className="font-medium text-primary">model:</span> {current.model_name}</p>
                     {current.prompt_version ? (
-                      <p><span className="font-medium text-ink">prompt:</span> {current.prompt_version}</p>
+                      <p><span className="font-medium text-primary">prompt:</span> {current.prompt_version}</p>
                     ) : null}
-                    <p><span className="font-medium text-ink">success:</span>{" "}
+                    <p><span className="font-medium text-primary">success:</span>{" "}
                       <span className={current.success ? "text-emerald-600" : "text-rose-600"}>
                         {current.success ? "yes" : "no"}
                       </span>
                     </p>
                     {current.error_type ? (
-                      <p><span className="font-medium text-ink">error:</span> {current.error_type}</p>
+                      <p><span className="font-medium text-primary">error:</span> {current.error_type}</p>
                     ) : null}
                     {current.latency_ms ? (
-                      <p><span className="font-medium text-ink">latency:</span> {current.latency_ms}ms</p>
+                      <p><span className="font-medium text-primary">latency:</span> {current.latency_ms}ms</p>
                     ) : null}
                   </div>
                 ) : (
-                  <p className="text-sm text-steel">No current trace</p>
+                  <p className="text-sm text-secondary">No current trace</p>
                 )}
               </div>
               <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-[0.15em] text-emerald-600">Baseline</p>
                 {baseline ? (
-                  <div className="space-y-1 text-sm text-steel">
-                    <p><span className="font-medium text-ink">model:</span> {baseline.model_name}</p>
+                  <div className="space-y-1 text-sm text-secondary">
+                    <p><span className="font-medium text-primary">model:</span> {baseline.model_name}</p>
                     {baseline.prompt_version ? (
-                      <p><span className="font-medium text-ink">prompt:</span> {baseline.prompt_version}</p>
+                      <p><span className="font-medium text-primary">prompt:</span> {baseline.prompt_version}</p>
                     ) : null}
-                    <p><span className="font-medium text-ink">success:</span>{" "}
+                    <p><span className="font-medium text-primary">success:</span>{" "}
                       <span className={baseline.success ? "text-emerald-600" : "text-rose-600"}>
                         {baseline.success ? "yes" : "no"}
                       </span>
                     </p>
                     {baseline.latency_ms ? (
-                      <p><span className="font-medium text-ink">latency:</span> {baseline.latency_ms}ms</p>
+                      <p><span className="font-medium text-primary">latency:</span> {baseline.latency_ms}ms</p>
                     ) : null}
                   </div>
                 ) : (
-                  <p className="text-sm text-steel">No baseline trace matched</p>
+                  <p className="text-sm text-secondary">No baseline trace matched</p>
                 )}
               </div>
             </div>
@@ -180,7 +180,7 @@ function TracePairDrawer({
 
           {/* Diff blocks */}
           <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-steel">Signal breakdown</p>
+            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-secondary">Signal breakdown</p>
             <div className="space-y-2">
               {pair.diff_blocks.map((block) => (
                 <div
@@ -193,7 +193,7 @@ function TracePairDrawer({
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-ink">{block.title}</p>
+                    <p className="text-sm font-medium text-primary">{block.title}</p>
                     {block.changed ? (
                       <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-800">
                         changed
@@ -205,7 +205,7 @@ function TracePairDrawer({
                     )}
                   </div>
                   {(block.current_value || block.baseline_value) ? (
-                    <div className="mt-2 grid gap-2 text-xs text-steel sm:grid-cols-2">
+                    <div className="mt-2 grid gap-2 text-xs text-secondary sm:grid-cols-2">
                       {block.current_value ? (
                         <div>
                           <span className="font-medium text-rose-600">failing: </span>
@@ -228,11 +228,11 @@ function TracePairDrawer({
           {/* Structured output */}
           {current?.structured_output ? (
             <div>
-              <p className="mb-2 text-xs uppercase tracking-[0.2em] text-steel">Structured output</p>
-              <div className="rounded-[12px] border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-steel">
-                <p><span className="font-medium text-ink">label:</span> {current.structured_output.label ?? "n/a"}</p>
+              <p className="mb-2 text-xs uppercase tracking-[0.2em] text-secondary">Structured output</p>
+              <div className="rounded-[12px] border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-secondary">
+                <p><span className="font-medium text-primary">label:</span> {current.structured_output.label ?? "n/a"}</p>
                 {current.structured_output.reason ? (
-                  <p className="mt-1"><span className="font-medium text-ink">reason:</span> {current.structured_output.reason}</p>
+                  <p className="mt-1"><span className="font-medium text-primary">reason:</span> {current.structured_output.reason}</p>
                 ) : null}
               </div>
             </div>
@@ -289,13 +289,13 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
       <header className="rounded-[20px] border border-zinc-300 bg-white px-5 py-4">
         <Link
           href={`/incidents/${incidentId}/command`}
-          className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+          className="inline-flex items-center gap-2 text-sm text-secondary hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to overview
         </Link>
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-          <span className="font-semibold text-ink">{incident.title}</span>
+          <span className="font-semibold text-primary">{incident.title}</span>
           <span className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-semibold uppercase text-zinc-600">
             {incident.severity}
           </span>
@@ -303,27 +303,27 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
       </header>
 
       {/* Tab nav */}
-      <nav className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1">
-        {TABS.map((tab) => (
-          <Link
-            key={tab.id}
-            href={`/incidents/${incidentId}/command?tab=${tab.id}`}
-            className={cn(
-              "rounded-[10px] px-4 py-2 text-sm font-medium transition-colors",
-              activeTab === tab.id
-                ? "bg-white text-ink shadow-sm"
-                : "text-steel hover:text-ink"
-            )}
-          >
-            {tab.label}
-          </Link>
-        ))}
+        <nav className="flex gap-1 rounded-[14px] border border-default bg-surface-elevated p-1">
+          {TABS.map((tab) => (
+            <Link
+              key={tab.id}
+              href={`/incidents/${incidentId}/command?tab=${tab.id}`}
+              className={cn(
+                "rounded-[10px] border border-transparent px-4 py-2 text-sm font-medium transition-colors",
+                activeTab === tab.id
+                  ? "tab-active border-default"
+                  : "tab-inactive hover:border-default"
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
       </nav>
 
       {comparison === null ? (
         <div className="rounded-[18px] border border-zinc-200 bg-white px-6 py-10 text-center">
-          <p className="text-sm font-medium text-ink">Could not load cohort comparison</p>
-          <p className="mt-2 text-sm text-steel">Try refreshing the page.</p>
+          <p className="text-sm font-medium text-primary">Could not load cohort comparison</p>
+          <p className="mt-2 text-sm text-secondary">Try refreshing the page.</p>
           <div className="mt-4">
             <Button asChild size="sm" variant="outline">
               <Link href={`/incidents/${incidentId}/command?tab=cohort-diff`}>Retry</Link>
@@ -341,8 +341,8 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
               { label: "Most likely driver", value: topDriverLabel },
             ].map((card) => (
               <div key={card.label} className="rounded-[16px] border border-zinc-200 bg-white px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-steel">{card.label}</p>
-                <p className="mt-2 truncate text-lg font-semibold text-ink" title={card.value}>{card.value}</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-secondary">{card.label}</p>
+                <p className="mt-2 truncate text-lg font-semibold text-primary" title={card.value}>{card.value}</p>
               </div>
             ))}
           </div>
@@ -351,11 +351,11 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
           <div className="flex flex-wrap items-center gap-3">
             {/* Sort dropdown */}
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-[0.18em] text-steel">Sort</span>
+              <span className="text-xs uppercase tracking-[0.18em] text-secondary">Sort</span>
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-ink focus:outline-none"
+                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-primary focus:outline-none"
               >
                 <option value="confidence">Highest failure confidence</option>
                 <option value="latest">Latest first</option>
@@ -373,7 +373,7 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
                     "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                     signalFilter === f.key
                       ? "bg-ink text-white"
-                      : "border border-zinc-200 bg-white text-steel hover:border-zinc-300 hover:text-ink"
+                      : "border border-zinc-200 bg-white text-secondary hover:border-zinc-300 hover:text-primary"
                   )}
                 >
                   {f.label}
@@ -382,15 +382,15 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
             </div>
 
             {topSignalLabel !== "No dominant signal" ? (
-              <span className="ml-auto text-xs text-steel">{topSignalLabel}</span>
+              <span className="ml-auto text-xs text-secondary">{topSignalLabel}</span>
             ) : null}
           </div>
 
           {/* Comparison table */}
           {displayPairs.length === 0 ? (
             <div className="rounded-[18px] border border-zinc-200 bg-white px-6 py-10 text-center">
-              <p className="text-sm font-medium text-ink">No matched baseline traces found</p>
-              <p className="mt-2 text-sm text-steel">
+              <p className="text-sm font-medium text-primary">No matched baseline traces found</p>
+              <p className="mt-2 text-sm text-secondary">
                 Try changing the baseline window or removing filters.
               </p>
               <div className="mt-4">
@@ -404,12 +404,12 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-100">
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-steel font-medium">Trace ID</th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-steel font-medium">Prompt version</th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-steel font-medium">Changed signals</th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-steel font-medium">Failure signal</th>
-                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-steel font-medium">Time</th>
-                    <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.18em] text-steel font-medium">Details</th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-secondary font-medium">Trace ID</th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-secondary font-medium">Prompt version</th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-secondary font-medium">Changed signals</th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-secondary font-medium">Failure signal</th>
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.18em] text-secondary font-medium">Time</th>
+                    <th className="px-4 py-3 text-right text-xs uppercase tracking-[0.18em] text-secondary font-medium">Details</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -423,11 +423,11 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
                         className="border-b border-zinc-50 hover:bg-zinc-50 transition-colors"
                       >
                         <td className="px-4 py-3">
-                          <span className="font-mono text-xs text-ink">
+                          <span className="font-mono text-xs text-primary">
                             {current ? shortId(current.id) : "—"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-steel">
+                        <td className="px-4 py-3 text-secondary">
                           {current?.prompt_version ?? "—"}
                         </td>
                         <td className="px-4 py-3">
@@ -442,11 +442,11 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
                                 </span>
                               ))}
                               {changed.length > 3 ? (
-                                <span className="text-xs text-steel">+{changed.length - 3}</span>
+                                <span className="text-xs text-secondary">+{changed.length - 3}</span>
                               ) : null}
                             </div>
                           ) : (
-                            <span className="text-xs text-steel">none</span>
+                            <span className="text-xs text-secondary">none</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -455,16 +455,16 @@ export function CohortDiffView({ incidentId, incident, comparison, activeTab }: 
                               {signal}
                             </span>
                           ) : (
-                            <span className="text-xs text-steel">—</span>
+                            <span className="text-xs text-secondary">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-xs text-steel">
+                        <td className="px-4 py-3 text-xs text-secondary">
                           {current ? formatTime(current.timestamp) : "—"}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
                             onClick={() => setOpenPair(pair)}
-                            className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-steel transition hover:border-zinc-300 hover:text-ink"
+                            className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-secondary transition hover:border-zinc-300 hover:text-primary"
                           >
                             Expand
                             <ChevronRight className="h-3 w-3" />

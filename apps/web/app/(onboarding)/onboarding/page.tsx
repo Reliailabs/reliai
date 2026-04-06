@@ -76,13 +76,13 @@ export default async function OnboardingPage({
     return (
       <div className="space-y-6">
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-steel">Guided simulation</p>
-          <h1 className="mt-3 text-3xl font-semibold text-ink">See your first AI incident in under 2 minutes</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-steel">
+          <p className="text-xs uppercase tracking-[0.24em] text-secondary">Guided simulation</p>
+          <h1 className="mt-3 text-3xl font-semibold text-primary">See your first AI incident in under 2 minutes</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-secondary">
             We simulate a realistic failure, open an incident automatically, and walk you through
             root cause and resolution impact. No SDK required.
           </p>
-          <div className="mt-4 grid gap-2 text-sm text-steel">
+          <div className="mt-4 grid gap-2 text-sm text-secondary">
             <p>1. Hallucination spike detected — 19% failure rate vs 4% baseline.</p>
             <p>2. Root cause scored — prompt v42 identified at 71% confidence.</p>
             <p>3. Fix verified — failure rate reduced from 19% → 5% after reverting.</p>
@@ -98,19 +98,19 @@ export default async function OnboardingPage({
         </Card>
 
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.24em] text-steel">What you will see</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-secondary">What you will see</p>
           <div className="mt-3 grid gap-4 md:grid-cols-3">
             <div>
-              <p className="text-sm font-semibold text-ink">Trigger</p>
-              <p className="mt-1 text-sm text-steel">A hallucination spike triggers an incident automatically when behavior deviates.</p>
+              <p className="text-sm font-semibold text-primary">Trigger</p>
+              <p className="mt-1 text-sm text-secondary">A hallucination spike triggers an incident automatically when behavior deviates.</p>
             </div>
             <div>
               <p className="text-sm font-semibold text-amber-700">Root Cause</p>
-              <p className="mt-1 text-sm text-steel">Prompt rollout identified as primary driver — 71% confidence, 82 minutes before incident.</p>
+              <p className="mt-1 text-sm text-secondary">Prompt rollout identified as primary driver — 71% confidence, 82 minutes before incident.</p>
             </div>
             <div>
               <p className="text-sm font-semibold text-green-700">Impact</p>
-              <p className="mt-1 text-sm text-steel">Failure rate reduced from <span className="font-semibold text-red-600">19%</span> → <span className="font-semibold text-green-600">5%</span> after reverting prompt v42.</p>
+              <p className="mt-1 text-sm text-secondary">Failure rate reduced from <span className="font-semibold text-danger">19%</span> → <span className="font-semibold text-success">5%</span> after reverting prompt v42.</p>
             </div>
           </div>
         </Card>
@@ -222,9 +222,9 @@ export default async function OnboardingPage({
       <OnboardingPathTracker path={selectedPath} />
 
       <Card className="p-6">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Quick start</p>
-        <h1 className="mt-3 text-3xl font-semibold text-ink">See your first AI incident in minutes</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-steel">
+        <p className="text-xs uppercase tracking-[0.24em] text-secondary">Quick start</p>
+        <h1 className="mt-3 text-3xl font-semibold text-primary">See your first AI incident in minutes</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-secondary">
           Connect your live system or run a guided simulation to experience the incident workflow.
           The goal is to get to actionable investigation quickly.
         </p>
@@ -249,9 +249,9 @@ export default async function OnboardingPage({
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card className="p-6">
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 1</p>
-              <h2 className="mt-2 text-xl font-semibold text-ink">Connect your app</h2>
-              <p className="mt-2 text-sm leading-6 text-steel">
+              <p className="text-xs uppercase tracking-[0.24em] text-secondary">Option 1</p>
+              <h2 className="mt-2 text-xl font-semibold text-primary">Connect your app</h2>
+              <p className="mt-2 text-sm leading-6 text-secondary">
                 Install the SDK and send traces from your own environment. This path is best when you
                 already have traffic and want production signals immediately.
               </p>
@@ -263,9 +263,9 @@ export default async function OnboardingPage({
             </Card>
 
             <Card className="p-6">
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Option 2</p>
-              <h2 className="mt-2 text-xl font-semibold text-ink">Try a guided simulation</h2>
-              <p className="mt-2 text-sm leading-6 text-steel">
+              <p className="text-xs uppercase tracking-[0.24em] text-secondary">Option 2</p>
+              <h2 className="mt-2 text-xl font-semibold text-primary">Try a guided simulation</h2>
+              <p className="mt-2 text-sm leading-6 text-secondary">
                 See a hallucination spike — detected at 19%, root-caused to prompt v42, and fixed in 6 minutes.
                 The same incident you saw on the homepage, live in the product.
               </p>
@@ -276,18 +276,18 @@ export default async function OnboardingPage({
               </div>
             </Card>
           </div>
-          <p className="text-center text-xs text-steel">
+          <p className="text-center text-xs text-secondary">
             After setup, navigate to any project to define{" "}
-            <Link href="/dashboard" className="underline hover:text-ink">
+            <Link href="/dashboard" className="underline hover:text-primary">
               custom behavioral signals
             </Link>{" "}
             — like refusal language, policy violations, or hallucination markers.
           </p>
           {primaryProjectId ? (
             <Card className="p-5">
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Behavioral signals</p>
-              <h3 className="mt-2 text-xl font-semibold text-ink">Create a refusal metric</h3>
-              <p className="mt-2 text-sm text-steel">
+              <p className="text-xs uppercase tracking-[0.24em] text-secondary">Behavioral signals</p>
+              <h3 className="mt-2 text-xl font-semibold text-primary">Create a refusal metric</h3>
+              <p className="mt-2 text-sm text-secondary">
                 Turn refusal spikes into a persistent metric you can track in Reliability and incidents.
               </p>
               <div className="mt-4">
@@ -305,9 +305,9 @@ export default async function OnboardingPage({
       {selectedPath === "sdk" ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
           <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Connect your app</p>
-            <h2 className="mt-3 text-2xl font-semibold text-ink">Install SDK and send first traces</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Connect your app</p>
+            <h2 className="mt-3 text-2xl font-semibold text-primary">Install SDK and send first traces</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-secondary">
               Use this setup checklist to create a workspace, issue a key, and verify ingestion.
               If your traffic is quiet, switch to simulation and return later.
             </p>
@@ -324,12 +324,12 @@ export default async function OnboardingPage({
                     className="grid gap-4 rounded-xl border border-line bg-surface px-4 py-4 md:grid-cols-[48px_minmax(0,1fr)_auto]"
                   >
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white">
-                      <Icon className="h-5 w-5 text-ink" />
+                      <Icon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-steel">Step {index + 1}</p>
-                      <h3 className="mt-1 text-lg font-semibold text-ink">{step.label}</h3>
-                      <p className="mt-2 text-sm leading-6 text-steel">{step.detail}</p>
+                      <p className="text-sm text-secondary">Step {index + 1}</p>
+                      <h3 className="mt-1 text-lg font-semibold text-primary">{step.label}</h3>
+                      <p className="mt-2 text-sm leading-6 text-secondary">{step.detail}</p>
                     </div>
                     <div className="flex items-center">
                       {isDone ? (
@@ -341,7 +341,7 @@ export default async function OnboardingPage({
                           Current
                         </span>
                       ) : (
-                        <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-steel">
+                        <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-secondary">
                           Pending
                         </span>
                       )}
@@ -352,32 +352,32 @@ export default async function OnboardingPage({
             </div>
 
             <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Organization</p>
-              <p className="mt-2 text-sm text-steel">
-                Active: <span className="font-medium text-ink">{activeOrganizationLabel}</span>
+              <p className="text-xs uppercase tracking-[0.24em] text-secondary">Organization</p>
+              <p className="mt-2 text-sm text-secondary">
+                Active: <span className="font-medium text-primary">{activeOrganizationLabel}</span>
               </p>
-              <p className="mt-2 text-sm text-steel">
+              <p className="mt-2 text-sm text-secondary">
                 {hasOrganization
                   ? "You can create another organization at any time. The new organization becomes active immediately."
                   : "Create your first organization to start ingesting traces."}
               </p>
 
               <form action={createOrganizationAction} className="mt-4 grid gap-3 md:grid-cols-2">
-                <label className="block space-y-2 text-sm text-steel">
-                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Organization name</span>
+                <label className="block space-y-2 text-sm text-secondary">
+                  <span className="text-xs uppercase tracking-[0.24em] text-secondary">Organization name</span>
                   <input
                     name="name"
                     defaultValue={defaultName}
-                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-primary"
                   />
                 </label>
 
-                <label className="block space-y-2 text-sm text-steel">
-                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Slug</span>
+                <label className="block space-y-2 text-sm text-secondary">
+                  <span className="text-xs uppercase tracking-[0.24em] text-secondary">Slug</span>
                   <input
                     name="slug"
                     defaultValue={defaultSlug}
-                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-primary"
                   />
                 </label>
 
@@ -395,20 +395,20 @@ export default async function OnboardingPage({
 
             {hasOrganization && !hasProject ? (
               <form action={createProjectAction} className="mt-6 grid gap-3 md:grid-cols-2">
-                <label className="block space-y-2 text-sm text-steel">
-                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Project name</span>
+                <label className="block space-y-2 text-sm text-secondary">
+                  <span className="text-xs uppercase tracking-[0.24em] text-secondary">Project name</span>
                   <input
                     name="project_name"
                     defaultValue="Production"
-                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-primary"
                   />
                 </label>
-                <label className="block space-y-2 text-sm text-steel">
-                  <span className="text-xs uppercase tracking-[0.24em] text-steel">Environment</span>
+                <label className="block space-y-2 text-sm text-secondary">
+                  <span className="text-xs uppercase tracking-[0.24em] text-secondary">Environment</span>
                   <select
                     name="environment"
                     defaultValue="prod"
-                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+                    className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-primary"
                   >
                     <option value="prod">Production</option>
                     <option value="staging">Staging</option>
@@ -429,15 +429,15 @@ export default async function OnboardingPage({
 
             {hasOrganization && hasProject && apiKeyValue ? (
               <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-steel">API key (copy once)</p>
-                <p className="mt-2 break-all rounded-md bg-white px-3 py-2 text-sm text-ink">{apiKeyValue}</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-secondary">API key (copy once)</p>
+                <p className="mt-2 break-all rounded-md bg-white px-3 py-2 text-sm text-primary">{apiKeyValue}</p>
               </div>
             ) : null}
           </Card>
 
           <Card className="h-fit p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Ingest example</p>
-            <div className="mt-4 rounded-xl bg-[#111827] p-4 text-sm text-zinc-100">
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Ingest example</p>
+            <div className="mt-4 rounded-xl border border-code bg-code p-4 text-sm text-code">
               <pre className="overflow-x-auto whitespace-pre-wrap font-mono">{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
   -H "x-api-key: ${apiKeyValue ?? "reliai_..."}" \\
   -H "content-type: application/json" \\
@@ -450,8 +450,8 @@ export default async function OnboardingPage({
             </div>
             <div className="mt-5 rounded-xl border border-line bg-surface px-4 py-4">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-ink" />
-                <p className="text-sm leading-6 text-steel">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-primary" />
+                <p className="text-sm leading-6 text-secondary">
                   After first accepted traces, open incidents and command center to investigate live
                   failures with cohort and prompt evidence.
                 </p>
@@ -474,9 +474,9 @@ export default async function OnboardingPage({
           />
         ) : (
           <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Simulation blocked</p>
-            <h2 className="mt-3 text-2xl font-semibold text-ink">Create your organization to start the simulation</h2>
-            <p className="mt-2 text-sm leading-6 text-steel">
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Simulation blocked</p>
+            <h2 className="mt-3 text-2xl font-semibold text-primary">Create your organization to start the simulation</h2>
+            <p className="mt-2 text-sm leading-6 text-secondary">
               We need a workspace to scope the simulation data. Create your organization first, then return here to
               run the guided incident.
             </p>

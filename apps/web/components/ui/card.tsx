@@ -9,7 +9,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "card-surface border border-line bg-white text-ink shadow-sm !p-[var(--spacing-card)]",
+        "card-surface border border-line bg-surface text-primary shadow-sm !p-[var(--spacing-card)]",
         className
       )}
       {...props}

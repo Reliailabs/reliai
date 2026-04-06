@@ -23,14 +23,14 @@ export function DensityToggle() {
   }, [mode]);
 
   return (
-    <div className="density-toggle flex items-center justify-between gap-2 rounded-lg border border-line bg-surface px-2 py-1 text-xs text-steel">
-      <span className="text-[10px] uppercase tracking-[0.2em] text-steel">Density</span>
+    <div className="density-toggle flex items-center justify-between gap-2 rounded-lg border border-line bg-surface px-2 py-1 text-xs text-secondary">
+      <span className="text-[10px] uppercase tracking-[0.2em] text-secondary">Density</span>
       <div className="flex rounded-md bg-surface p-0.5">
         <button
           type="button"
           onClick={() => setMode("comfortable")}
           className={`rounded px-2 py-1 text-[11px] font-medium transition ${
-            mode === "comfortable" ? "bg-surfaceAlt text-ink" : "text-steel"
+            mode === "comfortable" ? "bg-surfaceAlt text-primary" : "text-secondary"
           }`}
         >
           Comfortable
@@ -39,7 +39,7 @@ export function DensityToggle() {
           type="button"
           onClick={() => setMode("compact")}
           className={`rounded px-2 py-1 text-[11px] font-medium transition ${
-            mode === "compact" ? "bg-surfaceAlt text-ink" : "text-steel"
+            mode === "compact" ? "bg-surfaceAlt text-primary" : "text-secondary"
           }`}
         >
           Compact

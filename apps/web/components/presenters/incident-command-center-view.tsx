@@ -241,13 +241,13 @@ export function IncidentCommandCenterView({
           {!screenshotMode ? (
             <Link
               href={`/incidents/${incidentId}`}
-              className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+              className="inline-flex items-center gap-2 text-sm text-secondary hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to incident
             </Link>
           ) : (
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Reliai incident command center</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Reliai incident command center</p>
           )}
           {!screenshotMode && aiTicketDraftAction ? (
             <AiTicketDraftLauncher
@@ -262,18 +262,18 @@ export function IncidentCommandCenterView({
 
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
           <StatusDot status={incident.severity === "critical" ? "critical" : "neutral"} />
-          <span className="font-semibold text-ink">{incident.title}</span>
-          <span className="text-xs text-steel">{formatTime(incident.started_at, screenshotMode)}</span>
+          <span className="font-semibold text-primary">{incident.title}</span>
+          <span className="text-xs text-secondary">{formatTime(incident.started_at, screenshotMode)}</span>
           <span className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${severityTone(incident.severity)}`}>
             {incident.severity}
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-steel">
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-secondary">
           {metricSignals.map((signal) => (
             <div key={signal.label} className="flex items-center gap-2">
-              <span className="uppercase tracking-[0.2em] text-steel">{signal.label}</span>
-              <span className="text-ink">{signal.value}</span>
+              <span className="uppercase tracking-[0.2em] text-secondary">{signal.label}</span>
+              <span className="text-primary">{signal.value}</span>
             </div>
           ))}
         </div>
@@ -281,16 +281,16 @@ export function IncidentCommandCenterView({
 
 
       {!screenshotMode ? (
-        <nav className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1">
+        <nav className="flex gap-1 rounded-[14px] border border-default bg-surface-elevated p-1">
           {TABS.map((tab) => (
             <Link
               key={tab.id}
               href={`/incidents/${incidentId}/command?tab=${tab.id}`}
               className={cn(
-                "rounded-[10px] px-4 py-2 text-sm font-medium transition-colors",
+                "rounded-[10px] border border-transparent px-4 py-2 text-sm font-medium transition-colors",
                 activeTab === tab.id
-                  ? "bg-white text-ink shadow-sm"
-                  : "text-steel hover:text-ink"
+                  ? "tab-active border-default"
+                  : "tab-inactive hover:border-default"
               )}
             >
               {tab.label}
@@ -365,24 +365,24 @@ export function IncidentCommandCenterView({
           })() : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-steel">Root cause</p>
-            <p className="mt-2 text-sm font-semibold text-ink">{rootCauseTitle}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-secondary">Root cause</p>
+            <p className="mt-2 text-sm font-semibold text-primary">{rootCauseTitle}</p>
             {rootCauseProbability !== null ? (
-              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-steel">
+              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-secondary">
                 Confidence: {Math.round(rootCauseProbability * 100)}%
               </p>
             ) : null}
-            <p className="mt-2 text-sm text-steel">{command.root_cause.recommended_fix.summary}</p>
+            <p className="mt-2 text-sm text-secondary">{command.root_cause.recommended_fix.summary}</p>
             {command.root_cause.recommended_action_reason ? (
-              <p className="mt-2 text-sm text-ink">{command.root_cause.recommended_action_reason}</p>
+              <p className="mt-2 text-sm text-primary">{command.root_cause.recommended_action_reason}</p>
             ) : null}
             {visibleEvidence.length > 0 ? (
-              <ul className="mt-3 text-xs text-steel">
+              <ul className="mt-3 text-xs text-secondary">
                 {visibleEvidence.map((item) => (
                   <li key={item}>• {item}</li>
                 ))}
                 {extraEvidenceCount > 0 ? (
-                  <li className="text-steel">+{extraEvidenceCount} more</li>
+                  <li className="text-secondary">+{extraEvidenceCount} more</li>
                 ) : null}
               </ul>
             ) : null}
@@ -414,7 +414,7 @@ export function IncidentCommandCenterView({
           ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-steel">Trace evidence</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-secondary">Trace evidence</p>
             {!screenshotMode ? (
               <div className="mt-3">
                 <LimitStatusInlineSlot
@@ -442,16 +442,16 @@ export function IncidentCommandCenterView({
                     tokens: (command.trace_compare.baseline_trace_summary.prompt_tokens ?? 0) + (command.trace_compare.baseline_trace_summary.completion_tokens ?? 0),
                     prompt: command.trace_compare.baseline_trace_summary.prompt_version,
                     tone: "border-zinc-200 bg-zinc-50",
-                    labelTone: "text-steel",
+                    labelTone: "text-secondary",
                   },
                 ] as const).map((t) => (
                   <div key={t.label} className={`rounded-lg border ${t.tone} px-3 py-3`}>
                     <p className={`text-[11px] uppercase tracking-[0.2em] ${t.labelTone}`}>{t.label}</p>
-                    <div className="mt-2 space-y-1 text-xs text-steel">
-                      <p><span className="text-ink">{t.latency}ms</span> end-to-end latency</p>
-                      {t.retrieval !== null ? <p><span className="text-ink">{t.retrieval}ms</span> retrieval latency</p> : null}
-                      {t.tokens > 0 ? <p><span className="text-ink">{t.tokens}</span> tokens</p> : null}
-                      {t.prompt ? <p className="truncate text-steel">{t.prompt}</p> : null}
+                    <div className="mt-2 space-y-1 text-xs text-secondary">
+                      <p><span className="text-primary">{t.latency}ms</span> end-to-end latency</p>
+                      {t.retrieval !== null ? <p><span className="text-primary">{t.retrieval}ms</span> retrieval latency</p> : null}
+                      {t.tokens > 0 ? <p><span className="text-primary">{t.tokens}</span> tokens</p> : null}
+                      {t.prompt ? <p className="truncate text-secondary">{t.prompt}</p> : null}
                     </div>
                   </div>
                 ))}
@@ -480,7 +480,7 @@ export function IncidentCommandCenterView({
           {resolutionImpact || fixActionRecorded ? (
             <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
               <div className="flex items-start justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-steel">Resolution impact</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Resolution impact</p>
                 {!screenshotMode && aiFixPrSummaryAction && fixActionRecorded ? (
                   <AiFixSummaryLauncher
                     incidentId={incidentId}
@@ -493,11 +493,11 @@ export function IncidentCommandCenterView({
               {resolutionImpact ? (
                 <>
                   {resolutionImpact.summary ? (
-                    <p className="mt-2 text-sm font-semibold text-ink">{resolutionImpact.summary}</p>
+                    <p className="mt-2 text-sm font-semibold text-primary">{resolutionImpact.summary}</p>
                   ) : (
-                    <p className="mt-2 text-sm text-steel">Waiting for post-fix data.</p>
+                    <p className="mt-2 text-sm text-secondary">Waiting for post-fix data.</p>
                   )}
-                  <ul className="mt-2 text-sm text-steel">
+                  <ul className="mt-2 text-sm text-secondary">
                     <li>
                       • before: {formatImpactValue(resolutionImpact.before_value, resolutionImpact.unit)}
                     </li>
@@ -514,7 +514,7 @@ export function IncidentCommandCenterView({
                   </ul>
                 </>
               ) : (
-                <p className="mt-2 text-sm text-steel">
+                <p className="mt-2 text-sm text-secondary">
                   Fix action recorded — post-fix impact not yet verified.
                 </p>
               )}
@@ -522,8 +522,8 @@ export function IncidentCommandCenterView({
           ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-steel">Impact</p>
-            <ul className="mt-2 text-sm text-steel">
+            <p className="text-xs uppercase tracking-[0.2em] text-secondary">Impact</p>
+            <ul className="mt-2 text-sm text-secondary">
               <li>• current value: {currentValue}</li>
               <li>• baseline value: {baselineValue}</li>
               <li>• delta: {deltaPercent !== "n/a" ? `${deltaPercent}%` : "n/a"}</li>
@@ -567,8 +567,8 @@ export function IncidentCommandCenterView({
           ) : null}
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-steel">Mitigations</p>
-            <div className="mt-2 space-y-2 text-sm text-steel">
+            <p className="text-xs uppercase tracking-[0.2em] text-secondary">Mitigations</p>
+            <div className="mt-2 space-y-2 text-sm text-secondary">
               {command.recommended_mitigations.length > 0 ? (
                 command.recommended_mitigations.slice(0, 4).map((item) => <p key={item}>{item}</p>)
               ) : (
@@ -578,8 +578,8 @@ export function IncidentCommandCenterView({
           </div>
 
           <div className="rounded-[18px] border border-zinc-300 bg-white px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-steel">Deployment context</p>
-            <div className="mt-2 space-y-2 text-sm text-steel">
+            <p className="text-xs uppercase tracking-[0.2em] text-secondary">Deployment context</p>
+            <div className="mt-2 space-y-2 text-sm text-secondary">
               {command.deployment_context ? (
                 <>
                   <p>{command.deployment_context.model_version?.model_name ?? "Model n/a"}</p>

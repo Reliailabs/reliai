@@ -220,41 +220,41 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <Card className="p-6">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Guided simulation</p>
-        <h2 className="mt-3 text-2xl font-semibold text-ink">Generate a hallucination spike — then fix it</h2>
-        <p className="mt-3 text-sm leading-6 text-steel">
+        <p className="text-xs uppercase tracking-[0.24em] text-secondary">Guided simulation</p>
+        <h2 className="mt-3 text-2xl font-semibold text-primary">Generate a hallucination spike — then fix it</h2>
+        <p className="mt-3 text-sm leading-6 text-secondary">
           We generate a healthy baseline, deploy prompt v42 to inject hallucinations, trigger incident detection,
           and open the incident so you can investigate root cause and verify the fix.
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <label className="block space-y-2 text-sm text-steel">
-            <span className="text-xs uppercase tracking-[0.24em] text-steel">Project name</span>
+          <label className="block space-y-2 text-sm text-secondary">
+            <span className="text-xs uppercase tracking-[0.24em] text-secondary">Project name</span>
             <input
               value={projectName}
               onChange={(event) => setProjectName(event.target.value)}
-              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-primary"
             />
           </label>
-          <label className="block space-y-2 text-sm text-steel">
-            <span className="text-xs uppercase tracking-[0.24em] text-steel">Model</span>
+          <label className="block space-y-2 text-sm text-secondary">
+            <span className="text-xs uppercase tracking-[0.24em] text-secondary">Model</span>
             <input
               value={modelName}
               onChange={(event) => setModelName(event.target.value)}
-              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-primary"
             />
           </label>
-          <label className="block space-y-2 text-sm text-steel">
-            <span className="text-xs uppercase tracking-[0.24em] text-steel">Prompt type</span>
+          <label className="block space-y-2 text-sm text-secondary">
+            <span className="text-xs uppercase tracking-[0.24em] text-secondary">Prompt type</span>
             <input
               value={promptType}
               onChange={(event) => setPromptType(event.target.value)}
-              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink"
+              className="h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-primary"
             />
           </label>
         </div>
 
-        <div className="mt-6 space-y-3 text-sm text-steel">
+        <div className="mt-6 space-y-3 text-sm text-secondary">
           <div className="rounded-xl border border-line bg-surface px-4 py-3">1. Generating 4% baseline — healthy traces</div>
           <div className="rounded-xl border border-line bg-surface px-4 py-3">2. Deploying prompt v42 — injecting hallucination pattern</div>
           <div className="rounded-xl border border-line bg-surface px-4 py-3">3. Hallucination spike detected — opening incident (19% failure rate)</div>
@@ -263,10 +263,10 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
 
         {state === "handoff" ? (
           <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-4 space-y-1">
-            <p className="text-sm font-semibold text-green-900">
+            <p className="text-sm font-semibold text-success">
               Opening incident: Hallucination spike detected (19% failure rate)
             </p>
-            <p className="text-xs text-green-700">
+            <p className="text-xs text-success">
               Redirecting to incident command center...
             </p>
           </div>
@@ -297,19 +297,19 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
       </Card>
 
       <Card className="p-6">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Simulation status</p>
+        <p className="text-xs uppercase tracking-[0.24em] text-secondary">Simulation status</p>
         <div className="mt-4 rounded-xl border border-line bg-surface px-4 py-4">
-          <p className="text-sm text-steel">State: <span className="font-medium text-ink">{state}</span></p>
-          <p className="mt-2 text-sm text-steel">Stage: <span className="font-medium text-ink">{statusLabel}</span></p>
-          <p className="mt-2 text-sm text-steel">
-            Progress: <span className="font-medium text-ink">{status?.progress ?? (state === "idle" ? 0 : 5)}%</span>
+          <p className="text-sm text-secondary">State: <span className="font-medium text-primary">{state}</span></p>
+          <p className="mt-2 text-sm text-secondary">Stage: <span className="font-medium text-primary">{statusLabel}</span></p>
+          <p className="mt-2 text-sm text-secondary">
+            Progress: <span className="font-medium text-primary">{status?.progress ?? (state === "idle" ? 0 : 5)}%</span>
           </p>
           {simulationId ? (
-            <p className="mt-2 text-xs text-steel">Simulation ID: {simulationId}</p>
+            <p className="mt-2 text-xs text-secondary">Simulation ID: {simulationId}</p>
           ) : null}
         </div>
 
-        <p className="mt-5 text-sm leading-6 text-steel">
+        <p className="mt-5 text-sm leading-6 text-secondary">
           {state === "idle" && "Launch the simulation to generate a hallucination spike and open an incident automatically."}
           {state === "creating" && "Allocating project context and enqueuing synthetic trace jobs."}
           {state === "running" && "Generating traces — hallucination pattern injecting after prompt v42 deployment."}

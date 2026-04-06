@@ -24,8 +24,8 @@ export function ControlPanelPreview() {
           className="overflow-hidden rounded-[24px] border border-zinc-200 bg-white shadow-sm"
         >
           <div className="border-b border-zinc-200 bg-[linear-gradient(180deg,#fbfbfc,#f1f3f6)] px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">{screen.title}</p>
-            <p className="mt-2 text-sm leading-6 text-steel">{screen.body}</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">{screen.title}</p>
+            <p className="mt-2 text-sm leading-6 text-secondary">{screen.body}</p>
           </div>
           <div className="flex h-[320px] items-center justify-center bg-zinc-50 px-4 py-4">
             <Image

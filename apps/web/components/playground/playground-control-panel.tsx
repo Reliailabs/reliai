@@ -127,8 +127,8 @@ export function PlaygroundControlPanel({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-steel">Simulated control panel</p>
-          <h2 className="mt-2 text-2xl font-semibold text-ink">System health under failure</h2>
+          <p className="text-xs uppercase tracking-[0.24em] text-secondary">Simulated control panel</p>
+          <h2 className="mt-2 text-2xl font-semibold text-primary">System health under failure</h2>
         </div>
         <div className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-800">
           Reliability {scenario.reliabilityBefore} → {stage === "idle" ? scenario.reliabilityBefore : scenario.reliabilityAfter}

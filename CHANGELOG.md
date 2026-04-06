@@ -14,6 +14,11 @@ All notable changes to Reliai will be documented in this file.
 - Limit banners now show window-grounded counters, storage impact context, and a recovery confirmation message.
 - Projects hub page that lists project controls with direct links to key project surfaces.
 - AI Reliability Audit landing page with dedicated conversion flow and homepage audit CTA.
+- Global semantic color + typography tokens with shared utility classes for consistent UI hierarchy.
+
+### Changed
+
+- Migrated key marketing, onboarding, and core product surfaces to semantic design tokens for higher readability.
 
 ### Fixed
 

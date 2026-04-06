@@ -68,9 +68,9 @@ export default async function BillingPage() {
   return (
     <div className="space-y-6">
       <header className="rounded-[28px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Billing</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Usage, costs, and upgrades.</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-steel">
+        <p className="text-xs uppercase tracking-[0.24em] text-secondary">Billing</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-primary">Usage, costs, and upgrades.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-secondary">
           Keep your monitoring live during peak loads. Reduce overage costs and avoid trace loss.
         </p>
       </header>
@@ -79,12 +79,12 @@ export default async function BillingPage() {
         <Card className="rounded-[28px] border-zinc-300 p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Current plan</p>
-              <p className="mt-2 text-2xl font-semibold text-ink">{currentPlanLabel}</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-secondary">Current plan</p>
+              <p className="mt-2 text-2xl font-semibold text-primary">{currentPlanLabel}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Est. monthly cost</p>
-              <p className="mt-2 text-2xl font-semibold text-ink">{totalEstimated ? `$${totalEstimated.toFixed(0)}` : "—"}</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-secondary">Est. monthly cost</p>
+              <p className="mt-2 text-2xl font-semibold text-primary">{totalEstimated ? `$${totalEstimated.toFixed(0)}` : "—"}</p>
             </div>
           </div>
           {usageStatus && organization ? (
@@ -96,7 +96,7 @@ export default async function BillingPage() {
                 organizationId={organization.id}
               />
               {limit > 0 && projected > limit ? (
-                <p className="mt-4 text-sm text-ink">
+                <p className="mt-4 text-sm text-primary">
                   At your current rate, you will exceed your plan before month end.
                 </p>
               ) : null}
@@ -105,18 +105,18 @@ export default async function BillingPage() {
         </Card>
 
         <Card className="rounded-[28px] border-zinc-300 p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-steel">Cost breakdown</p>
-          <h2 className="mt-3 text-xl font-semibold text-ink">Transparent billing, no surprises.</h2>
-          <div className="mt-6 space-y-3 text-sm text-steel">
+          <p className="text-xs uppercase tracking-[0.24em] text-secondary">Cost breakdown</p>
+          <h2 className="mt-3 text-xl font-semibold text-primary">Transparent billing, no surprises.</h2>
+          <div className="mt-6 space-y-3 text-sm text-secondary">
             <div className="flex items-center justify-between">
               <span>Base subscription</span>
-              <span className="font-medium text-ink">{baseCost === null ? "Custom" : `$${baseCost}`}</span>
+              <span className="font-medium text-primary">{baseCost === null ? "Custom" : `$${baseCost}`}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Usage</span>
-              <span className="font-medium text-ink">${usageCost.toFixed(2)}</span>
+              <span className="font-medium text-primary">${usageCost.toFixed(2)}</span>
             </div>
-            <div className="flex items-center justify-between border-t border-zinc-200 pt-3 text-sm font-semibold text-ink">
+            <div className="flex items-center justify-between border-t border-zinc-200 pt-3 text-sm font-semibold text-primary">
               <span>Total (estimated)</span>
               <span>{totalEstimated === null ? "Custom" : `$${totalEstimated.toFixed(2)}`}</span>
             </div>
@@ -125,13 +125,13 @@ export default async function BillingPage() {
             Upgrade to Production to maintain full visibility and reduce overage costs.
           </div>
           {teamEstimate !== null && productionEstimate !== null ? (
-            <div className="mt-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-ink">
+            <div className="mt-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-primary">
               At your current usage:
-              <div className="mt-2 flex items-center justify-between text-sm text-steel">
+              <div className="mt-2 flex items-center justify-between text-sm text-secondary">
                 <span>Team → ${teamEstimate.toFixed(0)} (growing)</span>
                 <span>Production → ${productionEstimate.toFixed(0)} flat</span>
               </div>
-              <p className="mt-2 text-xs text-steel">Production becomes cheaper than Team at your scale.</p>
+              <p className="mt-2 text-xs text-secondary">Production becomes cheaper than Team at your scale.</p>
             </div>
           ) : null}
           {enterpriseTrigger ? (
@@ -149,13 +149,13 @@ export default async function BillingPage() {
             className={`rounded-[24px] border-zinc-300 p-5 ${plan.highlight ? "bg-zinc-50" : "bg-white"}`}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-ink">{plan.name}</h3>
+              <h3 className="text-lg font-semibold text-primary">{plan.name}</h3>
               {plan.highlight ? (
                 <span className="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">Recommended</span>
               ) : null}
             </div>
-            <p className="mt-2 text-xl font-semibold text-ink">{plan.price}</p>
-            <ul className="mt-4 space-y-2 text-sm text-steel">
+            <p className="mt-2 text-xl font-semibold text-primary">{plan.price}</p>
+            <ul className="mt-4 space-y-2 text-sm text-secondary">
               {plan.notes.map((note) => (
                 <li key={note}>• {note}</li>
               ))}
