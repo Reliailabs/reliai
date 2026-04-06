@@ -98,6 +98,14 @@ function eventPrefixTone(eventType: IncidentEventRead["event_type"]) {
   return "text-danger";
 }
 
+function eventAccentColor(eventType: IncidentEventRead["event_type"]) {
+  if (eventType === "resolved") return "var(--color-success)";
+  if (eventType === "reopened" || eventType === "alert_failed") return "var(--color-danger)";
+  if (eventType.startsWith("alert")) return "var(--color-warning)";
+  if (eventType.startsWith("config")) return "var(--color-info)";
+  return "var(--color-danger)";
+}
+
 function emphasizeNumbers(summary: string) {
   const pattern = /(\d+(?:\.\d+)?)/g;
   const parts = summary.split(pattern);
@@ -111,6 +119,65 @@ function emphasizeNumbers(summary: string) {
       <Fragment key={`${part}-${index}`}>{part}</Fragment>
     )
   );
+}
+
+function parseNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/%/g, "").trim();
+    const parsed = Number.parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function formatNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toFixed(6);
+  }
+  if (typeof value === "string") return value;
+  return "n/a";
+}
+
+function formatRelativeTime(timestamp: string) {
+  const target = new Date(timestamp).getTime();
+  if (Number.isNaN(target)) return "time n/a";
+  const now = Date.now();
+  const diffSeconds = Math.max(0, Math.round((now - target) / 1000));
+  if (diffSeconds < 60) return `${diffSeconds}s ago`;
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+function extractDelta(event: IncidentEventRead) {
+  const metadata = event.metadata_json ?? {};
+  const currentValue = parseNumber(metadata.current_value);
+  const baselineValue = parseNumber(metadata.baseline_value);
+  const deltaPercent = parseNumber(metadata.delta_percent);
+
+  const computedPercent =
+    deltaPercent !== null
+      ? deltaPercent
+      : currentValue !== null && baselineValue !== null && baselineValue !== 0
+        ? ((currentValue - baselineValue) / Math.abs(baselineValue)) * 100
+        : null;
+
+  if (computedPercent === null || !Number.isFinite(computedPercent)) {
+    return null;
+  }
+
+  const direction = computedPercent >= 0 ? "↑" : "↓";
+  const percentLabel = `${direction} ${Math.abs(computedPercent).toFixed(1)}%`;
+  const rawLabel =
+    currentValue !== null || baselineValue !== null
+      ? `${formatNumber(baselineValue)} → ${formatNumber(currentValue)}`
+      : null;
+
+  return { percentLabel, rawLabel };
 }
 
 function renderEventSummary(event: IncidentEventRead) {
@@ -844,26 +911,42 @@ export default async function IncidentDetailPage({
             </div>
             {incident.events.length > 0 ? (
               <div className="mt-5 space-y-3">
-                {incident.events.map((event) => (
+                {incident.events.map((event) => {
+                  const delta = extractDelta(event);
+                  const relativeTime = formatRelativeTime(event.created_at);
+                  return (
                   <div
                     key={event.id}
                     className="rounded-2xl border border-default bg-surface-elevated px-4 py-3"
                   >
-                    <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em]">
-                      <span className={`font-semibold ${eventPrefixTone(event.event_type)}`}>
-                        {eventPrefix(event.event_type)}
-                      </span>
-                      <span className="text-secondary">
-                        {new Date(event.created_at).toLocaleString()}
-                      </span>
+                    <div
+                      className="relative pl-4"
+                      style={{ borderLeftWidth: "2px", borderLeftStyle: "solid", borderLeftColor: eventAccentColor(event.event_type) }}
+                    >
+                      <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em]">
+                        <span className={`font-semibold ${eventPrefixTone(event.event_type)}`}>
+                          {eventPrefix(event.event_type)}
+                        </span>
+                        <span className="text-secondary">{relativeTime}</span>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-primary">{eventLabel(event.event_type)}</p>
+                      {delta ? (
+                        <div className="mt-2 space-y-1">
+                          <p className="metric-value text-mono-data">{delta.percentLabel}</p>
+                          {delta.rawLabel ? (
+                            <p className="text-sm text-secondary text-mono-data">{delta.rawLabel}</p>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-sm text-secondary">{renderEventSummary(event)}</p>
+                      )}
+                      <p className="mt-3 text-xs uppercase tracking-[0.16em] text-secondary">
+                        Actor · {event.actor_operator_user_email ?? "system"}
+                      </p>
                     </div>
-                    <p className="mt-2 text-sm font-semibold text-primary">{eventLabel(event.event_type)}</p>
-                    <p className="mt-1 text-sm text-secondary">{renderEventSummary(event)}</p>
-                    <p className="mt-3 text-xs uppercase tracking-[0.16em] text-secondary">
-                      Actor · {event.actor_operator_user_email ?? "system"}
-                    </p>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-4 text-sm leading-6 text-secondary">

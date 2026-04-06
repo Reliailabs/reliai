@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Fragment } from "react";
 import { ArrowLeft, ArrowRight, BellElectric, GitCommitHorizontal, ShieldAlert, TriangleAlert } from "lucide-react";
 
@@ -57,19 +56,71 @@ function eventMeta(event: TimelineEventRead) {
           : null;
 }
 
-function renderSummary(summary: string) {
-  const pattern = /(\d+(?:\.\d+)?\s*->\s*\d+(?:\.\d+)?)/g;
-  const parts = summary.split(pattern);
-  if (parts.length === 1) return summary;
-  return parts.map((part, index) =>
-    index % 2 === 1 ? (
-      <span key={`${part}-${index}`} className="metric-value text-mono-data">
-        {part}
-      </span>
-    ) : (
-      <Fragment key={`${part}-${index}`}>{part}</Fragment>
-    )
-  );
+function parseNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/%/g, "").trim();
+    const parsed = Number.parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function formatNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toFixed(6);
+  }
+  if (typeof value === "string") return value;
+  return "n/a";
+}
+
+function formatRelativeTime(timestamp: string) {
+  const target = new Date(timestamp).getTime();
+  if (Number.isNaN(target)) return "time n/a";
+  const now = Date.now();
+  const diffSeconds = Math.max(0, Math.round((now - target) / 1000));
+  if (diffSeconds < 60) return `${diffSeconds}s ago`;
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+function eventAccentColor(event: TimelineEventRead) {
+  const metricName = typeof event.metadata?.metric_name === "string" ? event.metadata.metric_name.toLowerCase() : "";
+  if (metricName.includes("latency") || metricName.includes("performance")) return "var(--color-info)";
+  if (metricName.includes("cost") || metricName.includes("token")) return "var(--color-warning)";
+  if (metricName.includes("success") || event.event_type === "incident") return "var(--color-danger)";
+  if (event.event_type === "regression") return "var(--color-warning)";
+  return "var(--color-border)";
+}
+
+function extractDelta(event: TimelineEventRead) {
+  const currentValue = parseNumber(event.metadata?.current_value);
+  const baselineValue = parseNumber(event.metadata?.baseline_value);
+  const deltaPercent = parseNumber(event.metadata?.delta_percent);
+
+  const computedPercent =
+    deltaPercent !== null
+      ? deltaPercent
+      : currentValue !== null && baselineValue !== null && baselineValue !== 0
+        ? ((currentValue - baselineValue) / Math.abs(baselineValue)) * 100
+        : null;
+
+  if (computedPercent === null || !Number.isFinite(computedPercent)) {
+    return null;
+  }
+
+  const direction = computedPercent >= 0 ? "↑" : "↓";
+  const percentLabel = `${direction} ${Math.abs(computedPercent).toFixed(1)}%`;
+  const rawLabel =
+    currentValue !== null || baselineValue !== null
+      ? `${formatNumber(baselineValue)} → ${formatNumber(currentValue)}`
+      : null;
+
+  return { percentLabel, rawLabel };
 }
 
 export default async function ProjectTimelinePage({
@@ -127,12 +178,26 @@ export default async function ProjectTimelinePage({
               const meta = eventMeta(event);
               const eventTone = eventTypeTone(event.event_type);
               const severityClass = severityBadge(event.severity);
+              const delta = extractDelta(event);
+              const relativeTime = formatRelativeTime(event.timestamp);
+              const environmentLabel =
+                typeof event.metadata?.environment === "string"
+                  ? event.metadata.environment
+                  : environment ?? project.environment;
               return (
                 <div key={`${event.event_type}-${event.timestamp}-${index}`} className="relative pb-6 last:pb-0">
                   <div className={`absolute -left-[43px] top-5 flex h-7 w-7 items-center justify-center rounded-full border border-default bg-surface ${eventTone}`}>
                     <Icon className="h-3.5 w-3.5" />
                   </div>
-                  <article className="rounded-[24px] border border-default bg-surface-elevated p-5">
+                  {href ? (
+                    <a
+                      href={href}
+                      className="group block rounded-[24px] border border-default bg-surface-elevated p-5 transition hover:-translate-y-[1px] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]"
+                    >
+                      <article
+                        className="relative pl-4"
+                        style={{ borderLeftWidth: "2px", borderLeftStyle: "solid", borderLeftColor: eventAccentColor(event) }}
+                      >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em]">
@@ -140,27 +205,66 @@ export default async function ProjectTimelinePage({
                           {meta ? <span className="text-secondary">· {meta}</span> : null}
                         </div>
                         <h2 className="text-lg font-semibold text-primary">{event.title}</h2>
-                        <p className="text-sm leading-6 text-secondary">{renderSummary(event.summary)}</p>
+                        {delta ? (
+                          <div className="space-y-1">
+                            <p className="metric-value text-mono-data">{delta.percentLabel}</p>
+                            {delta.rawLabel ? (
+                              <p className="text-sm text-secondary text-mono-data">{delta.rawLabel}</p>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="text-sm leading-6 text-secondary">{event.summary}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
                         {severityClass ? <span className={severityClass}>{event.severity}</span> : null}
                         <p className="text-xs font-medium uppercase tracking-[0.18em] text-secondary">
-                          {new Date(event.timestamp).toLocaleString()}
+                          {environmentLabel} · {relativeTime}
                         </p>
                       </div>
                     </div>
                     {href ? (
-                      <div className="mt-4">
-                        <a
-                          href={href}
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-accent underline-offset-4 hover:underline"
-                        >
-                          Open detail
-                          <ArrowRight className="h-4 w-4" />
-                        </a>
+                      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-accent underline-offset-4 group-hover:underline">
+                        Open detail
+                        <ArrowRight className="h-4 w-4" />
                       </div>
                     ) : null}
-                  </article>
+                      </article>
+                    </a>
+                  ) : (
+                    <div className="rounded-[24px] border border-default bg-surface-elevated p-5">
+                      <article
+                        className="relative pl-4"
+                        style={{ borderLeftWidth: "2px", borderLeftStyle: "solid", borderLeftColor: eventAccentColor(event) }}
+                      >
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em]">
+                              <span className={`font-semibold ${eventTone}`}>{eventLabel(event.event_type)}</span>
+                              {meta ? <span className="text-secondary">· {meta}</span> : null}
+                            </div>
+                            <h2 className="text-lg font-semibold text-primary">{event.title}</h2>
+                            {delta ? (
+                              <div className="space-y-1">
+                                <p className="metric-value text-mono-data">{delta.percentLabel}</p>
+                                {delta.rawLabel ? (
+                                  <p className="text-sm text-secondary text-mono-data">{delta.rawLabel}</p>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <p className="text-sm leading-6 text-secondary">{event.summary}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {severityClass ? <span className={severityClass}>{event.severity}</span> : null}
+                            <p className="text-xs font-medium uppercase tracking-[0.18em] text-secondary">
+                              {environmentLabel} · {relativeTime}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+                  )}
                 </div>
               );
             })}
