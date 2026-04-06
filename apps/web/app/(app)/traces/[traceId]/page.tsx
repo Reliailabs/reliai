@@ -418,7 +418,7 @@ export default async function TraceDetailPage({
           ) : null}
         </div>
 
-        <aside className="space-y-6">
+        <aside className="space-y-6 !bg-transparent">
           <div className="rounded-2xl border border-line bg-surface px-4 py-4">
             <p className="text-xs uppercase tracking-[0.24em] text-steel">Request context</p>
             <MetadataBar className="mt-4">
