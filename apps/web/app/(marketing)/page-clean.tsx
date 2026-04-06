@@ -99,7 +99,7 @@ export default function MarketingHomePage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="border-zinc-300 text-ink hover:bg-zinc-50">
               <Link href="/demo">View demo</Link>
             </Button>
           </div>

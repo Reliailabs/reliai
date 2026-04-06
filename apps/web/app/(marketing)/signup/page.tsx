@@ -35,7 +35,7 @@ export default function SignupPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg" className="border-zinc-300 text-ink hover:bg-zinc-50">
               <Link href="/demo">View Demo First</Link>
             </Button>
           </div>

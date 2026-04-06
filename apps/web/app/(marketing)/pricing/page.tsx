@@ -116,7 +116,7 @@ export default function PricingPage() {
             <Button asChild>
               <Link href="/signup">Start with the demo</Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="border-zinc-300 text-ink hover:bg-zinc-50">
               <Link href="/demo">See the control panel</Link>
             </Button>
           </div>

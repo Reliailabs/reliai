@@ -27,11 +27,11 @@ const navItems: { label: string; href: string; group?: string }[] = [
 
 export default function DocsLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-bg text-textPrimary">
+    <div className="app-shell flex min-h-screen bg-bg text-primary">
       {/* Sidebar */}
-      <aside className="w-[220px] shrink-0 border-r border-border px-[20px] py-[32px]">
+      <aside className="w-[220px] shrink-0 border-r border-border bg-surface px-[20px] py-[32px]">
         <Link href="/docs" className="block mb-[32px]">
-          <span className="text-sm font-semibold text-textPrimary">Reliai Docs</span>
+          <span className="text-sm font-semibold text-primary">Reliai Docs</span>
         </Link>
 
         <nav className="space-y-[2px]">
@@ -39,7 +39,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href as never}
-              className={`block rounded px-[8px] py-[6px] text-sm text-textSecondary hover:bg-surface hover:text-textPrimary transition-colors${item.group === "examples" && item.href !== "/docs/examples" ? " pl-[20px] text-xs" : ""}`}
+              className={`block rounded px-[8px] py-[6px] text-sm text-secondary hover:bg-surface hover:text-primary transition-colors${item.group === "examples" && item.href !== "/docs/examples" ? " pl-[20px] text-xs" : ""}`}
             >
               {item.label}
             </Link>
@@ -49,7 +49,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         <div className="mt-[40px] pt-[20px] border-t border-border">
           <Link
             href="/"
-            className="block text-xs text-textMuted hover:text-textSecondary transition-colors"
+            className="block text-xs text-muted hover:text-secondary transition-colors"
           >
             ← Back to Reliai
           </Link>

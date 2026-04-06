@@ -211,7 +211,7 @@ export default function AiReliabilityAuditPage() {
           </div>
         </div>
         <div className="mt-8">
-          <Button asChild size="lg" variant="outline">
+          <Button asChild size="lg" variant="outline" className="border-zinc-300 text-ink hover:bg-zinc-50">
             <a href={CTA_HREF}>Audit my system for these failures</a>
           </Button>
         </div>
