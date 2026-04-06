@@ -229,13 +229,17 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-sm text-textSecondary">Start at the control panel.</p>
             </div>
           ) : null}
-          <ControlPanelView
-            projectId={demoProject.id}
-            projectName={demoProject.name}
-            panel={demoControlPanel}
-            screenshotMode
-            highlightedMetrics={["reliability_score", "active_incidents", "recommended_guardrail"]}
-          />
+          <div className="rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
+            <div className="app-shell-light overflow-hidden rounded-[24px] bg-surface">
+              <ControlPanelView
+                projectId={demoProject.id}
+                projectName={demoProject.name}
+                panel={demoControlPanel}
+                screenshotMode
+                highlightedMetrics={["reliability_score", "active_incidents", "recommended_guardrail"]}
+              />
+            </div>
+          </div>
         </section>
 
         <section data-tour-id="demo-incident" className={cn("space-y-4", sectionTone(isActive("incident")))}>
@@ -248,12 +252,16 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-sm text-textSecondary">{demoIncident.impact}</p>
             </div>
           ) : null}
-          <IncidentCommandCenterView
-            incidentId={demoIncidentCommand.incident.id}
-            command={demoIncidentCommand}
-            suggestedFix={demoSuggestedFix}
-            screenshotMode
-          />
+          <div className="rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
+            <div className="app-shell-light overflow-hidden rounded-[24px] bg-surface">
+              <IncidentCommandCenterView
+                incidentId={demoIncidentCommand.incident.id}
+                command={demoIncidentCommand}
+                suggestedFix={demoSuggestedFix}
+                screenshotMode
+              />
+            </div>
+          </div>
         </section>
 
         <section data-tour-id="demo-trace-graph" className={cn("space-y-4", sectionTone(isActive("trace-graph")))}>
@@ -268,8 +276,10 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               </p>
             </div>
           ) : null}
-          <div className="demo-trace-war-room app-shell war-room rounded-2xl border border-line bg-surface px-3 py-3">
-            <TraceGraphView graph={demoTraceGraph} analysis={demoTraceAnalysis} screenshotMode />
+          <div className="demo-trace-war-room rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
+            <div className="app-shell-light overflow-hidden rounded-[24px] bg-surface px-3 py-3">
+              <TraceGraphView graph={demoTraceGraph} analysis={demoTraceAnalysis} screenshotMode />
+            </div>
           </div>
         </section>
 
@@ -344,37 +354,39 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
               <p className="text-sm text-textSecondary">Fix verified — the loop is complete.</p>
             </div>
           ) : null}
-          <div className="rounded-[30px] border border-green-200 bg-green-50 px-6 py-8">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl bg-green-100 p-3">
-                <CheckCircle2 className="h-6 w-6 text-green-700" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs uppercase tracking-[0.24em] text-green-700">Fix verified · INC-1423</p>
-                <h3 className="mt-2 text-3xl font-semibold tracking-tight text-green-900">
-                  Failure rate reduced from 19% → 5% ✓
-                </h3>
-                <p className="mt-2 text-sm text-green-800">After reverting prompt v42 · Resolved in 6 minutes</p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-green-200 bg-white/70 px-4 py-4 text-center">
-                    <p className="text-xs uppercase tracking-[0.18em] text-green-700">Before</p>
-                    <p className="mt-2 text-3xl font-bold text-red-600">19%</p>
-                    <p className="mt-1 text-xs text-green-700">failure rate</p>
-                  </div>
-                  <div className="rounded-2xl border border-green-200 bg-white/70 px-4 py-4 text-center">
-                    <p className="text-xs uppercase tracking-[0.18em] text-green-700">Baseline</p>
-                    <p className="mt-2 text-3xl font-bold text-zinc-500">4%</p>
-                    <p className="mt-1 text-xs text-green-700">healthy baseline</p>
-                  </div>
-                  <div className="rounded-2xl border border-green-200 bg-green-100 px-4 py-4 text-center">
-                    <p className="text-xs uppercase tracking-[0.18em] text-green-700">After Fix</p>
-                    <p className="mt-2 text-3xl font-bold text-green-700">5% ✓</p>
-                    <p className="mt-1 text-xs text-green-700">near baseline</p>
-                  </div>
+          <div className="rounded-[30px] border border-demo-preview-frame bg-demo-preview-frame p-3 shadow-demo-preview-frame">
+            <div className="rounded-[24px] border border-green-200 bg-green-50 px-6 py-8">
+              <div className="flex items-start gap-4">
+                <div className="rounded-2xl bg-green-100 p-3">
+                  <CheckCircle2 className="h-6 w-6 text-green-700" />
                 </div>
-                <p className="mt-5 text-sm text-green-800">
-                  Based on live production traces · Root cause confidence 71% · Prompt v41 restored
-                </p>
+                <div className="flex-1">
+                  <p className="text-xs uppercase tracking-[0.24em] text-green-700">Fix verified · INC-1423</p>
+                  <h3 className="mt-2 text-3xl font-semibold tracking-tight text-green-900">
+                    Failure rate reduced from 19% → 5% ✓
+                  </h3>
+                  <p className="mt-2 text-sm text-green-800">After reverting prompt v42 · Resolved in 6 minutes</p>
+                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-green-200 bg-white/70 px-4 py-4 text-center">
+                      <p className="text-xs uppercase tracking-[0.18em] text-green-700">Before</p>
+                      <p className="mt-2 text-3xl font-bold text-red-600">19%</p>
+                      <p className="mt-1 text-xs text-green-700">failure rate</p>
+                    </div>
+                    <div className="rounded-2xl border border-green-200 bg-white/70 px-4 py-4 text-center">
+                      <p className="text-xs uppercase tracking-[0.18em] text-green-700">Baseline</p>
+                      <p className="mt-2 text-3xl font-bold text-zinc-500">4%</p>
+                      <p className="mt-1 text-xs text-green-700">healthy baseline</p>
+                    </div>
+                    <div className="rounded-2xl border border-green-200 bg-green-100 px-4 py-4 text-center">
+                      <p className="text-xs uppercase tracking-[0.18em] text-green-700">After Fix</p>
+                      <p className="mt-2 text-3xl font-bold text-green-700">5% ✓</p>
+                      <p className="mt-1 text-xs text-green-700">near baseline</p>
+                    </div>
+                  </div>
+                  <p className="mt-5 text-sm text-green-800">
+                    Based on live production traces · Root cause confidence 71% · Prompt v41 restored
+                  </p>
+                </div>
               </div>
             </div>
           </div>

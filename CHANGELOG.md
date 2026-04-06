@@ -20,6 +20,7 @@ All notable changes to Reliai will be documented in this file.
 
 - Migrated key marketing, onboarding, and core product surfaces to semantic design tokens for higher readability.
 - Restored demo/docs CTA styling and removed unintended white surfaces in the dashboard sidebar and docs/demo shells.
+- Refined the /demo shell with framed light previews and dark walkthrough overlays to eliminate theme bleed and improve presentation clarity.
 
 ### Fixed
 
