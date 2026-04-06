@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const panelCardClass =
-  "rounded-[24px] border border-zinc-200/90 bg-white/92 p-5 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur-sm";
+  "rounded-[24px] border border-line bg-surface p-5 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur-sm";
 const metricValueClass = "metric-value font-mono tracking-[-0.03em]";
 
 function compactNumber(value: number) {
@@ -120,8 +120,8 @@ export function ControlPanelView({
   const topMetricsSectionClass = screenshotMode ? "space-y-5 px-5 py-4" : "space-y-8 px-6 py-5";
   const metricsGridClass = screenshotMode ? "grid gap-3 sm:grid-cols-2 md:grid-cols-3" : "grid gap-4 sm:grid-cols-2 md:grid-cols-3";
   const metricCardClass = screenshotMode
-    ? "rounded-[22px] border border-zinc-200 bg-zinc-50 px-4 py-3"
-    : "rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4";
+    ? "rounded-[22px] border border-line bg-surface-alt px-4 py-3"
+    : "rounded-[24px] border border-line bg-surface-alt px-5 py-4";
   const contentGridClass = screenshotMode
     ? "grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]"
     : "grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]";
@@ -183,13 +183,11 @@ export function ControlPanelView({
       data-control-panel=""
       style={screenshotMode && screenshotWidth ? { width: screenshotWidth, maxWidth: screenshotWidth } : undefined}
     >
-      <header className="overflow-hidden rounded-[32px] border border-zinc-300 bg-white shadow-sm">
+      <header className="overflow-hidden rounded-[32px] border border-line bg-surface shadow-sm">
         <div
           className={cn(
-            "border-b border-zinc-200",
-            screenshotMode
-              ? "bg-surface-elevated"
-              : "bg-[linear-gradient(135deg,rgba(248,250,252,0.98),rgba(255,255,255,1)_55%,rgba(244,244,245,0.9))]",
+            "border-b border-line",
+            screenshotMode ? "bg-surface-elevated" : "bg-surface-elevated",
             headerPaddingClass,
           )}
         >
@@ -223,21 +221,21 @@ export function ControlPanelView({
                       <a
                         key={item.label}
                         href={item.href}
-                        className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-primary transition hover:bg-zinc-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-medium text-primary transition hover:bg-surface-alt"
                       >
                         {item.label}
                         <ArrowRight className="h-4 w-4" />
                       </a>
                     ))}
                   </div>
-                  <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-4 py-4">
+                  <div className="rounded-[24px] border border-line bg-surface-alt px-4 py-4">
                     <p className="text-xs uppercase tracking-[0.24em] text-secondary">Project controls</p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                       {projectControls.map((item) => (
                         <a
                           key={item.label}
                           href={item.href}
-                          className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-primary transition hover:border-zinc-300"
+                          className="rounded-2xl border border-line bg-surface px-4 py-3 text-sm font-medium text-primary transition hover:border-secondary"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <span>{item.label}</span>
@@ -257,7 +255,7 @@ export function ControlPanelView({
             <div className={statusCardClass}>
               <p className="text-xs uppercase tracking-[0.24em]">Is this system safe right now?</p>
               <div className={cn("flex items-start gap-4", screenshotMode ? "mt-3" : "mt-4")}>
-                <div className="rounded-2xl bg-white/70 p-3">
+                <div className="rounded-2xl bg-surface/70 p-3">
                   <StatusIcon className="h-6 w-6" />
                 </div>
                 <div>
@@ -272,7 +270,7 @@ export function ControlPanelView({
 
         <div className={topMetricsSectionClass}>
           <div>
-            <h3 className="mb-3 text-xs uppercase tracking-wide text-zinc-500">System Health</h3>
+            <h3 className="mb-3 text-xs uppercase tracking-wide text-secondary">System Health</h3>
             <div className={metricsGridClass}>
               <div className={metricCardClass}>
                 <p className="text-xs uppercase tracking-[0.18em] text-secondary">Reliability score</p>
@@ -281,7 +279,7 @@ export function ControlPanelView({
                     `mt-3 text-3xl font-semibold ${metricValueClass}`,
                     scoreTone(panel.reliability_score),
                     highlightedMetrics.includes("reliability_score") &&
-                      "rounded-2xl px-3 py-2 ring-2 ring-sky-300 ring-offset-2 ring-offset-white",
+                      "rounded-2xl px-3 py-2 ring-2 ring-sky-300 ring-offset-2 ring-offset-surface",
                   )}
                   data-tour-id="metric-reliability-score"
                 >
@@ -294,7 +292,7 @@ export function ControlPanelView({
                   className={cn(
                     `mt-3 text-3xl font-semibold text-primary ${metricValueClass}`,
                     highlightedMetrics.includes("active_incidents") &&
-                      "rounded-2xl px-3 py-2 ring-2 ring-amber-300 ring-offset-2 ring-offset-white",
+                      "rounded-2xl px-3 py-2 ring-2 ring-amber-300 ring-offset-2 ring-offset-surface",
                   )}
                   data-tour-id="metric-active-incidents"
                 >
@@ -309,7 +307,7 @@ export function ControlPanelView({
           </div>
 
           <div>
-            <h3 className="mb-3 text-xs uppercase tracking-wide text-zinc-500">Traffic</h3>
+            <h3 className="mb-3 text-xs uppercase tracking-wide text-secondary">Traffic</h3>
             <div className={metricsGridClass}>
               <div className={metricCardClass}>
                 <p className="text-xs uppercase tracking-[0.18em] text-secondary">Traces analyzed (24h)</p>
@@ -340,14 +338,14 @@ export function ControlPanelView({
               </div>
             </div>
             <div className={cn(sectionBodyTopClass, screenshotMode ? "grid gap-3 md:grid-cols-3" : "grid gap-4 md:grid-cols-3")}>
-              <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+              <div className="rounded-2xl border border-line px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-secondary">Latest deployment</p>
                 <p className="mt-2 text-lg font-semibold text-primary">{formatTime(panel.deployment_risk.deployed_at, screenshotMode)}</p>
                 <p className={`mt-2 text-sm font-medium ${riskTone(panel.deployment_risk.risk_level)}`}>
                   Risk score {decimal(panel.deployment_risk.risk_score)}
                 </p>
               </div>
-              <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+              <div className="rounded-2xl border border-line px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-secondary">Incident pressure</p>
                 <p className="mt-2 text-lg font-semibold text-primary">{panel.incidents.incident_rate_last_24h} incidents / 24h</p>
                 <p className="mt-2 text-sm text-secondary">
@@ -356,7 +354,7 @@ export function ControlPanelView({
                     : "No recent incidents."}
                 </p>
               </div>
-              <div className="rounded-2xl border border-zinc-200 px-4 py-4">
+              <div className="rounded-2xl border border-line px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-secondary">Guardrail pressure</p>
                 <p className="mt-2 text-lg font-semibold text-primary">{panel.guardrails.trigger_rate_last_24h} triggers / 24h</p>
                 <p className="mt-2 text-sm text-secondary">
@@ -376,17 +374,17 @@ export function ControlPanelView({
                 </div>
               </div>
               <div className={cn(sectionBodyTopClass, "space-y-3")}>
-                <div className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
+                <div className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
                   <span className="text-sm text-secondary">Risk level</span>
                   <span className={`text-sm font-medium ${riskTone(panel.deployment_risk.risk_level)}`}>
                     {panel.deployment_risk.risk_level ?? "n/a"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
+                <div className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
                   <span className="text-sm text-secondary">Risk score</span>
                   <span className="text-sm font-medium text-primary">{decimal(panel.deployment_risk.risk_score)}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
+                <div className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
                   <span className="text-sm text-secondary">Simulation risk</span>
                   <span className={`text-sm font-medium ${riskTone(panel.simulation.risk_level)}`}>
                     {panel.simulation.risk_level ?? "n/a"}
@@ -415,14 +413,14 @@ export function ControlPanelView({
               {panel.guardrail_activity.length > 0 ? (
                 <div className={cn(sectionBodyTopClass, "space-y-3")}>
                   {panel.guardrail_activity.slice(0, 4).map((item) => (
-                    <div key={item.policy_type} className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
+                    <div key={item.policy_type} className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
                       <span className="text-sm text-secondary">{item.policy_type.replaceAll("_", " ")}</span>
                       <span className="text-sm font-medium text-primary">{item.trigger_count}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className={cn(sectionBodyTopClass, "rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-sm leading-6 text-secondary")}>
+                <div className={cn(sectionBodyTopClass, "rounded-[24px] border border-dashed border-line bg-surface-alt px-5 py-8 text-sm leading-6 text-secondary")}>
                   No runtime guardrail interventions were recorded in the current window.
                 </div>
               )}
@@ -440,13 +438,13 @@ export function ControlPanelView({
               </div>
             </div>
             {panel.guardrail_compliance.length === 0 ? (
-              <div className={cn(sectionBodyTopClass, "rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-sm leading-6 text-secondary")}>
+              <div className={cn(sectionBodyTopClass, "rounded-[24px] border border-dashed border-line bg-surface-alt px-5 py-8 text-sm leading-6 text-secondary")}>
                 No organization-level guardrail policies are active for this project yet.
               </div>
             ) : (
               <div className={cn(sectionBodyTopClass, "grid gap-3")}>
                 {panel.guardrail_compliance.map((item) => (
-                  <div key={`${item.policy_type}-${item.enforcement_mode}`} className="rounded-[24px] border border-zinc-200 p-4">
+                  <div key={`${item.policy_type}-${item.enforcement_mode}`} className="rounded-[24px] border border-line p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-medium text-primary">{item.policy_type.replaceAll("_", " ")}</p>
@@ -480,10 +478,10 @@ export function ControlPanelView({
                   <div
                     key={`${item.policy_type}-${item.title}`}
                     className={cn(
-                      "rounded-[24px] border border-zinc-200 px-4 py-4",
+                      "rounded-[24px] border border-line px-4 py-4",
                       highlightedMetrics.includes("recommended_guardrail") &&
                         item === panel.recommended_guardrails[0] &&
-                        "ring-2 ring-emerald-300 ring-offset-2 ring-offset-white",
+                        "ring-2 ring-emerald-300 ring-offset-2 ring-offset-surface",
                     )}
                     data-tour-id={item === panel.recommended_guardrails[0] ? "metric-recommended-guardrail" : undefined}
                   >
@@ -495,7 +493,7 @@ export function ControlPanelView({
                   </div>
                 ))
               ) : (
-                <div className="rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-sm leading-6 text-secondary">
+                <div className="rounded-[24px] border border-dashed border-line bg-surface-alt px-5 py-8 text-sm leading-6 text-secondary">
                   No additional guardrail changes are being recommended right now.
                 </div>
               )}
@@ -512,20 +510,20 @@ export function ControlPanelView({
                     <h2 className="mt-2 text-2xl font-semibold text-primary">Model reliability</h2>
                   </div>
                 </div>
-                <div className="mt-5 rounded-[24px] border border-zinc-200 bg-zinc-50 px-4 py-4">
+                <div className="mt-5 rounded-[24px] border border-line bg-surface-alt px-4 py-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-secondary">Model</p>
                   <p className="mt-2 text-lg font-semibold text-primary">{panel.model_reliability.current_model ?? "n/a"}</p>
                 </div>
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
+                  <div className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
                     <span className="text-sm text-secondary">Success rate</span>
                     <span className="text-sm font-medium text-primary">{percent(panel.model_reliability.success_rate)}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
+                  <div className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
                     <span className="text-sm text-secondary">Average latency</span>
                     <span className="text-sm font-medium text-primary">{latency(panel.model_reliability.average_latency)}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3">
+                  <div className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
                     <span className="text-sm text-secondary">Structured output validity</span>
                     <span className="text-sm font-medium text-primary">
                       {percent(panel.model_reliability.structured_output_validity)}
@@ -543,13 +541,13 @@ export function ControlPanelView({
                   </div>
                 </div>
                 {panel.automatic_actions.recent_actions.length === 0 ? (
-                  <div className="mt-5 rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-sm leading-6 text-secondary">
+                  <div className="mt-5 rounded-[24px] border border-dashed border-line bg-surface-alt px-5 py-8 text-sm leading-6 text-secondary">
                     No automated mitigation actions recorded yet.
                   </div>
                 ) : (
                   <div className="mt-5 space-y-3">
                     {panel.automatic_actions.recent_actions.map((action) => (
-                      <div key={action.action_id} className="rounded-[22px] border border-zinc-200 px-4 py-4">
+                      <div key={action.action_id} className="rounded-[22px] border border-line px-4 py-4">
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-sm font-medium text-primary">
