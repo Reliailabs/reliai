@@ -432,7 +432,7 @@ export default function MarketingHomePage() {
               asChild
               size="lg"
               variant="outline"
-              className="border-zinc-700 text-white hover:bg-zinc-800"
+              className="border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-100"
             >
               <Link href="/pricing">View pricing</Link>
             </Button>
