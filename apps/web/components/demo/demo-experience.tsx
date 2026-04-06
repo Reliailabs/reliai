@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 import { DemoConversionCard } from "./demo-conversion-card";
 import { DemoTour, type DemoTourStep } from "./demo-tour";
+import { PresenterScaleFrame } from "./presenter-scale-frame";
 
 const demoSteps = [
   {
@@ -230,7 +231,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             </div>
           ) : null}
           <div className="rounded-[30px] border border-demo-preview-frame bg-transparent p-3 shadow-demo-preview-frame">
-            <div className="app-shell demo-no-gray overflow-hidden rounded-[24px] bg-bg">
+            <PresenterScaleFrame innerClassName="app-shell demo-no-gray rounded-[24px] bg-bg">
               <ControlPanelView
                 projectId={demoProject.id}
                 projectName={demoProject.name}
@@ -238,7 +239,7 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
                 screenshotMode
                 highlightedMetrics={["reliability_score", "active_incidents", "recommended_guardrail"]}
               />
-            </div>
+            </PresenterScaleFrame>
           </div>
         </section>
 
@@ -253,14 +254,14 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             </div>
           ) : null}
           <div className="rounded-[30px] border border-demo-preview-frame bg-transparent p-3 shadow-demo-preview-frame">
-            <div className="app-shell demo-no-gray overflow-hidden rounded-[24px] bg-bg">
+            <PresenterScaleFrame innerClassName="app-shell demo-no-gray rounded-[24px] bg-bg">
               <IncidentCommandCenterView
                 incidentId={demoIncidentCommand.incident.id}
                 command={demoIncidentCommand}
                 suggestedFix={demoSuggestedFix}
                 screenshotMode
               />
-            </div>
+            </PresenterScaleFrame>
           </div>
         </section>
 
@@ -277,9 +278,9 @@ export function DemoExperience({ screenshotMode = false, visualTestMode = false 
             </div>
           ) : null}
           <div className="demo-trace-war-room rounded-[30px] border border-demo-preview-frame bg-transparent p-3 shadow-demo-preview-frame">
-            <div className="app-shell demo-no-gray overflow-hidden rounded-[24px] bg-bg px-3 py-3">
+            <PresenterScaleFrame innerClassName="app-shell demo-no-gray rounded-[24px] bg-bg px-3 py-3">
               <TraceGraphView graph={demoTraceGraph} analysis={demoTraceAnalysis} screenshotMode />
-            </div>
+            </PresenterScaleFrame>
           </div>
         </section>
 

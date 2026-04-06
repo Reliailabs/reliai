@@ -382,17 +382,29 @@ body {
   .demo-no-gray .bg-white,
   .demo-no-gray .bg-white\/70,
   .demo-no-gray .bg-white\/90,
+  .demo-no-gray .bg-white\/92,
   .demo-no-gray .bg-surface,
   .demo-no-gray .bg-surface-elevated,
   .demo-no-gray .bg-surface-alt,
   .demo-no-gray .bg-zinc-50,
   .demo-no-gray .bg-gray-50,
+  .demo-no-gray .bg-gray-100,
   .demo-no-gray .bg-slate-50 {
     background-color: transparent !important;
   }
 
   .demo-no-gray .card-surface {
     background-color: transparent !important;
+  }
+
+  /* Semantic status colors — replace light tints with dark-appropriate equivalents */
+  .demo-no-gray .bg-rose-50 {
+    background-color: rgba(239, 68, 68, 0.12) !important;
+  }
+
+  .demo-no-gray .bg-amber-50,
+  .demo-no-gray .bg-amber-50\/60 {
+    background-color: rgba(245, 158, 11, 0.1) !important;
   }
 
   .bg-code {
