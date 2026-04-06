@@ -60,12 +60,12 @@ export function UsageHeader({
   const status = percentUsed >= 1 ? "blocked" : percentUsed >= 0.9 ? "critical" : percentUsed >= 0.7 ? "warning" : "normal";
   const statusTone =
     status === "blocked"
-      ? "bg-rose-100 text-rose-700"
+      ? "badge badge-danger"
       : status === "critical"
-        ? "bg-rose-100 text-rose-700"
+        ? "badge badge-danger"
         : status === "warning"
-          ? "bg-amber-100 text-amber-800"
-          : "bg-emerald-100 text-emerald-700";
+          ? "badge badge-warning"
+          : "badge badge-success";
   const barTone =
     status === "blocked"
       ? "bg-rose-500"
@@ -85,59 +85,59 @@ export function UsageHeader({
     <div className="w-full max-w-[360px] rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
       <button type="button" className="w-full text-left" onClick={() => setOpen((prev) => !prev)}>
         <div className="flex items-center justify-between">
-          <p className="text-xs uppercase tracking-[0.18em] text-steel">Usage</p>
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${statusTone}`}>{status}</span>
+          <p className="text-xs uppercase tracking-[0.18em] text-secondary">Usage</p>
+          <span className={statusTone}>{status}</span>
         </div>
         <div className="mt-2 flex items-center justify-between text-sm">
-          <span className="font-medium text-ink">
+          <span className="font-medium text-primary">
             {formatCompact(usageStatus.used)} / {limit ? formatCompact(limit) : "no limit"} traces
           </span>
-          <span className="text-xs text-steel">{Math.round(percentUsed * 100)}%</span>
+          <span className="text-xs text-secondary">{Math.round(percentUsed * 100)}%</span>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
           <div className={`h-full ${barTone}`} style={{ width: `${Math.min(percentUsed * 100, 100)}%` }} />
         </div>
         {showUpgrade && upgradePrompt ? (
-          <div className="mt-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs text-steel">
+          <div className="mt-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs text-secondary">
             {upgradePrompt.message}
           </div>
         ) : null}
       </button>
 
       {open ? (
-        <div className="mt-4 space-y-4 border-t border-zinc-200 pt-4 text-xs text-steel">
+        <div className="mt-4 space-y-4 border-t border-zinc-200 pt-4 text-xs text-secondary">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span>Traces used</span>
-              <span className="font-medium text-ink">{formatCompact(usageStatus.used)}</span>
+              <span className="font-medium text-primary">{formatCompact(usageStatus.used)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Plan limit</span>
-              <span className="font-medium text-ink">{limit ? formatCompact(limit) : "No limit"}</span>
+              <span className="font-medium text-primary">{limit ? formatCompact(limit) : "No limit"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Projected usage</span>
-              <span className="font-medium text-ink">{formatCompact(projectedUsage)}</span>
+              <span className="font-medium text-primary">{formatCompact(projectedUsage)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Estimated overage</span>
-              <span className="font-medium text-ink">{formatMoney(estimatedUsageCost)}</span>
+              <span className="font-medium text-primary">{formatMoney(estimatedUsageCost)}</span>
             </div>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Billing</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Billing</p>
             <div className="mt-2 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-steel">Base subscription</span>
-                <span className="font-medium text-ink">{formatMoney(baseCost)}</span>
+                <span className="text-xs text-secondary">Base subscription</span>
+                <span className="font-medium text-primary">{formatMoney(baseCost)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-steel">Estimated usage</span>
-                <span className="font-medium text-ink">{formatMoney(estimatedUsageCost)}</span>
+                <span className="text-xs text-secondary">Estimated usage</span>
+                <span className="font-medium text-primary">{formatMoney(estimatedUsageCost)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-zinc-100 pt-2">
-                <span className="text-xs text-steel">Estimated total</span>
-                <span className="font-medium text-ink">{formatMoney(totalEstimated)}</span>
+                <span className="text-xs text-secondary">Estimated total</span>
+                <span className="font-medium text-primary">{formatMoney(totalEstimated)}</span>
               </div>
             </div>
           </div>

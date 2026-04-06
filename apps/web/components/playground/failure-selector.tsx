@@ -27,7 +27,7 @@ export function FailureSelector({ selectedFailure, onSelect }: FailureSelectorPr
             "rounded-[24px] border px-5 py-5 text-left transition",
             selectedFailure === option.id
               ? "border-ink bg-ink text-white shadow-[0_12px_30px_rgba(15,23,42,0.18)]"
-              : "border-zinc-300 bg-white text-ink hover:border-zinc-400 hover:bg-zinc-50",
+              : "border-zinc-300 bg-white text-primary hover:border-zinc-400 hover:bg-zinc-50",
           )}
         >
           <p className="text-xs uppercase tracking-[0.22em] opacity-70">Failure</p>

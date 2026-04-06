@@ -38,11 +38,11 @@ export async function AppShell({
   }
 
   return (
-    <div className="app-shell min-h-screen bg-bg text-textPrimary">
+    <div className="app-shell min-h-screen bg-bg text-primary">
       <div className="mx-auto grid min-h-screen max-w-[1400px] grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="border-r border-line bg-surface px-5 py-6">
           <div className="mb-8">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Reliai</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Reliai</p>
             <h1 className="mt-2 text-xl font-semibold">AI reliability operations</h1>
           </div>
           <nav className="space-y-1">
@@ -52,7 +52,7 @@ export async function AppShell({
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-steel transition-colors hover:bg-surface hover:text-ink"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-secondary transition-colors hover:bg-surface hover:text-primary"
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
@@ -60,8 +60,8 @@ export async function AppShell({
               );
             })}
           </nav>
-          <div className="mt-8 rounded-lg border border-line bg-surface px-3 py-3 text-sm text-steel">
-            <p className="font-medium text-ink">{operatorEmail}</p>
+          <div className="mt-8 rounded-lg border border-line bg-surface px-3 py-3 text-sm text-secondary">
+            <p className="font-medium text-primary">{operatorEmail}</p>
             <OrgSwitcher memberships={memberships} activeOrganizationId={activeOrganizationId} />
             <div className="mt-3">
               <DensityToggle />
@@ -70,7 +70,7 @@ export async function AppShell({
               <WarRoomToggle />
             </div>
             <form action={signOutAction} className="mt-3">
-              <button className="text-sm text-steel underline-offset-4 hover:text-ink hover:underline">
+              <button className="text-sm text-secondary underline-offset-4 hover:text-primary hover:underline">
                 Sign out
               </button>
             </form>

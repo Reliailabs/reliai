@@ -75,10 +75,10 @@ export function FailureTimeline({ disableAnimation = false }: FailureTimelinePro
               style={{ transitionDelay: `${index * 90}ms` }}
             >
               <div className="absolute -left-6 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white shadow-sm">
-                <Icon className="h-4 w-4 text-ink" />
+                <Icon className="h-4 w-4 text-primary" />
               </div>
-              <p className="text-sm font-semibold text-ink">{item.title}</p>
-              <p className="mt-2 text-sm leading-7 text-steel">{item.body}</p>
+              <p className="text-sm font-semibold text-primary">{item.title}</p>
+              <p className="mt-2 text-sm leading-7 text-secondary">{item.body}</p>
             </div>
           );
         })}

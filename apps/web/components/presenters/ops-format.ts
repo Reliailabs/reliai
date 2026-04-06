@@ -22,37 +22,37 @@ export function formatTime(value: string | null, screenshotMode = false) {
 }
 
 export function scoreTone(score: number) {
-  if (score >= 80) return "text-emerald-700";
-  if (score >= 60) return "text-amber-700";
-  return "text-rose-700";
+  if (score >= 80) return "text-success";
+  if (score >= 60) return "text-warning";
+  return "text-danger";
 }
 
 export function riskTone(level: string | null) {
-  if (level === "high") return "text-rose-700";
-  if (level === "medium") return "text-amber-700";
-  if (level === "low") return "text-emerald-700";
-  return "text-steel";
+  if (level === "high") return "text-danger";
+  if (level === "medium") return "text-warning";
+  if (level === "low") return "text-success";
+  return "text-secondary";
 }
 
 export function coverageTone(value: number) {
-  if (value >= 95) return "text-emerald-700";
-  if (value >= 85) return "text-amber-700";
-  return "text-rose-700";
+  if (value >= 95) return "text-success";
+  if (value >= 85) return "text-warning";
+  return "text-danger";
 }
 
 export function actionStatusTone(status: string) {
-  if (status === "success") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (status === "dry_run") return "border-sky-200 bg-sky-50 text-sky-800";
-  if (status.startsWith("skipped_")) return "border-amber-200 bg-amber-50 text-amber-800";
-  if (status === "error") return "border-rose-200 bg-rose-50 text-rose-800";
-  return "border-zinc-200 bg-zinc-50 text-zinc-800";
+  if (status === "success") return "badge badge-success";
+  if (status === "dry_run") return "badge badge-neutral";
+  if (status.startsWith("skipped_")) return "badge badge-warning";
+  if (status === "error") return "badge badge-danger";
+  return "badge badge-neutral";
 }
 
 export function severityTone(severity: string) {
-  if (severity === "critical") return "bg-rose-100 text-rose-700 ring-1 ring-rose-200";
-  if (severity === "high") return "bg-amber-100 text-amber-800 ring-1 ring-amber-200";
-  if (severity === "medium") return "bg-orange-100 text-orange-800 ring-1 ring-orange-200";
-  return "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200";
+  if (severity === "critical") return "badge badge-danger";
+  if (severity === "high") return "badge badge-warning";
+  if (severity === "medium") return "badge badge-warning";
+  return "badge badge-neutral";
 }
 
 export function renderProbability(value: number) {
@@ -60,9 +60,9 @@ export function renderProbability(value: number) {
 }
 
 export function gateTone(decision: string | null | undefined) {
-  if (decision === "BLOCK") return "border-rose-300 bg-rose-50 text-rose-800";
-  if (decision === "WARN") return "border-amber-300 bg-amber-50 text-amber-800";
-  return "border-emerald-300 bg-emerald-50 text-emerald-800";
+  if (decision === "BLOCK") return "tone-danger";
+  if (decision === "WARN") return "tone-warning";
+  return "tone-success";
 }
 
 export function gateLabel(decision: string | null | undefined) {

@@ -53,16 +53,16 @@ export default async function IncidentsPage({
       <header className="rounded-[28px] border border-zinc-300 bg-white px-6 py-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Incidents</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Incidents</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-primary">
               Deterministic reliability incidents
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-steel">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-secondary">
               Filter by status, severity, owner, project, and incident start date to narrow the
               operator queue to the incidents that need action now.
             </p>
           </div>
-          <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-steel">
+          <div className="rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-secondary">
             {activeCount} open · {incidents.items.length - activeCount} resolved
           </div>
         </div>
@@ -71,11 +71,11 @@ export default async function IncidentsPage({
       <Card className="rounded-[28px] border-zinc-300 p-5">
         <form action="/incidents" className="grid gap-4 xl:grid-cols-[repeat(6,minmax(0,1fr))_auto_auto]">
           <label className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.18em] text-steel">Status</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-secondary">Status</span>
             <select
               name="status"
               defaultValue={status}
-              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-primary"
             >
               <option value="">Any</option>
               <option value="open">Open</option>
@@ -83,11 +83,11 @@ export default async function IncidentsPage({
             </select>
           </label>
           <label className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.18em] text-steel">Severity</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-secondary">Severity</span>
             <select
               name="severity"
               defaultValue={severity}
-              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-primary"
             >
               <option value="">Any</option>
               <option value="critical">Critical</option>
@@ -97,11 +97,11 @@ export default async function IncidentsPage({
             </select>
           </label>
           <label className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.18em] text-steel">Owner</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-secondary">Owner</span>
             <select
               name="owner"
               defaultValue={owner}
-              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-primary"
             >
               <option value="">Any</option>
               <option value="me">Assigned to me</option>
@@ -110,11 +110,11 @@ export default async function IncidentsPage({
             </select>
           </label>
           <label className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.18em] text-steel">Environment</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-secondary">Environment</span>
             <select
               name="environment"
               defaultValue={environment}
-              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-primary"
             >
               <option value="">Any</option>
               <option value="production">Production</option>
@@ -123,11 +123,11 @@ export default async function IncidentsPage({
             </select>
           </label>
           <label className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.18em] text-steel">Project</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-secondary">Project</span>
             <select
               name="projectId"
               defaultValue={projectId}
-              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+              className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-primary"
             >
               <option value="">Any</option>
               {projects.items.map((project) => (
@@ -138,19 +138,19 @@ export default async function IncidentsPage({
             </select>
           </label>
           <label className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.18em] text-steel">Date range</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-secondary">Date range</span>
             <div className="flex gap-2">
               <input
                 name="dateFrom"
                 type="date"
                 defaultValue={dateFrom}
-                className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-primary"
               />
               <input
                 name="dateTo"
                 type="date"
                 defaultValue={dateTo}
-                className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-ink"
+                className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-primary"
               />
             </div>
           </label>
@@ -160,7 +160,7 @@ export default async function IncidentsPage({
           </button>
           <Link
             href="/incidents"
-            className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm text-ink"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm text-primary"
           >
             Clear
           </Link>
@@ -171,9 +171,9 @@ export default async function IncidentsPage({
         {incidents.items.length === 0 ? (
           <div className="px-6 py-12">
             <div className="rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10">
-              <SearchSlash className="h-6 w-6 text-steel" />
-              <h2 className="mt-4 text-xl font-semibold text-ink">No incidents match these filters</h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-steel">
+              <SearchSlash className="h-6 w-6 text-secondary" />
+              <h2 className="mt-4 text-xl font-semibold text-primary">No incidents match these filters</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-secondary">
                 Adjust the queue filters or clear them to inspect the broader incident set.
               </p>
             </div>
@@ -214,16 +214,16 @@ export default async function IncidentsPage({
                       </span>
                     ) : null}
                   </div>
-                  <p className="mt-3 text-sm font-medium text-ink">{incident.title}</p>
-                  <p className="mt-2 text-sm text-steel">{incident.project_name}</p>
+                  <p className="mt-3 text-sm font-medium text-primary">{incident.title}</p>
+                  <p className="mt-2 text-sm text-secondary">{incident.project_name}</p>
                 </div>
-                <div className="text-sm text-steel">
-                  <p className="inline-flex items-center gap-2 text-ink">
-                    <FolderKanban className="h-4 w-4 text-steel" />
+                <div className="text-sm text-secondary">
+                  <p className="inline-flex items-center gap-2 text-primary">
+                    <FolderKanban className="h-4 w-4 text-secondary" />
                     {incident.project_name}
                   </p>
                 </div>
-                <div className="text-sm text-steel">
+                <div className="text-sm text-secondary">
                   <p className="inline-flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
                     {getMetricDisplayName(
@@ -232,16 +232,16 @@ export default async function IncidentsPage({
                     )}
                   </p>
                 </div>
-                <div className="text-sm text-steel">
+                <div className="text-sm text-secondary">
                   <p className="inline-flex items-center gap-2">
                     <UserRound className="h-4 w-4" />
                     {incident.owner_operator_email ?? "Unassigned"}
                   </p>
                 </div>
-                <div className="text-sm text-steel">
+                <div className="text-sm text-secondary">
                   Started {new Date(incident.started_at).toLocaleString()}
                 </div>
-                <ArrowRight className="h-4 w-4 text-steel" />
+                <ArrowRight className="h-4 w-4 text-secondary" />
               </Link>
             ))}
           </div>

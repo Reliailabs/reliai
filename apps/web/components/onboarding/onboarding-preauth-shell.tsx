@@ -5,10 +5,10 @@ import Link from "next/link";
 
 export function OnboardingPreAuthShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#f7f8fa] text-ink">
+    <div className="min-h-screen bg-page text-primary">
       <header className="border-b border-zinc-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between">
-          <Link href="/" className="text-sm font-semibold tracking-tight text-ink">
+          <Link href="/" className="text-sm font-semibold tracking-tight text-primary">
             Reliai
           </Link>
           <Link

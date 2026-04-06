@@ -72,11 +72,11 @@ export function SdkInstallSection() {
       <div className={cn(marketingContainerClass, "py-16")}>
         <div className="grid gap-12 lg:grid-cols-2 lg:items-start">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">Install Reliai in 60 seconds</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+            <p className="text-xs uppercase tracking-[0.28em] text-secondary">Install Reliai in 60 seconds</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-primary">
               Install Reliai in 60 seconds
             </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-steel">
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-secondary">
               Add reliability protection to your AI system with one SDK.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
@@ -89,7 +89,7 @@ export function SdkInstallSection() {
                     "rounded-full border px-4 py-2 text-sm font-medium transition",
                     activeTab === key
                       ? "border-ink bg-ink text-white"
-                      : "border-zinc-300 bg-white text-steel hover:text-ink",
+                      : "border-zinc-300 bg-white text-secondary hover:text-primary",
                   )}
                 >
                   {item.label}
@@ -102,9 +102,9 @@ export function SdkInstallSection() {
             {badges.map((badge) => (
               <span
                 key={badge.label}
-                className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-ink"
+                className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-primary"
               >
-                <badge.icon className="h-3.5 w-3.5 text-steel" />
+                <badge.icon className="h-3.5 w-3.5 text-secondary" />
                 {badge.label}
               </span>
             ))}

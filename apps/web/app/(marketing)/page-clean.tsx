@@ -81,15 +81,15 @@ const failures = [
 
 export default function MarketingHomePage() {
   return (
-    <main className="bg-[#f7f8fa] text-ink">
+    <main className="bg-page text-primary">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
         <div className={`${marketingContainerClass} flex flex-col items-center pb-16 pt-24 text-center`} data-marketing-container>
           {/* Headline + CTAs */}
-          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
+          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-primary lg:text-5xl">
             Find and fix AI failures before your users do.
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-steel">
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-secondary">
             Reliai turns regressions into incidents, shows you what changed, and proves the fix worked.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

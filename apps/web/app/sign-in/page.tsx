@@ -32,14 +32,14 @@ export default async function SignInPage({
       : "Authentication unavailable";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f3f4f6] px-6">
+    <main className="flex min-h-screen items-center justify-center bg-page px-6">
       <Card className="w-full max-w-md p-8">
-        <p className="text-xs uppercase tracking-[0.24em] text-steel">Operator access</p>
+        <p className="text-xs uppercase tracking-[0.24em] text-secondary">Operator access</p>
         <h1 className="mt-3 text-2xl font-semibold">Operator sign-in</h1>
-        <div className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-steel">
-          Auth mode: <span className="font-medium text-ink">{authModeLabel}</span>
+        <div className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-secondary">
+          Auth mode: <span className="font-medium text-primary">{authModeLabel}</span>
         </div>
-        <p className="mt-3 text-sm leading-6 text-steel">
+        <p className="mt-3 text-sm leading-6 text-secondary">
           {workosEnabled
             ? "Production authentication is configured through WorkOS."
             : "WorkOS is not configured in the current environment."}{" "}
@@ -56,7 +56,7 @@ export default async function SignInPage({
           </a>
         ) : null}
         {showDevFallback ? (
-          <div className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-steel">
+          <div className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-secondary">
             Local seed credentials: `owner@acme.test` / `reliai-dev-password`
           </div>
         ) : null}
@@ -77,13 +77,13 @@ export default async function SignInPage({
               name="email"
               type="email"
               placeholder="owner@acme.test"
-              className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none"
+              className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-primary outline-none"
             />
             <input
               name="password"
               type="password"
               placeholder="Password"
-              className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none"
+              className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-primary outline-none"
             />
             <button className="w-full rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-black">
               Sign in with dev fallback

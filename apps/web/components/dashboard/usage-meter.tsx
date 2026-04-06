@@ -95,12 +95,12 @@ export function UsageMeter({
 
   const statusTone =
     state === "blocked"
-      ? "bg-rose-100 text-rose-700"
+      ? "badge badge-danger"
       : state === "critical"
-        ? "bg-rose-100 text-rose-700"
+        ? "badge badge-danger"
         : state === "warning"
-          ? "bg-amber-100 text-amber-800"
-          : "bg-emerald-100 text-emerald-700";
+          ? "badge badge-warning"
+          : "badge badge-success";
 
   const normalizedPlan = normalizePlan(plan);
   const baseCost = basePlanCosts[normalizedPlan] ?? null;
@@ -138,8 +138,8 @@ export function UsageMeter({
     <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
       <button type="button" className="w-full text-left" onClick={() => setOpen((prev) => !prev)}>
         <div className="flex items-center justify-between">
-          <div className="text-sm font-medium text-steel">Usage (This Month)</div>
-          <div className="text-sm font-semibold text-ink">
+          <div className="text-sm font-medium text-secondary">Usage (This Month)</div>
+          <div className="text-sm font-semibold text-primary">
             {limit ? `${Math.round(percentUsed * 100)}%` : "Unlimited"}
           </div>
         </div>
@@ -153,7 +153,7 @@ export function UsageMeter({
           </div>
         ) : null}
 
-        <div className="mt-2 text-xs text-steel">
+        <div className="mt-2 text-xs text-secondary">
           {limit
             ? `${formatNumber(usageStatus.used)} / ${formatNumber(limit)} traces`
             : `${formatNumber(usageStatus.used)} traces`}
@@ -166,13 +166,11 @@ export function UsageMeter({
         ) : null}
 
         {message[state] ? (
-          <div className="mt-3 text-sm text-ink">{message[state]}</div>
+          <div className="mt-3 text-sm text-primary">{message[state]}</div>
         ) : null}
 
         {shouldPrompt ? (
-          <div className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusTone}`}>
-            {state}
-          </div>
+          <div className={`mt-3 ${statusTone}`}>{state}</div>
         ) : null}
       </button>
 
@@ -206,44 +204,44 @@ export function UsageMeter({
       ) : null}
 
       {open ? (
-        <div className="mt-4 space-y-4 border-t border-zinc-200 pt-4 text-xs text-steel">
+        <div className="mt-4 space-y-4 border-t border-zinc-200 pt-4 text-xs text-secondary">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span>Traces used</span>
-              <span className="font-medium text-ink">{formatNumber(usageStatus.used)}</span>
+              <span className="font-medium text-primary">{formatNumber(usageStatus.used)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Plan limit</span>
-              <span className="font-medium text-ink">{limit ? formatNumber(limit) : "No limit"}</span>
+              <span className="font-medium text-primary">{limit ? formatNumber(limit) : "No limit"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Projected usage</span>
-              <span className="font-medium text-ink">{formatNumber(projectedUsage)}</span>
+              <span className="font-medium text-primary">{formatNumber(projectedUsage)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Estimated overage</span>
-              <span className="font-medium text-ink">{formatMoney(estimatedUsageCost)}</span>
+              <span className="font-medium text-primary">{formatMoney(estimatedUsageCost)}</span>
             </div>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Billing</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Billing</p>
             <div className="mt-2 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-steel">Base subscription</span>
-                <span className="font-medium text-ink">{formatMoney(baseCost)}</span>
+                <span className="text-xs text-secondary">Base subscription</span>
+                <span className="font-medium text-primary">{formatMoney(baseCost)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-steel">Estimated usage</span>
-                <span className="font-medium text-ink">{formatMoney(estimatedUsageCost)}</span>
+                <span className="text-xs text-secondary">Estimated usage</span>
+                <span className="font-medium text-primary">{formatMoney(estimatedUsageCost)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-zinc-100 pt-2">
-                <span className="text-xs text-steel">Estimated total</span>
-                <span className="font-medium text-ink">{formatMoney(totalEstimated)}</span>
+                <span className="text-xs text-secondary">Estimated total</span>
+                <span className="font-medium text-primary">{formatMoney(totalEstimated)}</span>
               </div>
             </div>
           </div>
           {!targetPlan ? (
-            <Link href="mailto:billing@reliai.dev" className="text-xs text-ink underline underline-offset-4">
+            <Link href="mailto:billing@reliai.dev" className="text-xs text-primary underline underline-offset-4">
               Contact sales →
             </Link>
           ) : null}

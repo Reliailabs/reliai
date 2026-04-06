@@ -55,19 +55,19 @@ function spanLabel(spanType: string) {
 function spanTone(spanType: string) {
   switch (spanType) {
     case "retrieval":
-      return "border-l-2 border-sky-400 text-ink";
+      return "border-l-2 border-sky-400 text-primary";
     case "prompt_build":
-      return "border-l-2 border-indigo-400 text-ink";
+      return "border-l-2 border-indigo-400 text-primary";
     case "llm_call":
-      return "border-l-2 border-emerald-400 text-ink";
+      return "border-l-2 border-emerald-400 text-primary";
     case "tool_call":
-      return "border-l-2 border-orange-400 text-ink";
+      return "border-l-2 border-orange-400 text-primary";
     case "postprocess":
-      return "border-l-2 border-amber-400 text-ink";
+      return "border-l-2 border-amber-400 text-primary";
     case "guardrail":
-      return "border-l-2 border-rose-400 text-ink";
+      return "border-l-2 border-rose-400 text-primary";
     default:
-      return "border-l-2 border-line text-ink";
+      return "border-l-2 border-line text-primary";
   }
 }
 
@@ -267,35 +267,35 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
           {!screenshotMode ? (
             <Link
               href={`/traces/${graph.trace_id}`}
-              className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-steel hover:text-ink"
+              className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-secondary hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to trace
             </Link>
           ) : (
-            <p className="text-xs uppercase tracking-[0.28em] text-steel">Reliai trace debugger</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-secondary">Reliai trace debugger</p>
           )}
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Execution graph</p>
-            <h1 className="mt-2 text-lg font-semibold text-ink text-mono-data">
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Execution graph</p>
+            <h1 className="mt-2 text-lg font-semibold text-primary text-mono-data">
               {truncateMiddle(graph.trace_id)}
             </h1>
-            <p className="mt-1 text-sm text-steel">
+            <p className="mt-1 text-sm text-secondary">
               Span relationships, retry chains, and failure points in one view.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-steel">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-secondary">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Spans</p>
-              <p className="mt-1 text-sm font-semibold text-ink">{graph.nodes.length}</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Spans</p>
+              <p className="mt-1 text-sm font-semibold text-primary">{graph.nodes.length}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Edges</p>
-              <p className="mt-1 text-sm font-semibold text-ink">{graph.edges.length}</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Edges</p>
+              <p className="mt-1 text-sm font-semibold text-primary">{graph.edges.length}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Environment</p>
-              <p className="mt-1 text-sm font-semibold text-ink">{graph.environment}</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Environment</p>
+              <p className="mt-1 text-sm font-semibold text-primary">{graph.environment}</p>
             </div>
           </div>
         </div>
@@ -304,13 +304,13 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
       <section className="mx-auto grid max-w-[1400px] gap-6 px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card className="rounded-2xl border-line bg-surface p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Execution breakdown</p>
-            <h2 className="mt-2 text-xl font-semibold text-ink">Span tree</h2>
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Execution breakdown</p>
+            <h2 className="mt-2 text-xl font-semibold text-primary">Span tree</h2>
             {rootCauseSummary ? (
               <div className="mt-3 rounded-lg border border-error/30 bg-errorBg px-3 py-2 text-sm text-error">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-error">Root cause</p>
-                <p className="mt-2 font-semibold text-ink">{rootCauseSummary.title}</p>
-                <p className="mt-1 text-sm text-ink">{rootCauseSummary.summary}</p>
+                <p className="mt-2 font-semibold text-primary">{rootCauseSummary.title}</p>
+                <p className="mt-1 text-sm text-primary">{rootCauseSummary.summary}</p>
                 {rootCauseSummary.evidence.length > 0 ? (
                   <ul className="mt-2 text-xs text-error">
                     {rootCauseSummary.evidence.map((item) => (
@@ -406,7 +406,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0">
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-steel">
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-secondary">
                           {node.span_name ?? "request"} {screenshotMode ? "" : `· ${new Date(node.timestamp).toLocaleString()}`}
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -414,17 +414,17 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
                             <Icon className="h-3.5 w-3.5" />
                             {spanLabel(type)}
                           </span>
-                          <p className="text-base font-semibold text-ink">{node.model_name}</p>
+                          <p className="text-base font-semibold text-primary">{node.model_name}</p>
                         </div>
-                        <p className="mt-1 text-sm text-steel">
+                        <p className="mt-1 text-sm text-secondary">
                           <span className="text-mono-data">
                             span {truncateMiddle(node.span_id)}
                             {node.parent_span_id ? ` · parent ${truncateMiddle(node.parent_span_id)}` : " · root span"}
                           </span>
                         </p>
                         <div className="mt-3 space-y-1">
-                          <div className="flex items-center justify-between text-xs text-steel">
-                            <span className="font-medium text-ink">{node.span_name ?? "request"}</span>
+                          <div className="flex items-center justify-between text-xs text-secondary">
+                            <span className="font-medium text-primary">{node.span_name ?? "request"}</span>
                             <span>{duration} ms</span>
                           </div>
                           <div className="h-2 w-full rounded-full bg-bg">
@@ -435,15 +435,15 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-steel">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-secondary">
                         <span className={`rounded-full px-3 py-1 font-medium ${node.success ? "bg-successBg text-success ring-1 ring-success/30" : "bg-errorBg text-error ring-1 ring-error/30"}`}>
                           {node.success ? "Success" : "Failure"}
                         </span>
-                        <span className="rounded-full bg-surface px-3 py-1 font-medium text-steel ring-1 ring-line">
+                        <span className="rounded-full bg-surface px-3 py-1 font-medium text-secondary ring-1 ring-line">
                           {node.latency_ms === null ? "—" : `${node.latency_ms} ms`}
                         </span>
                         {tokenCount > 0 ? (
-                          <span className="rounded-full bg-surface px-3 py-1 font-medium text-steel ring-1 ring-line">
+                          <span className="rounded-full bg-surface px-3 py-1 font-medium text-secondary ring-1 ring-line">
                             {tokenCount} tokens
                           </span>
                         ) : null}
@@ -497,8 +497,8 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
                             <div className="failure text-xs font-semibold text-error">
                               Retrieval failed: {failureReason ?? "unknown"}
                             </div>
-                            {explanation ? <div className="mt-1 text-sm text-ink">{explanation}</div> : null}
-                            <div className="mt-1 text-xs text-steel">
+                            {explanation ? <div className="mt-1 text-sm text-primary">{explanation}</div> : null}
+                            <div className="mt-1 text-xs text-secondary">
                               {failureReason ? `reason: ${failureReason}` : "reason: —"}
                               {typeof documentsFound === "number" ? ` · docs: ${documentsFound}` : ""}
                               {typeof retryAttempt === "number" ? ` · attempt: ${retryAttempt}` : ""}
@@ -512,7 +512,7 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
                                 ? `Recovered after retry (${retryAttemptLabel})`
                                 : "Recovered after retry"}
                             </div>
-                            <div className="mt-1 text-sm text-ink">
+                            <div className="mt-1 text-sm text-primary">
                               This retrieval recovered on attempt {retryAttempt}.
                             </div>
                           </div>
@@ -530,26 +530,26 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
         </div>
         <aside className="space-y-6">
           <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode ? "bg-gray-50" : "bg-surface")}>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Key signals</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Key signals</p>
             <div className="mt-4 space-y-3">
-              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-steel", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Slowest span</p>
-                <p className="mt-1 text-sm text-ink">{analysis?.slowest_span?.span_name ?? "—"}</p>
+              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-secondary", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Slowest span</p>
+                <p className="mt-1 text-sm text-primary">{analysis?.slowest_span?.span_name ?? "—"}</p>
               </div>
-              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-steel", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Token spike</p>
-                <p className="mt-1 text-sm text-ink">{analysis?.largest_token_span?.span_name ?? "—"}</p>
+              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-secondary", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Token spike</p>
+                <p className="mt-1 text-sm text-primary">{analysis?.largest_token_span?.span_name ?? "—"}</p>
               </div>
-              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-steel", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-steel">Guardrail retries</p>
-                <p className="mt-1 text-sm text-ink">
+              <div className={cn("rounded-lg border border-line px-3 py-2 text-sm text-secondary", screenshotMode ? "bg-gray-100" : "bg-surfaceAlt")}>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-secondary">Guardrail retries</p>
+                <p className="mt-1 text-sm text-primary">
                   {analysis?.most_guardrail_retries?.guardrail_policy ?? "—"}
                 </p>
               </div>
             </div>
           </div>
           <div className={cn("rounded-2xl border border-line px-4 py-4", screenshotMode ? "bg-gray-50" : "bg-surface")}>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">Span legend</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">Span legend</p>
             <div className="mt-4 space-y-3">
               {legend.map((item) => {
                 const Icon = spanIcon(item);
@@ -571,9 +571,9 @@ export function TraceGraphView({ graph, analysis, screenshotMode = false }: Trac
       {applyOpen && !screenshotMode ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 py-6 sm:items-center">
           <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-steel">Confirm apply</p>
-            <h3 className="mt-2 text-lg font-semibold text-ink">Apply suggested fix</h3>
-            <p className="mt-2 text-sm text-steel">
+            <p className="text-xs uppercase tracking-[0.18em] text-secondary">Confirm apply</p>
+            <h3 className="mt-2 text-lg font-semibold text-primary">Apply suggested fix</h3>
+            <p className="mt-2 text-sm text-secondary">
               This will update organization configuration based on the suggested fix.
             </p>
             <div className="mt-4 rounded-md bg-bg px-3 py-2 text-xs text-textPrimary">

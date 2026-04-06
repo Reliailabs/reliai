@@ -104,11 +104,11 @@ export default function PricingPage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.10),_transparent_60%)]" />
         <div className="pointer-events-none absolute -right-20 top-6 h-48 w-48 rounded-full bg-[radial-gradient(circle,_rgba(185,28,28,0.2),_transparent_70%)] blur-2xl" />
         <div className="relative max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.4em] text-steel">Pricing</p>
-          <h1 className="mt-4 text-5xl font-semibold tracking-tight text-ink md:text-6xl">
+          <p className="text-xs uppercase tracking-[0.4em] text-secondary">Pricing</p>
+          <h1 className="mt-4 text-5xl font-semibold tracking-tight text-primary md:text-6xl">
             Upgrade when reliability becomes a job, not a side project.
           </h1>
-          <p className="mt-6 text-base leading-8 text-steel">
+          <p className="mt-6 text-base leading-8 text-secondary">
             Reliai pricing follows how teams actually adopt reliability. Start small, then upgrade the moment the signal
             needs to stay live.
           </p>
@@ -126,10 +126,10 @@ export default function PricingPage() {
       <section className="mt-16">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="max-w-xl">
-            <p className="text-xs uppercase tracking-[0.36em] text-steel">Plans</p>
-            <h2 className="mt-4 text-3xl font-semibold text-ink">Pricing that tracks your reliability maturity.</h2>
+            <p className="text-xs uppercase tracking-[0.36em] text-secondary">Plans</p>
+            <h2 className="mt-4 text-3xl font-semibold text-primary">Pricing that tracks your reliability maturity.</h2>
           </div>
-          <p className="max-w-md text-sm leading-7 text-steel">
+          <p className="max-w-md text-sm leading-7 text-secondary">
             Every tier ships the same core product. The difference is how much you can rely on it in production.
           </p>
         </div>
@@ -142,15 +142,15 @@ export default function PricingPage() {
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="text-xl font-semibold text-ink">{tier.name}</h3>
-                    <p className="mt-2 text-sm leading-6 text-steel">{tier.description}</p>
+                    <h3 className="text-xl font-semibold text-primary">{tier.name}</h3>
+                    <p className="mt-2 text-sm leading-6 text-secondary">{tier.description}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-ink">{tier.price}</p>
-                    <p className="text-xs uppercase tracking-[0.2em] text-steel">Plan</p>
+                    <p className="text-lg font-semibold text-primary">{tier.price}</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-secondary">Plan</p>
                   </div>
                 </div>
-                <ul className="mt-6 space-y-3 text-sm text-steel">
+                <ul className="mt-6 space-y-3 text-sm text-secondary">
                   {tier.capabilities.map((capability) => (
                     <li key={capability} className="flex items-start gap-2">
                       <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent" />
@@ -159,7 +159,7 @@ export default function PricingPage() {
                   ))}
                 </ul>
               </div>
-              <p className="mt-6 text-xs uppercase tracking-[0.28em] text-steel">{tier.unlocks}</p>
+              <p className="mt-6 text-xs uppercase tracking-[0.28em] text-secondary">{tier.unlocks}</p>
             </div>
           ))}
         </div>
@@ -167,25 +167,25 @@ export default function PricingPage() {
 
       <section className="mt-20 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-          <p className="text-xs uppercase tracking-[0.36em] text-steel">Why teams upgrade</p>
-          <h2 className="mt-4 text-3xl font-semibold text-ink">The moment Reliai becomes your control room.</h2>
-          <div className="mt-6 space-y-6 text-sm text-steel">
+          <p className="text-xs uppercase tracking-[0.36em] text-secondary">Why teams upgrade</p>
+          <h2 className="mt-4 text-3xl font-semibold text-primary">The moment Reliai becomes your control room.</h2>
+          <div className="mt-6 space-y-6 text-sm text-secondary">
             {upgradeReasons.map((reason) => (
               <div key={reason.title}>
-                <p className="text-base font-semibold text-ink">{reason.title}</p>
+                <p className="text-base font-semibold text-primary">{reason.title}</p>
                 <p className="mt-2 leading-7">{reason.body}</p>
               </div>
             ))}
           </div>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-8">
-          <p className="text-xs uppercase tracking-[0.36em] text-steel">Operator note</p>
-          <h3 className="mt-4 text-2xl font-semibold text-ink">Upgrade triggers are lived moments.</h3>
-          <p className="mt-4 text-sm leading-7 text-steel">
+          <p className="text-xs uppercase tracking-[0.36em] text-secondary">Operator note</p>
+          <h3 className="mt-4 text-2xl font-semibold text-primary">Upgrade triggers are lived moments.</h3>
+          <p className="mt-4 text-sm leading-7 text-secondary">
             If you are already discussing incidents or guardrails in Slack, you are past the Evaluate tier. Plan changes
             should remove friction, not add procurement.
           </p>
-          <div className="mt-8 grid gap-4 text-sm text-ink">
+          <div className="mt-8 grid gap-4 text-sm text-primary">
             <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">Team tier removes member limits.</div>
             <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">Production tier unlocks audit trails.</div>
             <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3">Enterprise tier meets compliance and scale.</div>
@@ -195,17 +195,17 @@ export default function PricingPage() {
 
       <section className="mt-20">
         <div className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.36em] text-steel">Trigger guide</p>
-          <h2 className="mt-4 text-3xl font-semibold text-ink">Upgrade when the signal would otherwise break.</h2>
-          <p className="mt-4 text-sm leading-7 text-steel">
+          <p className="text-xs uppercase tracking-[0.36em] text-secondary">Trigger guide</p>
+          <h2 className="mt-4 text-3xl font-semibold text-primary">Upgrade when the signal would otherwise break.</h2>
+          <p className="mt-4 text-sm leading-7 text-secondary">
             These are the moments teams see value in Reliai. Each one maps to an immediate capability upgrade.
           </p>
         </div>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {triggers.map((trigger) => (
             <div key={trigger.title} className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <h3 className="text-lg font-semibold text-ink">{trigger.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-steel">{trigger.body}</p>
+              <h3 className="text-lg font-semibold text-primary">{trigger.title}</h3>
+              <p className="mt-3 text-sm leading-7 text-secondary">{trigger.body}</p>
             </div>
           ))}
         </div>
@@ -220,10 +220,10 @@ export default function PricingPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button asChild variant="subtle" className="bg-white text-ink hover:bg-white/90">
+          <Button asChild variant="subtle" className="bg-white text-primary hover:bg-white/90">
             <Link href="/signup">Start with Evaluate</Link>
           </Button>
-          <Button asChild variant="outline" className="border-white/60 bg-white text-ink hover:bg-white/90">
+          <Button asChild variant="outline" className="border-white/60 bg-white text-primary hover:bg-white/90">
             <Link href="/demo">Tour the dashboard</Link>
           </Button>
         </div>

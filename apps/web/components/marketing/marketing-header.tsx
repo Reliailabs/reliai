@@ -15,7 +15,7 @@ export function MarketingHeader() {
     <header
       className={cn(
         "sticky top-0 z-30 border-b backdrop-blur",
-        isDemo ? "border-line bg-bg/95 text-textPrimary" : "border-zinc-200/80 bg-[#f7f8fa]/90 text-ink"
+        isDemo ? "border-line bg-bg/95 text-textPrimary" : "border-default bg-page/90 text-primary"
       )}
     >
       <div className={`${marketingContainerClass} flex items-center justify-between py-4`}>
@@ -23,19 +23,19 @@ export function MarketingHeader() {
           <div
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-2xl border text-sm font-semibold",
-              isDemo ? "border-line bg-surface text-textPrimary" : "border-zinc-300 bg-white text-ink shadow-sm"
+              isDemo ? "border-line bg-surface text-textPrimary" : "border-default bg-surface text-primary shadow-sm"
             )}
           >
             R
           </div>
           <div>
-            <p className={cn("text-sm font-semibold tracking-tight", isDemo ? "text-textPrimary" : "text-ink")}>
+            <p className={cn("text-sm font-semibold tracking-tight", isDemo ? "text-textPrimary" : "text-primary")}>
               Reliai
             </p>
             <p
               className={cn(
                 "text-xs uppercase tracking-[0.24em]",
-                isDemo ? "text-textSecondary" : "text-steel"
+                isDemo ? "text-textSecondary" : "text-secondary"
               )}
             >
               Production AI reliability
@@ -47,7 +47,7 @@ export function MarketingHeader() {
             href="/#product"
             className={cn(
               "text-sm font-medium transition",
-              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-steel hover:text-ink"
+              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-secondary hover:text-primary"
             )}
           >
             Product
@@ -56,7 +56,7 @@ export function MarketingHeader() {
             href="/docs"
             className={cn(
               "text-sm font-medium transition",
-              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-steel hover:text-ink"
+              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-secondary hover:text-primary"
             )}
           >
             Docs
@@ -65,7 +65,7 @@ export function MarketingHeader() {
             href="/demo"
             className={cn(
               "text-sm font-medium transition",
-              isDemo ? "text-textPrimary" : "text-steel hover:text-ink"
+              isDemo ? "text-textPrimary" : "text-secondary hover:text-primary"
             )}
           >
             Demo
@@ -74,7 +74,7 @@ export function MarketingHeader() {
             href="/pricing"
             className={cn(
               "text-sm font-medium transition",
-              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-steel hover:text-ink"
+              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-secondary hover:text-primary"
             )}
           >
             Pricing
@@ -83,7 +83,7 @@ export function MarketingHeader() {
             href="/ai-reliability-audit"
             className={cn(
               "text-sm font-medium transition",
-              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-steel hover:text-ink"
+              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-secondary hover:text-primary"
             )}
           >
             Audit
@@ -92,7 +92,7 @@ export function MarketingHeader() {
             href="/login"
             className={cn(
               "text-sm font-medium transition",
-              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-steel hover:text-ink"
+              isDemo ? "text-textSecondary hover:text-textPrimary" : "text-secondary hover:text-primary"
             )}
           >
             Sign In

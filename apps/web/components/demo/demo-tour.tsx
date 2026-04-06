@@ -69,23 +69,23 @@ export function DemoTour({ steps, currentStep, onStepChange, onClose }: DemoTour
       <div className="fixed bottom-6 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-[28px] border border-zinc-300 bg-white p-5 shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">
+            <p className="text-xs uppercase tracking-[0.24em] text-secondary">
               Step {currentStep + 1} of {steps.length}
             </p>
-            <h3 className="mt-2 text-xl font-semibold text-ink">{step.title}</h3>
+            <h3 className="mt-2 text-xl font-semibold text-primary">{step.title}</h3>
           </div>
           {onClose ? (
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-zinc-300 p-2 text-steel transition hover:bg-zinc-50 hover:text-ink"
+              className="rounded-full border border-zinc-300 p-2 text-secondary transition hover:bg-zinc-50 hover:text-primary"
               aria-label="Close tour"
             >
               <X className="h-4 w-4" />
             </button>
           ) : null}
         </div>
-        <p className="mt-4 text-sm leading-7 text-steel">{step.description}</p>
+        <p className="mt-4 text-sm leading-7 text-secondary">{step.description}</p>
         <div className="mt-5 flex items-center justify-between">
           <Button
             type="button"

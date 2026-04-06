@@ -3,14 +3,54 @@
 @tailwind utilities;
 
 :root {
-  --background: #0b0f14;
-  --foreground: #e5e7eb;
-  --surface: #111827;
-  --surface-alt: #0f172a;
-  --border: #1f2937;
-  --text-primary: #e5e7eb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f8fafc;
+  --color-border: #e5e7eb;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #9ca3af;
+  --color-text-data: #0f172a;
+  --color-accent: #111827;
+  --color-success: #16a34a;
+  --color-danger: #dc2626;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
+  --color-code-bg: #0b0f14;
+  --color-code-text: #e2e8f0;
+  --color-code-border: rgba(148, 163, 184, 0.2);
+  --tab-accent: #111827;
+  --badge-critical-bg: rgba(220, 38, 38, 0.12);
+  --badge-critical-border: rgba(220, 38, 38, 0.35);
+  --badge-critical-text: #991b1b;
+  --badge-high-bg: rgba(217, 119, 6, 0.12);
+  --badge-high-border: rgba(217, 119, 6, 0.3);
+  --badge-high-text: #92400e;
+  --badge-medium-bg: rgba(245, 158, 11, 0.12);
+  --badge-medium-border: rgba(245, 158, 11, 0.3);
+  --badge-medium-text: #92400e;
+  --badge-low-bg: rgba(37, 99, 235, 0.12);
+  --badge-low-border: rgba(37, 99, 235, 0.3);
+  --badge-low-text: #1d4ed8;
+  --badge-resolved-bg: rgba(22, 163, 74, 0.12);
+  --badge-resolved-border: rgba(22, 163, 74, 0.3);
+  --badge-resolved-text: #166534;
+  --banner-critical-bg: rgba(220, 38, 38, 0.08);
+  --banner-critical-border: rgba(220, 38, 38, 0.25);
+  --banner-warning-bg: rgba(217, 119, 6, 0.08);
+  --banner-warning-border: rgba(217, 119, 6, 0.25);
+  --banner-info-bg: rgba(148, 163, 184, 0.08);
+  --banner-info-border: rgba(148, 163, 184, 0.25);
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --surface: var(--color-surface);
+  --surface-alt: var(--color-surface-elevated);
+  --surface-elevated: var(--color-surface-elevated);
+  --border: var(--color-border);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
+  --text-data: var(--color-text-data);
   --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -33,46 +73,88 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 @layer base {
   .app-shell {
-    background: var(--background);
-    color: var(--foreground);
+    --color-bg: #0b0f14;
+    --color-surface: #111827;
+    --color-surface-elevated: #151d2b;
+    --color-border: #263041;
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #94a3b8;
+    --color-text-data: #f1f5f9;
+    --color-accent: #60a5fa;
+    --color-success: #22c55e;
+    --color-danger: #f87171;
+    --color-warning: #f59e0b;
+    --color-info: #3b82f6;
+    --color-code-bg: #0b0f14;
+    --color-code-text: #e2e8f0;
+    --color-code-border: rgba(148, 163, 184, 0.2);
+    --tab-accent: #60a5fa;
+    --badge-critical-bg: rgba(248, 113, 113, 0.16);
+    --badge-critical-border: rgba(248, 113, 113, 0.45);
+    --badge-critical-text: #fecaca;
+    --badge-high-bg: rgba(251, 191, 36, 0.16);
+    --badge-high-border: rgba(251, 191, 36, 0.4);
+    --badge-high-text: #fde68a;
+    --badge-medium-bg: rgba(251, 146, 60, 0.18);
+    --badge-medium-border: rgba(251, 146, 60, 0.4);
+    --badge-medium-text: #fdba74;
+    --badge-low-bg: rgba(96, 165, 250, 0.18);
+    --badge-low-border: rgba(96, 165, 250, 0.4);
+    --badge-low-text: #bfdbfe;
+    --badge-resolved-bg: rgba(34, 197, 94, 0.16);
+    --badge-resolved-border: rgba(34, 197, 94, 0.4);
+    --badge-resolved-text: #bbf7d0;
+    --banner-critical-bg: rgba(248, 113, 113, 0.12);
+    --banner-critical-border: rgba(248, 113, 113, 0.35);
+    --banner-warning-bg: rgba(251, 191, 36, 0.12);
+    --banner-warning-border: rgba(251, 191, 36, 0.35);
+    --banner-info-bg: rgba(148, 163, 184, 0.08);
+    --banner-info-border: rgba(148, 163, 184, 0.3);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
     font-family: var(--font-body);
   }
 
   .app-shell .text-steel {
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
   }
 
   .app-shell .text-ink {
-    color: var(--text-primary);
+    color: var(--color-text-primary);
   }
 
   .app-shell .bg-white {
-    background-color: var(--surface);
+    background-color: var(--color-surface);
   }
 
   .app-shell .bg-zinc-50,
   .app-shell .bg-gray-50,
   .app-shell .bg-slate-50 {
-    background-color: var(--surface-alt);
+    background-color: var(--color-surface-elevated);
   }
 
   .app-shell .bg-surface {
-    background-color: var(--surface);
+    background-color: var(--color-surface);
+  }
+
+  .app-shell .bg-surface-elevated {
+    background-color: var(--color-surface-elevated);
   }
 
   .app-shell .border-line {
-    border-color: var(--border);
+    border-color: var(--color-border);
   }
 
   .app-shell .border-zinc-200,
   .app-shell .border-zinc-300 {
-    border-color: var(--border);
+    border-color: var(--color-border);
   }
 
   .app-shell aside {
@@ -106,27 +188,27 @@ body {
   }
 
   .app-shell .card-surface {
-    background: var(--surface);
-    border-color: var(--border);
-    color: var(--foreground);
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
   }
 
   .app-shell .metadata-bar {
-    background: var(--surface-alt);
-    border-color: var(--border);
-    color: var(--text-secondary);
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
   }
 
   .app-shell .density-toggle {
-    background: var(--surface-alt);
-    border-color: var(--border);
-    color: var(--text-secondary);
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
   }
 
   .app-shell .war-room-toggle {
-    background: var(--surface-alt);
-    border-color: var(--border);
-    color: var(--text-secondary);
+    background: var(--color-surface-elevated);
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
   }
 
   .war-room {
@@ -176,5 +258,183 @@ body {
     font-family: var(--font-mono);
     font-size: 0.85em;
     letter-spacing: -0.01em;
+  }
+
+  .text-primary {
+    color: var(--color-text-primary);
+  }
+
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  .text-success {
+    color: var(--color-success);
+  }
+
+  .text-danger {
+    color: var(--color-danger);
+  }
+
+  .text-warning {
+    color: var(--color-warning);
+  }
+
+  .text-data {
+    color: var(--color-text-data);
+  }
+
+  .bg-page {
+    background-color: var(--color-bg);
+  }
+
+  .bg-surface {
+    background-color: var(--color-surface);
+  }
+
+  .bg-surface-elevated {
+    background-color: var(--color-surface-elevated);
+  }
+
+  .bg-code {
+    background-color: var(--color-code-bg);
+  }
+
+  .text-code {
+    color: var(--color-code-text);
+  }
+
+  .border-code {
+    border-color: var(--color-code-border);
+  }
+
+  .border-default {
+    border-color: var(--color-border);
+  }
+
+  .heading-xl {
+    font-size: 2.5rem;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .heading-lg {
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .heading-md {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .body-lg {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .body-sm {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .metric-value {
+    color: var(--color-text-data);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    border-width: 1px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+
+  .badge-danger {
+    background: var(--badge-critical-bg);
+    border-color: var(--badge-critical-border);
+    color: var(--badge-critical-text);
+  }
+
+  .badge-warning {
+    background: var(--badge-medium-bg);
+    border-color: var(--badge-medium-border);
+    color: var(--badge-medium-text);
+  }
+
+  .badge-success {
+    background: var(--badge-resolved-bg);
+    border-color: var(--badge-resolved-border);
+    color: var(--badge-resolved-text);
+  }
+
+  .badge-neutral {
+    background: var(--badge-low-bg);
+    border-color: var(--badge-low-border);
+    color: var(--badge-low-text);
+  }
+
+  .tone-danger {
+    background: var(--badge-critical-bg);
+    border-color: var(--badge-critical-border);
+    color: var(--badge-critical-text);
+  }
+
+  .tone-warning {
+    background: var(--badge-medium-bg);
+    border-color: var(--badge-medium-border);
+    color: var(--badge-medium-text);
+  }
+
+  .tone-success {
+    background: var(--badge-resolved-bg);
+    border-color: var(--badge-resolved-border);
+    color: var(--badge-resolved-text);
+  }
+
+  .banner-critical {
+    background: var(--banner-critical-bg);
+    border-color: var(--banner-critical-border);
+  }
+
+  .banner-warning {
+    background: var(--banner-warning-bg);
+    border-color: var(--banner-warning-border);
+  }
+
+  .banner-info {
+    background: var(--banner-info-bg);
+    border-color: var(--banner-info-border);
+  }
+
+  .tab-active {
+    color: var(--color-text-primary);
+    border-color: var(--tab-accent);
+    background: var(--color-surface-elevated);
+  }
+
+  .tab-inactive {
+    color: var(--color-text-secondary);
+    border-color: transparent;
+  }
+
+  .tab-inactive:hover {
+    color: var(--color-text-primary);
   }
 }

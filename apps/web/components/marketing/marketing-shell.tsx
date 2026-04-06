@@ -13,7 +13,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
     <div
       className={cn(
         "min-h-screen",
-        isDemo ? "bg-bg text-textPrimary" : "bg-[#f7f8fa] text-ink"
+        isDemo ? "bg-bg text-textPrimary" : "bg-page text-primary"
       )}
     >
       {children}

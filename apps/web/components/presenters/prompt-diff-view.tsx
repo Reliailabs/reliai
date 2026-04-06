@@ -80,39 +80,39 @@ export function PromptDiffView({ incidentId, incident, comparison, activeTab }: 
       <header className="rounded-[20px] border border-zinc-300 bg-white px-5 py-4">
         <Link
           href={`/incidents/${incidentId}/command`}
-          className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink"
+          className="inline-flex items-center gap-2 text-sm text-secondary hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to overview
         </Link>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-          <span className="font-semibold text-ink">{incident.title}</span>
+          <span className="font-semibold text-primary">{incident.title}</span>
           <span className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-semibold uppercase text-zinc-600">
             {incident.severity}
           </span>
         </div>
       </header>
 
-      <nav className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1">
-        {TABS.map((tab) => (
-          <Link
-            key={tab.id}
-            href={`/incidents/${incidentId}/command?tab=${tab.id}`}
-            className={cn(
-              "rounded-[10px] px-4 py-2 text-sm font-medium transition-colors",
-              activeTab === tab.id ? "bg-white text-ink shadow-sm" : "text-steel hover:text-ink"
-            )}
-          >
-            {tab.label}
-          </Link>
-        ))}
+        <nav className="flex gap-1 rounded-[14px] border border-default bg-surface-elevated p-1">
+          {TABS.map((tab) => (
+            <Link
+              key={tab.id}
+              href={`/incidents/${incidentId}/command?tab=${tab.id}`}
+              className={cn(
+                "rounded-[10px] border border-transparent px-4 py-2 text-sm font-medium transition-colors",
+                activeTab === tab.id ? "tab-active border-default" : "tab-inactive hover:border-default"
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
       </nav>
 
       {comparison === null ? (
         <section className="rounded-[18px] border border-zinc-200 bg-white px-6 py-10 text-center">
-          <p className="text-sm font-medium text-ink">We could not load prompt diff evidence.</p>
-          <p className="mt-2 text-sm text-steel">Try reloading this tab or return to cohort diff.</p>
+          <p className="text-sm font-medium text-primary">We could not load prompt diff evidence.</p>
+          <p className="mt-2 text-sm text-secondary">Try reloading this tab or return to cohort diff.</p>
           <div className="mt-4 flex justify-center gap-2">
             <Button asChild size="sm" variant="outline">
               <Link href={`/incidents/${incidentId}/command?tab=prompt-diff`}>Retry</Link>
@@ -154,43 +154,43 @@ function PromptDiffEvidence({
     <>
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
         <div className="rounded-[18px] border border-zinc-200 bg-white px-5 py-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-steel">Prompt evidence summary</p>
-          <h2 className="mt-3 text-xl font-semibold text-ink">
+          <p className="text-xs uppercase tracking-[0.2em] text-secondary">Prompt evidence summary</p>
+          <h2 className="mt-3 text-xl font-semibold text-primary">
             {diffData
               ? `Prompt ${diffData.from_version} → ${diffData.to_version}`
               : "Prompt version impact on this incident"}
           </h2>
-          <p className="mt-2 text-sm text-steel">{driver.headline}</p>
-          <p className="mt-2 text-sm text-steel">{driver.note}</p>
+          <p className="mt-2 text-sm text-secondary">{driver.headline}</p>
+          <p className="mt-2 text-sm text-secondary">{driver.note}</p>
           <div className="mt-4 flex items-center gap-2">
             {driver.confidence === "high" ? (
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             ) : (
               <AlertTriangle className="h-4 w-4 text-amber-600" />
             )}
-            <span className="text-xs uppercase tracking-[0.14em] text-steel">
+            <span className="text-xs uppercase tracking-[0.14em] text-secondary">
               Confidence: {driver.confidence}
             </span>
           </div>
         </div>
 
         <div className="rounded-[18px] border border-zinc-200 bg-white px-5 py-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-steel">Change timing</p>
-          <div className="mt-3 space-y-2 text-sm text-steel">
+          <p className="text-xs uppercase tracking-[0.2em] text-secondary">Change timing</p>
+          <div className="mt-3 space-y-2 text-sm text-secondary">
             <p>
-              Incident started: <span className="font-medium text-ink">{formatDateTime(incident.started_at)}</span>
+              Incident started: <span className="font-medium text-primary">{formatDateTime(incident.started_at)}</span>
             </p>
             <p>
-              Current window: <span className="font-medium text-ink">{formatDateTime(comparison.current_window_start)}</span>
+              Current window: <span className="font-medium text-primary">{formatDateTime(comparison.current_window_start)}</span>
               {" "}- {formatDateTime(comparison.current_window_end)}
             </p>
             <p>
-              Baseline window: <span className="font-medium text-ink">{formatDateTime(comparison.baseline_window_start)}</span>
+              Baseline window: <span className="font-medium text-primary">{formatDateTime(comparison.baseline_window_start)}</span>
               {" "}- {formatDateTime(comparison.baseline_window_end)}
             </p>
             {typeof summary.metric_name === "string" ? (
               <p>
-                Triggered signal: <span className="font-medium text-ink">{summary.metric_name}</span>
+                Triggered signal: <span className="font-medium text-primary">{summary.metric_name}</span>
               </p>
             ) : null}
           </div>
@@ -198,15 +198,15 @@ function PromptDiffEvidence({
       </section>
 
       <section className="rounded-[18px] border border-zinc-200 bg-white px-5 py-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-steel">Line-level prompt diff</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-secondary">Line-level prompt diff</p>
         {diffData ? (
           <div className="mt-4 space-y-3">
-            <div className="grid gap-2 text-xs text-steel sm:grid-cols-2">
+            <div className="grid gap-2 text-xs text-secondary sm:grid-cols-2">
               <p>
-                From <span className="font-semibold text-ink">{diffData.from_version}</span>
+                From <span className="font-semibold text-primary">{diffData.from_version}</span>
               </p>
               <p>
-                To <span className="font-semibold text-ink">{diffData.to_version}</span>
+                To <span className="font-semibold text-primary">{diffData.to_version}</span>
               </p>
             </div>
             <div className="max-h-[460px] overflow-auto rounded-[14px] border border-zinc-200 bg-zinc-950 p-3 font-mono text-xs leading-5 text-zinc-100">
@@ -232,7 +232,7 @@ function PromptDiffEvidence({
             </div>
           </div>
         ) : (
-          <div className="mt-4 rounded-[12px] border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-steel">
+          <div className="mt-4 rounded-[12px] border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-secondary">
             No prompt content is attached to the prompt versions in this incident window.
           </div>
         )}
@@ -240,12 +240,12 @@ function PromptDiffEvidence({
 
       <section className="rounded-[18px] border border-zinc-200 bg-white px-5 py-5">
         <div className="flex items-center gap-2">
-          <GitCompareArrows className="h-4 w-4 text-steel" />
-          <p className="text-xs uppercase tracking-[0.2em] text-steel">Prompt version distribution</p>
+          <GitCompareArrows className="h-4 w-4 text-secondary" />
+          <p className="text-xs uppercase tracking-[0.2em] text-secondary">Prompt version distribution</p>
         </div>
 
         {comparison.prompt_version_contexts.length === 0 ? (
-          <div className="mt-4 rounded-[12px] border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-steel">
+          <div className="mt-4 rounded-[12px] border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-secondary">
             No prompt version contexts were attached to these traces.
           </div>
         ) : (
@@ -253,11 +253,11 @@ function PromptDiffEvidence({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100">
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-steel">Prompt</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-steel">Current</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-steel">Baseline</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-steel">Delta</th>
-                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-steel">Pivots</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-secondary">Prompt</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-secondary">Current</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-secondary">Baseline</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-secondary">Delta</th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-[0.16em] text-secondary">Pivots</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,9 +267,9 @@ function PromptDiffEvidence({
                   const delta = current - baseline;
                   return (
                     <tr key={context.id} className="border-b border-zinc-50">
-                      <td className="px-3 py-2 font-medium text-ink">{context.version}</td>
-                      <td className="px-3 py-2 text-steel">{current}</td>
-                      <td className="px-3 py-2 text-steel">{baseline}</td>
+                      <td className="px-3 py-2 font-medium text-primary">{context.version}</td>
+                      <td className="px-3 py-2 text-secondary">{current}</td>
+                      <td className="px-3 py-2 text-secondary">{baseline}</td>
                       <td className="px-3 py-2">
                         <span className={cn("text-xs font-semibold", delta > 0 ? "text-rose-700" : "text-emerald-700")}>
                           {delta > 0 ? `+${delta}` : `${delta}`}
@@ -277,10 +277,10 @@ function PromptDiffEvidence({
                       </td>
                       <td className="px-3 py-2 text-xs">
                         <div className="flex flex-wrap gap-2">
-                          <a href={context.traces_path} className="text-ink underline-offset-4 hover:underline">
+                          <a href={context.traces_path} className="text-primary underline-offset-4 hover:underline">
                             Traces
                           </a>
-                          <a href={context.incidents_path} className="text-ink underline-offset-4 hover:underline">
+                          <a href={context.incidents_path} className="text-primary underline-offset-4 hover:underline">
                             Incidents
                           </a>
                         </div>
@@ -295,15 +295,15 @@ function PromptDiffEvidence({
       </section>
 
       <section className="rounded-[18px] border border-zinc-200 bg-white px-5 py-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-steel">Behavior deltas tied to this incident</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-secondary">Behavior deltas tied to this incident</p>
         {topSignals.length === 0 ? (
-          <p className="mt-3 text-sm text-steel">No changed signal blocks were detected between current and baseline traces.</p>
+          <p className="mt-3 text-sm text-secondary">No changed signal blocks were detected between current and baseline traces.</p>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {topSignals.map(([title, count]) => (
               <div key={title} className="rounded-[12px] border border-zinc-200 bg-zinc-50 px-4 py-3">
-                <p className="text-sm font-medium text-ink">{title}</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-steel">Changed in {count} trace pairs</p>
+                <p className="text-sm font-medium text-primary">{title}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-secondary">Changed in {count} trace pairs</p>
               </div>
             ))}
           </div>
