@@ -34,6 +34,128 @@ export interface Change {
   environment: string
   age: string
 }
+export const deployments: DeploymentRecord[] = [
+  {
+    id: "d1", name: "my-chatbot-prod", version: "v2.1.4",
+    project: "my-chatbot-prod", model: "gpt-4o",
+    status: "live", gateStatus: "pass", riskScore: 78,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 89 },
+      { factor: "hallucination_risk",  score: 72 },
+      { factor: "latency_regression",  score: 52 },
+      { factor: "error_rate_delta",    score: 45 },
+      { factor: "token_cost_delta",    score: 18 },
+    ],
+    age: "14m ago", triggeredBy: "sarah@acme.io", commit: "a3f9c12",
+    baseline: "v2.1.3", evalsPassed: 47, evalsTotal: 52,
+    guardrailsPassed: 5, guardrailsTotal: 5, deployedAt: "Apr 9, 2026 14:32 UTC",
+  },
+  {
+    id: "d2", name: "legal-assistant", version: "v1.8.2",
+    project: "legal-assistant", model: "claude-3.5-sonnet",
+    status: "live", gateStatus: "pass", riskScore: 34,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 41 },
+      { factor: "hallucination_risk",  score: 38 },
+      { factor: "latency_regression",  score: 29 },
+      { factor: "error_rate_delta",    score: 12 },
+      { factor: "token_cost_delta",    score: 51 },
+    ],
+    age: "2h ago", triggeredBy: "james@acme.io", commit: "b7e2d44",
+    baseline: "v1.8.1", evalsPassed: 61, evalsTotal: 62,
+    guardrailsPassed: 5, guardrailsTotal: 5, deployedAt: "Apr 9, 2026 12:41 UTC",
+  },
+  {
+    id: "d3", name: "search-copilot", version: "v3.0.2",
+    project: "search-copilot", model: "gpt-4o",
+    status: "pending", gateStatus: "pending", riskScore: 55,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 60 },
+      { factor: "hallucination_risk",  score: 44 },
+      { factor: "latency_regression",  score: 58 },
+      { factor: "error_rate_delta",    score: 33 },
+      { factor: "token_cost_delta",    score: 22 },
+    ],
+    age: "5m ago", triggeredBy: "ci-bot", commit: "c9a1f88",
+    baseline: "v3.0.1", evalsPassed: 38, evalsTotal: 45,
+    guardrailsPassed: 4, guardrailsTotal: 5, deployedAt: "Awaiting gate",
+  },
+  {
+    id: "d4", name: "data-extractor", version: "v2.3.2",
+    project: "data-extractor", model: "gpt-4o-mini",
+    status: "live", gateStatus: "pass", riskScore: 12,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 8  },
+      { factor: "hallucination_risk",  score: 14 },
+      { factor: "latency_regression",  score: 10 },
+      { factor: "error_rate_delta",    score: 15 },
+      { factor: "token_cost_delta",    score: 9  },
+    ],
+    age: "4h ago", triggeredBy: "james@acme.io", commit: "d2b5e77",
+    baseline: "v2.3.1", evalsPassed: 80, evalsTotal: 80,
+    guardrailsPassed: 5, guardrailsTotal: 5, deployedAt: "Apr 9, 2026 10:18 UTC",
+  },
+  {
+    id: "d5", name: "rag-pipeline", version: "v0.4.3",
+    project: "rag-pipeline", model: "claude-3.5-sonnet",
+    status: "rolled_back", gateStatus: "fail", riskScore: 92,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 95 },
+      { factor: "hallucination_risk",  score: 88 },
+      { factor: "latency_regression",  score: 91 },
+      { factor: "error_rate_delta",    score: 89 },
+      { factor: "token_cost_delta",    score: 78 },
+    ],
+    age: "1d ago", triggeredBy: "ci-bot", commit: "e4c8f22",
+    baseline: "v0.4.2", evalsPassed: 12, evalsTotal: 45,
+    guardrailsPassed: 2, guardrailsTotal: 5, deployedAt: "Apr 8, 2026 16:22 UTC",
+  },
+  {
+    id: "d6", name: "content-moderator", version: "v1.2.1",
+    project: "content-moderator", model: "gpt-4o-mini",
+    status: "live", gateStatus: "pass", riskScore: 23,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 18 },
+      { factor: "hallucination_risk",  score: 25 },
+      { factor: "latency_regression",  score: 22 },
+      { factor: "error_rate_delta",    score: 19 },
+      { factor: "token_cost_delta",    score: 31 },
+    ],
+    age: "6h ago", triggeredBy: "sarah@acme.io", commit: "f1a9b33",
+    baseline: "v1.2.0", evalsPassed: 73, evalsTotal: 75,
+    guardrailsPassed: 5, guardrailsTotal: 5, deployedAt: "Apr 9, 2026 08:15 UTC",
+  },
+  {
+    id: "d7", name: "sentiment-analyzer", version: "v0.9.4",
+    project: "sentiment-analyzer", model: "claude-3-haiku",
+    status: "at_risk", gateStatus: "pass", riskScore: 67,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 71 },
+      { factor: "hallucination_risk",  score: 62 },
+      { factor: "latency_regression",  score: 68 },
+      { factor: "error_rate_delta",    score: 58 },
+      { factor: "token_cost_delta",    score: 45 },
+    ],
+    age: "3h ago", triggeredBy: "ci-bot", commit: "g7d2e55",
+    baseline: "v0.9.3", evalsPassed: 42, evalsTotal: 50,
+    guardrailsPassed: 4, guardrailsTotal: 5, deployedAt: "Apr 9, 2026 11:30 UTC",
+  },
+  {
+    id: "d8", name: "code-review-assistant", version: "v2.0.1",
+    project: "code-review-assistant", model: "gpt-4o",
+    status: "failed", gateStatus: "fail", riskScore: 85,
+    riskFactors: [
+      { factor: "refusal_rate_delta",  score: 82 },
+      { factor: "hallucination_risk",  score: 87 },
+      { factor: "latency_regression",  score: 79 },
+      { factor: "error_rate_delta",    score: 91 },
+      { factor: "token_cost_delta",    score: 66 },
+    ],
+    age: "30m ago", triggeredBy: "james@acme.io", commit: "h3f8c66",
+    baseline: "v2.0.0", evalsPassed: 18, evalsTotal: 45,
+    guardrailsPassed: 3, guardrailsTotal: 5, deployedAt: "Apr 9, 2026 14:02 UTC",
+  },
+]
 
 export const incidents: Incident[] = [
   {
