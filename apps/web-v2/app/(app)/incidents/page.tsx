@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { FilterChips, type FilterOption } from "@/components/ui/filter-chips"
 import { SeverityBadge } from "@/components/ui/severity-badge"
+import { ProviderHealthOverlay, type ProviderStatus } from "@/components/provider-health-overlay"
 import { incidents } from "@/lib/mock-data"
 import type { Incident } from "@/lib/mock-data"
 
@@ -41,8 +42,27 @@ export default function IncidentsPage() {
   const open = incidents.filter((i) => i.status !== "resolved").length
   const resolved = incidents.filter((i) => i.status === "resolved").length
 
+  // Mock provider health data
+  const providers = [
+    {
+      provider: "Anthropic Claude API",
+      status: "operational" as ProviderStatus,
+      description: "All systems nominal",
+      lastUpdated: new Date().toISOString(),
+      incidentsCount: 0,
+    },
+    {
+      provider: "OpenAI API",
+      status: "degraded" as ProviderStatus,
+      description: "Higher than normal latencies detected",
+      lastUpdated: new Date().toISOString(),
+      incidentsCount: 1,
+    },
+  ]
+
   return (
     <div className="min-h-full">
+      <ProviderHealthOverlay providers={providers} />
       <PageHeader
         title="Incidents"
         description="Detected reliability events, ordered by severity."

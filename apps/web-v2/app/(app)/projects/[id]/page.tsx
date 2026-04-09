@@ -241,7 +241,6 @@ export default function ProjectDetailPage({
                   color="#ef4444"
                   gradientId="proj-err-rate"
                   height={100}
-                  formatValue={(v) => `${v}%`}
                 />
               </div>
               <div className="px-4 py-3 border-t border-zinc-800 grid grid-cols-2 gap-4">

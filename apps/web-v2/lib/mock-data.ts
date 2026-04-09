@@ -1,3 +1,58 @@
+// SLOs mock data for SLOs page
+export const slos = [
+  {
+    id: "slo-001",
+    name: "Refusal Rate",
+    description: "Keep refusal rate below 2%",
+    current: 1.2,
+    target: 2.0,
+    unit: "%",
+    status: "healthy",
+    trend: "down",
+    project: "my-chatbot-prod",
+    owner: "sarah@acme.io",
+    period: "7d",
+  },
+  {
+    id: "slo-002",
+    name: "Latency (p95)",
+    description: "p95 latency under 1200ms",
+    current: 980,
+    target: 1200,
+    unit: "ms",
+    status: "healthy",
+    trend: "down",
+    project: "legal-assistant",
+    owner: "james@acme.io",
+    period: "30d",
+  },
+  {
+    id: "slo-003",
+    name: "Hallucination Rate",
+    description: "Keep hallucination rate below 1.5%",
+    current: 2.1,
+    target: 1.5,
+    unit: "%",
+    status: "breached",
+    trend: "up",
+    project: "my-chatbot-prod",
+    owner: "ci-bot",
+    period: "90d",
+  },
+  {
+    id: "slo-004",
+    name: "Retrieval Relevance",
+    description: "Relevance score above 0.85",
+    current: 0.81,
+    target: 0.85,
+    unit: "score",
+    status: "at_risk",
+    trend: "down",
+    project: "rag-pipeline",
+    owner: "alice@acme.com",
+    period: "30d",
+  },
+];
 export type Severity = "critical" | "high" | "medium" | "low"
 export type IncidentStatus = "open" | "acknowledged" | "resolved"
 export type TraceStatus = "success" | "failed" | "refusal"
@@ -128,7 +183,7 @@ export const deployments: DeploymentRecord[] = [
   {
     id: "d7", name: "sentiment-analyzer", version: "v0.9.4",
     project: "sentiment-analyzer", model: "claude-3-haiku",
-    status: "at_risk", gateStatus: "pass", riskScore: 67,
+    status: "live", gateStatus: "pass", riskScore: 67,
     riskFactors: [
       { factor: "refusal_rate_delta",  score: 71 },
       { factor: "hallucination_risk",  score: 62 },
@@ -327,6 +382,8 @@ export const reliabilityPatterns: ReliabilityPattern[] = [
 
 // ── Regressions ───────────────────────────────────────────────────────────────
 
+
+
 export interface RegressionSnapshot {
   id: string
   name: string
@@ -401,4 +458,43 @@ export const regressions: RegressionSnapshot[] = [
     severity: "low", status: "resolved", detectedAt: "2d ago",
     sparkline: [645,650,660,670,680,685,680,675,670,665,660,680].map(v => ({ value: v }))
   },
+]
+
+// ── Deployments ──────────────────────────────────────────────────────────────
+
+export type DeploymentStatus = "live" | "pending" | "failed" | "rolled_back"
+export type GateStatus = "pass" | "fail" | "pending" | "skipped"
+
+export interface RiskFactor {
+  factor: string
+  score: number
+}
+
+export interface DeploymentRecord {
+  id: string
+  name: string
+  version: string
+  project: string
+  model: string
+  status: DeploymentStatus
+  gateStatus: GateStatus
+  riskScore: number
+  riskFactors: RiskFactor[]
+  age: string
+  triggeredBy: string
+  commit: string
+  baseline: string
+  evalsPassed: number
+  evalsTotal: number
+  guardrailsPassed: number
+  guardrailsTotal: number
+  deployedAt: string
+}
+
+
+// ── Hourly error rate data ───────────────────────────────────────────────────
+
+export const hourlyErrorRate: number[] = [
+  12.4, 11.8, 13.2, 14.1, 15.3, 16.7, 18.2, 17.8, 16.4, 15.1, 14.2, 13.8,
+  12.9, 11.5, 10.8, 9.7, 8.9, 8.1, 7.4, 6.8, 6.2, 5.9, 5.7, 5.4
 ]

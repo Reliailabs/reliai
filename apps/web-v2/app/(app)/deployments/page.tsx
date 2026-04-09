@@ -321,9 +321,9 @@ export default function DeploymentsPage() {
     setRollbackConfirmId(null)
   }
 
-  function handleRollbackConfirm(_id: string) {
+  function handleRollbackConfirm() {
     // In production this would fire an API call; for now just dismiss
-    setRollbackConfirmId(null)
+     setRollbackConfirmId(null)
   }
 
   return (
