@@ -15,6 +15,7 @@ import {
   Zap,
   ClipboardCheck,
   Settings2,
+  GitBranch,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/deployments",  icon: Rocket,          label: "Deployments"  },
   // ── Observability config ──
   { href: "/alerts",       icon: Bell,            label: "Alerts"       },
+  { href: "/escalation",   icon: GitBranch,       label: "Escalation"   },
   { href: "/slos",         icon: Target,          label: "SLOs"         },
   { href: "/projects",     icon: FolderKanban,    label: "Projects"     },
   // ── Record-keeping ──
