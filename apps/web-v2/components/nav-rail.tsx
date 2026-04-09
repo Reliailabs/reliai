@@ -19,17 +19,20 @@ import {
 import { cn } from "@/lib/utils"
 
 const navItems = [
+  // ── Primary triage surfaces ──
   { href: "/dashboard",    icon: LayoutDashboard, label: "Dashboard"    },
-  { href: "/projects",     icon: FolderKanban,    label: "Projects"     },
   { href: "/incidents",    icon: ShieldAlert,     label: "Incidents"    },
-  { href: "/audit",        icon: History,         label: "Audit Log"    },
-  { href: "/post-mortem",  icon: ClipboardCheck,  label: "Post-Mortem"  },
+  { href: "/traces",       icon: ScanLine,        label: "Traces"       },
+  { href: "/regressions",  icon: TrendingDown,    label: "Regressions"  },
+  { href: "/deployments",  icon: Rocket,          label: "Deployments"  },
+  // ── Observability config ──
   { href: "/alerts",       icon: Bell,            label: "Alerts"       },
   { href: "/slos",         icon: Target,          label: "SLOs"         },
-  { href: "/regressions",  icon: TrendingDown,    label: "Regressions"  },
+  { href: "/projects",     icon: FolderKanban,    label: "Projects"     },
+  // ── Record-keeping ──
+  { href: "/post-mortem",  icon: ClipboardCheck,  label: "Post-Mortem"  },
+  { href: "/audit",        icon: History,         label: "Audit Log"    },
   { href: "/prompt-diff",  icon: Zap,             label: "Prompt Diff"  },
-  { href: "/deployments",  icon: Rocket,          label: "Deployments"  },
-  { href: "/traces",       icon: ScanLine,        label: "Traces"       },
 ]
 
 export function NavRail() {

@@ -24,33 +24,31 @@ function DiffRenderer({ before, after }: { before: string; after: string }) {
     <div className="grid grid-cols-2 gap-4 min-h-[400px]">
       {/* Before */}
       <div className="border border-zinc-800 rounded bg-zinc-950/50 overflow-hidden">
-        <div className="bg-zinc-900/50 border-b border-zinc-800 px-4 py-3 text-xs font-medium text-zinc-400">
-          Before
+        <div className="bg-zinc-900/50 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
+          <span className="text-xs font-semibold text-red-400 font-mono">v{mockRegression.beforeVersion}</span>
+          <span className="text-[10px] text-zinc-600">{mockRegression.beforeModel}</span>
         </div>
         <div className="p-4 font-mono text-sm leading-relaxed overflow-x-auto">
-          <div className="text-zinc-300 whitespace-pre-wrap break-words">
-            {beforeLines.map((line, i) => (
-              <div key={i} className="text-red-400/70">
-                {line}
-              </div>
-            ))}
-          </div>
+          {beforeLines.map((line, i) => (
+            <div key={i} className="text-red-300/80 whitespace-pre">
+              {line}
+            </div>
+          ))}
         </div>
       </div>
 
       {/* After */}
       <div className="border border-zinc-800 rounded bg-zinc-950/50 overflow-hidden">
-        <div className="bg-zinc-900/50 border-b border-zinc-800 px-4 py-3 text-xs font-medium text-zinc-400">
-          After
+        <div className="bg-zinc-900/50 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
+          <span className="text-xs font-semibold text-emerald-400 font-mono">v{mockRegression.afterVersion}</span>
+          <span className="text-[10px] text-zinc-600">{mockRegression.afterModel}</span>
         </div>
         <div className="p-4 font-mono text-sm leading-relaxed overflow-x-auto">
-          <div className="text-zinc-300 whitespace-pre-wrap break-words">
-            {afterLines.map((line, i) => (
-              <div key={i} className="text-emerald-400/70">
-                {line}
-              </div>
-            ))}
-          </div>
+          {afterLines.map((line, i) => (
+            <div key={i} className="text-emerald-300/80 whitespace-pre">
+              {line}
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -200,31 +198,23 @@ export default function PromptDiffPage() {
             {viewMode === "split" ? ( 
             <DiffRenderer before={mockRegression.beforePrompt} after={mockRegression.afterPrompt} />
           ) : (
-            <div className="space-y-6 font-mono text-sm leading-relaxed">
-              <div>
-                <h4 className="text-xs font-semibold text-red-400 mb-2">Removed Lines</h4>
-                <pre className="bg-red-500/5 border border-red-500/20 rounded p-4 text-red-300 overflow-x-auto">
-                  {mockRegression.beforePrompt.replace(/"/g, '&quot;')}
-                </pre>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-emerald-400 mb-2">Added Lines</h4>
-                <pre className="bg-emerald-500/5 border border-emerald-500/20 rounded p-4 text-emerald-300 overflow-x-auto">
-                    {mockRegression.afterPrompt.replace(/"/g, '&quot;')}
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    {`If you see a &quot;-&quot; in the diff, it means the model removed that part. If you see a &quot;+&quot;, it means the model added it.`}
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    {`The model's &quot;before&quot; and &quot;after&quot; responses are shown below. Differences are highlighted.`}
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    {`If you see a &quot;-&quot; in the diff, it means the model removed that part. If you see a &quot;+&quot;, it means the model added it.`}
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    {`The model's &quot;before&quot; and &quot;after&quot; responses are shown below. Differences are highlighted.`}
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    {`If you see a &quot;-&quot; in the diff, it means the model removed that part. If you see a &quot;+&quot;, it means the model added it.`}
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    {`The model's &quot;before&quot; and &quot;after&quot; responses are shown below. Differences are highlighted.`}
-                </pre>
-              </div>
+            <div className="border border-zinc-800 rounded bg-zinc-950/50 overflow-hidden font-mono text-sm leading-relaxed">
+              {/* Removed lines */}
+              {mockRegression.beforePrompt.split("\n").map((line, i) => (
+                <div key={`b-${i}`} className="flex gap-3 px-4 py-0.5 bg-red-500/5 hover:bg-red-500/10 transition-colors">
+                  <span className="text-red-600 select-none w-4 shrink-0 text-right">−</span>
+                  <span className="text-red-300/80 whitespace-pre">{line || " "}</span>
+                </div>
+              ))}
+              {/* Separator */}
+              <div className="border-t border-zinc-800/60" />
+              {/* Added lines */}
+              {mockRegression.afterPrompt.split("\n").map((line, i) => (
+                <div key={`a-${i}`} className="flex gap-3 px-4 py-0.5 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors">
+                  <span className="text-emerald-600 select-none w-4 shrink-0 text-right">+</span>
+                  <span className="text-emerald-300/80 whitespace-pre">{line || " "}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
