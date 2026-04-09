@@ -11,8 +11,17 @@
       "name": "Web (Next.js)",
       "runtimeExecutable": "/opt/homebrew/bin/node",
       "env": { "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" },
-      "runtimeArgs": ["/opt/homebrew/Cellar/pnpm/10.26.0/libexec/lib/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web", "dev"],
-      "port": 3000
+      "runtimeArgs": ["/opt/homebrew/Cellar/pnpm/10.33.0/libexec/lib/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web", "dev"],
+      "port": 3000,
+      "autoPort": false
+    }
+  ,{
+      "name": "Web v2 (Next.js redesign)",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "env": { "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" },
+      "runtimeArgs": ["/opt/homebrew/Cellar/pnpm/10.33.0/libexec/lib/node_modules/pnpm/bin/pnpm.cjs", "--filter", "web-v2", "dev"],
+      "port": 3002,
+      "autoPort": false
     }
   ]
 }

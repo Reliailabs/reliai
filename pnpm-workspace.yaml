@@ -1,5 +1,6 @@
 packages:
   - apps/web
+  - apps/web-v2
   - packages/config
   - packages/reliai-node
   - packages/runtime-guardrail
