@@ -270,3 +270,135 @@ export const weeklyIncidents = [
   { day: "Sat", count: 1 },
   { day: "Sun", count: 3 },
 ]
+
+// ── Project detail ────────────────────────────────────────────────────────────
+
+export interface ProjectDetail {
+  id: string
+  name: string
+  env: string
+  model: string
+  errorRate: number      // percent
+  p95Latency: number     // ms
+  tracesPerDay: string
+  openIncidents: number
+}
+
+export interface GuardrailPolicy {
+  id: string
+  name: string
+  type: "refusal" | "pii" | "toxicity" | "latency" | "cost"
+  enabled: boolean
+  actionsLast24h: number
+  threshold: string
+}
+
+export interface ReliabilityPattern {
+  id: string
+  pattern: string
+  frequency: number      // occurrences
+  severity: Severity
+  lastSeen: string
+}
+
+export const projectDetails: Record<string, ProjectDetail> = {
+  "cb2dfd2d": { id: "cb2dfd2d", name: "my-chatbot-prod", env: "production", model: "gpt-4o",            errorRate: 14.2, p95Latency: 1820, tracesPerDay: "12.4k", openIncidents: 2 },
+  "ab3ce1ef": { id: "ab3ce1ef", name: "legal-assistant",  env: "production", model: "claude-3.5-sonnet", errorRate: 2.1,  p95Latency: 940,  tracesPerDay: "4.1k",  openIncidents: 1 },
+  "dc7f2b01": { id: "dc7f2b01", name: "search-copilot",   env: "production", model: "gpt-4o",            errorRate: 3.7,  p95Latency: 680,  tracesPerDay: "8.7k",  openIncidents: 1 },
+  "ef9a3c44": { id: "ef9a3c44", name: "data-extractor",   env: "production", model: "gpt-4o-mini",       errorRate: 0.8,  p95Latency: 320,  tracesPerDay: "2.3k",  openIncidents: 1 },
+  "fa1b2d55": { id: "fa1b2d55", name: "rag-pipeline",     env: "staging",    model: "claude-3.5-sonnet", errorRate: 6.4,  p95Latency: 1240, tracesPerDay: "1.1k",  openIncidents: 1 },
+}
+
+export const guardrailPolicies: GuardrailPolicy[] = [
+  { id: "g1", name: "PII Redaction",        type: "pii",      enabled: true,  actionsLast24h: 47,  threshold: "confidence > 0.85" },
+  { id: "g2", name: "Refusal Detection",    type: "refusal",  enabled: true,  actionsLast24h: 234, threshold: "score > 0.7"       },
+  { id: "g3", name: "Toxicity Filter",      type: "toxicity", enabled: true,  actionsLast24h: 12,  threshold: "score > 0.9"       },
+  { id: "g4", name: "Latency SLO",          type: "latency",  enabled: false, actionsLast24h: 0,   threshold: "p95 > 2000ms"      },
+  { id: "g5", name: "Cost Per Request Cap", type: "cost",     enabled: false, actionsLast24h: 0,   threshold: "> $0.05"           },
+]
+
+export const reliabilityPatterns: ReliabilityPattern[] = [
+  { id: "p1", pattern: "Refusal spike on ambiguous user intent",        frequency: 89,  severity: "high",     lastSeen: "14m ago" },
+  { id: "p2", pattern: "max_tokens exceeded on long-document prompts",  frequency: 234, severity: "critical", lastSeen: "2m ago"  },
+  { id: "p3", pattern: "Latency outliers correlated with gpt-4o calls", frequency: 41,  severity: "medium",   lastSeen: "1h ago"  },
+  { id: "p4", pattern: "PII detected in 3% of legal_assistant traces",  frequency: 17,  severity: "high",     lastSeen: "3h ago"  },
+  { id: "p5", pattern: "Consistent output truncation on RAG pipeline",  frequency: 62,  severity: "medium",   lastSeen: "30m ago" },
+]
+
+// ── Regressions ───────────────────────────────────────────────────────────────
+
+export interface RegressionSnapshot {
+  id: string
+  name: string
+  project: string
+  promptVersion: string
+  baselineVersion: string
+  model: string
+  metric: string
+  baselineValue: number
+  currentValue: number
+  deltaPercent: number     // positive = worse
+  severity: Severity
+  status: "active" | "resolved"
+  detectedAt: string
+  sparkline: { value: number }[]   // 12 points
+}
+
+export const regressions: RegressionSnapshot[] = [
+  {
+    id: "r1", name: "Refusal rate regression",
+    project: "my-chatbot-prod", promptVersion: "v2.1.4", baselineVersion: "v2.1.3",
+    model: "gpt-4o", metric: "refusal_rate",
+    baselineValue: 1.4, currentValue: 12.4, deltaPercent: 785,
+    severity: "critical", status: "active", detectedAt: "14m ago",
+    sparkline: [1.2,1.3,1.4,1.5,1.3,2.1,4.7,8.2,10.1,11.8,12.1,12.4].map(v => ({ value: v }))
+  },
+  {
+    id: "r2", name: "p95 latency spike",
+    project: "my-chatbot-prod", promptVersion: "v2.1.4", baselineVersion: "v2.1.3",
+    model: "gpt-4o", metric: "p95_latency_ms",
+    baselineValue: 1200, currentValue: 1820, deltaPercent: 52,
+    severity: "high", status: "active", detectedAt: "14m ago",
+    sparkline: [1180,1210,1200,1195,1220,1300,1450,1600,1720,1800,1810,1820].map(v => ({ value: v }))
+  },
+  {
+    id: "r3", name: "Token usage increase",
+    project: "legal-assistant", promptVersion: "v1.8.2", baselineVersion: "v1.8.1",
+    model: "claude-3.5-sonnet", metric: "avg_tokens",
+    baselineValue: 820, currentValue: 1240, deltaPercent: 51,
+    severity: "high", status: "active", detectedAt: "2h ago",
+    sparkline: [810,820,830,815,820,850,900,980,1080,1160,1220,1240].map(v => ({ value: v }))
+  },
+  {
+    id: "r4", name: "Error rate uptick",
+    project: "search-copilot", promptVersion: "v3.0.1", baselineVersion: "v3.0.0",
+    model: "gpt-4o", metric: "error_rate",
+    baselineValue: 0.8, currentValue: 3.7, deltaPercent: 363,
+    severity: "medium", status: "active", detectedAt: "4h ago",
+    sparkline: [0.7,0.8,0.9,0.8,0.8,1.1,1.5,2.0,2.8,3.2,3.5,3.7].map(v => ({ value: v }))
+  },
+  {
+    id: "r5", name: "Refusal increase on staging",
+    project: "rag-pipeline", promptVersion: "v0.4.3", baselineVersion: "v0.4.2",
+    model: "claude-3.5-sonnet", metric: "refusal_rate",
+    baselineValue: 2.1, currentValue: 6.4, deltaPercent: 205,
+    severity: "medium", status: "active", detectedAt: "6h ago",
+    sparkline: [2.0,2.1,2.2,2.1,2.3,2.8,3.4,4.0,4.8,5.5,6.0,6.4].map(v => ({ value: v }))
+  },
+  {
+    id: "r6", name: "Latency regression (resolved)",
+    project: "data-extractor", promptVersion: "v2.3.1", baselineVersion: "v2.3.0",
+    model: "gpt-4o-mini", metric: "p95_latency_ms",
+    baselineValue: 290, currentValue: 310, deltaPercent: 7,
+    severity: "low", status: "resolved", detectedAt: "1d ago",
+    sparkline: [285,290,295,300,310,320,315,310,305,300,295,310].map(v => ({ value: v }))
+  },
+  {
+    id: "r7", name: "Token cost spike (resolved)",
+    project: "search-copilot", promptVersion: "v2.9.8", baselineVersion: "v2.9.7",
+    model: "gpt-4o", metric: "avg_tokens",
+    baselineValue: 650, currentValue: 680, deltaPercent: 5,
+    severity: "low", status: "resolved", detectedAt: "2d ago",
+    sparkline: [645,650,660,670,680,685,680,675,670,665,660,680].map(v => ({ value: v }))
+  },
+]

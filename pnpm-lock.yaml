@@ -51,6 +51,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      geist:
+        specifier: ^1.7.0
+        version: 1.7.0(next@15.1.11(@playwright/test@1.58.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.0.0)
