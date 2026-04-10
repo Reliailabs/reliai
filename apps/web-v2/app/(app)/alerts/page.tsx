@@ -8,12 +8,14 @@ export default async function AlertsPage() {
 
   let alertTarget: AlertTargetData | null = null
   if (orgId) {
-    const target = await getOrganizationAlertTarget(orgId)
-    alertTarget = {
-      channel_type: target.channel_type,
-      channel_target: target.channel_target,
-      is_active: target.is_active,
-      webhook_masked: target.webhook_masked,
+    const target = await getOrganizationAlertTarget(orgId).catch(() => null)
+    if (target) {
+      alertTarget = {
+        channel_type: target.channel_type,
+        channel_target: target.channel_target,
+        is_active: target.is_active,
+        webhook_masked: target.webhook_masked,
+      }
     }
   }
 
