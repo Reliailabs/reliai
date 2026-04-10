@@ -264,34 +264,3 @@ export async function getRegressionHistory(projectId: string, regressionId: stri
     `/api/v1/projects/${projectId}/regressions/${regressionId}/history`
   );
 }
-export async function getOrganizationAlertDeliveries(
-  organizationId: string,
-  options?: {
-    limit?: number;
-    status?: string;
-    date_from?: string;
-    date_to?: string;
-  }
-) {
-  const params = new URLSearchParams();
-  if (options?.limit) params.set("limit", String(options.limit));
-  if (options?.status) params.set("status", options.status);
-  if (options?.date_from) params.set("date_from", options.date_from);
-  if (options?.date_to) params.set("date_to", options.date_to);
-  const query = params.size ? `?${params.toString()}` : "";
-  return request<AlertDeliveryListResponse>(
-    `/api/v1/organizations/${organizationId}/alert-deliveries${query}`
-  );
-}
-
-export async function getOrganizationUsageQuota(organizationId: string) {
-  return request<UsageQuotaStatusRead>(
-    `/api/v1/organizations/${organizationId}/usage-quota`
-  );
-}
-
-export async function getRegressionHistory(projectId: string, regressionId: string) {
-  return request<RegressionHistoryRead>(
-    `/api/v1/projects/${projectId}/regressions/${regressionId}/history`
-  );
-}
