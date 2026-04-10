@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { ChevronRight, ChevronDown, AlertTriangle, Info, XCircle } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { cn } from "@/lib/utils"
+import { formatRelativeTime } from "@/lib/time"
 
 export type AlertTargetData = {
   channel_type: string
@@ -12,33 +13,19 @@ export type AlertTargetData = {
   webhook_masked: string | null
 }
 
-const alerts = [
-  {
-    id: "a1",
-    title: "High Error Rate Detected",
-    description: "Error rate exceeded 5% threshold for sentiment-analyzer",
-    severity: "critical" as const,
-    status: "active" as const,
-    project: "sentiment-analyzer",
-    timestamp: "2024-01-15T10:30:00Z",
-    duration: "2h 15m",
-    affected: "23 requests",
-  },
-  {
-    id: "a2",
-    title: "Latency SLO Violation",
-    description: "P95 latency exceeded 2000ms for 15 minutes",
-    severity: "warning" as const,
-    status: "active" as const,
-    project: "sentiment-analyzer",
-    timestamp: "2024-01-15T09:45:00Z",
-    duration: "45m",
-    affected: "156 requests",
-  },
-]
-
 type AlertSeverity = "critical" | "warning" | "info"
-type AlertStatus = "active" | "acknowledged" | "resolved"
+
+export type AlertDeliveryRow = {
+  id: string
+  incidentId: string
+  channelType: string
+  channelTarget: string
+  deliveryStatus: string
+  attemptCount: number
+  errorMessage: string | null
+  sentAt: string | null
+  createdAt: string
+}
 
 const severityIcon: Record<AlertSeverity, React.ComponentType<{ className?: string }>> = {
   critical: XCircle,
@@ -52,14 +39,32 @@ const severityColor: Record<AlertSeverity, string> = {
   info: "text-blue-400",
 }
 
-const statusConfig: Record<AlertStatus, string> = {
-  active: "bg-red-500/10 text-red-400 border-red-500/20",
-  acknowledged: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  resolved: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+const statusConfig: Record<string, string> = {
+  sent: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  failed: "bg-red-500/10 text-red-400 border-red-500/20",
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  suppressed: "bg-zinc-700/40 text-zinc-400 border-zinc-700/60",
 }
 
-export function AlertsView({ alertTarget }: { alertTarget: AlertTargetData | null }) {
+function mapSeverity(status: string): AlertSeverity {
+  if (status === "failed") return "critical"
+  if (status === "pending") return "warning"
+  return "info"
+}
+
+export function AlertsView({
+  alertTarget,
+  deliveries,
+}: {
+  alertTarget: AlertTargetData | null
+  deliveries: AlertDeliveryRow[]
+}) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const now = Date.now()
+  const activeCount = useMemo(
+    () => deliveries.filter((d) => d.deliveryStatus !== "sent").length,
+    [deliveries]
+  )
 
   const toggleRow = (id: string) => {
     const newExpanded = new Set(expandedRows)
@@ -111,22 +116,24 @@ export function AlertsView({ alertTarget }: { alertTarget: AlertTargetData | nul
             <h3 className="text-sm font-medium text-zinc-200">Alert Delivery History</h3>
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-500">
-                {alerts.filter(a => a.status === "active").length} active
+                {activeCount} active
               </span>
             </div>
           </div>
         </div>
 
         <div className="divide-y divide-zinc-800">
-          {alerts.map((alert) => {
-            const isExpanded = expandedRows.has(alert.id)
-            const SeverityIcon = severityIcon[alert.severity]
+          {deliveries.map((delivery) => {
+            const isExpanded = expandedRows.has(delivery.id)
+            const severity = mapSeverity(delivery.deliveryStatus)
+            const SeverityIcon = severityIcon[severity]
+            const timestamp = delivery.sentAt ?? delivery.createdAt
 
             return (
-              <div key={alert.id} className="bg-zinc-950/50">
+              <div key={delivery.id} className="bg-zinc-950/50">
                 <div
                   className="px-6 py-4 cursor-pointer hover:bg-zinc-900/30 transition-colors"
-                  onClick={() => toggleRow(alert.id)}
+                  onClick={() => toggleRow(delivery.id)}
                 >
                   <div className="flex items-center gap-4">
                     <button className="text-zinc-500 hover:text-zinc-300 transition-colors">
@@ -137,28 +144,28 @@ export function AlertsView({ alertTarget }: { alertTarget: AlertTargetData | nul
                       )}
                     </button>
 
-                    <SeverityIcon className={cn("w-5 h-5", severityColor[alert.severity])} />
+                    <SeverityIcon className={cn("w-5 h-5", severityColor[severity])} />
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
                         <h4 className="text-sm font-medium text-zinc-200 truncate">
-                          {alert.title}
+                          Incident alert · {delivery.incidentId.slice(0, 8)}
                         </h4>
                         <span className={cn(
                           "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border",
-                          statusConfig[alert.status]
+                          statusConfig[delivery.deliveryStatus] ?? statusConfig.pending
                         )}>
-                          {alert.status}
+                          {delivery.deliveryStatus}
                         </span>
                       </div>
                       <p className="text-xs text-zinc-500 mt-1 truncate">
-                        {alert.description}
+                        {delivery.channelType} · {delivery.channelTarget}
                       </p>
                     </div>
 
                     <div className="text-right text-xs text-zinc-500">
-                      <div>{alert.duration}</div>
-                      <div className="mt-1">{alert.affected}</div>
+                      <div>{formatRelativeTime(timestamp, now)}</div>
+                      <div className="mt-1">{delivery.attemptCount} attempts</div>
                     </div>
                   </div>
                 </div>
@@ -168,36 +175,33 @@ export function AlertsView({ alertTarget }: { alertTarget: AlertTargetData | nul
                     <div className="pt-4 space-y-3">
                       <div className="grid grid-cols-2 gap-4 text-xs">
                         <div>
-                          <span className="text-zinc-500">Project:</span>
-                          <span className="ml-2 text-zinc-300">{alert.project}</span>
+                          <span className="text-zinc-500">Incident ID:</span>
+                          <span className="ml-2 text-zinc-300">{delivery.incidentId}</span>
                         </div>
                         <div>
-                          <span className="text-zinc-500">Triggered:</span>
+                          <span className="text-zinc-500">Timestamp:</span>
                           <span className="ml-2 text-zinc-300">
-                            {new Date(alert.timestamp).toLocaleString()}
+                            {new Date(timestamp).toLocaleString()}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        <button className="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors">
-                          Acknowledge
-                        </button>
-                        <button className="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors">
-                          View Details
-                        </button>
-                        {alert.status === "active" && (
-                          <button className="px-3 py-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-600/30 rounded transition-colors">
-                            Resolve
-                          </button>
-                        )}
-                      </div>
+                      {delivery.errorMessage && (
+                        <div className="text-xs text-red-400">
+                          Error: {delivery.errorMessage}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
             )
           })}
+          {deliveries.length === 0 && (
+            <div className="px-6 py-6 text-xs text-zinc-500">
+              No alert delivery events found.
+            </div>
+          )}
         </div>
       </div>
     </div>

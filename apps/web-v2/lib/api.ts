@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  AlertDeliveryListResponse,
   DeploymentListResponse,
   EscalationPolicyListResponse,
   IncidentDetailRead,
@@ -14,12 +15,15 @@ import type {
   ProjectListResponse,
   ProjectReliabilityRead,
   ProjectRead,
+  ProjectSLOListResponse,
   PromptDiffRead,
   PromptVersionListResponse,
+  RegressionHistoryRead,
   RegressionListResponse,
   TraceDetailRead,
   TraceListResponse,
   TraceReplayRead,
+  UsageQuotaStatusRead,
 } from "@reliai/types";
 
 import { getApiAccessToken } from "@/lib/auth";
@@ -56,6 +60,7 @@ export type DashboardTriageRead = {
     active_incident_count: number;
     unacknowledged_incident_count: number;
     degraded_project_count?: number | null;
+    avg_mttr_minutes?: number | null;
     last_updated_at: string;
   };
 };
@@ -169,6 +174,10 @@ export async function getProjectReliability(projectId: string) {
   return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
 }
 
+export async function getProjectSLOs(projectId: string) {
+  return request<ProjectSLOListResponse>(`/api/v1/projects/${projectId}/slos`);
+}
+
 export async function getOrganizationPolicies(organizationId: string) {
   return request<OrganizationGuardrailPolicyListResponse>(
     `/api/v1/organizations/${organizationId}/policies`
@@ -221,5 +230,68 @@ export async function getOrganizationMembers(organizationId: string) {
 export async function getOrgEscalationPolicies(organizationId: string) {
   return request<EscalationPolicyListResponse>(
     `/api/v1/organizations/${organizationId}/escalation-policies`
+  );
+}
+
+export async function getOrganizationAlertDeliveries(
+  organizationId: string,
+  options?: {
+    limit?: number;
+    status?: string;
+    date_from?: string;
+    date_to?: string;
+  }
+) {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.status) params.set("status", options.status);
+  if (options?.date_from) params.set("date_from", options.date_from);
+  if (options?.date_to) params.set("date_to", options.date_to);
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<AlertDeliveryListResponse>(
+    `/api/v1/organizations/${organizationId}/alert-deliveries${query}`
+  );
+}
+
+export async function getOrganizationUsageQuota(organizationId: string) {
+  return request<UsageQuotaStatusRead>(
+    `/api/v1/organizations/${organizationId}/usage-quota`
+  );
+}
+
+export async function getRegressionHistory(projectId: string, regressionId: string) {
+  return request<RegressionHistoryRead>(
+    `/api/v1/projects/${projectId}/regressions/${regressionId}/history`
+  );
+}
+export async function getOrganizationAlertDeliveries(
+  organizationId: string,
+  options?: {
+    limit?: number;
+    status?: string;
+    date_from?: string;
+    date_to?: string;
+  }
+) {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.status) params.set("status", options.status);
+  if (options?.date_from) params.set("date_from", options.date_from);
+  if (options?.date_to) params.set("date_to", options.date_to);
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<AlertDeliveryListResponse>(
+    `/api/v1/organizations/${organizationId}/alert-deliveries${query}`
+  );
+}
+
+export async function getOrganizationUsageQuota(organizationId: string) {
+  return request<UsageQuotaStatusRead>(
+    `/api/v1/organizations/${organizationId}/usage-quota`
+  );
+}
+
+export async function getRegressionHistory(projectId: string, regressionId: string) {
+  return request<RegressionHistoryRead>(
+    `/api/v1/projects/${projectId}/regressions/${regressionId}/history`
   );
 }

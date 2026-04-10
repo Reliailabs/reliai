@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -213,6 +214,7 @@ from app.schemas.project import (
     VersionRegressionRead,
     VersionTraceRead,
 )
+from app.schemas.project_slo import ProjectSLOListResponse, ProjectSLORead
 from app.schemas.reliability import (
     ProjectReliabilityRead,
     ReliabilityMetricPointRead,
@@ -247,10 +249,12 @@ from app.schemas.reliability_graph import (
 )
 from app.schemas.regression import (
     RegressionDetailRead,
+    RegressionHistoryRead,
     RegressionListQuery,
     RegressionListResponse,
     RegressionRelatedIncidentRead,
     RegressionSnapshotRead,
+    RegressionTrendPointRead,
 )
 from app.schemas.root_cause_analysis import (
     IncidentAnalysisRead,
@@ -370,6 +374,7 @@ from app.services.incidents import (
     INCIDENT_EVENT_CONFIG_APPLIED,
     INCIDENT_EVENT_CONFIG_UNDONE,
     get_incident_alert_deliveries,
+    get_organization_alert_deliveries,
     get_incident_compare_traces,
     get_incident_detail,
     get_incident_events,
@@ -381,7 +386,13 @@ from app.services.incidents import (
     reopen_incident,
     resolve_incident,
 )
-from app.services.regressions import get_regression_compare, get_regression_detail, list_project_regressions
+from app.services.regressions import get_regression_compare, get_regression_detail, get_regression_history, list_project_regressions
+from app.services.project_slos import (
+    compute_slo_current_value,
+    compute_slo_status,
+    list_project_slos,
+    status_to_trend,
+)
 from app.services.root_cause_engine import get_incident_analysis
 from app.services.authorization import (
     require_environment_access,
@@ -1591,6 +1602,18 @@ def get_dashboard_triage_endpoint(
     activity_items = [_dashboard_activity_item(incident) for incident in recent_incidents[:8]]
     unacknowledged = len([incident for incident in attention_incidents if incident.acknowledged_at is None])
 
+    resolved_timed = [
+        i for i in recent_incidents if i.resolved_at is not None and i.started_at is not None
+    ]
+    if resolved_timed:
+        mttr_values = [
+            (i.resolved_at - i.started_at).total_seconds() / 60.0
+            for i in resolved_timed
+        ]
+        avg_mttr: float | None = round(sum(mttr_values) / len(mttr_values), 1)
+    else:
+        avg_mttr = None
+
     return DashboardTriageRead(
         attention=attention_items,
         recent_incident_activity=activity_items,
@@ -1603,6 +1626,7 @@ def get_dashboard_triage_endpoint(
             active_incident_count=len(attention_incidents),
             unacknowledged_incident_count=unacknowledged,
             degraded_project_count=None,
+            avg_mttr_minutes=avg_mttr,
             last_updated_at=datetime.now(timezone.utc),
         ),
     )
@@ -2525,6 +2549,35 @@ def test_org_alert_target_endpoint(
     )
 
 
+class AlertDeliveryListQuery(BaseModel):
+    limit: int = Field(default=50, ge=1, le=200)
+    status: str | None = Field(default=None, pattern=r"^(sent|failed|pending)$")
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+
+
+@router.get("/organizations/{organization_id}/alert-deliveries", response_model=AlertDeliveryListResponse)
+def get_organization_alert_deliveries_endpoint(
+    organization_id: UUID,
+    query: AlertDeliveryListQuery = Depends(),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AlertDeliveryListResponse:
+    require_org_role(operator, organization_id, "viewer")
+    deliveries = get_organization_alert_deliveries(
+        db,
+        operator,
+        organization_id,
+        limit=query.limit,
+        status=query.status,
+        date_from=query.date_from,
+        date_to=query.date_to,
+    )
+    return AlertDeliveryListResponse(
+        items=[AlertDeliveryRead.model_validate(d) for d in deliveries]
+    )
+
+
 @router.get("/organizations/{organization_id}/usage-quota", response_model=UsageQuotaStatusRead)
 def get_org_usage_quota_endpoint(
     organization_id: UUID,
@@ -3142,6 +3195,44 @@ def get_project_reliability_endpoint(
             for metric_name, metrics in trend_rows.items()
         ],
     )
+
+
+@router.get("/projects/{project_id}/slos", response_model=ProjectSLOListResponse)
+def list_project_slos_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectSLOListResponse:
+    slos = list_project_slos(db, operator, project_id=project_id)
+    items: list[ProjectSLORead] = []
+    for slo in slos:
+        current = compute_slo_current_value(
+            db,
+            project_id=project_id,
+            metric_type=slo.metric_type,
+            window_days=slo.window_days,
+        )
+        status = compute_slo_status(current, slo.target_value) if current is not None else None
+        trend = status_to_trend(status) if status is not None else None
+        items.append(
+            ProjectSLORead(
+                id=slo.id,
+                project_id=slo.project_id,
+                organization_id=slo.organization_id,
+                name=slo.name,
+                description=slo.description,
+                metric_type=slo.metric_type,
+                target_value=slo.target_value,
+                window_days=slo.window_days,
+                enabled=slo.enabled,
+                current_value=current,
+                status=status,
+                trend=trend,
+                created_at=slo.created_at,
+                updated_at=slo.updated_at,
+            )
+        )
+    return ProjectSLOListResponse(items=items)
 
 
 @router.get("/projects/{project_id}/timeline", response_model=TimelineResponse)
@@ -3880,6 +3971,34 @@ def get_incident_analysis_endpoint(
 ) -> IncidentAnalysisResponse:
     report = get_incident_analysis(db, operator, incident_id=incident_id)
     return IncidentAnalysisResponse(incident=_incident_analysis_item(report))
+
+
+@router.get("/projects/{project_id}/regressions/{regression_id}/history", response_model=RegressionHistoryRead)
+def get_regression_history_endpoint(
+    project_id: UUID,
+    regression_id: UUID,
+    limit: int = Query(default=10, ge=2, le=30),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> RegressionHistoryRead:
+    regression, points = get_regression_history(
+        db, operator, project_id=project_id, regression_id=regression_id, limit=limit
+    )
+    return RegressionHistoryRead(
+        regression_id=regression.id,
+        metric_name=regression.metric_name,
+        scope_type=regression.scope_type,
+        scope_id=regression.scope_id,
+        window_minutes=regression.window_minutes,
+        points=[
+            RegressionTrendPointRead(
+                window_start=p.window_start,
+                metric_value=p.metric_value,
+                sample_size=p.sample_size,
+            )
+            for p in points
+        ],
+    )
 
 
 @router.get("/projects/{project_id}/regressions", response_model=RegressionListResponse)

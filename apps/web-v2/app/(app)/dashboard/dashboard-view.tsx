@@ -1,4 +1,5 @@
 import Link from "next/link"
+import type { UsageQuotaStatusRead } from "@reliai/types"
 import { ChevronRight, Rocket, FileText, Box } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { SeverityBadge } from "@/components/ui/severity-badge"
@@ -45,13 +46,24 @@ export function DashboardView({
   unacknowledgedCount,
   changes,
   weeklyIncidents,
+  avgMttrMinutes,
+  usageQuota,
 }: {
   openIncidents: DashboardIncidentRow[]
   unacknowledgedCount: number
   changes: DashboardChangeRow[]
   weeklyIncidents: WeeklyIncidentPoint[]
+  avgMttrMinutes: number | null
+  usageQuota: UsageQuotaStatusRead | null
 }) {
   const maxIncidents = Math.max(0, ...weeklyIncidents.map((d) => d.count))
+  const usageUsed = usageQuota?.usage_status?.used ?? null
+  const usageLimit =
+    usageQuota?.max_traces_per_day ?? usageQuota?.usage_status?.limit ?? null
+  const usagePercent =
+    usageQuota?.usage_status?.percent_used ??
+    (usageUsed !== null && usageLimit ? (usageUsed / usageLimit) * 100 : null)
+  const usagePercentClamped = usagePercent ? Math.min(100, Math.max(0, usagePercent)) : 0
 
   return (
     <div className="min-h-full">
@@ -264,7 +276,7 @@ export function DashboardView({
                 </div>
                 <div>
                   <div className="text-lg font-semibold text-zinc-100 tabular-nums leading-none">
-                    18m
+                    {avgMttrMinutes !== null ? `${avgMttrMinutes}m` : "—"}
                   </div>
                   <div className="text-[10px] text-zinc-600 mt-1">avg MTTR</div>
                 </div>
@@ -281,17 +293,21 @@ export function DashboardView({
             <div className="px-4 py-3.5">
               <div className="flex items-baseline justify-between mb-2">
                 <span className="text-sm font-semibold text-zinc-200 tabular-nums">
-                  12,432
+                  {usageUsed !== null ? usageUsed.toLocaleString() : "—"}
                 </span>
-                <span className="text-xs text-zinc-600">/ 50,000 traces</span>
+                <span className="text-xs text-zinc-600">
+                  / {usageLimit !== null ? usageLimit.toLocaleString() : "—"} traces
+                </span>
               </div>
               <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 rounded-full"
-                  style={{ width: "24.9%" }}
+                  style={{ width: `${usagePercentClamped}%` }}
                 />
               </div>
-              <div className="mt-1.5 text-[10px] text-zinc-600">24.9% used this month</div>
+              <div className="mt-1.5 text-[10px] text-zinc-600">
+                {usagePercent !== null ? `${usagePercent.toFixed(1)}%` : "—"} used today
+              </div>
             </div>
           </div>
         </div>

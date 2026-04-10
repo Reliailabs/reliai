@@ -345,3 +345,36 @@ def get_regression_compare(
         model_version_contexts=result.model_version_contexts,
         cohort_pivots=result.cohort_pivots,
     )
+
+
+def get_regression_history(
+    db: Session,
+    operator: OperatorContext,
+    *,
+    project_id: UUID,
+    regression_id: UUID,
+    limit: int = 30,
+) -> tuple[RegressionSnapshot, list[EvaluationRollup]]:
+    require_project_access(db, operator, project_id)
+    regression = db.scalar(
+        select(RegressionSnapshot).where(
+            RegressionSnapshot.id == regression_id,
+            RegressionSnapshot.project_id == project_id,
+        )
+    )
+    if regression is None:
+        from fastapi import HTTPException, status as http_status
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Regression not found")
+    points = db.scalars(
+        select(EvaluationRollup)
+        .where(
+            EvaluationRollup.project_id == project_id,
+            EvaluationRollup.scope_type == regression.scope_type,
+            EvaluationRollup.scope_id == regression.scope_id,
+            EvaluationRollup.metric_name == regression.metric_name,
+            EvaluationRollup.window_minutes == regression.window_minutes,
+        )
+        .order_by(EvaluationRollup.window_start)
+        .limit(limit)
+    ).all()
+    return regression, list(points)

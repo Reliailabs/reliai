@@ -62,3 +62,18 @@ class RegressionDetailRead(RegressionSnapshotRead):
     current_representative_traces: list[TraceCompareItemRead]
     baseline_representative_traces: list[TraceCompareItemRead]
     trace_compare_path: str | None
+
+
+class RegressionTrendPointRead(APIModel):
+    window_start: datetime
+    metric_value: Decimal
+    sample_size: int
+
+
+class RegressionHistoryRead(APIModel):
+    regression_id: UUID
+    metric_name: str
+    scope_type: str
+    scope_id: str
+    window_minutes: int
+    points: list[RegressionTrendPointRead]

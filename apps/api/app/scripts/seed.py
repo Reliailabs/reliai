@@ -40,6 +40,7 @@ from app.services.registry import ensure_model_version_record, ensure_prompt_ver
 from app.services.regressions import compute_regressions_for_scope
 from app.services.reliability_metrics import compute_project_reliability_metrics
 from app.services.org_escalation_policies import seed_default_escalation_policy
+from app.services.project_slos import seed_default_slos
 from app.services.rollups import build_scopes
 from app.services.traces import create_trace
 from app.services.utils import slugify
@@ -655,6 +656,8 @@ def run() -> None:
         )
         ensure_project_bootstrap_environments(db, project=project)
         ensure_project_bootstrap_environments(db, project=stale_project)
+        seed_default_slos(db, project_id=project.id, organization_id=organization.id)
+        seed_default_slos(db, project_id=stale_project.id, organization_id=organization.id)
 
         alert_target = db.scalar(
             select(OrganizationAlertTarget).where(

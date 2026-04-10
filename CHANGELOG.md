@@ -17,6 +17,7 @@ All notable changes to Reliai will be documented in this file.
 - Global semantic color + typography tokens with shared utility classes for consistent UI hierarchy.
 - Organization escalation policies backend with list endpoint and seeded defaults.
 - web-v2 Settings page with operator, organization, and member visibility plus API key guidance.
+- Project SLO backend with list endpoint and seeded defaults.
 
 ### Changed
 
@@ -27,6 +28,7 @@ All notable changes to Reliai will be documented in this file.
 - web-v2 list filters now drive API queries via URL parameters, with traces cursor pagination and list limit controls.
 - web-v2 regressions now aggregate project-scoped regressions and resolve project names; deployments resolve project display names.
 - web-v2 projects surface now pulls reliability metrics per project for data-backed tiles.
+- web-v2 SLOs now load from the new project SLO endpoint instead of derived client-side metrics.
 
 ### Fixed
 
