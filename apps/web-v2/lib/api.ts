@@ -16,6 +16,7 @@ import type {
   PromptDiffRead,
   PromptVersionListResponse,
   RegressionListResponse,
+  TraceDetailRead,
   TraceListResponse,
   TraceReplayRead,
 } from "@reliai/types";
@@ -145,6 +146,10 @@ export async function getTraces(options?: {
   if (options?.limit) params.set("limit", String(options.limit));
   const query = params.size ? `?${params.toString()}` : "";
   return request<TraceListResponse>(`/api/v1/traces${query}`);
+}
+
+export async function getTraceDetail(traceId: string) {
+  return request<TraceDetailRead>(`/api/v1/traces/${traceId}`);
 }
 
 export async function getTraceReplay(traceId: string) {
