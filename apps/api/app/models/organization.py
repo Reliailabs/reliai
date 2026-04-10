@@ -44,3 +44,4 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         "OrganizationGuardrailPolicy",
         back_populates="organization",
     )
+    escalation_policies = relationship("OrgEscalationPolicy")

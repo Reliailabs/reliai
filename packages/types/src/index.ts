@@ -53,6 +53,33 @@ export interface OrganizationGuardrailPolicyListResponse {
   items: OrganizationGuardrailPolicyRead[];
 }
 
+export interface EscalationPolicyStepRead {
+  id: string;
+  policy_id: string;
+  step_number: number;
+  delay_minutes: number;
+  action: "notify" | "escalate" | "page";
+  channel: "slack" | "email" | "pagerduty" | "webhook";
+  target: string;
+}
+
+export interface EscalationPolicyRead {
+  id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  trigger_severity: "critical" | "high" | "all";
+  unacknowledged_after_minutes: number;
+  enabled: boolean;
+  steps: EscalationPolicyStepRead[];
+  active_incident_count: number;
+  created_at: string;
+}
+
+export interface EscalationPolicyListResponse {
+  items: EscalationPolicyRead[];
+}
+
 export interface ProjectRead {
   id: string;
   organization_id: string;

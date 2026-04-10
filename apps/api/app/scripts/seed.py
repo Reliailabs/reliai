@@ -12,6 +12,7 @@ from app.models.deployment_rollback import DeploymentRollback
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.operator_user import OperatorUser
 from app.models.organization import Organization
+from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
 from app.models.project import Project
 from app.models.trace import Trace
@@ -38,6 +39,7 @@ from app.services.onboarding import get_or_create_checklist, mark_api_key_create
 from app.services.registry import ensure_model_version_record, ensure_prompt_version_record
 from app.services.regressions import compute_regressions_for_scope
 from app.services.reliability_metrics import compute_project_reliability_metrics
+from app.services.org_escalation_policies import seed_default_escalation_policy
 from app.services.rollups import build_scopes
 from app.services.traces import create_trace
 from app.services.utils import slugify
@@ -653,6 +655,18 @@ def run() -> None:
         )
         ensure_project_bootstrap_environments(db, project=project)
         ensure_project_bootstrap_environments(db, project=stale_project)
+
+        alert_target = db.scalar(
+            select(OrganizationAlertTarget).where(
+                OrganizationAlertTarget.organization_id == organization.id
+            )
+        )
+        if alert_target is not None:
+            seed_default_escalation_policy(
+                db,
+                organization_id=organization.id,
+                alert_target=alert_target,
+            )
 
         sample_summary = _seed_sample_dataset(db, project=project)
         stale_summary = _seed_stale_telemetry_scenario(db, project=stale_project)

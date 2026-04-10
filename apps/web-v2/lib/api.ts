@@ -2,6 +2,7 @@ import "server-only";
 
 import type {
   DeploymentListResponse,
+  EscalationPolicyListResponse,
   IncidentDetailRead,
   IncidentEventListResponse,
   IncidentInvestigationRead,
@@ -214,5 +215,11 @@ export async function getOrganization(organizationId: string) {
 export async function getOrganizationMembers(organizationId: string) {
   return request<OrganizationMemberListResponse>(
     `/api/v1/organizations/${organizationId}/members`
+  );
+}
+
+export async function getOrgEscalationPolicies(organizationId: string) {
+  return request<EscalationPolicyListResponse>(
+    `/api/v1/organizations/${organizationId}/escalation-policies`
   );
 }

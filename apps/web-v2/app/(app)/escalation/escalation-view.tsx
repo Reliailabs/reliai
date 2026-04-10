@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 export type EscalationChannel = "slack" | "email" | "pagerduty" | "webhook"
 type TriggerSeverity = "critical" | "high" | "all"
 
-export type DerivedPolicy = {
+export type EscalationPolicy = {
   id: string
   name: string
   description: string
@@ -68,7 +68,7 @@ const channelColor: Record<EscalationChannel, string> = {
   webhook:   "text-zinc-400",
 }
 
-const actionLabel: Record<DerivedPolicy["steps"][number]["action"], string> = {
+const actionLabel: Record<EscalationPolicy["steps"][number]["action"], string> = {
   notify:   "Notify",
   escalate: "Escalate",
   page:     "Page",
@@ -79,7 +79,7 @@ const actionLabel: Record<DerivedPolicy["steps"][number]["action"], string> = {
 function StepTimeline({
   steps,
 }: {
-  steps: DerivedPolicy["steps"]
+  steps: EscalationPolicy["steps"]
 }) {
   return (
     <div className="flex items-start gap-0 ml-14 mr-6 pb-4 pt-3 border-t border-zinc-800/40 bg-zinc-900/20">
@@ -132,16 +132,16 @@ function StepTimeline({
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 interface Props {
-  policy: DerivedPolicy | null
+  policies: EscalationPolicy[]
 }
 
-export function EscalationView({ policy }: Props) {
-  const [expanded, setExpanded] = useState<boolean>(true)
+export function EscalationView({ policies }: Props) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
-  const enabled = policy?.enabled ? 1 : 0
-  const active  = policy?.activeIncidents ?? 0
+  const enabled = policies.filter((p) => p.enabled).length
+  const active = policies.reduce((sum, p) => sum + p.activeIncidents, 0)
 
-  if (!policy) {
+  if (policies.length === 0) {
     return (
       <div className="min-h-full">
         <PageHeader
@@ -149,11 +149,9 @@ export function EscalationView({ policy }: Props) {
           description="Define who gets paged and when for unacknowledged incidents."
         />
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-sm text-zinc-500">
-            No alert target configured
-          </div>
+          <div className="text-sm text-zinc-500">No escalation policies configured</div>
           <div className="text-xs text-zinc-700 mt-1">
-            Configure an alert target in Settings to enable escalation policies
+            Create an alert target to seed a default escalation policy
           </div>
         </div>
       </div>
@@ -205,105 +203,118 @@ export function EscalationView({ policy }: Props) {
 
       {/* Rows */}
       <div className="divide-y divide-zinc-800/40">
-        <div>
-          {/* Row */}
-          <div
-            className="group flex items-stretch cursor-pointer hover:bg-zinc-900/50 transition-colors"
-            onClick={() => setExpanded((v) => !v)}
-          >
-            {/* Severity left bar */}
-            <div
-              className={cn("shrink-0", severityBar[policy.trigger.severity])}
-              style={{ width: "2px" }}
-            />
-
-            <div className="flex flex-1 items-center gap-4 px-6 py-3.5">
-              {/* Expand chevron */}
-              <div className="w-5 shrink-0">
-                {expanded ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-zinc-700 group-hover:text-zinc-500 transition-colors" />
-                )}
-              </div>
-
-              {/* Name + description */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "text-sm font-medium transition-colors",
-                      policy.enabled ? "text-zinc-100" : "text-zinc-500",
-                    )}
-                  >
-                    {policy.name}
-                  </span>
-                </div>
-                <div className="text-xs text-zinc-600 mt-0.5 truncate">
-                  {policy.description}
-                </div>
-              </div>
-
-              {/* Trigger */}
-              <div className="w-24 shrink-0">
-                <span
-                  className={cn(
-                    "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider border",
-                    severityBadge[policy.trigger.severity],
-                  )}
-                >
-                  {policy.trigger.severity}
-                </span>
-                {policy.trigger.unacknowledgedAfter > 0 && (
-                  <div className="text-[10px] text-zinc-700 mt-0.5 flex items-center gap-0.5">
-                    <Clock className="w-2.5 h-2.5" />
-                    {policy.trigger.unacknowledgedAfter}m
-                  </div>
-                )}
-              </div>
-
-              {/* Step count */}
-              <div className="w-20 shrink-0 hidden md:block">
-                <span className="text-xs text-zinc-400 tabular-nums">
-                  {policy.steps.length} step{policy.steps.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-
-              {/* Active incidents */}
-              <div className="w-24 shrink-0 text-right">
-                {policy.activeIncidents > 0 ? (
-                  <span className="text-xs text-red-400 tabular-nums font-medium">
-                    {policy.activeIncidents} routing
-                  </span>
-                ) : (
-                  <span className="text-xs text-zinc-700">—</span>
-                )}
-              </div>
-
-              {/* Enabled toggle (display only) */}
-              <div className="w-16 shrink-0 flex justify-end">
+        {policies.map((policy) => {
+          const isExpanded = expanded.has(policy.id)
+          return (
+            <div key={policy.id}>
+              {/* Row */}
+              <div
+                className="group flex items-stretch cursor-pointer hover:bg-zinc-900/50 transition-colors"
+                onClick={() => {
+                  const next = new Set(expanded)
+                  if (next.has(policy.id)) {
+                    next.delete(policy.id)
+                  } else {
+                    next.add(policy.id)
+                  }
+                  setExpanded(next)
+                }}
+              >
+                {/* Severity left bar */}
                 <div
-                  className={cn(
-                    "w-7 h-4 rounded-full relative transition-colors",
-                    policy.enabled ? "bg-emerald-500/30" : "bg-zinc-700",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "absolute top-0.5 w-3 h-3 rounded-full transition-all",
-                      policy.enabled
-                        ? "left-[14px] bg-emerald-400"
-                        : "left-0.5 bg-zinc-500",
+                  className={cn("shrink-0", severityBar[policy.trigger.severity])}
+                  style={{ width: "2px" }}
+                />
+
+                <div className="flex flex-1 items-center gap-4 px-6 py-3.5">
+                  {/* Expand chevron */}
+                  <div className="w-5 shrink-0">
+                    {isExpanded ? (
+                      <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 text-zinc-700 group-hover:text-zinc-500 transition-colors" />
                     )}
-                  />
+                  </div>
+
+                  {/* Name + description */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "text-sm font-medium transition-colors",
+                          policy.enabled ? "text-zinc-100" : "text-zinc-500",
+                        )}
+                      >
+                        {policy.name}
+                      </span>
+                    </div>
+                    <div className="text-xs text-zinc-600 mt-0.5 truncate">
+                      {policy.description}
+                    </div>
+                  </div>
+
+                  {/* Trigger */}
+                  <div className="w-24 shrink-0">
+                    <span
+                      className={cn(
+                        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wider border",
+                        severityBadge[policy.trigger.severity],
+                      )}
+                    >
+                      {policy.trigger.severity}
+                    </span>
+                    {policy.trigger.unacknowledgedAfter > 0 && (
+                      <div className="text-[10px] text-zinc-700 mt-0.5 flex items-center gap-0.5">
+                        <Clock className="w-2.5 h-2.5" />
+                        {policy.trigger.unacknowledgedAfter}m
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step count */}
+                  <div className="w-20 shrink-0 hidden md:block">
+                    <span className="text-xs text-zinc-400 tabular-nums">
+                      {policy.steps.length} step{policy.steps.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {/* Active incidents */}
+                  <div className="w-24 shrink-0 text-right">
+                    {policy.activeIncidents > 0 ? (
+                      <span className="text-xs text-red-400 tabular-nums font-medium">
+                        {policy.activeIncidents} routing
+                      </span>
+                    ) : (
+                      <span className="text-xs text-zinc-700">—</span>
+                    )}
+                  </div>
+
+                  {/* Enabled toggle (display only) */}
+                  <div className="w-16 shrink-0 flex justify-end">
+                    <div
+                      className={cn(
+                        "w-7 h-4 rounded-full relative transition-colors",
+                        policy.enabled ? "bg-emerald-500/30" : "bg-zinc-700",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "absolute top-0.5 w-3 h-3 rounded-full transition-all",
+                          policy.enabled
+                            ? "left-[14px] bg-emerald-400"
+                            : "left-0.5 bg-zinc-500",
+                        )}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Expanded step timeline */}
-          {expanded && <StepTimeline steps={policy.steps} />}
-        </div>
+              {/* Expanded step timeline */}
+              {isExpanded && <StepTimeline steps={policy.steps} />}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

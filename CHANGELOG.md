@@ -15,6 +15,7 @@ All notable changes to Reliai will be documented in this file.
 - Projects hub page that lists project controls with direct links to key project surfaces.
 - AI Reliability Audit landing page with dedicated conversion flow and homepage audit CTA.
 - Global semantic color + typography tokens with shared utility classes for consistent UI hierarchy.
+- Organization escalation policies backend with list endpoint and seeded defaults.
 - web-v2 Settings page with operator, organization, and member visibility plus API key guidance.
 
 ### Changed
@@ -22,6 +23,7 @@ All notable changes to Reliai will be documented in this file.
 - Migrated key marketing, onboarding, and core product surfaces to semantic design tokens for higher readability.
 - Restored demo/docs CTA styling and removed unintended white surfaces in the dashboard sidebar and docs/demo shells.
 - Refined the /demo shell with framed light previews and dark walkthrough overlays to eliminate theme bleed and improve presentation clarity.
+- web-v2 escalation policies now load from the organization escalation policies endpoint.
 - web-v2 list filters now drive API queries via URL parameters, with traces cursor pagination and list limit controls.
 - web-v2 regressions now aggregate project-scoped regressions and resolve project names; deployments resolve project display names.
 - web-v2 projects surface now pulls reliability metrics per project for data-backed tiles.
