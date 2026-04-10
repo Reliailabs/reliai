@@ -148,6 +148,8 @@ class TraceListItemRead(APIModel):
     latency_ms: int | None
     success: bool
     error_type: str | None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
     created_at: datetime
     refusal_detected: bool | None = None
 
