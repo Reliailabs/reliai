@@ -1,0 +1,96 @@
+import "server-only";
+
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { API_URL, SESSION_COOKIE_NAME } from "@/lib/constants";
+
+export interface OperatorSession {
+  operator: {
+    id: string;
+    email: string;
+    is_system_admin: boolean;
+  };
+  memberships: Array<{
+    organization_id: string;
+    organization_name?: string | null;
+    role: string;
+  }>;
+  active_organization_id?: string | null;
+  expires_at: string;
+}
+
+async function authRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(init?.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Auth request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export async function getApiAccessToken(): Promise<string | null> {
+  const legacyToken = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  return legacyToken ?? null;
+}
+
+export async function signIn(email: string, password: string) {
+  const response = await fetch(`${API_URL}/api/v1/auth/sign-in`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return (await response.json()) as OperatorSession & { session_token: string };
+}
+
+export async function getOperatorSession(): Promise<OperatorSession | null> {
+  const token = await getApiAccessToken();
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return await authRequest<OperatorSession>("/api/v1/auth/session", token);
+  } catch {
+    return null;
+  }
+}
+
+export async function requireOperatorSession(): Promise<OperatorSession> {
+  const session = await getOperatorSession();
+  if (!session) {
+    redirect("/sign-in");
+  }
+  return session;
+}
+
+export async function signOut(): Promise<void> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (token) {
+    await fetch(`${API_URL}/api/v1/auth/sign-out`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    }).catch(() => undefined);
+  }
+  cookieStore.delete(SESSION_COOKIE_NAME);
+  redirect("/sign-in");
+}

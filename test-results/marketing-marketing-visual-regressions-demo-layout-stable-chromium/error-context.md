@@ -1,0 +1,577 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "R Reliai Production AI reliability" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]: R
+          - generic [ref=e7]:
+            - paragraph [ref=e8]: Reliai
+            - paragraph [ref=e9]: Production AI reliability
+        - navigation [ref=e10]:
+          - link "Product" [ref=e11] [cursor=pointer]:
+            - /url: /#product
+          - link "Docs" [ref=e12] [cursor=pointer]:
+            - /url: /docs
+          - link "Demo" [ref=e13] [cursor=pointer]:
+            - /url: /demo
+          - link "Pricing" [ref=e14] [cursor=pointer]:
+            - /url: /pricing
+          - link "Audit" [ref=e15] [cursor=pointer]:
+            - /url: /ai-reliability-audit
+          - link "Sign In" [ref=e16] [cursor=pointer]:
+            - /url: /login
+          - link "Get Started" [ref=e17] [cursor=pointer]:
+            - /url: /signup
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e23]:
+            - generic [ref=e24]:
+              - paragraph [ref=e25]: Reliai Demo
+              - heading "Explore a realistic AI reliability workflow in under two minutes." [level=1] [ref=e26]
+            - generic [ref=e27]:
+              - button "1 Detect" [ref=e28] [cursor=pointer]:
+                - generic [ref=e29]: "1"
+                - generic [ref=e30]: Detect
+              - button "2 Understand" [ref=e31] [cursor=pointer]:
+                - generic [ref=e32]: "2"
+                - generic [ref=e33]: Understand
+              - button "3 Incident" [ref=e34] [cursor=pointer]:
+                - generic [ref=e35]: "3"
+                - generic [ref=e36]: Incident
+              - button "4 Compare" [ref=e37] [cursor=pointer]:
+                - generic [ref=e38]: "4"
+                - generic [ref=e39]: Compare
+              - button "5 Root Cause" [ref=e40] [cursor=pointer]:
+                - generic [ref=e41]: "5"
+                - generic [ref=e42]: Root Cause
+              - button "6 Fix" [ref=e43] [cursor=pointer]:
+                - generic [ref=e44]: "6"
+                - generic [ref=e45]: Fix
+              - button "7 Prove" [ref=e46] [cursor=pointer]:
+                - generic [ref=e47]: "7"
+                - generic [ref=e48]: Prove
+          - generic [ref=e49]:
+            - generic [ref=e51]:
+              - img [ref=e53]
+              - generic [ref=e55]:
+                - paragraph [ref=e56]: Simulated failure · INC-1423
+                - heading "Hallucination spike detected" [level=2] [ref=e57]
+                - paragraph [ref=e58]: AI Support Copilot · Production · Mar 11, 10:22 AM
+                - paragraph [ref=e59]: Failure rate hit 19% — vs 4% baseline. Reliai detected the regression, opened the incident, and identified the fix before users noticed.
+            - generic [ref=e60]:
+              - paragraph [ref=e61]: Demo scenario
+              - generic [ref=e62]:
+                - paragraph [ref=e63]: This is INC-1423 — the same incident from the homepage, live in the product.
+                - paragraph [ref=e64]: AI Support Copilot · Production · Failure rate 19% vs 4% baseline.
+                - paragraph [ref=e65]: "Follow the loop: Detect → Understand → Compare → Root Cause → Fix → Prove."
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - paragraph [ref=e69]: "01"
+                - heading "Understand — System health" [level=2] [ref=e70]
+              - paragraph [ref=e71]: Start at the control panel.
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - generic [ref=e76]:
+                  - paragraph [ref=e77]: Reliai system status page
+                  - generic [ref=e78]:
+                    - generic [ref=e79]:
+                      - paragraph [ref=e80]: AI reliability control panel
+                      - generic [ref=e81]:
+                        - heading "AI Support Copilot" [level=1] [ref=e82]
+                        - generic [ref=e83]: 26.6 traces/sec · 1m avg · updated 5s ago
+                      - paragraph [ref=e84]: Default status page for this AI system. It answers what is happening, whether it is safe, and where an operator should click next.
+                    - generic [ref=e85]:
+                      - paragraph [ref=e86]: Is this system safe right now?
+                      - generic [ref=e87]:
+                        - img [ref=e89]
+                        - generic [ref=e91]:
+                          - paragraph [ref=e92]: "Answer: MAYBE"
+                          - paragraph [ref=e93]: This AI system needs review before the next change.
+                          - paragraph [ref=e94]: The system is stable enough to operate, but current signals show elevated reliability risk.
+                - generic [ref=e95]:
+                  - generic [ref=e96]:
+                    - heading "System Health" [level=3] [ref=e97]
+                    - generic [ref=e98]:
+                      - generic [ref=e99]:
+                        - paragraph [ref=e100]: Reliability score
+                        - paragraph [ref=e101]: "92"
+                      - generic [ref=e102]:
+                        - paragraph [ref=e103]: Active incidents
+                        - paragraph [ref=e104]: "1"
+                      - generic [ref=e105]:
+                        - paragraph [ref=e106]: Guardrails protecting
+                        - paragraph [ref=e107]: "17"
+                  - generic [ref=e108]:
+                    - heading "Traffic" [level=3] [ref=e109]
+                    - generic [ref=e110]:
+                      - generic [ref=e111]:
+                        - paragraph [ref=e112]: Traces analyzed (24h)
+                        - paragraph [ref=e113]: 2.3M
+                      - generic [ref=e114]:
+                        - paragraph [ref=e115]: Throughput
+                        - paragraph [ref=e116]: "27"
+                        - paragraph [ref=e117]: traces/sec · 1m avg
+                      - generic [ref=e118]:
+                        - paragraph [ref=e119]: Active services
+                        - paragraph [ref=e120]: "6"
+              - generic [ref=e121]:
+                - generic [ref=e122]:
+                  - generic [ref=e123]:
+                    - generic [ref=e124]:
+                      - img [ref=e125]
+                      - generic [ref=e127]:
+                        - paragraph [ref=e128]: System status
+                        - heading "What needs attention next" [level=2] [ref=e129]
+                    - generic [ref=e130]:
+                      - generic [ref=e131]:
+                        - paragraph [ref=e132]: Latest deployment
+                        - paragraph [ref=e133]: Today
+                        - paragraph [ref=e134]: Risk score 0.24
+                      - generic [ref=e135]:
+                        - paragraph [ref=e136]: Incident pressure
+                        - paragraph [ref=e137]: 1 incidents / 24h
+                        - paragraph [ref=e138]: "Latest: Hallucination spike after retriever prompt rollout"
+                      - generic [ref=e139]:
+                        - paragraph [ref=e140]: Guardrail pressure
+                        - paragraph [ref=e141]: 17 triggers / 24h
+                        - paragraph [ref=e142]: "Top policy: structured_output"
+                  - generic [ref=e143]:
+                    - generic [ref=e144]:
+                      - generic [ref=e145]:
+                        - img [ref=e146]
+                        - generic [ref=e152]:
+                          - paragraph [ref=e153]: Deployment risk
+                          - heading "Safety before the next rollout" [level=2] [ref=e154]
+                      - generic [ref=e155]:
+                        - generic [ref=e156]:
+                          - generic [ref=e157]: Risk level
+                          - generic [ref=e158]: low
+                        - generic [ref=e159]:
+                          - generic [ref=e160]: Risk score
+                          - generic [ref=e161]: "0.24"
+                        - generic [ref=e162]:
+                          - generic [ref=e163]: Simulation risk
+                          - generic [ref=e164]: medium
+                    - generic [ref=e165]:
+                      - generic [ref=e166]:
+                        - img [ref=e167]
+                        - generic [ref=e173]:
+                          - paragraph [ref=e174]: Guardrail activity
+                          - heading "Runtime protection coverage" [level=2] [ref=e175]
+                      - generic [ref=e176]:
+                        - generic [ref=e177]:
+                          - generic [ref=e178]: structured output
+                          - generic [ref=e179]: "11"
+                        - generic [ref=e180]:
+                          - generic [ref=e181]: latency retry
+                          - generic [ref=e182]: "4"
+                        - generic [ref=e183]:
+                          - generic [ref=e184]: cost budget
+                          - generic [ref=e185]: "2"
+                - generic [ref=e186]:
+                  - generic [ref=e187]:
+                    - generic [ref=e188]:
+                      - img [ref=e189]
+                      - generic [ref=e192]:
+                        - paragraph [ref=e193]: Policy compliance
+                        - heading "Organization guardrail coverage" [level=2] [ref=e194]
+                    - generic [ref=e195]:
+                      - generic [ref=e196]:
+                        - generic [ref=e197]:
+                          - generic [ref=e198]:
+                            - paragraph [ref=e199]: structured output
+                            - paragraph [ref=e200]: "Mode: enforce"
+                          - paragraph [ref=e201]: 98.0%
+                        - generic [ref=e202]:
+                          - generic [ref=e203]: Violations last 24h
+                          - generic [ref=e204]: "3"
+                      - generic [ref=e205]:
+                        - generic [ref=e206]:
+                          - generic [ref=e207]:
+                            - paragraph [ref=e208]: cost budget
+                            - paragraph [ref=e209]: "Mode: warn"
+                          - paragraph [ref=e210]: 96.0%
+                        - generic [ref=e211]:
+                          - generic [ref=e212]: Violations last 24h
+                          - generic [ref=e213]: "5"
+                      - generic [ref=e214]:
+                        - generic [ref=e215]:
+                          - generic [ref=e216]:
+                            - paragraph [ref=e217]: latency retry
+                            - paragraph [ref=e218]: "Mode: enforce"
+                          - paragraph [ref=e219]: 94.0%
+                        - generic [ref=e220]:
+                          - generic [ref=e221]: Violations last 24h
+                          - generic [ref=e222]: "2"
+                  - generic [ref=e223]:
+                    - generic [ref=e224]:
+                      - img [ref=e225]
+                      - generic [ref=e227]:
+                        - paragraph [ref=e228]: Recommended next step
+                        - heading "Operator guidance" [level=2] [ref=e229]
+                    - generic [ref=e230]:
+                      - generic [ref=e231]:
+                        - paragraph [ref=e232]: Add hallucination guardrail to retriever prompt
+                        - paragraph [ref=e233]: structured_output -> Add hallucination guardrail to retriever prompt. for gpt-4.1
+                      - generic [ref=e234]:
+                        - paragraph [ref=e235]: Add retry policy for retrieval failures
+                        - paragraph [ref=e236]: latency_retry -> Retry retrieval failures once before fallback
+          - generic [ref=e237]:
+            - generic [ref=e238]:
+              - generic [ref=e239]:
+                - paragraph [ref=e240]: "02"
+                - heading "Incident" [level=2] [ref=e241]
+              - paragraph [ref=e242]: 19% failure rate — hallucinated responses
+            - generic [ref=e245]:
+              - generic [ref=e246]:
+                - paragraph [ref=e248]: Reliai incident command center
+                - generic [ref=e249]:
+                  - generic [ref=e251]: Hallucination spike detected
+                  - generic [ref=e252]: Today
+                  - generic [ref=e253]: high
+                - generic [ref=e254]:
+                  - generic [ref=e255]:
+                    - generic [ref=e256]: Retrieval latency
+                    - generic [ref=e257]: 980 ms
+                  - generic [ref=e258]:
+                    - generic [ref=e259]: baseline
+                    - generic [ref=e260]: 410 ms
+                  - generic [ref=e261]:
+                    - generic [ref=e262]: delta
+                    - generic [ref=e263]: 139.0%
+              - generic [ref=e264]:
+                - generic [ref=e265]:
+                  - generic [ref=e266]:
+                    - paragraph [ref=e267]: Root cause
+                    - paragraph [ref=e268]: Prompt rollout changed retrieval behavior
+                    - paragraph [ref=e269]: "Confidence: 82%"
+                    - paragraph [ref=e270]: Enable latency retry on retrieval and compare v42 against the previous prompt before expanding rollout.
+                    - paragraph [ref=e271]: Root cause confidence 82% based on trace deltas — retrieval latency climbed 139% within 82 min of prompt v42 rollout.
+                    - list [ref=e272]:
+                      - listitem [ref=e273]: "• prompt version: support/refund-v42 (was v41)"
+                      - listitem [ref=e274]: "• retrieval p95 ms: 980"
+                      - listitem [ref=e275]: "• chunk count: 6 chunks (was 4)"
+                      - listitem [ref=e276]: "• elapsed since deploy min: 82"
+                      - listitem [ref=e277]: "• affected trace sample: 128"
+                  - generic [ref=e278]:
+                    - paragraph [ref=e279]: Trace evidence
+                    - generic [ref=e280]:
+                      - generic [ref=e281]:
+                        - paragraph [ref=e282]: failing trace
+                        - generic [ref=e283]:
+                          - paragraph [ref=e284]:
+                            - generic [ref=e285]: 2310ms
+                            - text: end-to-end latency
+                          - paragraph [ref=e286]:
+                            - generic [ref=e287]: 980ms
+                            - text: retrieval latency
+                          - paragraph [ref=e288]: 3840 tokens
+                          - paragraph [ref=e289]: support/refund-v42
+                      - generic [ref=e290]:
+                        - paragraph [ref=e291]: baseline trace
+                        - generic [ref=e292]:
+                          - paragraph [ref=e293]:
+                            - generic [ref=e294]: 1480ms
+                            - text: end-to-end latency
+                          - paragraph [ref=e295]:
+                            - generic [ref=e296]: 410ms
+                            - text: retrieval latency
+                          - paragraph [ref=e297]: 3400 tokens
+                          - paragraph [ref=e298]: support/refund-v41
+                  - generic [ref=e299]:
+                    - paragraph [ref=e300]: Impact
+                    - list [ref=e301]:
+                      - listitem [ref=e302]: "• current value: 980"
+                      - listitem [ref=e303]: "• baseline value: 410"
+                      - listitem [ref=e304]: "• delta: 139.0%"
+                - generic [ref=e305]:
+                  - generic [ref=e306]:
+                    - generic [ref=e307]:
+                      - paragraph [ref=e308]: Action
+                      - paragraph [ref=e309]: "confidence: high · source: root-cause engine"
+                    - paragraph [ref=e310]: Enable latency retry on retrieval and compare v42 against the previous prompt before expanding rollout.
+                    - generic [ref=e311]: Root cause confidence 82% based on trace deltas — retrieval latency climbed 139% within 82 min of prompt v42 rollout.
+                  - generic [ref=e312]:
+                    - paragraph [ref=e313]: Mitigations
+                    - generic [ref=e314]:
+                      - paragraph [ref=e315]: Enable structured output validation on the full response path
+                      - paragraph [ref=e316]: Add retry policy for retrieval failures before fallback
+                      - paragraph [ref=e317]: Pause rollout of prompt version support/refund-v42
+                  - generic [ref=e318]:
+                    - paragraph [ref=e319]: Deployment context
+                    - generic [ref=e320]:
+                      - paragraph [ref=e321]: gpt-4.1-mini
+                      - paragraph [ref=e322]: support/refund-v42
+                      - paragraph [ref=e323]: 82 min before incident
+          - generic [ref=e324]:
+            - generic [ref=e325]:
+              - generic [ref=e326]:
+                - paragraph [ref=e327]: "03"
+                - heading "Compare — Trace graph" [level=2] [ref=e328]
+              - paragraph [ref=e329]: "Slowest span: retrieval · Token heavy span: llm_call"
+            - generic [ref=e332]:
+              - generic [ref=e334]:
+                - paragraph [ref=e335]: Reliai trace debugger
+                - generic [ref=e336]:
+                  - paragraph [ref=e337]: Execution graph
+                  - heading "trac...94f3" [level=1] [ref=e338]
+                  - paragraph [ref=e339]: Span relationships, retry chains, and failure points in one view.
+                - generic [ref=e340]:
+                  - generic [ref=e341]:
+                    - paragraph [ref=e342]: Spans
+                    - paragraph [ref=e343]: "8"
+                  - generic [ref=e344]:
+                    - paragraph [ref=e345]: Edges
+                    - paragraph [ref=e346]: "7"
+                  - generic [ref=e347]:
+                    - paragraph [ref=e348]: Environment
+                    - paragraph [ref=e349]: production
+              - generic [ref=e350]:
+                - generic [ref=e352]:
+                  - paragraph [ref=e353]: Execution breakdown
+                  - heading "Span tree" [level=2] [ref=e354]
+                  - generic [ref=e355]:
+                    - generic [ref=e357]:
+                      - generic [ref=e358]:
+                        - paragraph [ref=e359]: ai_request
+                        - generic [ref=e360]:
+                          - generic [ref=e361]:
+                            - img [ref=e362]
+                            - text: request
+                          - paragraph [ref=e365]: gpt-4.1-mini
+                        - paragraph [ref=e366]:
+                          - generic [ref=e367]: span span...root · root span
+                        - generic [ref=e369]:
+                          - generic [ref=e370]: ai_request
+                          - generic [ref=e371]: 2310 ms
+                      - generic [ref=e374]:
+                        - generic [ref=e375]: Success
+                        - generic [ref=e376]: 2310 ms
+                    - generic [ref=e378]:
+                      - generic [ref=e379]:
+                        - paragraph [ref=e380]: retrieve_context
+                        - generic [ref=e381]:
+                          - generic [ref=e382]:
+                            - img [ref=e383]
+                            - text: retrieval
+                          - paragraph [ref=e386]: pgvector
+                        - paragraph [ref=e387]:
+                          - generic [ref=e388]: span span...eval · parent span...root
+                        - generic [ref=e390]:
+                          - generic [ref=e391]: retrieve_context
+                          - generic [ref=e392]: 980 ms
+                      - generic [ref=e395]:
+                        - generic [ref=e396]: Success
+                        - generic [ref=e397]: 980 ms
+                    - generic [ref=e399]:
+                      - generic [ref=e400]:
+                        - paragraph [ref=e401]: build_prompt
+                        - generic [ref=e402]:
+                          - generic [ref=e403]:
+                            - img [ref=e404]
+                            - text: prompt build
+                          - paragraph [ref=e407]: prompt-assembler
+                        - paragraph [ref=e408]:
+                          - generic [ref=e409]: span span...ompt · parent span...root
+                        - generic [ref=e411]:
+                          - generic [ref=e412]: build_prompt
+                          - generic [ref=e413]: 180 ms
+                      - generic [ref=e416]:
+                        - generic [ref=e417]: Success
+                        - generic [ref=e418]: 180 ms
+                        - generic [ref=e419]: 3100 tokens
+                    - generic [ref=e421]:
+                      - generic [ref=e422]:
+                        - paragraph [ref=e423]: answer_customer
+                        - generic [ref=e424]:
+                          - generic [ref=e425]:
+                            - img [ref=e426]
+                            - text: llm call
+                          - paragraph [ref=e429]: gpt-4.1-mini
+                        - paragraph [ref=e430]:
+                          - generic [ref=e431]: span span_llm · parent span...root
+                        - generic [ref=e433]:
+                          - generic [ref=e434]: answer_customer
+                          - generic [ref=e435]: 760 ms
+                      - generic [ref=e438]:
+                        - generic [ref=e439]: Success
+                        - generic [ref=e440]: 760 ms
+                        - generic [ref=e441]: 3840 tokens
+                    - generic [ref=e443]:
+                      - generic [ref=e444]:
+                        - paragraph [ref=e445]: postprocess_answer
+                        - generic [ref=e446]:
+                          - generic [ref=e447]:
+                            - img [ref=e448]
+                            - text: postprocess
+                          - paragraph [ref=e450]: response-normalizer
+                        - paragraph [ref=e451]:
+                          - generic [ref=e452]: span span...post · parent span...root
+                        - generic [ref=e454]:
+                          - generic [ref=e455]: postprocess_answer
+                          - generic [ref=e456]: 150 ms
+                      - generic [ref=e459]:
+                        - generic [ref=e460]: Success
+                        - generic [ref=e461]: 150 ms
+                    - generic [ref=e463]:
+                      - generic [ref=e464]:
+                        - paragraph [ref=e465]: cache_lookup
+                        - generic [ref=e466]:
+                          - generic [ref=e467]:
+                            - img [ref=e468]
+                            - text: retrieval
+                          - paragraph [ref=e471]: redis-cache
+                        - paragraph [ref=e472]:
+                          - generic [ref=e473]: span span...ache · parent span...eval
+                        - generic [ref=e475]:
+                          - generic [ref=e476]: cache_lookup
+                          - generic [ref=e477]: 18 ms
+                      - generic [ref=e480]:
+                        - generic [ref=e481]: Failure
+                        - generic [ref=e482]: 18 ms
+                    - generic [ref=e484]:
+                      - generic [ref=e485]:
+                        - paragraph [ref=e486]: lookup_order_status
+                        - generic [ref=e487]:
+                          - generic [ref=e488]:
+                            - img [ref=e489]
+                            - text: tool call
+                          - paragraph [ref=e491]: order-service
+                        - paragraph [ref=e492]:
+                          - generic [ref=e493]: span span...tool · parent span_llm
+                        - generic [ref=e495]:
+                          - generic [ref=e496]: lookup_order_status
+                          - generic [ref=e497]: 240 ms
+                      - generic [ref=e500]:
+                        - generic [ref=e501]: Success
+                        - generic [ref=e502]: 240 ms
+                    - generic [ref=e504]:
+                      - generic [ref=e505]:
+                        - paragraph [ref=e506]: validate_output
+                        - generic [ref=e507]:
+                          - generic [ref=e508]:
+                            - img [ref=e509]
+                            - text: guardrail
+                          - paragraph [ref=e511]: structured-output-guard
+                        - paragraph [ref=e512]:
+                          - generic [ref=e513]: span span...rail · parent span_llm
+                        - generic [ref=e515]:
+                          - generic [ref=e516]: validate_output
+                          - generic [ref=e517]: 95 ms
+                      - generic [ref=e520]:
+                        - generic [ref=e521]: Success
+                        - generic [ref=e522]: 95 ms
+                - complementary [ref=e523]:
+                  - generic [ref=e524]:
+                    - paragraph [ref=e525]: Key signals
+                    - generic [ref=e526]:
+                      - generic [ref=e527]:
+                        - paragraph [ref=e528]: Slowest span
+                        - paragraph [ref=e529]: retrieve_context
+                      - generic [ref=e530]:
+                        - paragraph [ref=e531]: Token spike
+                        - paragraph [ref=e532]: answer_customer
+                      - generic [ref=e533]:
+                        - paragraph [ref=e534]: Guardrail retries
+                        - paragraph [ref=e535]: structured_output
+                  - generic [ref=e536]:
+                    - paragraph [ref=e537]: Span legend
+                    - generic [ref=e538]:
+                      - generic [ref=e539]:
+                        - img [ref=e540]
+                        - generic [ref=e543]: retrieval
+                      - generic [ref=e544]:
+                        - img [ref=e545]
+                        - generic [ref=e548]: prompt build
+                      - generic [ref=e549]:
+                        - img [ref=e550]
+                        - generic [ref=e553]: llm call
+                      - generic [ref=e554]:
+                        - img [ref=e555]
+                        - generic [ref=e557]: tool call
+                      - generic [ref=e558]:
+                        - img [ref=e559]
+                        - generic [ref=e561]: postprocess
+                      - generic [ref=e562]:
+                        - img [ref=e563]
+                        - generic [ref=e565]: guardrail
+          - generic [ref=e566]:
+            - generic [ref=e567]:
+              - generic [ref=e568]:
+                - paragraph [ref=e569]: "04"
+                - heading "Root cause explanation" [level=2] [ref=e570]
+              - paragraph [ref=e571]: Prompt v42 deployed 82 minutes before incident
+            - generic [ref=e573]:
+              - generic [ref=e574]:
+                - paragraph [ref=e575]: Likely cause
+                - heading "Prompt v42 deployed 82 minutes before incident" [level=3] [ref=e576]
+                - paragraph [ref=e577]: The failing trace shows retrieval pressure first, then a model response that required guardrail retry. The deployment window lines up with the incident start.
+              - generic [ref=e578]:
+                - generic [ref=e579]:
+                  - paragraph [ref=e580]: Failure surface
+                  - paragraph [ref=e581]: 19% failure rate — hallucinated responses
+                - generic [ref=e582]:
+                  - paragraph [ref=e583]: Linked signal
+                  - paragraph [ref=e584]: Prompt update deployed 82 minutes before incident start.
+          - generic [ref=e585]:
+            - generic [ref=e586]:
+              - generic [ref=e587]:
+                - paragraph [ref=e588]: "05"
+                - heading "Fix" [level=2] [ref=e589]
+              - paragraph [ref=e590]: Revert v42 → enable protections → failure rate returns to baseline.
+            - generic [ref=e591]:
+              - generic [ref=e592]:
+                - generic [ref=e593]:
+                  - img [ref=e594]
+                  - generic [ref=e597]:
+                    - paragraph [ref=e598]: enforce
+                    - heading "Structured output policy" [level=3] [ref=e599]
+                - paragraph [ref=e600]: Schema validation catches malformed tool responses before they reach users.
+              - generic [ref=e601]:
+                - generic [ref=e602]:
+                  - img [ref=e603]
+                  - generic [ref=e606]:
+                    - paragraph [ref=e607]: warn
+                    - heading "Latency retry policy" [level=3] [ref=e608]
+                - paragraph [ref=e609]: Retrieval retry cushions transient upstream failures during traffic spikes.
+        - generic [ref=e610]:
+          - generic [ref=e611]:
+            - generic [ref=e612]:
+              - paragraph [ref=e613]: "06"
+              - heading "Prove" [level=2] [ref=e614]
+            - paragraph [ref=e615]: Fix verified — the loop is complete.
+          - generic [ref=e618]:
+            - img [ref=e620]
+            - generic [ref=e623]:
+              - paragraph [ref=e624]: Fix verified · INC-1423
+              - heading "Failure rate reduced from 19% → 5% ✓" [level=3] [ref=e625]
+              - paragraph [ref=e626]: After reverting prompt v42 · Resolved in 6 minutes
+              - generic [ref=e627]:
+                - generic [ref=e628]:
+                  - paragraph [ref=e629]: Before
+                  - paragraph [ref=e630]: 19%
+                  - paragraph [ref=e631]: failure rate
+                - generic [ref=e632]:
+                  - paragraph [ref=e633]: Baseline
+                  - paragraph [ref=e634]: 4%
+                  - paragraph [ref=e635]: healthy baseline
+                - generic [ref=e636]:
+                  - paragraph [ref=e637]: After Fix
+                  - paragraph [ref=e638]: 5% ✓
+                  - paragraph [ref=e639]: near baseline
+              - paragraph [ref=e640]: Based on live production traces · Root cause confidence 71% · Prompt v41 restored
+  - status [ref=e641]:
+    - generic [ref=e642]:
+      - img [ref=e644]
+      - generic [ref=e646]:
+        - text: Static route
+        - button "Hide static indicator" [ref=e647] [cursor=pointer]:
+          - img [ref=e648]
+  - alert [ref=e651]
+```
