@@ -1,11 +1,12 @@
-import { TopRail } from "@/components/top-rail"
-import { NavRail } from "@/components/nav-rail"
+import type { ReactNode } from "react"
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+import { NavRail } from "@/components/nav-rail"
+import { TopRail } from "@/components/top-rail"
+import { requireOperatorSession } from "@/lib/auth"
+
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  await requireOperatorSession()
+
   return (
     <div className="h-screen bg-zinc-950 flex flex-col overflow-hidden">
       <TopRail />

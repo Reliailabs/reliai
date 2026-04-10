@@ -11,12 +11,11 @@ import {
   Rocket,
   Bell,
   Target,
-  History,
   Zap,
-  ClipboardCheck,
   Settings2,
   GitBranch,
   FlaskConical,
+  LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -34,8 +33,6 @@ const navItems = [
   { href: "/slos",         icon: Target,          label: "SLOs"         },
   { href: "/projects",     icon: FolderKanban,    label: "Projects"     },
   // ── Record-keeping ──
-  { href: "/post-mortem",  icon: ClipboardCheck,  label: "Post-Mortem"  },
-  { href: "/audit",        icon: History,         label: "Audit Log"    },
   { href: "/prompt-diff",  icon: Zap,             label: "Prompt Diff"  },
 ]
 
@@ -74,6 +71,21 @@ export function NavRail() {
       })}
 
       <div className="flex-1" />
+
+      <div className="relative group">
+        <form action="/api/auth/sign-out" method="post">
+          <button
+            type="submit"
+            className="w-9 h-9 flex items-center justify-center rounded-md transition-all text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </form>
+        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-md text-xs text-zinc-200 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+          Sign out
+          <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-zinc-700" />
+        </div>
+      </div>
 
       {/* Settings at bottom */}
       <div className="relative group">

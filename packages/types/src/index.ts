@@ -680,6 +680,24 @@ export interface PromptVersionListResponse {
   items: PromptVersionRead[];
 }
 
+export interface PromptDiffVersionRead {
+  id: string;
+  version: string;
+  content: string;
+  created_at: string;
+}
+
+export interface PromptDiffLineRead {
+  type: "added" | "removed" | "unchanged";
+  text: string;
+}
+
+export interface PromptDiffRead {
+  from_version: PromptDiffVersionRead;
+  to_version: PromptDiffVersionRead;
+  diff: PromptDiffLineRead[];
+}
+
 export interface ModelVersionRead {
   id: string;
   project_id: string;
