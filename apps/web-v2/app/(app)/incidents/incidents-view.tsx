@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useMemo } from "react"
 import { ChevronRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/ui/page-header"
 import { FilterChips, type FilterOption } from "@/components/ui/filter-chips"
 import { SeverityBadge } from "@/components/ui/severity-badge"
@@ -19,10 +20,6 @@ export type IncidentRowData = {
   owner?: string | null
   acknowledged?: boolean
 }
-
-const initialFilters: FilterOption[] = [
-  { key: "status", label: "Status", value: "Open" },
-]
 
 const severityBg: Record<string, string> = {
   critical: "bg-red-500",
@@ -42,15 +39,49 @@ const colWidths = {
   chevron: "w-5 shrink-0",
 }
 
-export function IncidentsView({ incidents }: { incidents: IncidentRowData[] }) {
-  const [filters] = useState<FilterOption[]>(initialFilters)
-
-  const visible = filters.some((f) => f.key === "status" && f.value === "Open")
-    ? incidents.filter((i) => i.status !== "resolved")
-    : incidents
+export function IncidentsView({
+  incidents,
+  projects,
+  filters,
+}: {
+  incidents: IncidentRowData[]
+  projects: Array<{ id: string; name: string }>
+  filters: {
+    status: string
+    severity: string
+    projectId: string
+    environment: string
+    limit: number
+  }
+}) {
+  const router = useRouter()
 
   const open = incidents.filter((i) => i.status !== "resolved").length
   const resolved = incidents.filter((i) => i.status === "resolved").length
+
+  const activeFilters = useMemo<FilterOption[]>(() => {
+    const items: FilterOption[] = []
+    if (filters.status) items.push({ key: "status", label: "Status", value: filters.status })
+    if (filters.severity) items.push({ key: "severity", label: "Severity", value: filters.severity })
+    if (filters.projectId) {
+      const project = projects.find((p) => p.id === filters.projectId)
+      items.push({ key: "project_id", label: "Project", value: project?.name ?? filters.projectId })
+    }
+    if (filters.environment) items.push({ key: "environment", label: "Env", value: filters.environment })
+    return items
+  }, [filters, projects])
+
+  const pushParams = (next: Partial<typeof filters>) => {
+    const params = new URLSearchParams()
+    const merged = { ...filters, ...next }
+    if (merged.status) params.set("status", merged.status)
+    if (merged.severity) params.set("severity", merged.severity)
+    if (merged.projectId) params.set("project_id", merged.projectId)
+    if (merged.environment) params.set("environment", merged.environment)
+    if (merged.limit) params.set("limit", String(merged.limit))
+    const query = params.toString()
+    router.push(`/incidents${query ? `?${query}` : ""}`)
+  }
 
   const providers = [
     {
@@ -88,7 +119,74 @@ export function IncidentsView({ incidents }: { incidents: IncidentRowData[] }) {
         }
       />
 
-      <FilterChips initial={initialFilters} />
+      <div className="px-6 py-3 flex flex-wrap gap-2 border-b border-zinc-800/60">
+        <select
+          value={filters.status}
+          onChange={(e) => pushParams({ status: e.target.value })}
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+        >
+          <option value="">Status: any</option>
+          <option value="open">Open</option>
+          <option value="resolved">Resolved</option>
+        </select>
+        <select
+          value={filters.severity}
+          onChange={(e) => pushParams({ severity: e.target.value })}
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+        >
+          <option value="">Severity: any</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <select
+          value={filters.environment}
+          onChange={(e) => pushParams({ environment: e.target.value })}
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+        >
+          <option value="">Env: any</option>
+          <option value="production">Production</option>
+          <option value="staging">Staging</option>
+        </select>
+        <select
+          value={filters.projectId}
+          onChange={(e) => pushParams({ projectId: e.target.value })}
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+        >
+          <option value="">Project: all</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </select>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Limit</span>
+          <select
+            value={filters.limit}
+            onChange={(e) => pushParams({ limit: Number(e.target.value) })}
+            className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+          >
+            {[25, 50, 100].map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <FilterChips
+        filters={activeFilters}
+        onRemove={(key) => {
+          if (key === "status") pushParams({ status: "" })
+          if (key === "severity") pushParams({ severity: "" })
+          if (key === "project_id") pushParams({ projectId: "" })
+          if (key === "environment") pushParams({ environment: "" })
+        }}
+        onClear={() => pushParams({ status: "", severity: "", projectId: "", environment: "" })}
+      />
 
       <div className="flex items-center gap-4 px-6 py-2.5 border-b border-zinc-800 bg-zinc-950/60 sticky top-0 backdrop-blur-sm">
         <div className={colWidths.sev} />
@@ -112,12 +210,12 @@ export function IncidentsView({ incidents }: { incidents: IncidentRowData[] }) {
       </div>
 
       <div className="divide-y divide-zinc-800/50">
-        {visible.map((inc) => (
+        {incidents.map((inc) => (
           <IncidentRow key={inc.id} incident={inc} />
         ))}
       </div>
 
-      {visible.length === 0 && (
+      {incidents.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center mb-3">
             <span className="text-zinc-500 text-lg">✓</span>

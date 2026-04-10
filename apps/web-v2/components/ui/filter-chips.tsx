@@ -12,10 +12,21 @@ export interface FilterOption {
 
 interface Props {
   initial?: FilterOption[]
+  filters?: FilterOption[]
+  onRemove?: (key: string) => void
+  onClear?: () => void
+  onAdd?: () => void
   className?: string
 }
 
-export function FilterChips({ initial = [], className }: Props) {
+export function FilterChips({
+  initial = [],
+  filters,
+  onRemove,
+  onClear,
+  onAdd,
+  className,
+}: Props) {
   const [active, setActive] = useState<FilterOption[]>(initial)
 
   const remove = (key: string) => {
@@ -23,6 +34,10 @@ export function FilterChips({ initial = [], className }: Props) {
   }
 
   const clearAll = () => setActive([])
+  const current = filters ?? active
+  const handleRemove = onRemove ?? remove
+  const handleClear = onClear ?? clearAll
+  const handleAdd = onAdd
 
   return (
     <div
@@ -33,14 +48,14 @@ export function FilterChips({ initial = [], className }: Props) {
     >
       <SlidersHorizontal className="w-3 h-3 text-zinc-600 shrink-0" />
 
-      {active.length === 0 && (
+      {current.length === 0 && (
         <span className="text-xs text-zinc-600">No active filters</span>
       )}
 
-      {active.map((filter) => (
+      {current.map((filter) => (
         <button
           key={filter.key}
-          onClick={() => remove(filter.key)}
+          onClick={() => handleRemove(filter.key)}
           className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium rounded border border-zinc-700 transition-colors"
         >
           <span className="text-zinc-500 font-normal">{filter.label}:</span>
@@ -49,16 +64,19 @@ export function FilterChips({ initial = [], className }: Props) {
         </button>
       ))}
 
-      {active.length > 0 && (
+      {current.length > 0 && (
         <button
-          onClick={clearAll}
+          onClick={handleClear}
           className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
         >
           Clear
         </button>
       )}
 
-      <button className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 text-zinc-600 hover:text-zinc-400 text-xs rounded border border-zinc-800 hover:border-zinc-700 transition-colors">
+      <button
+        onClick={handleAdd}
+        className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 text-zinc-600 hover:text-zinc-400 text-xs rounded border border-zinc-800 hover:border-zinc-700 transition-colors"
+      >
         + Filter
       </button>
     </div>
