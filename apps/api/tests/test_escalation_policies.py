@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.models.org_escalation_policy import OrgEscalationPolicy, OrgEscalationPolicyStep
 
 from .test_api import auth_headers, create_operator, create_organization, sign_in
@@ -9,7 +11,7 @@ def test_escalation_policies_endpoint(client, db_session):
     organization = create_organization(client, session_payload, name="Policy Org", slug="policy-org")
 
     policy = OrgEscalationPolicy(
-        organization_id=organization["id"],
+        organization_id=UUID(organization["id"]),
         name="Default Policy",
         description="Notify primary on-call",
         trigger_severity="all",

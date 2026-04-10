@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.models.project_slo import ProjectSLO
 
 from .test_api import auth_headers, create_operator, create_organization, create_project, sign_in
@@ -10,8 +12,8 @@ def test_project_slos_endpoint(client, db_session):
     project = create_project(client, session_payload, organization["id"])
 
     slo = ProjectSLO(
-        project_id=project["id"],
-        organization_id=organization["id"],
+        project_id=UUID(project["id"]),
+        organization_id=UUID(organization["id"]),
         name="Quality Pass Rate",
         description="Test SLO",
         metric_type="quality_pass_rate",
