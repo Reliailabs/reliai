@@ -14,6 +14,7 @@ import type {
   ProjectListResponse,
   ProjectReliabilityRead,
   ProjectRead,
+  ProjectSLOListResponse,
   PromptDiffRead,
   PromptVersionListResponse,
   RegressionHistoryRead,
@@ -170,6 +171,10 @@ export async function getProject(projectId: string) {
 
 export async function getProjectReliability(projectId: string) {
   return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
+}
+
+export async function getProjectSLOs(projectId: string) {
+  return request<ProjectSLOListResponse>(`/api/v1/projects/${projectId}/slos`);
 }
 
 export async function getOrganizationPolicies(organizationId: string) {

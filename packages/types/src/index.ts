@@ -100,6 +100,27 @@ export interface ProjectListResponse {
   items: ProjectRead[];
 }
 
+export interface ProjectSLORead {
+  id: string;
+  project_id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  metric_type: string;
+  target_value: number;
+  window_days: number;
+  enabled: boolean;
+  current_value: number | null;
+  status: "healthy" | "at_risk" | "breached" | null;
+  trend: "up" | "down" | "flat" | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectSLOListResponse {
+  items: ProjectSLORead[];
+}
+
 export interface EnvironmentRead {
   id: string;
   project_id: string;

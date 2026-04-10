@@ -11,13 +11,14 @@ export type SLOEntry = {
   id: string
   name: string
   description: string
-  current: number
+  current: number | null
   target: number
   unit: string
-  status: "healthy" | "at_risk" | "breached"
-  trend: "up" | "down" | "flat"
+  status: "healthy" | "at_risk" | "breached" | null
+  trend: "up" | "down" | "flat" | null
   projectId: string
   projectName: string
+  windowDays: number
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -41,10 +42,16 @@ const statusConfig = {
     bg:     "bg-red-500/10",
     border: "border-red-500/20",
   },
+  neutral: {
+    dot: "bg-zinc-600",
+    color: "text-zinc-400",
+    bg: "bg-zinc-800/40",
+    border: "border-zinc-700/60",
+  },
 }
 
 const trendIcon  = { up: TrendingUp, down: TrendingDown, flat: Minus }
-const trendColor = { up: "text-emerald-400", down: "text-red-400", flat: "text-zinc-500" }
+const trendColor = { up: "text-emerald-400", down: "text-red-400", flat: "text-zinc-500", neutral: "text-zinc-500" }
 
 const periods = ["7d", "30d", "90d"] as const
 
@@ -59,10 +66,12 @@ export function SLOsView({ slos, projects }: Props) {
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     projects[0]?.id ?? "",
   )
-  // Period is cosmetic — the API returns current-state reliability data only.
   const [selectedPeriod, setSelectedPeriod] = useState<string>("30d")
 
-  const filtered = slos.filter((s) => s.projectId === selectedProjectId)
+  const periodDays = selectedPeriod === "7d" ? 7 : selectedPeriod === "90d" ? 90 : 30
+  const filtered = slos.filter(
+    (s) => s.projectId === selectedProjectId && s.windowDays === periodDays
+  )
 
   const breached = filtered.filter((s) => s.status === "breached").length
   const atRisk   = filtered.filter((s) => s.status === "at_risk").length
@@ -183,14 +192,17 @@ export function SLOsView({ slos, projects }: Props) {
               No SLOs available for this project
             </div>
             <div className="text-xs text-zinc-700 mt-1">
-              SLOs are derived from project reliability metrics
+              SLOs are not configured for the selected period
             </div>
           </div>
         ) : (
           filtered.map((slo) => {
-            const TrendIcon = trendIcon[slo.trend]
-            const cfg       = statusConfig[slo.status]
-            const pct       = Math.min(100, (slo.current / slo.target) * 100)
+            const trendKey = slo.trend ?? "flat"
+            const statusKey = slo.status ?? "neutral"
+            const TrendIcon = trendIcon[trendKey]
+            const cfg       = statusConfig[statusKey]
+            const pct =
+              slo.current !== null ? Math.min(100, (slo.current / slo.target) * 100) : 0
 
             return (
               <div
@@ -216,7 +228,7 @@ export function SLOsView({ slos, projects }: Props) {
                         cfg.border,
                       )}
                     >
-                      {slo.status.replace("_", " ")}
+                      {statusKey.replace("_", " ")}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-600 mt-0.5">
@@ -227,8 +239,8 @@ export function SLOsView({ slos, projects }: Props) {
                 {/* Current / target */}
                 <div className="w-32 shrink-0 text-right">
                   <span className="text-sm font-semibold tabular-nums text-zinc-100">
-                    {slo.current}
-                    {slo.unit}
+                    {slo.current !== null ? slo.current.toFixed(1) : "—"}
+                    {slo.current !== null ? slo.unit : ""}
                   </span>
                   <span className="text-xs text-zinc-600">
                     {" "}
@@ -243,24 +255,26 @@ export function SLOsView({ slos, projects }: Props) {
                     <div
                       className={cn(
                         "h-full rounded-full",
-                        slo.status === "healthy"
+                        statusKey === "healthy"
                           ? "bg-emerald-500"
-                          : slo.status === "at_risk"
+                          : statusKey === "at_risk"
                             ? "bg-amber-500"
-                            : "bg-red-500",
+                            : statusKey === "breached"
+                              ? "bg-red-500"
+                              : "bg-zinc-600",
                       )}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
                   <div className="text-[10px] text-zinc-700 mt-0.5 text-right tabular-nums">
-                    {pct.toFixed(0)}%
+                    {slo.current !== null ? `${pct.toFixed(0)}%` : "—"}
                   </div>
                 </div>
 
                 {/* Trend */}
                 <div className="w-16 shrink-0 flex justify-end">
                   <TrendIcon
-                    className={cn("w-3.5 h-3.5", trendColor[slo.trend])}
+                    className={cn("w-3.5 h-3.5", trendColor[trendKey])}
                   />
                 </div>
               </div>

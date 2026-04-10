@@ -209,6 +209,7 @@ from app.schemas.project import (
     VersionRegressionRead,
     VersionTraceRead,
 )
+from app.schemas.project_slo import ProjectSLOListResponse, ProjectSLORead
 from app.schemas.reliability import (
     ProjectReliabilityRead,
     ReliabilityMetricPointRead,
@@ -381,6 +382,12 @@ from app.services.incidents import (
     resolve_incident,
 )
 from app.services.regressions import get_regression_compare, get_regression_detail, get_regression_history, list_project_regressions
+from app.services.project_slos import (
+    compute_slo_current_value,
+    compute_slo_status,
+    list_project_slos,
+    status_to_trend,
+)
 from app.services.root_cause_engine import get_incident_analysis
 from app.services.authorization import (
     require_environment_access,
@@ -3149,6 +3156,44 @@ def get_project_reliability_endpoint(
             for metric_name, metrics in trend_rows.items()
         ],
     )
+
+
+@router.get("/projects/{project_id}/slos", response_model=ProjectSLOListResponse)
+def list_project_slos_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectSLOListResponse:
+    slos = list_project_slos(db, operator, project_id=project_id)
+    items: list[ProjectSLORead] = []
+    for slo in slos:
+        current = compute_slo_current_value(
+            db,
+            project_id=project_id,
+            metric_type=slo.metric_type,
+            window_days=slo.window_days,
+        )
+        status = compute_slo_status(current, slo.target_value) if current is not None else None
+        trend = status_to_trend(status) if status is not None else None
+        items.append(
+            ProjectSLORead(
+                id=slo.id,
+                project_id=slo.project_id,
+                organization_id=slo.organization_id,
+                name=slo.name,
+                description=slo.description,
+                metric_type=slo.metric_type,
+                target_value=slo.target_value,
+                window_days=slo.window_days,
+                enabled=slo.enabled,
+                current_value=current,
+                status=status,
+                trend=trend,
+                created_at=slo.created_at,
+                updated_at=slo.updated_at,
+            )
+        )
+    return ProjectSLOListResponse(items=items)
 
 
 @router.get("/projects/{project_id}/timeline", response_model=TimelineResponse)
