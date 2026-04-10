@@ -124,7 +124,7 @@ export async function getIncidentDetail(incidentId: string) {
 }
 
 export async function getIncidentInvestigation(incidentId: string) {
-  return request<IncidentInvestigationRead>(`/api/v1/incidents/${incidentId}/investigate`);
+  return request<IncidentInvestigationRead>(`/api/v1/incidents/${incidentId}/investigation`);
 }
 
 export async function getIncidentEvents(incidentId: string) {
@@ -174,8 +174,8 @@ export async function getOrganizationPolicies(organizationId: string) {
   );
 }
 
-export async function getDeployments() {
-  return request<DeploymentListResponse>("/api/v1/deployments");
+export async function getProjectDeployments(projectId: string) {
+  return request<DeploymentListResponse>(`/api/v1/projects/${projectId}/deployments`);
 }
 
 export async function getProjectRegressions(
