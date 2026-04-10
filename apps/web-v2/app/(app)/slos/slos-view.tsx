@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { cn } from "@/lib/utils"
@@ -60,18 +61,16 @@ const periods = ["7d", "30d", "90d"] as const
 interface Props {
   slos: SLOEntry[]
   projects: { id: string; name: string }[]
+  period?: string
 }
 
-export function SLOsView({ slos, projects }: Props) {
+export function SLOsView({ slos, projects, period = "30d" }: Props) {
+  const router = useRouter()
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     projects[0]?.id ?? "",
   )
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("30d")
 
-  const periodDays = selectedPeriod === "7d" ? 7 : selectedPeriod === "90d" ? 90 : 30
-  const filtered = slos.filter(
-    (s) => s.projectId === selectedProjectId && s.windowDays === periodDays
-  )
+  const filtered = slos.filter((s) => s.projectId === selectedProjectId)
 
   const breached = filtered.filter((s) => s.status === "breached").length
   const atRisk   = filtered.filter((s) => s.status === "at_risk").length
@@ -155,10 +154,10 @@ export function SLOsView({ slos, projects }: Props) {
           {periods.map((p) => (
             <button
               key={p}
-              onClick={() => setSelectedPeriod(p)}
+              onClick={() => router.push(`?period=${p}`)}
               className={cn(
                 "px-2 py-0.5 text-xs rounded border transition-colors font-mono",
-                selectedPeriod === p
+                period === p
                   ? "bg-zinc-800 border-zinc-700 text-zinc-200"
                   : "bg-transparent border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400",
               )}

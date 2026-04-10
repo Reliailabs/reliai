@@ -20,7 +20,7 @@ def test_org_alert_deliveries_endpoint(client, db_session, fake_queue):
     assert response.status_code == 200
     items = response.json()["items"]
     assert items
-    assert items[0]["incident_id"] in {delivery.incident_id for delivery in deliveries}
+    assert items[0]["incident_id"] in {str(delivery.incident_id) for delivery in deliveries}
 
 
 def test_org_alert_deliveries_isolated(client, db_session):
