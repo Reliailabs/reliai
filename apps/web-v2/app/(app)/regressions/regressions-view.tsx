@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { ChevronRight, ChevronDown, CheckCircle } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { SeverityBadge } from "@/components/ui/severity-badge"
+import { FilterChips, type FilterOption } from "@/components/ui/filter-chips"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 type Severity = "critical" | "high" | "medium" | "low"
@@ -224,13 +226,35 @@ function RegressionRow({
   )
 }
 
-export function RegressionsView({ regressions }: { regressions: RegressionRowData[] }) {
+export function RegressionsView({
+  regressions,
+  filters,
+}: {
+  regressions: RegressionRowData[]
+  filters: { metricName: string; limit: number }
+}) {
+  const router = useRouter()
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showResolved, setShowResolved] = useState(false)
 
   const active   = regressions.filter((r) => r.status === "active")
   const resolved = regressions.filter((r) => r.status === "resolved")
   const visible  = showResolved ? regressions : active
+
+  const activeFilters = useMemo<FilterOption[]>(() => {
+    const items: FilterOption[] = []
+    if (filters.metricName) items.push({ key: "metric_name", label: "Metric", value: filters.metricName })
+    return items
+  }, [filters.metricName])
+
+  const pushParams = (next: Partial<typeof filters>) => {
+    const params = new URLSearchParams()
+    const merged = { ...filters, ...next }
+    if (merged.metricName) params.set("metric_name", merged.metricName)
+    if (merged.limit) params.set("limit", String(merged.limit))
+    const query = params.toString()
+    router.push(`/regressions${query ? `?${query}` : ""}`)
+  }
 
   return (
     <div className="min-h-full">
@@ -250,6 +274,35 @@ export function RegressionsView({ regressions }: { regressions: RegressionRowDat
             </button>
           </div>
         }
+      />
+
+      <div className="px-6 py-3 flex flex-wrap gap-2 border-b border-zinc-800/60">
+        <input
+          value={filters.metricName}
+          onChange={(e) => pushParams({ metricName: e.target.value })}
+          placeholder="Metric name (e.g. refusal_rate)"
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300 w-56"
+        />
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Limit</span>
+          <select
+            value={filters.limit}
+            onChange={(e) => pushParams({ limit: Number(e.target.value) })}
+            className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+          >
+            {[25, 50, 100].map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <FilterChips
+        filters={activeFilters}
+        onRemove={() => pushParams({ metricName: "" })}
+        onClear={() => pushParams({ metricName: "" })}
       />
 
       <div className="divide-y divide-zinc-800/40">

@@ -9,6 +9,18 @@ export interface OrganizationRead {
   updated_at: string;
 }
 
+export interface OrganizationMemberRead {
+  user_id: string;
+  organization_id: string;
+  role: string;
+  email: string | null;
+  created_at: string;
+}
+
+export interface OrganizationMemberListResponse {
+  items: OrganizationMemberRead[];
+}
+
 export interface OrganizationAlertTargetRead {
   id: string;
   organization_id: string;

@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/ui/page-header"
 import { FilterChips, type FilterOption } from "@/components/ui/filter-chips"
 import { cn } from "@/lib/utils"
@@ -19,10 +20,6 @@ export type TraceRowData = {
   age: string
 }
 
-const initialFilters: FilterOption[] = [
-  { key: "env", label: "Env", value: "production" },
-]
-
 const statusDot: Record<TraceRowData["status"], string> = {
   success: "bg-emerald-500",
   failed:  "bg-red-500",
@@ -35,16 +32,54 @@ const statusLabel: Record<TraceRowData["status"], string> = {
   refusal: "text-amber-400",
 }
 
-export function TracesView({ traces }: { traces: TraceRowData[] }) {
-  const [filters] = useState<FilterOption[]>(initialFilters)
+export function TracesView({
+  traces,
+  nextCursor,
+  projects,
+  filters,
+}: {
+  traces: TraceRowData[]
+  nextCursor: string | null
+  projects: Array<{ id: string; name: string }>
+  filters: {
+    environment: string
+    success: string
+    projectId: string
+    cursor: string
+  }
+}) {
+  const router = useRouter()
 
-  const showProd = filters.some((f) => f.key === "env" && f.value === "production")
-  const visible = showProd
-    ? traces.filter((t) => t.environment === "production")
-    : traces
+  const failed  = traces.filter((t) => t.status === "failed").length
+  const refusal = traces.filter((t) => t.status === "refusal").length
 
-  const failed  = visible.filter((t) => t.status === "failed").length
-  const refusal = visible.filter((t) => t.status === "refusal").length
+  const activeFilters = useMemo<FilterOption[]>(() => {
+    const items: FilterOption[] = []
+    if (filters.environment) items.push({ key: "environment", label: "Env", value: filters.environment })
+    if (filters.success) {
+      items.push({
+        key: "success",
+        label: "Status",
+        value: filters.success === "true" ? "success" : "failed",
+      })
+    }
+    if (filters.projectId) {
+      const project = projects.find((p) => p.id === filters.projectId)
+      items.push({ key: "project_id", label: "Project", value: project?.name ?? filters.projectId })
+    }
+    return items
+  }, [filters, projects])
+
+  const pushParams = (next: Partial<typeof filters> & { cursor?: string }) => {
+    const params = new URLSearchParams()
+    const merged = { ...filters, ...next }
+    if (merged.environment) params.set("environment", merged.environment)
+    if (merged.success) params.set("success", merged.success)
+    if (merged.projectId) params.set("project_id", merged.projectId)
+    if (merged.cursor) params.set("cursor", merged.cursor)
+    const query = params.toString()
+    router.push(`/traces${query ? `?${query}` : ""}`)
+  }
 
   return (
     <div className="min-h-full">
@@ -54,7 +89,7 @@ export function TracesView({ traces }: { traces: TraceRowData[] }) {
         right={
           <>
             <span className="text-xs text-zinc-500 tabular-nums">
-              <span className="text-zinc-200 font-medium">{visible.length.toLocaleString()}</span> traces
+              <span className="text-zinc-200 font-medium">{traces.length.toLocaleString()}</span> traces
             </span>
             {failed > 0 && (
               <>
@@ -72,7 +107,66 @@ export function TracesView({ traces }: { traces: TraceRowData[] }) {
         }
       />
 
-      <FilterChips initial={initialFilters} />
+      <div className="px-6 py-3 flex flex-wrap gap-2 border-b border-zinc-800/60">
+        <select
+          value={filters.environment}
+          onChange={(e) => pushParams({ environment: e.target.value, cursor: "" })}
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+        >
+          <option value="">Env: any</option>
+          <option value="production">Production</option>
+          <option value="staging">Staging</option>
+        </select>
+        <select
+          value={filters.success}
+          onChange={(e) => pushParams({ success: e.target.value, cursor: "" })}
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+        >
+          <option value="">Status: any</option>
+          <option value="true">Success</option>
+          <option value="false">Failed</option>
+        </select>
+        <select
+          value={filters.projectId}
+          onChange={(e) => pushParams({ projectId: e.target.value, cursor: "" })}
+          className="text-xs bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-zinc-300"
+        >
+          <option value="">Project: all</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </select>
+        <div className="ml-auto flex items-center gap-2">
+          {nextCursor && (
+            <button
+              onClick={() => pushParams({ cursor: nextCursor })}
+              className="text-xs bg-zinc-800 text-zinc-200 px-2 py-1 rounded hover:bg-zinc-700 transition-colors"
+            >
+              Next
+            </button>
+          )}
+          {filters.cursor && (
+            <button
+              onClick={() => pushParams({ cursor: "" })}
+              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      <FilterChips
+        filters={activeFilters}
+        onRemove={(key) => {
+          if (key === "environment") pushParams({ environment: "", cursor: "" })
+          if (key === "success") pushParams({ success: "", cursor: "" })
+          if (key === "project_id") pushParams({ projectId: "", cursor: "" })
+        }}
+        onClear={() => pushParams({ environment: "", success: "", projectId: "", cursor: "" })}
+      />
 
       <div className="flex items-center gap-0 px-6 py-2.5 border-b border-zinc-800 bg-zinc-950/60 sticky top-0 backdrop-blur-sm text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
         <div className="w-6 shrink-0" />
@@ -88,12 +182,12 @@ export function TracesView({ traces }: { traces: TraceRowData[] }) {
       </div>
 
       <div className="divide-y divide-zinc-800/40">
-        {visible.map((trace) => (
+        {traces.map((trace) => (
           <TraceRow key={trace.id} trace={trace} />
         ))}
       </div>
 
-      {visible.length === 0 && (
+      {traces.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="text-sm text-zinc-500">No traces match filters</div>
         </div>

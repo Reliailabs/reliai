@@ -7,8 +7,11 @@ import type {
   IncidentInvestigationRead,
   IncidentListResponse,
   OrganizationAlertTargetRead,
+  OrganizationMemberListResponse,
+  OrganizationRead,
   OrganizationGuardrailPolicyListResponse,
   ProjectListResponse,
+  ProjectReliabilityRead,
   ProjectRead,
   PromptDiffRead,
   PromptVersionListResponse,
@@ -98,8 +101,21 @@ export async function getDashboardChanges() {
   return request<DashboardChangeFeedRead>("/api/v1/dashboard/changes");
 }
 
-export async function getIncidents() {
-  return request<IncidentListResponse>("/api/v1/incidents");
+export async function getIncidents(options?: {
+  status?: string;
+  severity?: string;
+  project_id?: string;
+  environment?: string;
+  limit?: number;
+}) {
+  const params = new URLSearchParams();
+  if (options?.status) params.set("status", options.status);
+  if (options?.severity) params.set("severity", options.severity);
+  if (options?.project_id) params.set("project_id", options.project_id);
+  if (options?.environment) params.set("environment", options.environment);
+  if (options?.limit) params.set("limit", String(options.limit));
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<IncidentListResponse>(`/api/v1/incidents${query}`);
 }
 
 export async function getIncidentDetail(incidentId: string) {
@@ -114,8 +130,21 @@ export async function getIncidentEvents(incidentId: string) {
   return request<IncidentEventListResponse>(`/api/v1/incidents/${incidentId}/events`);
 }
 
-export async function getTraces() {
-  return request<TraceListResponse>("/api/v1/traces");
+export async function getTraces(options?: {
+  environment?: string;
+  success?: boolean;
+  project_id?: string;
+  cursor?: string;
+  limit?: number;
+}) {
+  const params = new URLSearchParams();
+  if (options?.environment) params.set("environment", options.environment);
+  if (options?.success !== undefined) params.set("success", String(options.success));
+  if (options?.project_id) params.set("project_id", options.project_id);
+  if (options?.cursor) params.set("cursor", options.cursor);
+  if (options?.limit) params.set("limit", String(options.limit));
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<TraceListResponse>(`/api/v1/traces${query}`);
 }
 
 export async function getTraceReplay(traceId: string) {
@@ -130,6 +159,10 @@ export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
 }
 
+export async function getProjectReliability(projectId: string) {
+  return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
+}
+
 export async function getOrganizationPolicies(organizationId: string) {
   return request<OrganizationGuardrailPolicyListResponse>(
     `/api/v1/organizations/${organizationId}/policies`
@@ -140,8 +173,15 @@ export async function getDeployments() {
   return request<DeploymentListResponse>("/api/v1/deployments");
 }
 
-export async function getRegressions() {
-  return request<RegressionListResponse>("/api/v1/regressions");
+export async function getProjectRegressions(
+  projectId: string,
+  options?: { metric_name?: string; limit?: number }
+) {
+  const params = new URLSearchParams();
+  if (options?.metric_name) params.set("metric_name", options.metric_name);
+  if (options?.limit) params.set("limit", String(options.limit));
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<RegressionListResponse>(`/api/v1/projects/${projectId}/regressions${query}`);
 }
 
 export async function getPromptVersions(projectId: string) {
@@ -159,5 +199,15 @@ export async function getPromptDiff(fromVersionId: string, toVersionId: string) 
 export async function getOrganizationAlertTarget(organizationId: string) {
   return request<OrganizationAlertTargetRead>(
     `/api/v1/organizations/${organizationId}/alert-target`
+  );
+}
+
+export async function getOrganization(organizationId: string) {
+  return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`);
+}
+
+export async function getOrganizationMembers(organizationId: string) {
+  return request<OrganizationMemberListResponse>(
+    `/api/v1/organizations/${organizationId}/members`
   );
 }
