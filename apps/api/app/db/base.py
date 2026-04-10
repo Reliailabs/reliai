@@ -42,6 +42,7 @@ from app.models.platform_extension import PlatformExtension
 from app.models.processor_failure import ProcessorFailure
 from app.models.project import Project
 from app.models.project_custom_metric import ProjectCustomMetric
+from app.models.project_slo import ProjectSLO
 from app.models.project_member import ProjectMember
 from app.models.prompt_failure_pattern import PromptFailurePattern
 from app.models.prompt_version import PromptVersion
@@ -105,6 +106,7 @@ __all__ = [
     "ProcessorFailure",
     "Project",
     "ProjectCustomMetric",
+    "ProjectSLO",
     "ProjectMember",
     "PromptFailurePattern",
     "PromptVersion",

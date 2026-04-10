@@ -38,6 +38,7 @@ from app.services.onboarding import get_or_create_checklist, mark_api_key_create
 from app.services.registry import ensure_model_version_record, ensure_prompt_version_record
 from app.services.regressions import compute_regressions_for_scope
 from app.services.reliability_metrics import compute_project_reliability_metrics
+from app.services.project_slos import seed_default_slos
 from app.services.rollups import build_scopes
 from app.services.traces import create_trace
 from app.services.utils import slugify
@@ -653,6 +654,8 @@ def run() -> None:
         )
         ensure_project_bootstrap_environments(db, project=project)
         ensure_project_bootstrap_environments(db, project=stale_project)
+        seed_default_slos(db, project_id=project.id, organization_id=organization.id)
+        seed_default_slos(db, project_id=stale_project.id, organization_id=organization.id)
 
         sample_summary = _seed_sample_dataset(db, project=project)
         stale_summary = _seed_stale_telemetry_scenario(db, project=stale_project)
