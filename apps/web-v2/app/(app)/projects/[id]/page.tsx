@@ -287,54 +287,86 @@ export default function ProjectDetailPage({
               </span>
             </div>
 
-            <div className="space-y-2 -mt-2">
-              {guardrailPolicies.map((policy) => (
-                <div
-                  key={policy.id}
-                  className={cn(
-                    "bg-zinc-900 border border-zinc-800 rounded-lg p-4",
-                    !policy.enabled && "opacity-60"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    {/* Left: indicator + name + threshold */}
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div
-                        className={cn(
-                          "w-2 h-2 rounded-full mt-1 shrink-0",
-                          policy.enabled ? "bg-emerald-500" : "bg-zinc-600"
-                        )}
-                      />
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-zinc-100 leading-snug">
-                          {policy.name}
-                        </div>
-                        <div className="text-xs text-zinc-500 mt-0.5 font-mono">
-                          {policy.threshold}
-                        </div>
-                      </div>
+            {/* Table header */}
+            <div className="flex items-center gap-3 px-4 py-2 border border-zinc-800 rounded-t-lg bg-zinc-950/60 -mt-2">
+              <div className="w-5 shrink-0" />
+              <div className="flex-1 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Policy</div>
+              <div className="w-20 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider text-right shrink-0">Actions</div>
+              <div className="w-16 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider text-right shrink-0">TP</div>
+              <div className="w-16 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider text-right shrink-0">FP</div>
+              <div className="w-16 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider text-right shrink-0">FPR</div>
+            </div>
+            <div className="border border-t-0 border-zinc-800 rounded-b-lg overflow-hidden divide-y divide-zinc-800/40 -mt-0">
+              {guardrailPolicies.map((policy) => {
+                const total = policy.truePositives + policy.falsePositives
+                const fpr   = total > 0 ? (policy.falsePositives / total) * 100 : 0
+                const fprTone = fpr > 20 ? "text-red-400" : fpr > 10 ? "text-amber-400" : "text-emerald-400"
+
+                return (
+                  <div
+                    key={policy.id}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 hover:bg-zinc-900/40 transition-colors",
+                      !policy.enabled && "opacity-50"
+                    )}
+                  >
+                    {/* Status dot */}
+                    <div className="w-5 shrink-0 flex items-center">
+                      <div className={cn(
+                        "w-1.5 h-1.5 rounded-full",
+                        policy.enabled ? "bg-emerald-500" : "bg-zinc-600"
+                      )} />
                     </div>
 
-                    {/* Right: action count + type badge */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="text-right">
-                        <span className="text-sm tabular-nums text-zinc-200 font-medium">
-                          {policy.actionsLast24h.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-zinc-600 ml-1">actions</span>
-                      </div>
-                      <span
-                        className={cn(
-                          "text-[10px] uppercase tracking-wider bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded",
+                    {/* Name + threshold */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-zinc-100 truncate">{policy.name}</span>
+                        <span className={cn(
+                          "text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-800",
                           guardrailTypeColor[policy.type]
-                        )}
-                      >
-                        {policy.type}
+                        )}>
+                          {policy.type}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-mono text-zinc-600 mt-0.5">{policy.threshold}</div>
+                    </div>
+
+                    {/* Actions 24h */}
+                    <div className="w-20 text-right shrink-0">
+                      <span className="text-sm tabular-nums font-medium text-zinc-200">
+                        {policy.actionsLast24h.toLocaleString()}
                       </span>
                     </div>
+
+                    {/* True positives */}
+                    <div className="w-16 text-right shrink-0">
+                      <span className="text-xs tabular-nums text-emerald-400">{policy.truePositives}</span>
+                    </div>
+
+                    {/* False positives */}
+                    <div className="w-16 text-right shrink-0">
+                      <span className={cn(
+                        "text-xs tabular-nums",
+                        policy.falsePositives > 0 ? "text-red-400" : "text-zinc-600"
+                      )}>
+                        {policy.falsePositives}
+                      </span>
+                    </div>
+
+                    {/* FPR % */}
+                    <div className="w-16 text-right shrink-0">
+                      {total > 0 ? (
+                        <span className={cn("text-xs tabular-nums font-medium", fprTone)}>
+                          {fpr.toFixed(0)}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-zinc-700">—</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}

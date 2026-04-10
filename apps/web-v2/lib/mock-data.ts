@@ -346,6 +346,8 @@ export interface GuardrailPolicy {
   enabled: boolean
   actionsLast24h: number
   threshold: string
+  truePositives: number    // correctly blocked
+  falsePositives: number   // incorrectly blocked (operators overrode)
 }
 
 export interface ReliabilityPattern {
@@ -365,11 +367,11 @@ export const projectDetails: Record<string, ProjectDetail> = {
 }
 
 export const guardrailPolicies: GuardrailPolicy[] = [
-  { id: "g1", name: "PII Redaction",        type: "pii",      enabled: true,  actionsLast24h: 47,  threshold: "confidence > 0.85" },
-  { id: "g2", name: "Refusal Detection",    type: "refusal",  enabled: true,  actionsLast24h: 234, threshold: "score > 0.7"       },
-  { id: "g3", name: "Toxicity Filter",      type: "toxicity", enabled: true,  actionsLast24h: 12,  threshold: "score > 0.9"       },
-  { id: "g4", name: "Latency SLO",          type: "latency",  enabled: false, actionsLast24h: 0,   threshold: "p95 > 2000ms"      },
-  { id: "g5", name: "Cost Per Request Cap", type: "cost",     enabled: false, actionsLast24h: 0,   threshold: "> $0.05"           },
+  { id: "g1", name: "PII Redaction",        type: "pii",      enabled: true,  actionsLast24h: 47,  threshold: "confidence > 0.85", truePositives: 44,  falsePositives: 3  },
+  { id: "g2", name: "Refusal Detection",    type: "refusal",  enabled: true,  actionsLast24h: 234, threshold: "score > 0.7",       truePositives: 181, falsePositives: 53 },
+  { id: "g3", name: "Toxicity Filter",      type: "toxicity", enabled: true,  actionsLast24h: 12,  threshold: "score > 0.9",       truePositives: 12,  falsePositives: 0  },
+  { id: "g4", name: "Latency SLO",          type: "latency",  enabled: false, actionsLast24h: 0,   threshold: "p95 > 2000ms",      truePositives: 0,   falsePositives: 0  },
+  { id: "g5", name: "Cost Per Request Cap", type: "cost",     enabled: false, actionsLast24h: 0,   threshold: "> $0.05",           truePositives: 0,   falsePositives: 0  },
 ]
 
 export const reliabilityPatterns: ReliabilityPattern[] = [

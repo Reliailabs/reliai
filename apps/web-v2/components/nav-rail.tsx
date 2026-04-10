@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   Settings2,
   GitBranch,
+  FlaskConical,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/dashboard",    icon: LayoutDashboard, label: "Dashboard"    },
   { href: "/incidents",    icon: ShieldAlert,     label: "Incidents"    },
   { href: "/traces",       icon: ScanLine,        label: "Traces"       },
+  { href: "/eval-replay",  icon: FlaskConical,    label: "Eval Replay"  },
   { href: "/regressions",  icon: TrendingDown,    label: "Regressions"  },
   { href: "/deployments",  icon: Rocket,          label: "Deployments"  },
   // ── Observability config ──

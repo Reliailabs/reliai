@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { CheckCircle, Plus, X, Clock, Zap, AlertTriangle, ArrowRight } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
+import { CostPerIncident, calculateCostMetrics } from "@/components/cost-per-incident"
 import { cn } from "@/lib/utils"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -323,6 +324,11 @@ export default function PostMortemPage() {
             </div>
           </div>
         </div>
+
+        {/* ── Cost analysis ── */}
+        <CostPerIncident
+          metrics={calculateCostMetrics(48200, 12800, incident.model)}
+        />
 
         {/* ── Action items ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
