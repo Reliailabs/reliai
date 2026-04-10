@@ -1,4 +1,4 @@
-import { getProjectRegressions, getProjects } from "@/lib/api"
+import { getProjectRegressions, getProjects, getRegressionHistory } from "@/lib/api"
 import { formatRelativeTime } from "@/lib/time"
 import { RegressionsView, type RegressionRowData } from "./regressions-view"
 
@@ -24,16 +24,29 @@ export default async function RegressionsPage({
 
   const projectMap = new Map(projects.items.map((project) => [project.id, project.name]))
   const now = Date.now()
+  const entries = responses.flatMap((response) =>
+    response.items.map((item) => ({ item, projectId: response.projectId }))
+  )
+  const sortedEntries = entries.sort(
+    (a, b) => new Date(b.item.detected_at).getTime() - new Date(a.item.detected_at).getTime()
+  )
+  const histories = await Promise.all(
+    sortedEntries.map((entry) =>
+      getRegressionHistory(entry.projectId, entry.item.id).catch(() => null)
+    )
+  )
 
-  const regressions: RegressionRowData[] = responses
-    .flatMap((response) => response.items.map((item) => ({ item, projectId: response.projectId })))
-    .sort((a, b) => new Date(b.item.detected_at).getTime() - new Date(a.item.detected_at).getTime())
-    .map((entry) => {
+  const regressions: RegressionRowData[] = sortedEntries.map((entry, index) => {
       const regression = entry.item
       const deltaPercent = regression.delta_percent ? Number.parseFloat(regression.delta_percent) : 0
       const absDelta = Math.abs(deltaPercent)
       const severity: "critical" | "high" | "medium" | "low" =
         absDelta >= 30 ? "critical" : absDelta >= 20 ? "high" : absDelta >= 10 ? "medium" : "low"
+      const historyPoints = histories[index]?.points ?? []
+      const sparkline = historyPoints
+        .map((point) => Number.parseFloat(point.metric_value))
+        .filter((value) => Number.isFinite(value))
+        .map((value) => ({ value }))
 
       return {
         id: regression.id,
@@ -45,7 +58,7 @@ export default async function RegressionsPage({
         deltaPercent,
         status: "active" as const,
         severity,
-        sparkline: [],   // populated by T3-3 (regression history endpoint)
+        sparkline,
         detectedAt: formatRelativeTime(regression.detected_at, now),
         baselineVersion: "—",
         promptVersion: "—",

@@ -53,6 +53,36 @@ export interface OrganizationGuardrailPolicyListResponse {
   items: OrganizationGuardrailPolicyRead[];
 }
 
+export interface UpgradePromptRead {
+  title: string;
+  message: string;
+  cta: string;
+  plan: string;
+}
+
+export interface UsageStatusRead {
+  used: number;
+  limit: number | null;
+  percent_used: number;
+  usage_percent: number;
+  projected_usage: number;
+  estimated_overage_cost: number | null;
+  status: string;
+}
+
+export interface UsageQuotaRead {
+  id: string;
+  organization_id: string;
+  max_traces_per_day: number | null;
+  max_processors: number | null;
+  max_api_requests: number | null;
+}
+
+export interface UsageQuotaStatusRead extends UsageQuotaRead {
+  usage_status: UsageStatusRead | null;
+  upgrade_prompt: UpgradePromptRead | null;
+}
+
 export interface ProjectRead {
   id: string;
   organization_id: string;
@@ -1289,6 +1319,21 @@ export interface RegressionDetailRead extends RegressionSnapshotRead {
   current_representative_traces: TraceCompareItemRead[];
   baseline_representative_traces: TraceCompareItemRead[];
   trace_compare_path: string | null;
+}
+
+export interface RegressionTrendPointRead {
+  window_start: string;
+  metric_value: string;
+  sample_size: number;
+}
+
+export interface RegressionHistoryRead {
+  regression_id: string;
+  metric_name: string;
+  scope_type: string;
+  scope_id: string;
+  window_minutes: number;
+  points: RegressionTrendPointRead[];
 }
 
 export interface IncidentTraceSampleRead {

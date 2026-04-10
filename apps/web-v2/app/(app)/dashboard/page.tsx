@@ -1,4 +1,5 @@
-import { getDashboardChanges, getDashboardTriage } from "@/lib/api"
+import { getDashboardChanges, getDashboardTriage, getOrganizationUsageQuota } from "@/lib/api"
+import { requireOperatorSession } from "@/lib/auth"
 import { formatRelativeTime } from "@/lib/time"
 import {
   DashboardView,
@@ -14,9 +15,13 @@ function mapChangeKind(kind: string): "deployment" | "prompt" | "model" {
 }
 
 export default async function DashboardPage() {
-  const [triage, changeFeed] = await Promise.all([
+  const session = await requireOperatorSession()
+  const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id
+
+  const [triage, changeFeed, usageQuota] = await Promise.all([
     getDashboardTriage(),
     getDashboardChanges(),
+    orgId ? getOrganizationUsageQuota(orgId).catch(() => null) : Promise.resolve(null),
   ])
   const now = Date.now()
 
@@ -62,6 +67,8 @@ export default async function DashboardPage() {
       unacknowledgedCount={triage.context.unacknowledged_incident_count}
       changes={changes}
       weeklyIncidents={weeklyIncidents}
+      avgMttrMinutes={triage.context.avg_mttr_minutes ?? null}
+      usageQuota={usageQuota}
     />
   )
 }

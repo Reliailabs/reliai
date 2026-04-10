@@ -37,6 +37,7 @@ class DashboardTriageContext(APIModel):
     active_incident_count: int
     unacknowledged_incident_count: int
     degraded_project_count: int | None = None
+    avg_mttr_minutes: float | None = None
     last_updated_at: datetime
 
 

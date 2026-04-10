@@ -2514,3 +2514,28 @@ def get_incident_alert_deliveries(
         .order_by(desc(AlertDelivery.created_at), desc(AlertDelivery.id))
     )
     return db.scalars(statement).all()
+
+
+def get_organization_alert_deliveries(
+    db: Session,
+    operator: OperatorContext,
+    organization_id: UUID,
+    limit: int = 50,
+    status: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+) -> list[AlertDelivery]:
+    allowed_ids = authorized_project_ids(db, operator, organization_id=organization_id)
+    statement = (
+        select(AlertDelivery)
+        .join(Incident, AlertDelivery.incident_id == Incident.id)
+        .where(Incident.project_id.in_(allowed_ids))
+    )
+    if status:
+        statement = statement.where(AlertDelivery.delivery_status == status)
+    if date_from:
+        statement = statement.where(AlertDelivery.created_at >= date_from)
+    if date_to:
+        statement = statement.where(AlertDelivery.created_at <= date_to)
+    statement = statement.order_by(desc(AlertDelivery.created_at), desc(AlertDelivery.id)).limit(limit)
+    return db.scalars(statement).all()

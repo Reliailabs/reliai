@@ -5,9 +5,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.core.settings import get_settings
 from app.models.project import Project
-from app.schemas.limits import LimitCTA, LimitScope, LimitStatus, LimitStatusResponse
+from app.schemas.limits import LimitCTA, LimitScope, LimitStatus
 from app.services.auth import OperatorContext
 from app.services.environments import get_default_environment
 from app.services.rate_limiter import get_limit_exceeded_count, get_limit_exceeded_timestamp
