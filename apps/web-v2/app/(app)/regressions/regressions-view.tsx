@@ -25,6 +25,10 @@ export type RegressionRowData = {
   baselineVersion: string
   promptVersion: string
   model: string
+  scopeType: string
+  scopeId: string
+  windowMinutes: number
+  metadata: Record<string, unknown> | null
 }
 
 const severityBorderColor: Record<Severity | "resolved", string> = {
@@ -121,10 +125,22 @@ function RegressionRow({
             {reg.name}
           </div>
           <div className="text-xs text-zinc-500 mt-0.5 truncate">{reg.project}</div>
+          {reg.scopeType && reg.scopeId && (
+            <div className="text-[10px] text-zinc-700 mt-0.5 font-mono truncate">
+              {reg.scopeType} · {reg.scopeId.slice(0, 8)}
+            </div>
+          )}
         </div>
 
         <div className="w-36 shrink-0 py-3.5 hidden md:block">
           <span className="font-mono text-xs text-zinc-400">{reg.metric}</span>
+          {reg.windowMinutes > 0 && (
+            <div className="text-[10px] text-zinc-700 mt-0.5">
+              {reg.windowMinutes < 60
+                ? `${reg.windowMinutes}m window`
+                : `${(reg.windowMinutes / 60).toFixed(0)}h window`}
+            </div>
+          )}
         </div>
 
         <div className="w-24 shrink-0 py-3.5 text-right hidden sm:block">

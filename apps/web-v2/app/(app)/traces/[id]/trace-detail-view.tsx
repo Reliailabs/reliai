@@ -17,6 +17,9 @@ type EvaluationRow = {
   label: string | null
   explanation: string | null
   evaluatorModel: string | null
+  evaluatorProvider: string | null
+  evaluatorVersion: string | null
+  rawResultJson: Record<string, unknown> | null
 }
 
 type CustomMetricRow = {
@@ -30,6 +33,7 @@ type RetrievalSpanData = {
   sourceCount: number | null
   topK: number | null
   queryText: string | null
+  retrievedChunks: Array<Record<string, unknown>> | null
 }
 
 type TraceDetailData = {
@@ -88,6 +92,26 @@ const statusLabel: Record<TraceStatus, string> = {
   success: "Success",
   failed:  "Failed",
   refusal: "Refusal",
+}
+
+function RetrievedChunks({ chunks }: { chunks: Array<Record<string, unknown>> }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-[10px] font-semibold text-zinc-600 uppercase tracking-widest hover:text-zinc-400 transition-colors"
+      >
+        {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        Retrieved Chunks ({chunks.length})
+      </button>
+      {open && (
+        <pre className="mt-2 text-[11px] text-zinc-400 font-mono bg-zinc-950 rounded border border-zinc-800 p-3 overflow-x-auto max-h-64">
+          {JSON.stringify(chunks, null, 2)}
+        </pre>
+      )}
+    </div>
+  )
 }
 
 function StatCell({
@@ -311,7 +335,12 @@ export function TraceDetailView({ trace }: { trace: TraceDetailData }) {
                             )}
                             {ev.evaluatorModel && (
                               <span className="text-[10px] text-zinc-600 font-mono">
-                                {ev.evaluatorModel}
+                                {ev.evaluatorProvider
+                                  ? `${ev.evaluatorProvider} / ${ev.evaluatorModel}`
+                                  : ev.evaluatorModel}
+                                {ev.evaluatorVersion && (
+                                  <span className="text-zinc-700"> · {ev.evaluatorVersion}</span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -417,6 +446,10 @@ export function TraceDetailView({ trace }: { trace: TraceDetailData }) {
                       </p>
                     </div>
                   )}
+                  {trace.retrievalSpan.retrievedChunks &&
+                    trace.retrievalSpan.retrievedChunks.length > 0 && (
+                      <RetrievedChunks chunks={trace.retrievalSpan.retrievedChunks} />
+                    )}
                 </div>
               </div>
             )}
