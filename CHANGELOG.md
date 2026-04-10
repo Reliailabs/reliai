@@ -32,6 +32,7 @@ All notable changes to Reliai will be documented in this file.
 
 ### Fixed
 
+- Escalation policy seeding now succeeds by enforcing the organization foreign key.
 - AI Summary no longer reuses cached output when the provider changes, and failures now surface as a safe error state instead of breaking the command route.
 - Increased AI Summary body text contrast for readability.
 - Refined AI root-cause explanation card hierarchy and readability to stay clearly subordinate to deterministic root-cause evidence.

@@ -10,7 +10,11 @@ from app.models.base import Base, UUIDPrimaryKeyMixin
 class OrgEscalationPolicy(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "org_escalation_policies"
 
-    organization_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    organization_id: Mapped[UUID] = mapped_column(
+        ForeignKey("organizations.id"),
+        nullable=False,
+        index=True,
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     trigger_severity: Mapped[str] = mapped_column(String(32), nullable=False, default="all")
