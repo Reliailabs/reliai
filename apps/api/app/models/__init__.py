@@ -37,6 +37,7 @@ from app.models.organization_usage_expansion import OrganizationUsageExpansion
 from app.models.organization_guardrail_policy import OrganizationGuardrailPolicy
 from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
+from app.models.org_escalation_policy import OrgEscalationPolicy, OrgEscalationPolicyStep
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser
 from app.models.platform_extension import PlatformExtension
@@ -102,6 +103,8 @@ __all__ = [
     "OrganizationGuardrailPolicy",
     "OrganizationAlertTarget",
     "OrganizationMember",
+    "OrgEscalationPolicy",
+    "OrgEscalationPolicyStep",
     "OperatorSession",
     "OperatorUser",
     "PlatformExtension",

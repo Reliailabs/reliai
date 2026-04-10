@@ -192,6 +192,11 @@ from app.schemas.onboarding_simulation import (
     OnboardingSimulationCreateResponse,
     OnboardingSimulationStatusRead,
 )
+from app.schemas.org_escalation_policy import (
+    EscalationPolicyListResponse,
+    EscalationPolicyRead,
+    EscalationPolicyStepRead,
+)
 from app.schemas.prompt_diff import PromptDiffRead
 from app.schemas.project import (
     ModelVersionDetailRead,
@@ -409,6 +414,10 @@ from app.services.organization_alert_targets import (
 from app.services.organization_guardrails import (
     list_active_organization_guardrail_policies,
     require_api_key_organization_access,
+)
+from app.services.org_escalation_policies import (
+    count_active_incidents_for_policy,
+    list_org_escalation_policies,
 )
 from app.services.projects import create_project, list_projects, update_project
 from app.services.public_api import (
@@ -2349,6 +2358,36 @@ def list_organization_guardrail_policies_endpoint(
     return OrganizationGuardrailPolicyListResponse(
         items=[_organization_guardrail_policy_item(item) for item in items]
     )
+
+
+@router.get(
+    "/organizations/{organization_id}/escalation-policies",
+    response_model=EscalationPolicyListResponse,
+)
+def list_org_escalation_policies_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> EscalationPolicyListResponse:
+    policies = list_org_escalation_policies(db, operator, organization_id=organization_id)
+    items = []
+    for policy in policies:
+        active_count = count_active_incidents_for_policy(db, policy)
+        items.append(
+            EscalationPolicyRead(
+                id=policy.id,
+                organization_id=policy.organization_id,
+                name=policy.name,
+                description=policy.description,
+                trigger_severity=policy.trigger_severity,
+                unacknowledged_after_minutes=policy.unacknowledged_after_minutes,
+                enabled=policy.enabled,
+                steps=[EscalationPolicyStepRead.model_validate(step) for step in policy.steps],
+                active_incident_count=active_count,
+                created_at=policy.created_at,
+            )
+        )
+    return EscalationPolicyListResponse(items=items)
 
 
 @router.get("/organizations/{organization_id}/members", response_model=OrganizationMemberListResponse)

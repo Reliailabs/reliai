@@ -1,57 +1,34 @@
 import { requireOperatorSession } from "@/lib/auth";
-import { getOrganizationAlertTarget, getIncidents } from "@/lib/api";
-import { EscalationView, type DerivedPolicy } from "./escalation-view";
-import type { OrganizationAlertTargetRead } from "@reliai/types";
-
-const CHANNEL_MAP: Record<string, DerivedPolicy["steps"][number]["channel"]> = {
-  slack:     "slack",
-  email:     "email",
-  pagerduty: "pagerduty",
-  webhook:   "webhook",
-};
-
-function derivePolicy(
-  target: OrganizationAlertTargetRead,
-  openIncidentCount: number,
-): DerivedPolicy {
-  const channel: DerivedPolicy["steps"][number]["channel"] =
-    CHANNEL_MAP[target.channel_type] ?? "webhook";
-
-  return {
-    id: target.id,
-    name: "Default Alert Policy",
-    description: `Alert notifications via ${target.channel_type} to ${target.channel_target}`,
-    trigger: { severity: "all", unacknowledgedAfter: 0 },
-    steps: [
-      {
-        step: 1,
-        delay: 0,
-        action: "notify",
-        target: target.channel_target,
-        channel,
-      },
-    ],
-    activeIncidents: openIncidentCount,
-    enabled: target.is_active,
-  };
-}
+import { getOrgEscalationPolicies } from "@/lib/api";
+import { EscalationView, type EscalationPolicy } from "./escalation-view";
 
 export default async function EscalationPage() {
   const session = await requireOperatorSession();
   const orgId =
     session.active_organization_id ?? session.memberships[0]?.organization_id;
 
-  const [alertTarget, incidents] = await Promise.all([
-    orgId
-      ? getOrganizationAlertTarget(orgId).catch(() => null)
-      : Promise.resolve(null),
-    getIncidents({ status: "open" }).catch(() => ({ items: [] as never[] })),
-  ]);
+  const policiesResponse = orgId
+    ? await getOrgEscalationPolicies(orgId).catch(() => ({ items: [] }))
+    : { items: [] };
 
-  const openIncidentCount = (incidents as { items: unknown[] }).items.length;
-  const policy = alertTarget
-    ? derivePolicy(alertTarget, openIncidentCount)
-    : null;
+  const policies: EscalationPolicy[] = policiesResponse.items.map((policy) => ({
+    id: policy.id,
+    name: policy.name,
+    description: policy.description ?? "—",
+    trigger: {
+      severity: policy.trigger_severity,
+      unacknowledgedAfter: policy.unacknowledged_after_minutes,
+    },
+    steps: policy.steps.map((step) => ({
+      step: step.step_number,
+      delay: step.delay_minutes,
+      action: step.action,
+      target: step.target,
+      channel: step.channel,
+    })),
+    activeIncidents: policy.active_incident_count,
+    enabled: policy.enabled,
+  }));
 
-  return <EscalationView policy={policy} />;
+  return <EscalationView policies={policies} />;
 }
