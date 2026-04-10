@@ -45,7 +45,12 @@ export default async function TracesPage({
       model: trace.model_name,
       promptVersion: trace.prompt_version ?? "—",
       latency: latencySeconds === null ? "—" : `${latencySeconds.toFixed(2)}s`,
-      tokens: "—",
+      tokens:
+        trace.prompt_tokens != null && trace.completion_tokens != null
+          ? String(trace.prompt_tokens + trace.completion_tokens)
+          : trace.prompt_tokens != null
+            ? String(trace.prompt_tokens)
+            : "—",
       environment: trace.environment === "staging" ? "staging" : "production",
       age: formatRelativeTime(trace.timestamp ?? trace.created_at, now),
     }

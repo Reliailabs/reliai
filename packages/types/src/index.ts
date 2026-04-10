@@ -971,6 +971,8 @@ export interface TraceListItemRead {
   latency_ms: number | null;
   success: boolean;
   error_type: string | null;
+  prompt_tokens?: number | null;
+  completion_tokens?: number | null;
   created_at: string;
   refusal_detected?: boolean | null;
 }
