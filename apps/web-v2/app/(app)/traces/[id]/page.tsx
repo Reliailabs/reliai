@@ -69,6 +69,7 @@ export default async function TraceDetailPage({
               sourceCount: trace.retrieval_span.source_count,
               topK: trace.retrieval_span.top_k,
               queryText: trace.retrieval_span.query_text,
+              retrievedChunks: trace.retrieval_span.retrieved_chunks_json ?? null,
             }
           : null,
         evaluations: trace.evaluations.map((ev) => ({
@@ -78,6 +79,9 @@ export default async function TraceDetailPage({
           label: ev.label,
           explanation: ev.explanation,
           evaluatorModel: ev.evaluator_model,
+          evaluatorProvider: ev.evaluator_provider ?? null,
+          evaluatorVersion: ev.evaluator_version ?? null,
+          rawResultJson: ev.raw_result_json ?? null,
         })),
         customMetrics: (trace.custom_metric_results ?? []).map((m) => ({
           name: m.name,

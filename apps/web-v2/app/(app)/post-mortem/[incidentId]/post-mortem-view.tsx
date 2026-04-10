@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { CostPerIncident, calculateCostMetrics } from "@/components/cost-per-incident"
 import { cn } from "@/lib/utils"
 
-type CauseCategory =
+export type PostMortemCauseCategory =
   | "code_defect"
   | "infrastructure"
   | "human_error"
@@ -14,6 +14,8 @@ type CauseCategory =
   | "configuration"
   | "monitoring"
   | "other"
+
+type CauseCategory = PostMortemCauseCategory
 
 type SeverityLevel = "critical" | "high" | "medium" | "low"
 type Priority      = "critical" | "high" | "medium" | "low"

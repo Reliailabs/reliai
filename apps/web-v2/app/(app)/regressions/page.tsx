@@ -28,12 +28,12 @@ export default async function RegressionsPage({
   const regressions: RegressionRowData[] = responses
     .flatMap((response) => response.items.map((item) => ({ item, projectId: response.projectId })))
     .sort((a, b) => new Date(b.item.detected_at).getTime() - new Date(a.item.detected_at).getTime())
-    .map((entry, index) => {
+    .map((entry) => {
       const regression = entry.item
       const deltaPercent = regression.delta_percent ? Number.parseFloat(regression.delta_percent) : 0
-      const sparklineBase = [1, 1.2, 1.4, 1.1, 1.3, 1.5, 1.2].map((value) => ({
-        value: value + index * 0.02,
-      }))
+      const absDelta = Math.abs(deltaPercent)
+      const severity: "critical" | "high" | "medium" | "low" =
+        absDelta >= 30 ? "critical" : absDelta >= 20 ? "high" : absDelta >= 10 ? "medium" : "low"
 
       return {
         id: regression.id,
@@ -43,13 +43,17 @@ export default async function RegressionsPage({
         baselineValue: regression.baseline_value,
         currentValue: regression.current_value,
         deltaPercent,
-        status: "active",
-        severity: "medium",
-        sparkline: sparklineBase,
+        status: "active" as const,
+        severity,
+        sparkline: [],   // populated by T3-3 (regression history endpoint)
         detectedAt: formatRelativeTime(regression.detected_at, now),
         baselineVersion: "—",
         promptVersion: "—",
         model: "—",
+        scopeType: regression.scope_type,
+        scopeId: regression.scope_id,
+        windowMinutes: regression.window_minutes,
+        metadata: regression.metadata_json ?? null,
       }
     })
 
