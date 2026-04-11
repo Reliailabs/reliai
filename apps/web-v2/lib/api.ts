@@ -29,6 +29,9 @@ import type {
   TraceReplayRead,
   TraceSummaryRead,
   TraceComparisonRead,
+  GuardrailMetrics,
+  TimelineResponse,
+  ModelVersionListResponse,
   UsageQuotaStatusRead,
 } from "@reliai/types";
 
@@ -227,6 +230,25 @@ export async function getProjectRegressions(
   return request<RegressionListResponse>(`/api/v1/projects/${projectId}/regressions${query}`);
 }
 
+export async function getProjectGuardrailMetrics(projectId: string) {
+  return request<GuardrailMetrics>(`/api/v1/projects/${projectId}/guardrail-metrics`);
+}
+
+export async function getProjectCost(projectId: string) {
+  return request<any>(`/api/v1/projects/${projectId}/cost`); // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export async function getProjectTimeline(projectId: string, options?: { environment?: string }) {
+  const params = new URLSearchParams();
+  if (options?.environment) params.set("environment", options.environment);
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<TimelineResponse>(`/api/v1/projects/${projectId}/timeline${query}`);
+}
+
+export async function getProjectModelVersions(projectId: string) {
+  return request<ModelVersionListResponse>(`/api/v1/projects/${projectId}/model-versions`);
+}
+
 export async function getPromptVersions(projectId: string) {
   return request<PromptVersionListResponse>(`/api/v1/projects/${projectId}/prompt-versions`);
 }
@@ -303,6 +325,22 @@ export async function getRegressionHistory(projectId: string, regressionId: stri
   return request<RegressionHistoryRead>(
     `/api/v1/projects/${projectId}/regressions/${regressionId}/history`
   );
+}
+
+export async function getIntelligenceGlobalPatterns() {
+  return request<any>(`/api/v1/intelligence/global-patterns`); // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export async function getIntelligenceModels() {
+  return request<any>(`/api/v1/intelligence/models`); // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export async function getIntelligencePrompts() {
+  return request<any>(`/api/v1/intelligence/prompts`); // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export async function getIntelligenceGuardrails() {
+  return request<any>(`/api/v1/intelligence/guardrails`); // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export async function getIncidentCommand(incidentId: string) {

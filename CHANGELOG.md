@@ -20,6 +20,10 @@ All notable changes to Reliai will be documented in this file.
 - Project SLO backend with list endpoint and seeded defaults.
 - Organization evaluation usage endpoint and dashboard evaluations usage tile.
 - Trace analysis panel with summary, compare, and replay insights in web-v2 trace detail page.
+- Evaluation replay page now uses real trace data and prompt versions in web-v2.
+- Project detail page enhanced with guardrail metrics, cost, timeline, and model versions.
+- Model versions tab in project detail showing version history and metadata.
+- Reliability intelligence page with high‑risk patterns, model reliability, prompt failures, and guardrail recommendations.
 
 ### Changed
 
