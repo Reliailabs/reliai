@@ -28,6 +28,7 @@ import type {
   TraceListResponse,
   TraceReplayRead,
   TraceSummaryRead,
+  TraceComparisonRead,
   UsageQuotaStatusRead,
 } from "@reliai/types";
 
@@ -173,6 +174,14 @@ export async function getTraceGraph(traceId: string) {
 
 export async function getTraceGraphAnalysis(traceId: string) {
   return request<TraceGraphAnalysisRead>(`/api/v1/traces/${traceId}/analysis`);
+}
+
+export async function getTraceSummary(traceId: string) {
+  return request<TraceSummaryRead>(`/api/v1/traces/${traceId}/summary`);
+}
+
+export async function getTraceCompare(traceId: string) {
+  return request<TraceComparisonRead>(`/api/v1/traces/${traceId}/compare`);
 }
 
 export async function getProjects() {

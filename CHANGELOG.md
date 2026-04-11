@@ -19,6 +19,7 @@ All notable changes to Reliai will be documented in this file.
 - web-v2 Settings page with operator, organization, and member visibility plus API key guidance.
 - Project SLO backend with list endpoint and seeded defaults.
 - Organization evaluation usage endpoint and dashboard evaluations usage tile.
+- Trace analysis panel with summary, compare, and replay insights in web-v2 trace detail page.
 
 ### Changed
 

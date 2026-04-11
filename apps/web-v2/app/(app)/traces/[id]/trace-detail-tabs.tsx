@@ -1,22 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import type { TraceGraphAnalysisRead, TraceGraphRead } from "@reliai/types"
+import type { TraceGraphAnalysisRead, TraceGraphRead, TraceSummaryRead, TraceComparisonRead, TraceReplayRead } from "@reliai/types"
 import { cn } from "@/lib/utils"
 import { TraceDetailView, type TraceDetailData } from "./trace-detail-view"
 import { TraceGraphView } from "./trace-graph-view"
+import { TraceAnalysisPanel } from "./trace-analysis-panel"
 
 export type { TraceDetailData }
 
-type Tab = "detail" | "graph"
+type Tab = "detail" | "graph" | "analysis"
 
 interface TraceDetailTabsProps {
   trace: TraceDetailData
   graph: TraceGraphRead | null
   analysis: TraceGraphAnalysisRead | null
+  summary?: TraceSummaryRead | null
+  compare?: TraceComparisonRead | null
+  replay?: TraceReplayRead | null
 }
 
-export function TraceDetailTabs({ trace, graph, analysis }: TraceDetailTabsProps) {
+export function TraceDetailTabs({ trace, graph, analysis, summary, compare, replay }: TraceDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("detail")
   const hasGraph = graph !== null
 
@@ -36,6 +40,12 @@ export function TraceDetailTabs({ trace, graph, analysis }: TraceDetailTabsProps
             Execution graph
             {!hasGraph && <span className="ml-1.5 text-zinc-700">—</span>}
           </TabButton>
+          <TabButton
+            active={activeTab === "analysis"}
+            onClick={() => setActiveTab("analysis")}
+          >
+            Analysis
+          </TabButton>
         </div>
       </div>
 
@@ -45,6 +55,9 @@ export function TraceDetailTabs({ trace, graph, analysis }: TraceDetailTabsProps
         <div className="p-6">
           <TraceGraphView graph={graph} analysis={analysis} />
         </div>
+      )}
+      {activeTab === "analysis" && (
+        <TraceAnalysisPanel summary={summary ?? null} compare={compare ?? null} replay={replay ?? null} />
       )}
     </div>
   )
