@@ -233,7 +233,7 @@ function IncidentRow({ incident: inc }: { incident: IncidentRowData }) {
 
   return (
     <Link
-      href={`/post-mortem/${inc.id}`}
+      href={`/incidents/${inc.id}`}
       className="group flex items-stretch hover:bg-zinc-900/50 transition-colors"
     >
       <div
