@@ -43,6 +43,7 @@ class DeploymentRead(APIModel):
     deployed_by: str | None
     deployed_at: datetime
     metadata_json: dict[str, Any] | None
+    risk_analysis_json: dict[str, Any] | None = None
     created_at: datetime
 
 

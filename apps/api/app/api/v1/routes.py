@@ -5,13 +5,14 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.dependencies import require_operator
 from app.core.settings import get_settings
 from app.db.session import get_db
 from app.models.deployment import Deployment
+from app.models.trace import Trace
 from app.models.model_version import ModelVersion
 from app.models.organization import Organization
 from app.models.prompt_version import PromptVersion
@@ -620,7 +621,10 @@ def _graph_pattern_item(item: dict) -> ReliabilityGraphPatternRead:
 
 
 def _deployment_item(deployment) -> DeploymentRead:
-    return DeploymentRead.model_validate(deployment)
+    base = DeploymentRead.model_validate(deployment)
+    if deployment.risk_score is not None and deployment.risk_score.analysis_json:
+        base.risk_analysis_json = deployment.risk_score.analysis_json
+    return base
 
 
 def _deployment_event_item(event) -> DeploymentEventRead:
@@ -3172,10 +3176,20 @@ def get_project_reliability_endpoint(
             METRIC_INCIDENT_DENSITY,
         ],
     )
+    from datetime import datetime, timezone, timedelta
+    cutoff_24h = datetime.now(timezone.utc) - timedelta(hours=24)
+    traces_last_24h = db.scalar(
+        select(func.count(Trace.id)).where(
+            Trace.project_id == project_id,
+            Trace.timestamp >= cutoff_24h,
+        )
+    ) or 0
+
     return ProjectReliabilityRead(
         project_id=project.id,
         organization_id=project.organization_id,
         reliability_score=compute_reliability_score(metric_values),
+        traces_last_24h=traces_last_24h,
         detection_latency_p90=metric_values["detection_latency_p90"],
         MTTA_p90=metric_values["MTTA_p90"],
         MTTR_p90=metric_values["MTTR_p90"],

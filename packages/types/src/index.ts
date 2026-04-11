@@ -219,6 +219,7 @@ export interface ProjectReliabilityRead {
   quality_pass_rate: number | null;
   structured_output_validity_rate: number | null;
   root_cause_localization_score: number | null;
+  traces_last_24h: number | null;
   recent_incidents: ReliabilityRecentIncidentRead[];
   trend_series: ReliabilityMetricSeriesRead[];
 }
@@ -918,6 +919,7 @@ export interface DeploymentRead {
   deployed_by: string | null;
   deployed_at: string;
   metadata_json: Record<string, unknown> | null;
+  risk_analysis_json: Record<string, unknown> | null;
   created_at: string;
 }
 

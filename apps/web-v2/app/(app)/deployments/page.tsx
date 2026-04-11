@@ -35,6 +35,7 @@ type RawDeployment = {
   created_at: string
   deployed_by: string | null
   metadata_json: Record<string, unknown> | null
+  risk_analysis_json: Record<string, unknown> | null
 }
 
 function mapDeployment(
@@ -90,10 +91,30 @@ function mapDeployment(
       typeof deployment.metadata_json?.baseline === "string"
         ? deployment.metadata_json.baseline
         : null,
-    evalsPassed: null,
-    evalsTotal: null,
-    guardrailsPassed: null,
-    guardrailsTotal: null,
+    evalsPassed: (() => {
+      const aj = deployment.risk_analysis_json
+      if (!aj) return null
+      const failRate = typeof aj.current_evaluation_failure_rate === "number" ? aj.current_evaluation_failure_rate : null
+      const count = typeof aj.current_trace_count === "number" ? aj.current_trace_count : null
+      if (failRate === null || count === null) return null
+      return Math.round((1 - failRate) * count)
+    })(),
+    evalsTotal: (() => {
+      const aj = deployment.risk_analysis_json
+      return typeof aj?.current_trace_count === "number" ? aj.current_trace_count : null
+    })(),
+    guardrailsPassed: (() => {
+      const aj = deployment.risk_analysis_json
+      if (!aj) return null
+      const validityRate = typeof aj.current_structured_validity_rate === "number" ? aj.current_structured_validity_rate : null
+      const count = typeof aj.current_trace_count === "number" ? aj.current_trace_count : null
+      if (validityRate === null || count === null) return null
+      return Math.round(validityRate * count)
+    })(),
+    guardrailsTotal: (() => {
+      const aj = deployment.risk_analysis_json
+      return typeof aj?.current_trace_count === "number" ? aj.current_trace_count : null
+    })(),
     deployedAt: deployment.deployed_at,
   }
 }
