@@ -18,6 +18,7 @@ All notable changes to Reliai will be documented in this file.
 - Organization escalation policies backend with list endpoint and seeded defaults.
 - web-v2 Settings page with operator, organization, and member visibility plus API key guidance.
 - Project SLO backend with list endpoint and seeded defaults.
+- Organization evaluation usage endpoint and dashboard evaluations usage tile.
 
 ### Changed
 

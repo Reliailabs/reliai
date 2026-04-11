@@ -2,6 +2,7 @@ import {
   getDashboardChanges,
   getDashboardTriage,
   getOrganizationAlertDeliveries,
+  getOrganizationEvaluationUsage,
   getOrganizationUsageQuota,
 } from "@/lib/api"
 import { requireOperatorSession } from "@/lib/auth"
@@ -24,13 +25,16 @@ export default async function DashboardPage() {
   const session = await requireOperatorSession()
   const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id
 
-  const [triage, changeFeed, usageQuota, alertDeliveries] = await Promise.all([
+  const [triage, changeFeed, usageQuota, alertDeliveries, evaluationUsage] = await Promise.all([
     getDashboardTriage(),
     getDashboardChanges(),
     orgId ? getOrganizationUsageQuota(orgId).catch(() => null) : Promise.resolve(null),
     orgId
       ? getOrganizationAlertDeliveries(orgId, { limit: 10 }).catch(() => ({ items: [] }))
       : Promise.resolve({ items: [] }),
+    orgId
+      ? getOrganizationEvaluationUsage(orgId, { window_days: 30 }).catch(() => null)
+      : Promise.resolve(null),
   ])
   const now = Date.now()
 
@@ -87,6 +91,7 @@ export default async function DashboardPage() {
       avgMttrMinutes={triage.context.avg_mttr_minutes ?? null}
       usageQuota={usageQuota}
       alertDeliveries={deliveries}
+      evaluationUsage={evaluationUsage}
     />
   )
 }

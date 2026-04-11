@@ -84,6 +84,7 @@ from app.schemas.deployment import (
     DeploymentSimulationRead,
     IncidentDeploymentContextRead,
 )
+from app.schemas.evaluation_usage import EvaluationUsageRead
 from app.schemas.environment import EnvironmentCreate, EnvironmentListResponse, EnvironmentRead
 from app.schemas.event_pipeline import (
     EventPipelineConsumerRead,
@@ -510,6 +511,7 @@ from app.services.traces import (
 from app.services.timeline import get_project_timeline
 from app.services.event_stream import PolicyViolationEventPayload, publish_event
 from app.services.entitlements import has_feature
+from app.services.evaluation_usage import get_organization_evaluation_usage
 from app.services.stripe_billing import create_checkout_session, ensure_stripe_customer, handle_stripe_webhook
 from app.services.organization_config import apply_config_patch, undo_config_patch
 from app.services.upgrade_prompts import get_upgrade_prompt
@@ -2599,6 +2601,22 @@ def get_org_usage_quota_endpoint(
         usage_status=usage_status,
         upgrade_prompt=upgrade_prompt,
     )
+
+
+@router.get("/organizations/{organization_id}/evaluation-usage", response_model=EvaluationUsageRead)
+def get_org_evaluation_usage_endpoint(
+    organization_id: UUID,
+    window_days: int = Query(default=30, ge=1, le=90),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> EvaluationUsageRead:
+    require_org_role(operator, organization_id, "viewer")
+    payload = get_organization_evaluation_usage(
+        db,
+        organization_id=organization_id,
+        window_days=window_days,
+    )
+    return EvaluationUsageRead(**payload)
 
 
 @router.put("/organizations/{organization_id}/usage-quota", response_model=UsageQuotaRead)
