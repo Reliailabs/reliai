@@ -27,6 +27,7 @@ import type {
   TraceGraphRead,
   TraceListResponse,
   TraceReplayRead,
+  TraceSummaryRead,
   UsageQuotaStatusRead,
 } from "@reliai/types";
 

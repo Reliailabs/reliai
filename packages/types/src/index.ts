@@ -1166,6 +1166,15 @@ export interface TraceGraphAnalysisRead {
   most_guardrail_retries: TraceGraphAnalysisSpanRead | null;
 }
 
+export interface TraceSummaryRead {
+  trace_id: string;
+  service_name: string | null;
+  model_name: string;
+  latency_ms: number | null;
+  guardrail_retries: number;
+  error_summary: string | null;
+}
+
 export interface TraceReplayStepRead {
   span_id: string;
   parent_span_id: string | null;
