@@ -23,6 +23,14 @@ export type DashboardChangeRow = {
   age: string
 }
 
+export type DashboardAlertRow = {
+  id: string
+  status: string
+  channel: string
+  target: string
+  age: string
+}
+
 export type WeeklyIncidentPoint = {
   day: string
   count: number
@@ -41,6 +49,13 @@ const changeIcon = {
   model:      <Box className="w-3 h-3" />,
 }
 
+const deliveryStatusConfig: Record<string, string> = {
+  sent: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  failed: "bg-red-500/10 text-red-400 border-red-500/20",
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  suppressed: "bg-zinc-700/40 text-zinc-400 border-zinc-700/60",
+}
+
 export function DashboardView({
   openIncidents,
   unacknowledgedCount,
@@ -48,6 +63,7 @@ export function DashboardView({
   weeklyIncidents,
   avgMttrMinutes,
   usageQuota,
+  alertDeliveries,
 }: {
   openIncidents: DashboardIncidentRow[]
   unacknowledgedCount: number
@@ -55,15 +71,28 @@ export function DashboardView({
   weeklyIncidents: WeeklyIncidentPoint[]
   avgMttrMinutes: number | null
   usageQuota: UsageQuotaStatusRead | null
+  alertDeliveries: DashboardAlertRow[]
 }) {
   const maxIncidents = Math.max(0, ...weeklyIncidents.map((d) => d.count))
-  const usageUsed = usageQuota?.usage_status?.used ?? null
-  const usageLimit =
+  const traceUsageUsed = usageQuota?.usage_status?.used ?? null
+  const traceUsageLimit =
     usageQuota?.max_traces_per_day ?? usageQuota?.usage_status?.limit ?? null
-  const usagePercent =
+  const traceUsagePercent =
     usageQuota?.usage_status?.percent_used ??
-    (usageUsed !== null && usageLimit ? (usageUsed / usageLimit) * 100 : null)
-  const usagePercentClamped = usagePercent ? Math.min(100, Math.max(0, usagePercent)) : 0
+    (traceUsageUsed !== null && traceUsageLimit ? (traceUsageUsed / traceUsageLimit) * 100 : null)
+  const traceUsagePercentClamped = traceUsagePercent
+    ? Math.min(100, Math.max(0, traceUsagePercent))
+    : 0
+
+  const evalUsageUsed = usageQuota?.usage_status?.projected_usage ?? null
+  const evalUsageLimit = usageQuota?.max_api_requests ?? null
+  const evalUsagePercent =
+    evalUsageUsed !== null && evalUsageLimit
+      ? (evalUsageUsed / evalUsageLimit) * 100
+      : null
+  const evalUsagePercentClamped = evalUsagePercent
+    ? Math.min(100, Math.max(0, evalUsagePercent))
+    : 0
 
   return (
     <div className="min-h-full">
@@ -290,24 +319,64 @@ export function DashboardView({
                 Usage
               </span>
             </div>
-            <div className="px-4 py-3.5">
-              <div className="flex items-baseline justify-between mb-2">
-                <span className="text-sm font-semibold text-zinc-200 tabular-nums">
-                  {usageUsed !== null ? usageUsed.toLocaleString() : "—"}
-                </span>
-                <span className="text-xs text-zinc-600">
-                  / {usageLimit !== null ? usageLimit.toLocaleString() : "—"} traces
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full"
-                  style={{ width: `${usagePercentClamped}%` }}
-                />
-              </div>
-              <div className="mt-1.5 text-[10px] text-zinc-600">
-                {usagePercent !== null ? `${usagePercent.toFixed(1)}%` : "—"} used today
-              </div>
+            <div className="px-4 py-3.5 space-y-4">
+              <UsageRow
+                label="Traces"
+                used={traceUsageUsed}
+                limit={traceUsageLimit}
+                percent={traceUsagePercent}
+                percentClamped={traceUsagePercentClamped}
+              />
+              <UsageRow
+                label="Evaluations"
+                used={evalUsageUsed}
+                limit={evalUsageLimit}
+                percent={evalUsagePercent}
+                percentClamped={evalUsagePercentClamped}
+              />
+            </div>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+                Alert deliveries
+              </span>
+              <Link
+                href="/alerts"
+                className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors"
+              >
+                View all
+              </Link>
+            </div>
+            <div className="divide-y divide-zinc-800/60">
+              {alertDeliveries.slice(0, 10).map((delivery) => (
+                <div key={delivery.id} className="px-4 py-3 text-xs">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-zinc-300 truncate">
+                        {delivery.channel} · {delivery.target}
+                      </div>
+                      <div className="text-[10px] text-zinc-600 mt-1">
+                        {delivery.age}
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${
+                        deliveryStatusConfig[delivery.status] ??
+                        "bg-zinc-700/40 text-zinc-400 border-zinc-700/60"
+                      }`}
+                    >
+                      {delivery.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {alertDeliveries.length === 0 && (
+                <div className="px-4 py-3 text-xs text-zinc-500">
+                  No alert deliveries yet.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -348,6 +417,42 @@ function StatusRow({
       <span className={`text-xs font-medium tabular-nums ${valueColor}`}>
         {value}
       </span>
+    </div>
+  )
+}
+
+function UsageRow({
+  label,
+  used,
+  limit,
+  percent,
+  percentClamped,
+}: {
+  label: string
+  used: number | null
+  limit: number | null
+  percent: number | null
+  percentClamped: number
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="text-sm font-semibold text-zinc-200 tabular-nums">
+          {used !== null ? used.toLocaleString() : "—"}
+        </span>
+        <span className="text-xs text-zinc-600">
+          / {limit !== null ? limit.toLocaleString() : "—"} {label.toLowerCase()}
+        </span>
+      </div>
+      <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-emerald-500 rounded-full"
+          style={{ width: `${percentClamped}%` }}
+        />
+      </div>
+      <div className="mt-1.5 text-[10px] text-zinc-600">
+        {percent !== null ? `${percent.toFixed(1)}%` : "—"} used
+      </div>
     </div>
   )
 }
