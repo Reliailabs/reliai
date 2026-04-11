@@ -5,6 +5,7 @@ import type {
   DeploymentListResponse,
   EscalationPolicyListResponse,
   EvaluationUsageRead,
+  IncidentCommandCenterRead,
   IncidentDetailRead,
   IncidentEventListResponse,
   IncidentInvestigationRead,
@@ -282,4 +283,8 @@ export async function getRegressionHistory(projectId: string, regressionId: stri
   return request<RegressionHistoryRead>(
     `/api/v1/projects/${projectId}/regressions/${regressionId}/history`
   );
+}
+
+export async function getIncidentCommand(incidentId: string) {
+  return request<IncidentCommandCenterRead>(`/api/v1/incidents/${incidentId}/command`);
 }
