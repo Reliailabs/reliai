@@ -49,5 +49,6 @@ class ProjectReliabilityRead(APIModel):
     quality_pass_rate: float | None
     structured_output_validity_rate: float | None
     root_cause_localization_score: float | None
+    traces_last_24h: int | None = None
     recent_incidents: list[ReliabilityRecentIncidentRead]
     trend_series: list[ReliabilityMetricSeriesRead]

@@ -56,7 +56,10 @@ export default async function ProjectsPage() {
           value: detectionLatency === null ? "—" : `${Math.round(detectionLatency)}ms`,
           tone: latencyTone,
         },
-        throughput: { value: "—", tone: "stable" },
+        throughput: {
+          value: metrics?.traces_last_24h != null ? `${metrics.traces_last_24h.toLocaleString()}/d` : "—",
+          tone: "stable",
+        },
         uptime: {
           value: qualityPassRate === null ? "—" : `${Math.round(qualityPassRate * 100)}%`,
           tone: qualityTone,

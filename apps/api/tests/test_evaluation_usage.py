@@ -8,7 +8,7 @@ from app.models.environment import Environment
 from app.models.evaluation import Evaluation
 from app.models.trace import Trace
 from app.services.evaluations import STRUCTURED_VALIDITY_EVAL_TYPE
-from app.tests.test_api import (
+from .test_api import (
     auth_headers,
     create_operator,
     create_organization,
@@ -70,8 +70,15 @@ def test_org_evaluation_usage_counts_daily(client, db_session):
         environment=environment,
         timestamp=today,
     )
+    trace_today_2 = _create_trace(
+        db_session,
+        organization_id=UUID(organization["id"]),
+        project_id=UUID(project["id"]),
+        environment=environment,
+        timestamp=today,
+    )
     _create_evaluation(db_session, trace=trace_today, project_id=UUID(project["id"]), created_at=today)
-    _create_evaluation(db_session, trace=trace_today, project_id=UUID(project["id"]), created_at=today)
+    _create_evaluation(db_session, trace=trace_today_2, project_id=UUID(project["id"]), created_at=today)
 
     trace_yesterday = _create_trace(
         db_session,

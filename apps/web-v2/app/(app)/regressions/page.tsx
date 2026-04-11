@@ -61,7 +61,7 @@ export default async function RegressionsPage({
         sparkline,
         detectedAt: formatRelativeTime(regression.detected_at, now),
         baselineVersion: "—",
-        promptVersion: "—",
+        promptVersion: regression.scope_type === "prompt_version" ? regression.scope_id : "—",
         model: "—",
         scopeType: regression.scope_type,
         scopeId: regression.scope_id,
