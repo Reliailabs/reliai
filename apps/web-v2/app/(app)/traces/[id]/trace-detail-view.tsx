@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useState } from "react"
 import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react"
-import { PageHeader } from "@/components/ui/page-header"
 import { cn } from "@/lib/utils"
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -36,7 +35,7 @@ type RetrievalSpanData = {
   retrievedChunks: Array<Record<string, unknown>> | null
 }
 
-type TraceDetailData = {
+export type TraceDetailData = {
   id: string
   requestId: string
   traceId: string
@@ -75,24 +74,6 @@ type TraceDetailData = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const statusDot: Record<TraceStatus, string> = {
-  success: "bg-emerald-500",
-  failed:  "bg-red-500",
-  refusal: "bg-amber-500",
-}
-
-const statusText: Record<TraceStatus, string> = {
-  success: "text-emerald-400",
-  failed:  "text-red-400",
-  refusal: "text-amber-400",
-}
-
-const statusLabel: Record<TraceStatus, string> = {
-  success: "Success",
-  failed:  "Failed",
-  refusal: "Refusal",
-}
 
 function RetrievedChunks({ chunks }: { chunks: Array<Record<string, unknown>> }) {
   const [open, setOpen] = useState(false)
@@ -181,24 +162,6 @@ export function TraceDetailView({ trace }: { trace: TraceDetailData }) {
 
   return (
     <div className="min-h-full">
-      <PageHeader
-        title={trace.requestId}
-        description={`${trace.model} · ${trace.environment === "staging" ? "staging" : "production"} · ${trace.age}`}
-        right={
-          <div className="flex items-center gap-2">
-            <div className={cn("w-2 h-2 rounded-full shrink-0", statusDot[trace.status])} />
-            <span className={cn("text-xs font-medium", statusText[trace.status])}>
-              {statusLabel[trace.status]}
-            </span>
-            {trace.environment === "staging" && (
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-400 border border-violet-500/30 rounded px-1.5 py-0.5">
-                staging
-              </span>
-            )}
-          </div>
-        }
-      />
-
       <div className="p-6 space-y-6">
 
         {/* ── Back link ── */}
