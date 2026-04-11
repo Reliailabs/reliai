@@ -1,7 +1,13 @@
-import { getDashboardChanges, getDashboardTriage, getOrganizationUsageQuota } from "@/lib/api"
+import {
+  getDashboardChanges,
+  getDashboardTriage,
+  getOrganizationAlertDeliveries,
+  getOrganizationUsageQuota,
+} from "@/lib/api"
 import { requireOperatorSession } from "@/lib/auth"
 import { formatRelativeTime } from "@/lib/time"
 import {
+  DashboardAlertRow,
   DashboardView,
   type DashboardChangeRow,
   type DashboardIncidentRow,
@@ -18,10 +24,13 @@ export default async function DashboardPage() {
   const session = await requireOperatorSession()
   const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id
 
-  const [triage, changeFeed, usageQuota] = await Promise.all([
+  const [triage, changeFeed, usageQuota, alertDeliveries] = await Promise.all([
     getDashboardTriage(),
     getDashboardChanges(),
     orgId ? getOrganizationUsageQuota(orgId).catch(() => null) : Promise.resolve(null),
+    orgId
+      ? getOrganizationAlertDeliveries(orgId, { limit: 10 }).catch(() => ({ items: [] }))
+      : Promise.resolve({ items: [] }),
   ])
   const now = Date.now()
 
@@ -61,6 +70,14 @@ export default async function DashboardPage() {
     }
   })
 
+  const deliveries: DashboardAlertRow[] = alertDeliveries.items.map((delivery) => ({
+    id: delivery.id,
+    status: delivery.delivery_status,
+    channel: delivery.channel_type,
+    target: delivery.channel_target,
+    age: formatRelativeTime(delivery.sent_at ?? delivery.created_at, now),
+  }))
+
   return (
     <DashboardView
       openIncidents={openIncidents}
@@ -69,6 +86,7 @@ export default async function DashboardPage() {
       weeklyIncidents={weeklyIncidents}
       avgMttrMinutes={triage.context.avg_mttr_minutes ?? null}
       usageQuota={usageQuota}
+      alertDeliveries={deliveries}
     />
   )
 }
