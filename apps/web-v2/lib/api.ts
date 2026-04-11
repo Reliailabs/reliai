@@ -4,6 +4,7 @@ import type {
   AlertDeliveryListResponse,
   DeploymentListResponse,
   EscalationPolicyListResponse,
+  EvaluationUsageRead,
   IncidentCommandCenterRead,
   IncidentDetailRead,
   IncidentEventListResponse,
@@ -231,6 +232,18 @@ export async function getOrganization(organizationId: string) {
 export async function getOrganizationMembers(organizationId: string) {
   return request<OrganizationMemberListResponse>(
     `/api/v1/organizations/${organizationId}/members`
+  );
+}
+
+export async function getOrganizationEvaluationUsage(
+  organizationId: string,
+  options?: { window_days?: number }
+) {
+  const params = new URLSearchParams();
+  if (options?.window_days) params.set("window_days", String(options.window_days));
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<EvaluationUsageRead>(
+    `/api/v1/organizations/${organizationId}/evaluation-usage${query}`
   );
 }
 

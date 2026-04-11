@@ -110,6 +110,20 @@ export interface UsageQuotaStatusRead extends UsageQuotaRead {
   upgrade_prompt: UpgradePromptRead | null;
 }
 
+export interface EvaluationUsagePointRead {
+  date: string;
+  count: number;
+}
+
+export interface EvaluationUsageRead {
+  window_days: number;
+  total: number;
+  used_today: number;
+  limit: number | null;
+  percent_used: number | null;
+  daily: EvaluationUsagePointRead[];
+}
+
 export interface ProjectRead {
   id: string;
   organization_id: string;
