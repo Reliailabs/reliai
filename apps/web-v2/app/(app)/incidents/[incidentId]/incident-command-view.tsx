@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useTransition, useState } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -12,13 +12,27 @@ import {
   Shield,
   GitBranch,
   Activity,
+  Sparkles,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  RefreshCw,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { IncidentCommandCenterRead } from "@reliai/types"
+import type {
+  AiIncidentSummaryResponse,
+  AiRootCauseExplanationResponse,
+  AiTicketDraftResponse,
+  IncidentCommandCenterRead,
+} from "@reliai/types"
 import {
   acknowledgeIncident,
   resolveIncident,
   reopenIncident,
+  generateAiSummary,
+  generateAiRootCause,
+  generateAiTicketDraft,
 } from "./actions"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -132,6 +146,310 @@ function ActionButton({
     >
       {children}
     </button>
+  )
+}
+
+// ── AI Panel shell ────────────────────────────────────────────────────────────
+
+function AiPanel({
+  title,
+  icon: Icon,
+  defaultOpen = false,
+  children,
+}: {
+  title: string
+  icon: React.ElementType
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800/40 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Icon className="w-3.5 h-3.5 text-violet-400/70" />
+          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+            {title}
+          </span>
+          <span className="text-[10px] text-violet-400/50 font-mono">AI</span>
+        </div>
+        {open ? (
+          <ChevronUp className="w-3.5 h-3.5 text-zinc-600" />
+        ) : (
+          <ChevronDown className="w-3.5 h-3.5 text-zinc-600" />
+        )}
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  )
+}
+
+// ── AI Summary panel ──────────────────────────────────────────────────────────
+
+function AiSummaryPanel({ incidentId }: { incidentId: string }) {
+  const [result, setResult] = useState<AiIncidentSummaryResponse | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  function generate(regenerate = false) {
+    setError(null)
+    startTransition(() => {
+      generateAiSummary(incidentId, regenerate)
+        .then(setResult)
+        .catch(() => setError("Generation failed. Try again."))
+    })
+  }
+
+  return (
+    <AiPanel title="AI Summary" icon={Sparkles}>
+      {!result ? (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-zinc-600">Generate a plain-language incident summary.</p>
+          <button
+            onClick={() => generate()}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border border-violet-800/60 text-violet-400 hover:border-violet-700 hover:text-violet-300 transition-colors disabled:opacity-40"
+          >
+            {isPending ? (
+              <RefreshCw className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
+            Generate
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {result.status === "ok" && result.summary ? (
+            <>
+              <p className="text-sm text-zinc-300 leading-relaxed">{result.summary}</p>
+              {result.recommended_next_step && (
+                <p className="text-xs text-zinc-500 border-l-2 border-violet-500/30 pl-3 leading-relaxed">
+                  {result.recommended_next_step}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-zinc-600">
+              {result.status === "insufficient_evidence"
+                ? "Not enough evidence to generate a summary yet."
+                : "Summary unavailable."}
+            </p>
+          )}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => generate(true)}
+              disabled={isPending}
+              className="inline-flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors disabled:opacity-40"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Regenerate
+            </button>
+            {result.model && (
+              <span className="text-[10px] text-zinc-700 font-mono">
+                {result.model.model}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+    </AiPanel>
+  )
+}
+
+// ── AI Root Cause panel ───────────────────────────────────────────────────────
+
+function AiRootCausePanel({ incidentId }: { incidentId: string }) {
+  const [result, setResult] = useState<AiRootCauseExplanationResponse | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  function generate(regenerate = false) {
+    setError(null)
+    startTransition(() => {
+      generateAiRootCause(incidentId, regenerate)
+        .then(setResult)
+        .catch(() => setError("Generation failed. Try again."))
+    })
+  }
+
+  return (
+    <AiPanel title="AI Root Cause Explanation" icon={AlertTriangle}>
+      {!result ? (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-zinc-600">Deep-dive explanation of the root cause.</p>
+          <button
+            onClick={() => generate()}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border border-violet-800/60 text-violet-400 hover:border-violet-700 hover:text-violet-300 transition-colors disabled:opacity-40"
+          >
+            {isPending ? (
+              <RefreshCw className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
+            Generate
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {result.status === "ok" && result.explanation ? (
+            <>
+              <p className="text-sm text-zinc-300 leading-relaxed">{result.explanation}</p>
+              {result.what_to_check_next && (
+                <div className="rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                  <p className="text-[10px] text-amber-500/70 uppercase tracking-wider mb-1">
+                    What to check next
+                  </p>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    {result.what_to_check_next}
+                  </p>
+                </div>
+              )}
+              {result.is_stale && (
+                <p className="text-[10px] text-zinc-600 italic">
+                  This explanation may be outdated — regenerate for fresh analysis.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-zinc-600">
+              {result.status === "insufficient_evidence"
+                ? "Not enough evidence for a root cause explanation."
+                : "Explanation unavailable."}
+            </p>
+          )}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => generate(true)}
+              disabled={isPending}
+              className="inline-flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors disabled:opacity-40"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Regenerate
+            </button>
+            {result.model && (
+              <span className="text-[10px] text-zinc-700 font-mono">{result.model.model}</span>
+            )}
+          </div>
+        </div>
+      )}
+      {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+    </AiPanel>
+  )
+}
+
+// ── AI Ticket Draft panel ─────────────────────────────────────────────────────
+
+function AiTicketDraftPanel({ incidentId }: { incidentId: string }) {
+  const [result, setResult] = useState<AiTicketDraftResponse | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [destination, setDestination] = useState<"jira" | "github">("github")
+  const [copied, setCopied] = useState(false)
+
+  function generate(regenerate = false) {
+    setError(null)
+    startTransition(() => {
+      generateAiTicketDraft(incidentId, destination, regenerate)
+        .then(setResult)
+        .catch(() => setError("Generation failed. Try again."))
+    })
+  }
+
+  function copyToClipboard() {
+    if (!result?.title && !result?.body) return
+    const text = `${result.title ?? ""}\n\n${result.body ?? ""}`
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <AiPanel title="Draft Ticket" icon={FileText}>
+      {!result ? (
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-600">Generate a Jira or GitHub issue draft.</p>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded border border-zinc-800 overflow-hidden">
+              {(["github", "jira"] as const).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDestination(d)}
+                  className={cn(
+                    "px-2.5 py-1 text-xs font-medium transition-colors",
+                    destination === d
+                      ? "bg-zinc-800 text-zinc-200"
+                      : "text-zinc-600 hover:text-zinc-400",
+                  )}
+                >
+                  {d === "github" ? "GitHub" : "Jira"}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => generate()}
+              disabled={isPending}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border border-violet-800/60 text-violet-400 hover:border-violet-700 hover:text-violet-300 transition-colors disabled:opacity-40"
+            >
+              {isPending ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3" />
+              )}
+              Generate
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {result.status === "ok" && (result.title || result.body) ? (
+            <>
+              {result.title && (
+                <p className="text-sm font-medium text-zinc-100">{result.title}</p>
+              )}
+              {result.body && (
+                <pre className="text-xs text-zinc-400 whitespace-pre-wrap leading-relaxed bg-zinc-950/60 rounded border border-zinc-800 p-3 max-h-64 overflow-y-auto font-mono">
+                  {result.body}
+                </pre>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-zinc-600">
+              {result.status === "insufficient_evidence"
+                ? "Not enough evidence to draft a ticket."
+                : "Draft unavailable."}
+            </p>
+          )}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={copyToClipboard}
+              className="inline-flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              <Copy className="w-3 h-3" />
+              {copied ? "Copied!" : "Copy"}
+            </button>
+            <button
+              onClick={() => generate(true)}
+              disabled={isPending}
+              className="inline-flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors disabled:opacity-40"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Regenerate
+            </button>
+            {result.model && (
+              <span className="text-[10px] text-zinc-700 font-mono">{result.model.model}</span>
+            )}
+          </div>
+        </div>
+      )}
+      {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+    </AiPanel>
   )
 }
 
@@ -483,6 +801,11 @@ export function IncidentCommandView({ incidentId, command }: Props) {
               </p>
             )}
           </div>
+
+          {/* AI panels */}
+          <AiSummaryPanel incidentId={incidentId} />
+          <AiRootCausePanel incidentId={incidentId} />
+          <AiTicketDraftPanel incidentId={incidentId} />
 
           {/* Mitigations */}
           {command.recommended_mitigations.length > 0 && (
