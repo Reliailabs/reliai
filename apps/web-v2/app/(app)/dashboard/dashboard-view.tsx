@@ -1,5 +1,5 @@
 import Link from "next/link"
-import type { UsageQuotaStatusRead } from "@reliai/types"
+import type { EvaluationUsageRead, UsageQuotaStatusRead } from "@reliai/types"
 import { ChevronRight, Rocket, FileText, Box } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { SeverityBadge } from "@/components/ui/severity-badge"
@@ -64,6 +64,7 @@ export function DashboardView({
   avgMttrMinutes,
   usageQuota,
   alertDeliveries,
+  evaluationUsage,
 }: {
   openIncidents: DashboardIncidentRow[]
   unacknowledgedCount: number
@@ -72,24 +73,23 @@ export function DashboardView({
   avgMttrMinutes: number | null
   usageQuota: UsageQuotaStatusRead | null
   alertDeliveries: DashboardAlertRow[]
+  evaluationUsage: EvaluationUsageRead | null
 }) {
   const maxIncidents = Math.max(0, ...weeklyIncidents.map((d) => d.count))
   const traceUsageUsed = usageQuota?.usage_status?.used ?? null
   const traceUsageLimit =
     usageQuota?.max_traces_per_day ?? usageQuota?.usage_status?.limit ?? null
-  const traceUsagePercent =
+  const traceUsagePercent = normalizePercent(
     usageQuota?.usage_status?.percent_used ??
-    (traceUsageUsed !== null && traceUsageLimit ? (traceUsageUsed / traceUsageLimit) * 100 : null)
+      (traceUsageUsed !== null && traceUsageLimit ? traceUsageUsed / traceUsageLimit : null)
+  )
   const traceUsagePercentClamped = traceUsagePercent
     ? Math.min(100, Math.max(0, traceUsagePercent))
     : 0
 
-  const evalUsageUsed = usageQuota?.usage_status?.projected_usage ?? null
-  const evalUsageLimit = usageQuota?.max_api_requests ?? null
-  const evalUsagePercent =
-    evalUsageUsed !== null && evalUsageLimit
-      ? (evalUsageUsed / evalUsageLimit) * 100
-      : null
+  const evalUsageUsed = evaluationUsage?.used_today ?? null
+  const evalUsageLimit = evaluationUsage?.limit ?? null
+  const evalUsagePercent = normalizePercent(evaluationUsage?.percent_used ?? null)
   const evalUsagePercentClamped = evalUsagePercent
     ? Math.min(100, Math.max(0, evalUsagePercent))
     : 0
@@ -419,6 +419,11 @@ function StatusRow({
       </span>
     </div>
   )
+}
+
+function normalizePercent(value: number | null) {
+  if (value === null || value === undefined) return null
+  return value > 1 ? value : value * 100
 }
 
 function UsageRow({
