@@ -48,6 +48,15 @@ export default async function RegressionsPage({
         .filter((value) => Number.isFinite(value))
         .map((value) => ({ value }))
 
+      // Extract baselineVersion and model from metadata_json
+      const metadata = regression.metadata_json ?? {}
+      const baselineVersion = typeof metadata.baseline_version === "string" ? metadata.baseline_version :
+                            typeof metadata.baseline_prompt_version === "string" ? metadata.baseline_prompt_version :
+                            "—"
+      const model = typeof metadata.model === "string" ? metadata.model :
+                   typeof metadata.model_name === "string" ? metadata.model_name :
+                   "—"
+
       return {
         id: regression.id,
         name: regression.metric_name,
@@ -60,9 +69,9 @@ export default async function RegressionsPage({
         severity,
         sparkline,
         detectedAt: formatRelativeTime(regression.detected_at, now),
-        baselineVersion: "—",
+        baselineVersion,
         promptVersion: regression.scope_type === "prompt_version" ? regression.scope_id : "—",
-        model: "—",
+        model,
         scopeType: regression.scope_type,
         scopeId: regression.scope_id,
         windowMinutes: regression.window_minutes,

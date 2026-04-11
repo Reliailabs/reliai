@@ -7,8 +7,14 @@ import { SeverityBadge } from "@/components/ui/severity-badge"
 import { MetricTile } from "@/components/metric-tile"
 import { Sparkline } from "@/components/charts/sparkline"
 import { cn } from "@/lib/utils"
+import type {
+  GuardrailMetrics,
+  TimelineResponse,
+  ModelVersionListResponse,
+  ModelVersionRead,
+} from "@reliai/types"
 
-type Tab = "overview" | "control" | "guardrails"
+type Tab = "overview" | "control" | "guardrails" | "models"
 type Severity = "critical" | "high" | "medium" | "low"
 
 type ProjectDetailData = {
@@ -66,10 +72,18 @@ export function ProjectDetailView({
   project,
   guardrailPolicies,
   openIncidents,
+  guardrailMetrics,
+  cost,
+  timeline,
+  modelVersions,
 }: {
   project: ProjectDetailData
   guardrailPolicies: GuardrailPolicyRow[]
   openIncidents: ProjectIncidentRow[]
+  guardrailMetrics: GuardrailMetrics | null
+  cost: any | null // eslint-disable-line @typescript-eslint/no-explicit-any
+  timeline: TimelineResponse | null
+  modelVersions: ModelVersionListResponse | null
 }) {
   const [tab, setTab] = useState<Tab>("overview")
 
@@ -87,6 +101,7 @@ export function ProjectDetailView({
     { key: "overview", label: "Overview" },
     { key: "control",  label: "Control Panel" },
     { key: "guardrails", label: "Guardrails" },
+    { key: "models", label: "Models" },
   ]
 
   return (
@@ -150,6 +165,23 @@ export function ProjectDetailView({
               <MetricTile
                 label="Traces / day"
                 value={project.tracesPerDay}
+                tone="neutral"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <MetricTile
+                label="Guardrail Actions"
+                value={guardrailMetrics?.recent_events?.length?.toLocaleString() ?? "0"}
+                tone="neutral"
+              />
+              <MetricTile
+                label="Total Cost"
+                value={cost?.total_cost != null ? `$${cost.total_cost.toFixed(2)}` : "—"}
+                tone="neutral"
+              />
+              <MetricTile
+                label="Timeline Events"
+                value={timeline?.items?.length?.toLocaleString() ?? "0"}
                 tone="neutral"
               />
             </div>
@@ -364,6 +396,42 @@ export function ProjectDetailView({
               })}
             </div>
           </>
+        )}
+
+        {tab === "models" && modelVersions && (
+          <div className="space-y-4">
+            <div className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest mb-3">
+              Model Versions
+            </div>
+            {modelVersions.items && modelVersions.items.length > 0 ? (
+              <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                <div className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                  <div>Model Version</div>
+                  <div>Model Name</div>
+                  <div>Provider</div>
+                  <div className="text-right">Created</div>
+                </div>
+                <div className="divide-y divide-zinc-800/40">
+                  {modelVersions.items.map((mv: ModelVersionRead) => (
+                    <div key={mv.id} className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
+                      <div className="text-sm font-medium text-zinc-100">{mv.model_version ?? "—"}</div>
+                      <div className="text-sm text-zinc-400">{mv.model_name}</div>
+                      <div className="text-sm text-zinc-500">{mv.provider ?? "—"}</div>
+                      <div className="text-right">
+                        <span className="text-xs text-zinc-600">
+                          {new Date(mv.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+                No model versions found
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

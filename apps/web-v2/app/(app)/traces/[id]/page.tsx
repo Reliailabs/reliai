@@ -1,4 +1,4 @@
-import { getTraceDetail, getTraceGraph, getTraceGraphAnalysis } from "@/lib/api"
+import { getTraceDetail, getTraceGraph, getTraceGraphAnalysis, getTraceSummary, getTraceCompare, getTraceReplay } from "@/lib/api"
 import { formatRelativeTime } from "@/lib/time"
 import { TraceDetailTabs } from "./trace-detail-tabs"
 import { PageHeader } from "@/components/ui/page-header"
@@ -11,10 +11,13 @@ export default async function TraceDetailPage({
 }) {
   const { id } = await params
 
-  const [trace, graph, analysis] = await Promise.all([
+  const [trace, graph, analysis, summary, compare, replay] = await Promise.all([
     getTraceDetail(id),
     getTraceGraph(id).catch(() => null),
     getTraceGraphAnalysis(id).catch(() => null),
+    getTraceSummary(id).catch(() => null),
+    getTraceCompare(id).catch(() => null),
+    getTraceReplay(id).catch(() => null),
   ])
 
   const now = Date.now()
@@ -136,6 +139,9 @@ export default async function TraceDetailPage({
         }}
         graph={graph}
         analysis={analysis}
+        summary={summary}
+        compare={compare}
+        replay={replay}
       />
     </>
   )

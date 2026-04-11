@@ -2,8 +2,13 @@ import {
   getOrganizationPolicies,
   getProject,
   getProjectReliability,
+  getProjectGuardrailMetrics,
+  getProjectCost,
+  getProjectTimeline,
+  getProjectModelVersions,
   getIncidents,
 } from "@/lib/api"
+import type { OrganizationGuardrailPolicyRead } from "@reliai/types"
 import { requireOperatorSession } from "@/lib/auth"
 import { formatRelativeTime } from "@/lib/time"
 import { ProjectDetailView, type GuardrailPolicyRow, type ProjectIncidentRow } from "./project-detail-view"
@@ -19,13 +24,25 @@ export default async function ProjectDetailPage({
   const orgId = session.active_organization_id ?? project.organization_id
   const now = Date.now()
 
-  const [policiesResponse, reliability, incidentsResponse] = await Promise.all([
+  const [
+    policiesResponse,
+    reliability,
+    incidentsResponse,
+    guardrailMetrics,
+    cost,
+    timeline,
+    modelVersions,
+  ] = await Promise.all([
     getOrganizationPolicies(orgId),
     getProjectReliability(id).catch(() => null),
     getIncidents({ project_id: id, status: "open", limit: 25 }).catch(() => ({ items: [] as never[] })),
+    getProjectGuardrailMetrics(id).catch(() => null),
+    getProjectCost(id).catch(() => null),
+    getProjectTimeline(id).catch(() => null),
+    getProjectModelVersions(id).catch(() => null),
   ])
 
-  const guardrailPolicies: GuardrailPolicyRow[] = policiesResponse.items.map((policy) => ({
+  const guardrailPolicies: GuardrailPolicyRow[] = policiesResponse.items.map((policy: OrganizationGuardrailPolicyRead) => ({
     id: policy.id,
     name: policy.policy_type.replace(/_/g, " "),
     type: policy.policy_type,
@@ -60,6 +77,10 @@ export default async function ProjectDetailPage({
       }}
       guardrailPolicies={guardrailPolicies}
       openIncidents={openIncidents}
+      guardrailMetrics={guardrailMetrics}
+      cost={cost}
+      timeline={timeline}
+      modelVersions={modelVersions}
     />
   )
 }
