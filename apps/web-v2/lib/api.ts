@@ -23,6 +23,8 @@ import type {
   RegressionHistoryRead,
   RegressionListResponse,
   TraceDetailRead,
+  TraceGraphAnalysisRead,
+  TraceGraphRead,
   TraceListResponse,
   TraceReplayRead,
   UsageQuotaStatusRead,
@@ -162,6 +164,14 @@ export async function getTraceDetail(traceId: string) {
 
 export async function getTraceReplay(traceId: string) {
   return request<TraceReplayRead>(`/api/v1/traces/${traceId}/replay`);
+}
+
+export async function getTraceGraph(traceId: string) {
+  return request<TraceGraphRead>(`/api/v1/traces/${traceId}/graph`);
+}
+
+export async function getTraceGraphAnalysis(traceId: string) {
+  return request<TraceGraphAnalysisRead>(`/api/v1/traces/${traceId}/analysis`);
 }
 
 export async function getProjects() {
