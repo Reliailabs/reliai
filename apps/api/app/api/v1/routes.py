@@ -3200,17 +3200,19 @@ def get_project_reliability_endpoint(
 @router.get("/projects/{project_id}/slos", response_model=ProjectSLOListResponse)
 def list_project_slos_endpoint(
     project_id: UUID,
+    window_days: int | None = Query(default=None, ge=7, le=365),
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> ProjectSLOListResponse:
     slos = list_project_slos(db, operator, project_id=project_id)
     items: list[ProjectSLORead] = []
     for slo in slos:
+        effective_window = window_days if window_days is not None else slo.window_days
         current = compute_slo_current_value(
             db,
             project_id=project_id,
             metric_type=slo.metric_type,
-            window_days=slo.window_days,
+            window_days=effective_window,
         )
         status = compute_slo_status(current, slo.target_value) if current is not None else None
         trend = status_to_trend(status) if status is not None else None
