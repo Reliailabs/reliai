@@ -168,6 +168,10 @@ export async function getIncidentInvestigation(incidentId: string) {
   return request<IncidentInvestigationRead>(`/api/v1/incidents/${incidentId}/investigation`);
 }
 
+export async function getIncidentTraceCompare(incidentId: string) {
+  return request<TraceComparisonRead>(`/api/v1/incidents/${incidentId}/compare`);
+}
+
 export async function getIncidentEvents(incidentId: string) {
   return request<IncidentEventListResponse>(`/api/v1/incidents/${incidentId}/events`);
 }

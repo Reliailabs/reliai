@@ -26,6 +26,7 @@ All notable changes to Reliai will be documented in this file.
 - Reliability intelligence page with high‑risk patterns, model reliability, prompt failures, and guardrail recommendations.
   - Advanced project subpages: guardrail configuration, custom‑metric dashboards, ingestion‑pipeline views, processor management, and project settings (web‑v2 Tier‑3).
   - Internal system operator pages: customer expansion, reliability intelligence, platform health, event pipeline telemetry, customer reliability dashboard, and system growth analytics (web‑v2 Tier‑4).
+  - Missing incident pages: trace compare and investigation views (web‑v2 parity).
 
 ### Changed
 
