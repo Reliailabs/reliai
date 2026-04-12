@@ -10,11 +10,15 @@ import { cn } from "@/lib/utils"
 import type {
   GuardrailMetrics,
   TimelineResponse,
+  TimelineEventRead,
   ModelVersionListResponse,
   ModelVersionRead,
+  ProjectReliabilityRead,
+  DeploymentListResponse,
+  DeploymentRead,
 } from "@reliai/types"
 
-type Tab = "overview" | "control" | "guardrails" | "models"
+type Tab = "overview" | "control" | "guardrails" | "models" | "timeline" | "reliability" | "deployments" | "metrics" | "ingestion" | "processors" | "settings"
 type Severity = "critical" | "high" | "medium" | "low"
 
 type ProjectDetailData = {
@@ -75,6 +79,8 @@ export function ProjectDetailView({
   guardrailMetrics,
   cost,
   timeline,
+  reliability,
+  deployments,
   modelVersions,
 }: {
   project: ProjectDetailData
@@ -83,6 +89,8 @@ export function ProjectDetailView({
   guardrailMetrics: GuardrailMetrics | null
   cost: any | null // eslint-disable-line @typescript-eslint/no-explicit-any
   timeline: TimelineResponse | null
+  reliability: ProjectReliabilityRead | null
+  deployments: DeploymentListResponse | null
   modelVersions: ModelVersionListResponse | null
 }) {
   const [tab, setTab] = useState<Tab>("overview")
@@ -99,9 +107,16 @@ export function ProjectDetailView({
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
+    { key: "timeline", label: "Timeline" },
     { key: "control",  label: "Control Panel" },
+    { key: "reliability", label: "Reliability" },
     { key: "guardrails", label: "Guardrails" },
     { key: "models", label: "Models" },
+    { key: "deployments", label: "Deployments" },
+    { key: "metrics", label: "Metrics" },
+    { key: "ingestion", label: "Ingestion" },
+    { key: "processors", label: "Processors" },
+    { key: "settings", label: "Settings" },
   ]
 
   return (
@@ -396,6 +411,185 @@ export function ProjectDetailView({
               })}
             </div>
           </>
+        )}
+
+        {tab === "timeline" && timeline && (
+          <div className="space-y-4">
+            <div className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest mb-3">
+              Timeline Events
+            </div>
+            {timeline.items && timeline.items.length > 0 ? (
+              <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                <div className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                  <div>Time</div>
+                  <div>Event Type</div>
+                  <div>Environment</div>
+                  <div className="text-right">Details</div>
+                </div>
+                <div className="divide-y divide-zinc-800/40">
+                    {timeline.items.map((event: TimelineEventRead, index) => (
+                     <div
+                       key={index}
+                       className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors"
+                     >
+                       <div className="text-sm text-zinc-400">
+                         {new Date(event.timestamp).toLocaleString()}
+                      </div>
+                      <div className="text-sm font-medium text-zinc-100">
+                        {event.event_type}
+                      </div>
+                       <div className="text-sm text-zinc-500">
+                         {(event as TimelineEventRead & { environment?: string }).environment ?? "—"}
+                       </div>
+                      <div className="text-right">
+                        <span className="text-xs text-zinc-600">
+                           {event.metadata ? "View" : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+                No timeline events found
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "reliability" && (
+          <div className="space-y-4">
+            <div className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest mb-3">
+              Reliability Metrics
+            </div>
+            {reliability ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                  <div className="text-xs font-medium text-zinc-400">Quality Pass Rate</div>
+                  <div className="text-2xl font-semibold text-zinc-100 mt-1">
+                    {reliability.quality_pass_rate != null ? `${(reliability.quality_pass_rate * 100).toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                  <div className="text-xs font-medium text-zinc-400">Detection Latency p90</div>
+                  <div className="text-2xl font-semibold text-zinc-100 mt-1">
+                    {reliability.detection_latency_p90 != null ? `${reliability.detection_latency_p90} ms` : "—"}
+                  </div>
+                </div>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                   <div className="text-xs font-medium text-zinc-400">Detection Latency p90</div>
+                  <div className="text-2xl font-semibold text-zinc-100 mt-1">
+                     {reliability.detection_latency_p90 != null ? `${reliability.detection_latency_p90} ms` : "—"}
+                  </div>
+                </div>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                   <div className="text-xs font-medium text-zinc-400">Quality Pass Rate</div>
+                   <div className="text-2xl font-semibold text-zinc-100 mt-1">
+                     {reliability.quality_pass_rate != null ? `${(reliability.quality_pass_rate * 100).toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                   <div className="text-xs font-medium text-zinc-400">Traces (24h)</div>
+                   <div className="text-2xl font-semibold text-zinc-100 mt-1">
+                     {reliability.traces_last_24h != null ? `${reliability.traces_last_24h.toLocaleString()}` : "—"}
+                  </div>
+                </div>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                   <div className="text-xs font-medium text-zinc-400">Structured Output Validity</div>
+                   <div className="text-2xl font-semibold text-zinc-100 mt-1">
+                     {reliability.structured_output_validity_rate != null ? `${(reliability.structured_output_validity_rate * 100).toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+                No reliability data available
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "deployments" && (
+          <div className="space-y-4">
+            <div className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest mb-3">
+              Deployments
+            </div>
+            {deployments && deployments.items && deployments.items.length > 0 ? (
+              <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                <div className="grid grid-cols-5 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                  <div>Environment</div>
+                  <div>Deployed At</div>
+                  <div>Prompt Version</div>
+                  <div>Model Version</div>
+                  <div className="text-right">Status</div>
+                </div>
+                 <div className="divide-y divide-zinc-800/40">
+                    {deployments.items.map((deployment: DeploymentRead) => (
+                     <Link
+                       key={deployment.id}
+                       href={`/deployments/${deployment.id}`}
+                       className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors"
+                     >
+                       <div className="text-sm font-medium text-zinc-100">
+                         {deployment.environment}
+                       </div>
+                       <div className="text-sm text-zinc-400">
+                         {new Date(deployment.deployed_at).toLocaleString()}
+                       </div>
+                       <div className="text-sm text-zinc-500">
+                         {deployment.prompt_version_id ? (
+                           <Link href={`/prompt-versions/${deployment.prompt_version_id}?projectId=${project.id}`} className="hover:text-zinc-300" onClick={(e) => e.stopPropagation()}>
+                             {deployment.prompt_version_id.slice(0, 8)}
+                           </Link>
+                         ) : "—"}
+                       </div>
+                       <div className="text-sm text-zinc-500">
+                         {deployment.model_version_id ? (
+                           <Link href={`/model-versions/${deployment.model_version_id}?projectId=${project.id}`} className="hover:text-zinc-300" onClick={(e) => e.stopPropagation()}>
+                             {deployment.model_version_id.slice(0, 8)}
+                           </Link>
+                         ) : "—"}
+                       </div>
+                       <div className="text-right">
+                         <span className="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400">
+                           deployed
+                         </span>
+                       </div>
+                     </Link>
+                   ))}
+                 </div>
+              </div>
+            ) : (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+                No deployments found
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "metrics" && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+            Metrics dashboard — coming soon
+          </div>
+        )}
+
+        {tab === "ingestion" && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+            Ingestion stats — coming soon
+          </div>
+        )}
+
+        {tab === "processors" && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+            Processor status — coming soon
+          </div>
+        )}
+
+        {tab === "settings" && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
+            Project settings — coming soon
+          </div>
         )}
 
         {tab === "models" && modelVersions && (
