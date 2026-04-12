@@ -120,6 +120,20 @@ export function ProjectDetailView({
     { key: "settings", label: "Settings" },
   ]
 
+  const tabHrefs: Record<Tab, string> = {
+    overview: "",
+    timeline: `/projects/${project.id}/timeline`,
+    control: `/projects/${project.id}/control`,
+    reliability: `/projects/${project.id}/reliability`,
+    guardrails: `/projects/${project.id}/guardrails`,
+    models: "",
+    deployments: `/projects/${project.id}/deployments`,
+    metrics: `/projects/${project.id}/metrics`,
+    ingestion: `/projects/${project.id}/ingestion`,
+    processors: `/projects/${project.id}/processors`,
+    settings: `/projects/${project.id}/settings`,
+  }
+
   return (
     <div className="min-h-full">
       <PageHeader
@@ -148,20 +162,38 @@ export function ProjectDetailView({
       />
 
       <div className="flex gap-0 border-b border-zinc-800 px-6">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "px-4 py-3 text-sm font-medium transition-colors -mb-px",
-              tab === t.key
-                ? "text-zinc-100 border-b-2 border-zinc-200"
-                : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent"
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
+        {tabs.map((t) => {
+          const href = tabHrefs[t.key]
+          const isExternal = href !== ""
+          const isActive = tab === t.key
+          return isExternal ? (
+            <Link
+              key={t.key}
+              href={href}
+              className={cn(
+                "px-4 py-3 text-sm font-medium transition-colors -mb-px",
+                isActive
+                  ? "text-zinc-100 border-b-2 border-zinc-200"
+                  : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent"
+              )}
+            >
+              {t.label}
+            </Link>
+          ) : (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "px-4 py-3 text-sm font-medium transition-colors -mb-px",
+                isActive
+                  ? "text-zinc-100 border-b-2 border-zinc-200"
+                  : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent"
+              )}
+            >
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
       <div className="p-6 space-y-6">
