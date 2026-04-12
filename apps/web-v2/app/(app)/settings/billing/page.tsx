@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/ui/page-header";
+import { UsageMeter } from "@/components/ui/usage-meter";
 import { getOrganization, getOrganizationUsageQuota, billingCheckout } from "@/lib/api";
 import { requireOperatorSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -112,22 +113,15 @@ export default async function BillingPage() {
                 </p>
               </div>
             </div>
-            {usageStatus && organization && (
-              <div className="mt-6">
-                {/* TODO: replace with UsageMeter component if exists */}
-                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500"
-                    style={{ width: `${Math.min(100, (usageStatus.used / limit) * 100)}%` }}
-                  />
-                </div>
-                {limit > 0 && projected > limit && (
-                  <p className="mt-4 text-sm text-zinc-300">
-                    At your current rate, you will exceed your plan before month end.
-                  </p>
-                )}
-              </div>
-            )}
+             {usageStatus && organization && (
+               <div className="mt-6">
+                 <UsageMeter
+                   used={usageStatus.used}
+                   limit={limit}
+                   projected={projected}
+                 />
+               </div>
+             )}
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
