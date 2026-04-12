@@ -12,6 +12,10 @@ const config: Config = {
         sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
+      colors: {
+        ink: "#111827",
+        steel: "#4b5563",
+      },
     },
   },
   plugins: [],

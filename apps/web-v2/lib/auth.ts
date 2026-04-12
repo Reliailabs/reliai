@@ -79,6 +79,14 @@ export async function requireOperatorSession(): Promise<OperatorSession> {
   return session;
 }
 
+export async function requireSystemAdminSession(): Promise<OperatorSession> {
+  const session = await requireOperatorSession();
+  if (!session.operator.is_system_admin) {
+    redirect("/dashboard");
+  }
+  return session;
+}
+
 export async function signOut(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
