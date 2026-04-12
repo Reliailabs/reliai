@@ -6,6 +6,7 @@ import {
   getProjectCost,
   getProjectTimeline,
   getProjectModelVersions,
+  getProjectDeployments,
   getIncidents,
 } from "@/lib/api"
 import type { OrganizationGuardrailPolicyRead } from "@reliai/types"
@@ -31,6 +32,7 @@ export default async function ProjectDetailPage({
     guardrailMetrics,
     cost,
     timeline,
+    deployments,
     modelVersions,
   ] = await Promise.all([
     getOrganizationPolicies(orgId),
@@ -39,6 +41,7 @@ export default async function ProjectDetailPage({
     getProjectGuardrailMetrics(id).catch(() => null),
     getProjectCost(id).catch(() => null),
     getProjectTimeline(id).catch(() => null),
+    getProjectDeployments(id).catch(() => null),
     getProjectModelVersions(id).catch(() => null),
   ])
 
@@ -80,6 +83,8 @@ export default async function ProjectDetailPage({
       guardrailMetrics={guardrailMetrics}
       cost={cost}
       timeline={timeline}
+      reliability={reliability}
+      deployments={deployments}
       modelVersions={modelVersions}
     />
   )

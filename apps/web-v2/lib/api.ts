@@ -33,6 +33,9 @@ import type {
   TimelineResponse,
   ModelVersionListResponse,
   ModelVersionDetailRead,
+  DeploymentDetailRead,
+  PromptVersionDetailRead,
+  RegressionDetailRead,
   UsageQuotaStatusRead,
 } from "@reliai/types";
 
@@ -357,6 +360,20 @@ export async function billingCheckout(organizationId: string, plan: string) {
     method: "POST",
     body: JSON.stringify({ organization_id: organizationId, plan }),
   });
+}
+
+export async function getDeploymentDetail(deploymentId: string) {
+  return request<DeploymentDetailRead>(`/api/v1/deployments/${deploymentId}`);
+}
+
+export async function getPromptVersionDetail(projectId: string, promptVersionId: string) {
+  return request<PromptVersionDetailRead>(
+    `/api/v1/projects/${projectId}/prompt-versions/${promptVersionId}`
+  );
+}
+
+export async function getRegressionDetail(regressionId: string) {
+  return request<RegressionDetailRead>(`/api/v1/regressions/${regressionId}`);
 }
 
 export async function getModelVersionDetail(projectId: string, modelVersionId: string) {
