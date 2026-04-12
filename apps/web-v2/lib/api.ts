@@ -2,9 +2,13 @@ import "server-only";
 
 import type {
   AlertDeliveryListResponse,
+  CustomerReliabilityDetailRead, EventPipelineRead,
+  CustomerReliabilityListRead,
   DeploymentListResponse,
   EscalationPolicyListResponse,
   EvaluationUsageRead,
+  GlobalReliabilityPatternListResponse,
+  GraphGuardrailRecommendationListResponse,
   IncidentCommandCenterRead,
   IncidentDetailRead,
   IncidentEventListResponse,
@@ -14,12 +18,21 @@ import type {
   OrganizationMemberListResponse,
   OrganizationRead,
   OrganizationGuardrailPolicyListResponse,
+  PlatformExtensionListResponse,
+  PlatformMetricsRead,
   ProjectListResponse,
   ProjectReliabilityRead,
+  ProjectReliabilityControlPanel,
   ProjectRead,
   ProjectSLOListResponse,
   ProjectCustomMetricListResponse,
   ProjectCustomMetricRead,
+  ReliabilityGraphOverviewRead,
+  ReliabilityGraphPatternListResponse,
+  ReliabilityPatternListResponse,
+  ReliabilityPatternRead,
+  SystemCustomerExpansionRead,
+  SystemGrowthRead,
   TraceIngestionPolicyRead,
   ExternalProcessorListResponse,
   ExternalProcessorRead,
@@ -208,8 +221,18 @@ export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
 }
 
-export async function getProjectReliability(projectId: string) {
-  return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability`);
+export async function getProjectReliability(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<ProjectReliabilityRead>(`/api/v1/projects/${projectId}/reliability${query ? `?${query}` : ""}`);
+}
+
+export async function getProjectReliabilityControlPanel(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<ProjectReliabilityControlPanel>(`/api/v1/projects/${projectId}/control-panel${query ? `?${query}` : ""}`);
 }
 
 export async function getProjectSLOs(
@@ -228,8 +251,11 @@ export async function getOrganizationPolicies(organizationId: string) {
   );
 }
 
-export async function getProjectDeployments(projectId: string) {
-  return request<DeploymentListResponse>(`/api/v1/projects/${projectId}/deployments`);
+export async function getProjectDeployments(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<DeploymentListResponse>(`/api/v1/projects/${projectId}/deployments${query ? `?${query}` : ""}`);
 }
 
 export async function getProjectRegressions(
@@ -238,6 +264,18 @@ export async function getProjectRegressions(
 ) {
   const params = new URLSearchParams();
   if (options?.metric_name) params.set("metric_name", options.metric_name);
+  if (options?.limit) params.set("limit", String(options.limit));
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<RegressionListResponse>(`/api/v1/projects/${projectId}/regressions${query}`);
+}
+
+export async function getProjectRegressionsFiltered(
+  projectId: string,
+  options?: { metricName?: string; scopeId?: string; limit?: number }
+) {
+  const params = new URLSearchParams();
+  if (options?.metricName) params.set("metric_name", options.metricName);
+  if (options?.scopeId) params.set("scope_id", options.scopeId);
   if (options?.limit) params.set("limit", String(options.limit));
   const query = params.size ? `?${params.toString()}` : "";
   return request<RegressionListResponse>(`/api/v1/projects/${projectId}/regressions${query}`);
@@ -254,9 +292,10 @@ export async function getProjectCost(projectId: string) {
   return request<any>(`/api/v1/projects/${projectId}/cost`); // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
-export async function getProjectTimeline(projectId: string, options?: { environment?: string }) {
+export async function getProjectTimeline(projectId: string, options?: { environment?: string; limit?: number }) {
   const params = new URLSearchParams();
   if (options?.environment) params.set("environment", options.environment);
+  if (options?.limit) params.set("limit", String(options.limit));
   const query = params.size ? `?${params.toString()}` : "";
   return request<TimelineResponse>(`/api/v1/projects/${projectId}/timeline${query}`);
 }
@@ -491,6 +530,62 @@ export async function updateProject(
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+}
+
+export async function getSystemGrowth() {
+  return request<SystemGrowthRead>(`/api/v1/system/growth`);
+}
+
+export async function getSystemCustomerExpansion() {
+  return request<SystemCustomerExpansionRead>(`/api/v1/system/customer-expansion`);
+}
+
+export async function getSystemPlatform() {
+  return request<PlatformMetricsRead>(`/api/v1/system/platform`);
+}
+
+export async function getSystemEventPipeline() {
+  return request<{ pipeline: EventPipelineRead }>(`/api/v1/system/event-pipeline`);
+}
+
+export async function getSystemExtensions() {
+  return request<PlatformExtensionListResponse>(`/api/v1/system/extensions`);
+}
+
+export async function getSystemCustomers() {
+  return request<CustomerReliabilityListRead>(`/api/v1/system/customers`);
+}
+
+export async function getSystemCustomerDetail(projectId: string) {
+  return request<CustomerReliabilityDetailRead>(`/api/v1/system/customers/${projectId}`);
+}
+
+export async function getReliabilityPatterns() {
+  return request<ReliabilityPatternListResponse>(`/api/v1/intelligence/patterns`);
+}
+
+export async function getReliabilityGraphOverview() {
+  return request<ReliabilityGraphOverviewRead>(`/api/v1/intelligence/graph`);
+}
+
+export async function getReliabilityGraphHighRiskPatterns() {
+  return request<ReliabilityGraphPatternListResponse>(`/api/v1/intelligence/high-risk-patterns`);
+}
+
+export async function getReliabilityGraphGuardrailRecommendations() {
+  return request<GraphGuardrailRecommendationListResponse>(`/api/v1/intelligence/guardrail-recommendations`);
+}
+
+export async function getSystemGlobalIntelligence() {
+  return request<ReliabilityGraphPatternListResponse>(`/api/v1/system/global-intelligence`);
+}
+
+export async function getGlobalReliabilityPatterns() {
+  return request<GlobalReliabilityPatternListResponse>(`/api/v1/intelligence/global-patterns`);
+}
+
+export async function getReliabilityPattern(patternId: string) {
+  return request<ReliabilityPatternRead>(`/api/v1/intelligence/patterns/${patternId}`);
 }
 
 export async function updateOrganization(organizationId: string, data: { name?: string; slug?: string }) {
