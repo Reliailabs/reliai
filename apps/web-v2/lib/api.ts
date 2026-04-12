@@ -18,6 +18,11 @@ import type {
   ProjectReliabilityRead,
   ProjectRead,
   ProjectSLOListResponse,
+  ProjectCustomMetricListResponse,
+  ProjectCustomMetricRead,
+  TraceIngestionPolicyRead,
+  ExternalProcessorListResponse,
+  ExternalProcessorRead,
   PromptDiffRead,
   PromptVersionListResponse,
   RegressionHistoryRead,
@@ -238,8 +243,11 @@ export async function getProjectRegressions(
   return request<RegressionListResponse>(`/api/v1/projects/${projectId}/regressions${query}`);
 }
 
-export async function getProjectGuardrailMetrics(projectId: string) {
-  return request<GuardrailMetrics>(`/api/v1/projects/${projectId}/guardrail-metrics`);
+export async function getProjectGuardrailMetrics(projectId: string, environment?: string) {
+  const params = new URLSearchParams();
+  if (environment) params.set("environment", environment);
+  const query = params.toString();
+  return request<GuardrailMetrics>(`/api/v1/projects/${projectId}/guardrail-metrics${query ? `?${query}` : ""}`);
 }
 
 export async function getProjectCost(projectId: string) {
@@ -378,6 +386,111 @@ export async function getRegressionDetail(regressionId: string) {
 
 export async function getModelVersionDetail(projectId: string, modelVersionId: string) {
   return request<ModelVersionDetailRead>(`/api/v1/projects/${projectId}/model-versions/${modelVersionId}`);
+}
+
+export async function getProjectIngestionPolicy(projectId: string) {
+  return request<TraceIngestionPolicyRead>(`/api/v1/projects/${projectId}/ingestion-policy`);
+}
+
+export async function updateProjectIngestionPolicy(
+  projectId: string,
+  payload: {
+    sampling_success_rate: number;
+    sampling_error_rate: number;
+    max_metadata_fields: number;
+    max_cardinality_per_field: number;
+    retention_days_success: number;
+    retention_days_error: number;
+  }
+) {
+  return request<TraceIngestionPolicyRead>(`/api/v1/projects/${projectId}/ingestion-policy`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listProjectCustomMetrics(projectId: string) {
+  return request<ProjectCustomMetricListResponse>(`/api/v1/projects/${projectId}/custom-metrics`);
+}
+
+export async function createProjectCustomMetric(
+  projectId: string,
+  payload: {
+    name: string;
+    metric_type: "regex" | "keyword";
+    value_mode: "boolean" | "count";
+    pattern?: string | null;
+    keywords?: string[] | null;
+    enabled?: boolean;
+  }
+) {
+  return request<ProjectCustomMetricRead>(`/api/v1/projects/${projectId}/custom-metrics`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateProjectCustomMetric(
+  projectId: string,
+  metricId: string,
+  payload: {
+    enabled: boolean;
+  }
+) {
+  return request<ProjectCustomMetricRead>(`/api/v1/projects/${projectId}/custom-metrics/${metricId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listProjectProcessors(projectId: string) {
+  return request<ExternalProcessorListResponse>(`/api/v1/projects/${projectId}/processors`);
+}
+
+export async function createProjectProcessor(
+  projectId: string,
+  payload: {
+    name: string;
+    event_type: string;
+    endpoint_url: string;
+    secret: string;
+    enabled?: boolean;
+  }
+) {
+  return request<ExternalProcessorRead>(`/api/v1/projects/${projectId}/processors`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateProjectProcessor(
+  projectId: string,
+  processorId: string,
+  payload: {
+    name?: string;
+    endpoint_url?: string;
+    secret?: string;
+    enabled?: boolean;
+  }
+) {
+  return request<ExternalProcessorRead>(`/api/v1/projects/${projectId}/processors/${processorId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateProject(
+  projectId: string,
+  payload: {
+    name?: string | null;
+    slug?: string | null;
+    description?: string | null;
+  }
+) {
+  return request<ProjectRead>(`/api/v1/projects/${projectId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function updateOrganization(organizationId: string, data: { name?: string; slug?: string }) {
