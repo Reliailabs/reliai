@@ -28,7 +28,7 @@ function toneForInverse(value: number | null, maxValue: number) {
 function Sparkline({ series }: { series: ReliabilityMetricSeriesRead }) {
   const values = series.points.map((point) => point.value_number);
   if (values.length < 2) {
-    return <div className="h-16 rounded-2xl border border-dashed border-zinc-800 bg-zinc-900" />;
+    return <div className="h-16 rounded-lg border border-dashed border-zinc-800 bg-zinc-900" />;
   }
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -180,7 +180,7 @@ export default async function ProjectReliabilityPage({
 
   return (
     <div className="space-y-6">
-      <header className="rounded-[28px] border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
+      <header className="rounded-lg border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
         <a
           href={`/projects/${id}/regressions${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
           className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-100"
@@ -220,7 +220,7 @@ export default async function ProjectReliabilityPage({
               <ArrowRight className="h-4 w-4" />
             </Link>
             <ScorePill score={reliability.reliability_score} />
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-500">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-500">
               {environment ?? project.environment}
             </div>
           </div>
@@ -229,7 +229,7 @@ export default async function ProjectReliabilityPage({
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {headlineCards.map((card) => (
-          <div key={card.label} className="rounded-[24px] border-zinc-800 p-5">
+          <div key={card.label} className="rounded-lg border-zinc-800 p-5">
             <p className="text-sm text-zinc-500">{card.label}</p>
             <p className={`mt-3 text-3xl font-semibold ${card.tone}`}>{card.value}</p>
             <p className="mt-3 text-sm leading-6 text-zinc-500">{card.note}</p>
@@ -238,7 +238,7 @@ export default async function ProjectReliabilityPage({
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px]">
-        <div className="rounded-[28px] border-zinc-800 p-6">
+        <div className="rounded-lg border-zinc-800 p-6">
           <div className="flex items-center gap-3">
             <ChartColumn className="h-5 w-5 text-zinc-500" />
             <div>
@@ -248,7 +248,7 @@ export default async function ProjectReliabilityPage({
           </div>
           <div className="mt-6 grid gap-4 xl:grid-cols-2">
             {reliability.trend_series.map((series) => (
-              <div key={series.metric_name} className="rounded-[24px] border border-zinc-800 p-4">
+              <div key={series.metric_name} className="rounded-lg border border-zinc-800 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-zinc-100">{series.metric_name}</p>
@@ -267,7 +267,7 @@ export default async function ProjectReliabilityPage({
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[28px] border-zinc-800 p-6">
+          <div className="rounded-lg border-zinc-800 p-6">
             <div className="flex items-center gap-3">
               {reliability.telemetry_freshness_minutes !== null && reliability.telemetry_freshness_minutes <= 15 ? (
                 <ShieldCheck className="h-5 w-5 text-emerald-400" />
@@ -281,7 +281,7 @@ export default async function ProjectReliabilityPage({
             </div>
             <div className="mt-5 space-y-3">
               {metricCards.map((card) => (
-                <div key={card.label} className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                <div key={card.label} className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium text-zinc-100">{card.label}</p>
                   </div>
@@ -291,7 +291,7 @@ export default async function ProjectReliabilityPage({
             </div>
           </div>
 
-          <div className="rounded-[28px] border-zinc-800 p-6">
+          <div className="rounded-lg border-zinc-800 p-6">
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-zinc-500" />
               <div>
@@ -300,7 +300,7 @@ export default async function ProjectReliabilityPage({
               </div>
             </div>
             {behavioralSignals.length === 0 ? (
-              <div className="mt-5 rounded-[24px] border border-dashed border-zinc-800 bg-zinc-900 px-5 py-6 text-sm text-zinc-500">
+              <div className="mt-5 rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-6 text-sm text-zinc-500">
                 <p className="text-sm font-medium text-zinc-100">No custom metrics yet</p>
                 <p className="mt-2 text-sm text-zinc-500">
                   Track behaviors like refusals, hallucinations, or policy violations.
@@ -321,7 +321,7 @@ export default async function ProjectReliabilityPage({
                   const windowLabel = windowMinutes === 1440 ? "last 24h" : "last window";
                   const latestValue = latestPoint ? numberValue(latestPoint.value_number) : "n/a";
                   return (
-                    <div key={metric.id} className="rounded-2xl border border-zinc-800 px-4 py-3">
+                    <div key={metric.id} className="rounded-lg border border-zinc-800 px-4 py-3">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-medium text-zinc-100">{metric.name}</p>
@@ -357,7 +357,7 @@ export default async function ProjectReliabilityPage({
             </p>
           </div>
 
-          <div className="rounded-[28px] border-zinc-800 p-6">
+          <div className="rounded-lg border-zinc-800 p-6">
             <div className="flex items-center gap-3">
               <FolderKanban className="h-5 w-5 text-zinc-500" />
               <div>
@@ -375,7 +375,7 @@ export default async function ProjectReliabilityPage({
                   <Link
                     key={incident.id}
                     href={`/incidents/${incident.id}`}
-                    className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-900"
+                    className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-900"
                   >
                     <div>
                       <p className="text-sm font-medium text-zinc-100">{incident.title}</p>
