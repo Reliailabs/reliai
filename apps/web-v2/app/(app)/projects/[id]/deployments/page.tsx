@@ -28,7 +28,7 @@ export default async function ProjectDeploymentsPage({
 
   return (
     <div className="space-y-6">
-      <header className="rounded-[28px] border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
+      <header className="rounded-lg border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Deployment history</p>
@@ -37,20 +37,20 @@ export default async function ProjectDeploymentsPage({
               Review environment-scoped prompt and model rollouts before jumping into incident or regression investigation.
             </p>
           </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-500">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-500">
             {environment ?? project.environment} · {deployments.items.length} deployments
           </div>
         </div>
       </header>
 
       {deployments.items.length === 0 ? (
-        <div className="rounded-[28px] border-zinc-800 p-6">
+        <div className="rounded-lg border-zinc-800 p-6">
           <p className="text-sm leading-6 text-zinc-500">
             No deployments recorded for this environment yet. Create a deployment event before using environment-scoped incident correlation.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-[28px] border-zinc-800">
+        <div className="overflow-hidden rounded-lg border-zinc-800">
           <div className="divide-y divide-zinc-200">
             {deployments.items.map((deployment) => {
               const label = metadataLabel(deployment.metadata_json);

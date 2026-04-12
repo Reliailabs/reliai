@@ -138,7 +138,7 @@ export default async function ProjectCustomMetricsPage({
 
   return (
     <div className="space-y-6">
-      <header className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950 shadow-sm">
+      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
         <div className="border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))] px-6 py-5">
           <Link href={`/projects/${id}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200">
             <ArrowLeft className="h-4 w-4" />
@@ -154,15 +154,15 @@ export default async function ProjectCustomMetricsPage({
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total metrics</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{metrics.length}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Enabled</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{metrics.filter((item) => item.enabled).length}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Signal type</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">Regex + Keywords</p>
               </div>
@@ -172,7 +172,7 @@ export default async function ProjectCustomMetricsPage({
       </header>
 
       {createdFlag ? (
-        <div className="rounded-[28px] border border-amber-800 bg-amber-950/60 p-5">
+        <div className="rounded-lg border border-amber-800 bg-amber-950/60 p-5">
           <p className="text-xs uppercase tracking-[0.24em] text-amber-400">Metric enabled</p>
           <h2 className="mt-2 text-xl font-semibold text-amber-200">
             {createdName ? `${createdName} is now tracked` : "Metric is now tracked"}
@@ -199,7 +199,7 @@ export default async function ProjectCustomMetricsPage({
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(360px,0.95fr)_minmax(0,1.05fr)]">
-        <div className={`rounded-[28px] border border-zinc-800 bg-zinc-950 p-6 ${highlightForm ? "border-amber-700 bg-amber-950/40" : ""}`}>
+        <div className={`rounded-lg border border-zinc-800 bg-zinc-950 p-6 ${highlightForm ? "border-amber-700 bg-amber-950/40" : ""}`}>
           <div className="flex items-center gap-3">
             <Gauge className="h-5 w-5 text-zinc-500" />
             <div>
@@ -251,7 +251,7 @@ export default async function ProjectCustomMetricsPage({
                 maxLength={120}
                 placeholder="Refusal language"
                 defaultValue={prefillName ?? tpl?.name ?? ""}
-                className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               />
             </div>
 
@@ -262,7 +262,7 @@ export default async function ProjectCustomMetricsPage({
                   id="metric_type"
                   name="metric_type"
                   defaultValue={prefillType ?? tpl?.metric_type ?? "keyword"}
-                  className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                 >
                   <option value="keyword">keyword</option>
                   <option value="regex">regex</option>
@@ -274,7 +274,7 @@ export default async function ProjectCustomMetricsPage({
                   id="value_mode"
                   name="value_mode"
                   defaultValue={prefillMode ?? tpl?.value_mode ?? "boolean"}
-                  className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
                 >
                   <option value="boolean">boolean hit/miss</option>
                   <option value="count">count matches</option>
@@ -290,7 +290,7 @@ export default async function ProjectCustomMetricsPage({
                 maxLength={500}
                 placeholder="i\s+cannot\s+help\s+with\s+that"
                 defaultValue={prefillPattern ?? tpl?.pattern ?? ""}
-                className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               />
             </div>
 
@@ -302,7 +302,7 @@ export default async function ProjectCustomMetricsPage({
                 rows={3}
                 placeholder="cannot help, unable to assist, can't provide"
                 defaultValue={prefillKeywords || tpl?.keywords || ""}
-                className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               />
             </div>
 
@@ -317,7 +317,7 @@ export default async function ProjectCustomMetricsPage({
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
             <div className="flex items-center gap-3">
               <ListFilter className="h-5 w-5 text-zinc-500" />
               <div>
@@ -326,7 +326,7 @@ export default async function ProjectCustomMetricsPage({
               </div>
             </div>
             {metrics.length === 0 ? (
-              <div className="mt-5 rounded-[24px] border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-400">
+              <div className="mt-5 rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-400">
                 <p className="text-sm font-medium text-zinc-100">Track behaviors that matter</p>
                 <p className="mt-2">
                   Create a metric to track refusal language, policy violations, or any custom pattern in outputs.
@@ -379,7 +379,7 @@ export default async function ProjectCustomMetricsPage({
             )}
           </div>
 
-          <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
             <div className="flex items-center gap-3">
               <ShieldAlert className="h-5 w-5 text-zinc-500" />
               <div>
@@ -388,14 +388,14 @@ export default async function ProjectCustomMetricsPage({
               </div>
             </div>
             <div className="mt-5 space-y-3 text-sm leading-6 text-zinc-400">
-              <p className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <p className="rounded-lg border border-zinc-800 px-4 py-3">
                 <Regex className="mr-2 inline h-4 w-4 align-text-bottom" />
                 Use regex for strict phrase families where tiny wording changes matter.
               </p>
-              <p className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <p className="rounded-lg border border-zinc-800 px-4 py-3">
                 Use keyword mode for broad operational classes like refusal, escalation, or apology language.
               </p>
-              <p className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <p className="rounded-lg border border-zinc-800 px-4 py-3">
                 Metrics run on every trace evaluation and roll into the same regression pipeline as core signals.
               </p>
             </div>

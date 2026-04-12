@@ -29,7 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const panelCardClass =
-  "rounded-[24px] border border-zinc-800 bg-zinc-950 p-5 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur-sm";
+  "rounded-lg border border-zinc-800 bg-zinc-950 p-5 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur-sm";
 const metricValueClass = "metric-value font-mono tracking-[-0.03em]";
 
 function compactNumber(value: number) {
@@ -119,8 +119,8 @@ export function ControlPanelView({
   const topMetricsSectionClass = screenshotMode ? "space-y-5 px-5 py-4" : "space-y-8 px-6 py-5";
   const metricsGridClass = screenshotMode ? "grid gap-3 sm:grid-cols-2 md:grid-cols-3" : "grid gap-4 sm:grid-cols-2 md:grid-cols-3";
   const metricCardClass = screenshotMode
-    ? "rounded-[22px] border border-zinc-800 bg-zinc-950-alt px-4 py-3"
-    : "rounded-[24px] border border-zinc-800 bg-zinc-950-alt px-5 py-4";
+    ? "rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3"
+    : "rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4";
   const contentGridClass = screenshotMode
     ? "grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]"
     : "grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]";
@@ -128,7 +128,7 @@ export function ControlPanelView({
   const panelCardClassName = cn(panelCardClass, screenshotMode && "p-4");
   const sectionTitleClass = screenshotMode ? "mt-1 text-xl font-semibold text-zinc-100" : "mt-2 text-2xl font-semibold text-zinc-100";
   const sectionBodyTopClass = screenshotMode ? "mt-4" : "mt-5";
-  const statusCardClass = screenshotMode ? `rounded-[24px] border p-4 ${status.tone}` : `rounded-[28px] border p-5 ${status.tone}`;
+  const statusCardClass = screenshotMode ? `rounded-lg border p-4 ${status.tone}` : `rounded-lg border p-5 ${status.tone}`;
   const statusSummaryClass = screenshotMode ? "mt-2 text-xl font-semibold" : "mt-2 text-2xl font-semibold";
   const statusDetailClass = screenshotMode ? "mt-2 text-sm leading-5 opacity-90" : "mt-2 text-sm leading-6 opacity-90";
 
@@ -182,11 +182,11 @@ export function ControlPanelView({
       data-control-panel=""
       style={screenshotMode && screenshotWidth ? { width: screenshotWidth, maxWidth: screenshotWidth } : undefined}
     >
-      <header className="overflow-hidden rounded-[32px] border border-zinc-800 bg-zinc-950 shadow-sm">
+      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
         <div
           className={cn(
             "border-b border-zinc-800",
-            screenshotMode ? "bg-zinc-950-elevated" : "bg-zinc-950-elevated",
+            screenshotMode ? "bg-zinc-900" : "bg-zinc-900",
             headerPaddingClass,
           )}
         >
@@ -220,21 +220,21 @@ export function ControlPanelView({
                       <a
                         key={item.label}
                         href={item.href}
-                        className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:bg-zinc-950-alt"
+                        className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:bg-zinc-900"
                       >
                         {item.label}
                         <ArrowRight className="h-4 w-4" />
                       </a>
                     ))}
                   </div>
-                  <div className="rounded-[24px] border border-zinc-800 bg-zinc-950-alt px-4 py-4">
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
                     <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Project controls</p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                       {projectControls.map((item) => (
                         <a
                           key={item.label}
                           href={item.href}
-                          className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-secondary"
+                          className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-zinc-700"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <span>{item.label}</span>
@@ -254,7 +254,7 @@ export function ControlPanelView({
             <div className={statusCardClass}>
               <p className="text-xs uppercase tracking-[0.24em]">Is this system safe right now?</p>
               <div className={cn("flex items-start gap-4", screenshotMode ? "mt-3" : "mt-4")}>
-                <div className="rounded-2xl bg-zinc-950/70 p-3">
+                <div className="rounded-lg bg-zinc-950/70 p-3">
                   <StatusIcon className="h-6 w-6" />
                 </div>
                 <div>
@@ -278,7 +278,7 @@ export function ControlPanelView({
                     `mt-3 text-3xl font-semibold ${metricValueClass}`,
                     scoreTone(panel.reliability_score),
                     highlightedMetrics.includes("reliability_score") &&
-                      "rounded-2xl px-3 py-2 ring-2 ring-sky-600 ring-offset-2 ring-offset-zinc-950",
+                      "rounded-lg px-3 py-2 ring-2 ring-sky-600 ring-offset-2 ring-offset-zinc-950",
                   )}
                   data-tour-id="metric-reliability-score"
                 >
@@ -291,7 +291,7 @@ export function ControlPanelView({
                   className={cn(
                     `mt-3 text-3xl font-semibold text-zinc-100 ${metricValueClass}`,
                     highlightedMetrics.includes("active_incidents") &&
-                      "rounded-2xl px-3 py-2 ring-2 ring-amber-300 ring-offset-2 ring-offset-zinc-950",
+                      "rounded-lg px-3 py-2 ring-2 ring-amber-300 ring-offset-2 ring-offset-zinc-950",
                   )}
                   data-tour-id="metric-active-incidents"
                 >
@@ -337,14 +337,14 @@ export function ControlPanelView({
               </div>
             </div>
             <div className={cn(sectionBodyTopClass, screenshotMode ? "grid gap-3 md:grid-cols-3" : "grid gap-4 md:grid-cols-3")}>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-4">
+              <div className="rounded-lg border border-zinc-800 px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Latest deployment</p>
                 <p className="mt-2 text-lg font-semibold text-zinc-100">{formatTime(panel.deployment_risk.deployed_at, screenshotMode)}</p>
                 <p className={`mt-2 text-sm font-medium ${riskTone(panel.deployment_risk.risk_level)}`}>
                   Risk score {decimal(panel.deployment_risk.risk_score)}
                 </p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-4">
+              <div className="rounded-lg border border-zinc-800 px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Incident pressure</p>
                 <p className="mt-2 text-lg font-semibold text-zinc-100">{panel.incidents.incident_rate_last_24h} incidents / 24h</p>
                 <p className="mt-2 text-sm text-zinc-500">
@@ -353,7 +353,7 @@ export function ControlPanelView({
                     : "No recent incidents."}
                 </p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-4">
+              <div className="rounded-lg border border-zinc-800 px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Guardrail pressure</p>
                 <p className="mt-2 text-lg font-semibold text-zinc-100">{panel.guardrails.trigger_rate_last_24h} triggers / 24h</p>
                 <p className="mt-2 text-sm text-zinc-500">
@@ -373,17 +373,17 @@ export function ControlPanelView({
                 </div>
               </div>
               <div className={cn(sectionBodyTopClass, "space-y-3")}>
-                <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                   <span className="text-sm text-zinc-500">Risk level</span>
                   <span className={`text-sm font-medium ${riskTone(panel.deployment_risk.risk_level)}`}>
                     {panel.deployment_risk.risk_level ?? "n/a"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                   <span className="text-sm text-zinc-500">Risk score</span>
                   <span className="text-sm font-medium text-zinc-100">{decimal(panel.deployment_risk.risk_score)}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                   <span className="text-sm text-zinc-500">Simulation risk</span>
                   <span className={`text-sm font-medium ${riskTone(panel.simulation.risk_level)}`}>
                     {panel.simulation.risk_level ?? "n/a"}
@@ -412,14 +412,14 @@ export function ControlPanelView({
               {panel.guardrail_activity.length > 0 ? (
                 <div className={cn(sectionBodyTopClass, "space-y-3")}>
                   {panel.guardrail_activity.slice(0, 4).map((item) => (
-                    <div key={item.policy_type} className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                    <div key={item.policy_type} className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                       <span className="text-sm text-zinc-500">{item.policy_type.replaceAll("_", " ")}</span>
                       <span className="text-sm font-medium text-zinc-100">{item.trigger_count}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className={cn(sectionBodyTopClass, "rounded-[24px] border border-dashed border-zinc-800 bg-zinc-950-alt px-5 py-8 text-sm leading-6 text-zinc-500")}>
+                <div className={cn(sectionBodyTopClass, "rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-500")}>
                   No runtime guardrail interventions were recorded in the current window.
                 </div>
               )}
@@ -437,13 +437,13 @@ export function ControlPanelView({
               </div>
             </div>
             {panel.guardrail_compliance.length === 0 ? (
-              <div className={cn(sectionBodyTopClass, "rounded-[24px] border border-dashed border-zinc-800 bg-zinc-950-alt px-5 py-8 text-sm leading-6 text-zinc-500")}>
+              <div className={cn(sectionBodyTopClass, "rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-500")}>
                 No organization-level guardrail policies are active for this project yet.
               </div>
             ) : (
               <div className={cn(sectionBodyTopClass, "grid gap-3")}>
                 {panel.guardrail_compliance.map((item) => (
-                  <div key={`${item.policy_type}-${item.enforcement_mode}`} className="rounded-[24px] border border-zinc-800 p-4">
+                  <div key={`${item.policy_type}-${item.enforcement_mode}`} className="rounded-lg border border-zinc-800 p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-medium text-zinc-100">{item.policy_type.replaceAll("_", " ")}</p>
@@ -477,7 +477,7 @@ export function ControlPanelView({
                   <div
                     key={`${item.policy_type}-${item.title}`}
                     className={cn(
-                      "rounded-[24px] border border-zinc-800 px-4 py-4",
+                      "rounded-lg border border-zinc-800 px-4 py-4",
                       highlightedMetrics.includes("recommended_guardrail") &&
                         item === panel.recommended_guardrails[0] &&
                         "ring-2 ring-emerald-300 ring-offset-2 ring-offset-zinc-950",
@@ -492,7 +492,7 @@ export function ControlPanelView({
                   </div>
                 ))
               ) : (
-                <div className="rounded-[24px] border border-dashed border-zinc-800 bg-zinc-950-alt px-5 py-8 text-sm leading-6 text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-500">
                   No additional guardrail changes are being recommended right now.
                 </div>
               )}
@@ -509,20 +509,20 @@ export function ControlPanelView({
                     <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Model reliability</h2>
                   </div>
                 </div>
-                <div className="mt-5 rounded-[24px] border border-zinc-800 bg-zinc-950-alt px-4 py-4">
+                <div className="mt-5 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Model</p>
                   <p className="mt-2 text-lg font-semibold text-zinc-100">{panel.model_reliability.current_model ?? "n/a"}</p>
                 </div>
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                  <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                     <span className="text-sm text-zinc-500">Success rate</span>
                     <span className="text-sm font-medium text-zinc-100">{percent(panel.model_reliability.success_rate)}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                  <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                     <span className="text-sm text-zinc-500">Average latency</span>
                     <span className="text-sm font-medium text-zinc-100">{latency(panel.model_reliability.average_latency)}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+                  <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                     <span className="text-sm text-zinc-500">Structured output validity</span>
                     <span className="text-sm font-medium text-zinc-100">
                       {percent(panel.model_reliability.structured_output_validity)}
@@ -540,13 +540,13 @@ export function ControlPanelView({
                   </div>
                 </div>
                 {panel.automatic_actions.recent_actions.length === 0 ? (
-                  <div className="mt-5 rounded-[24px] border border-dashed border-zinc-800 bg-zinc-950-alt px-5 py-8 text-sm leading-6 text-zinc-500">
+                  <div className="mt-5 rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-500">
                     No automated mitigation actions recorded yet.
                   </div>
                 ) : (
                   <div className="mt-5 space-y-3">
                     {panel.automatic_actions.recent_actions.map((action) => (
-                      <div key={action.action_id} className="rounded-[22px] border border-zinc-800 px-4 py-4">
+                      <div key={action.action_id} className="rounded-lg border border-zinc-800 px-4 py-4">
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-sm font-medium text-zinc-100">

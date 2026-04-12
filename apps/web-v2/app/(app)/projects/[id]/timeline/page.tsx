@@ -61,7 +61,7 @@ function renderSummary(summary: string) {
   if (parts.length === 1) return summary;
   return parts.map((part, index) =>
     index % 2 === 1 ? (
-      <span key={`${part}-${index}`} className="metric-value text-mono-data">
+      <span key={`${part}-${index}`} className="metric-value font-mono text-zinc-300">
         {part}
       </span>
     ) : (
@@ -88,7 +88,7 @@ export default async function ProjectTimelinePage({
 
   return (
     <div className="space-y-6">
-      <header className="rounded-[28px] border border-default bg-surface px-6 py-6 shadow-sm">
+      <header className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
         <a
           href={`/projects/${id}/reliability${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
           className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-blue-400"
@@ -104,21 +104,21 @@ export default async function ProjectTimelinePage({
               Unified project chronology across incidents, deployments, regressions, and triggered guardrails.
             </p>
           </div>
-          <div className="rounded-2xl border border-default bg-surface-elevated px-4 py-3 text-sm text-zinc-500">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-800 px-4 py-3 text-sm text-zinc-500">
             {environment ?? project.environment} · {timeline.items.length} events
           </div>
         </div>
       </header>
 
       {timeline.items.length === 0 ? (
-        <div className="rounded-[28px] border-default p-6">
+        <div className="rounded-lg border-zinc-800 p-6">
           <p className="text-sm leading-6 text-zinc-500">
             No timeline events yet. Deploy a change, ingest traces, or trigger a regression to populate the investigation feed.
           </p>
         </div>
       ) : (
-        <section className="rounded-[28px] border border-default bg-surface px-6 py-6 shadow-sm">
-          <div className="relative ml-3 border-l border-dashed border-default pl-8">
+        <section className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
+          <div className="relative ml-3 border-l border-dashed border-zinc-800 pl-8">
             {timeline.items.map((event, index) => {
               const Icon = eventIcon(event.event_type);
               const href = eventLink(event);
@@ -127,10 +127,10 @@ export default async function ProjectTimelinePage({
               const severityClass = severityBadge(event.severity);
               return (
                 <div key={`${event.event_type}-${event.timestamp}-${index}`} className="relative pb-6 last:pb-0">
-                  <div className={`absolute -left-[43px] top-5 flex h-7 w-7 items-center justify-center rounded-full border border-default bg-surface ${eventTone}`}>
+                  <div className={`absolute -left-[43px] top-5 flex h-7 w-7 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 ${eventTone}`}>
                     <Icon className="h-3.5 w-3.5" />
                   </div>
-                  <article className="rounded-[24px] border border-default bg-surface-elevated p-5">
+                  <article className="rounded-lg border border-zinc-800 bg-zinc-800 p-5">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em]">
@@ -151,7 +151,7 @@ export default async function ProjectTimelinePage({
                       <div className="mt-4">
                         <a
                           href={href}
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-accent underline-offset-4 hover:underline"
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 underline-offset-4 hover:underline"
                         >
                           Open detail
                           <ArrowRight className="h-4 w-4" />

@@ -36,7 +36,7 @@ export default async function ProjectGuardrailsPage({
 
   return (
     <div className="space-y-6">
-      <header className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950 shadow-sm">
+      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
         <div className="border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))] px-6 py-5">
           <Link
             href={`/projects/${id}${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
@@ -55,15 +55,15 @@ export default async function ProjectGuardrailsPage({
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Policies</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{activePolicies}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Triggers</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{totalTriggers}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Environment</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{environment ?? project.environment}</p>
               </div>
@@ -71,7 +71,7 @@ export default async function ProjectGuardrailsPage({
           </div>
         </div>
         <div className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex items-start gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
             <Shield className="mt-0.5 h-5 w-5 text-emerald-400" />
             <div>
               <p className="text-sm font-medium text-zinc-100">Protection coverage</p>
@@ -81,7 +81,7 @@ export default async function ProjectGuardrailsPage({
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
             <BellElectric className="mt-0.5 h-5 w-5 text-sky-400" />
             <div>
               <p className="text-sm font-medium text-zinc-100">Runtime focus</p>
@@ -109,7 +109,7 @@ export default async function ProjectGuardrailsPage({
         </div>
       </header>
 
-      <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+      <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
         <div className="flex items-center gap-3">
           <Shield className="h-5 w-5 text-zinc-500" />
           <div>
@@ -118,7 +118,7 @@ export default async function ProjectGuardrailsPage({
           </div>
         </div>
         {guardrailMetrics.policies.length === 0 ? (
-          <div className="mt-6 rounded-[24px] border border-dashed border-zinc-800 bg-zinc-900 px-5 py-10 text-sm leading-6 text-zinc-400">
+          <div className="mt-6 rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-10 text-sm leading-6 text-zinc-400">
             No guardrail policies are configured for this project yet. Create structured output, cost, latency,
             or hallucination policies before expecting runtime protection coverage.
             <Link
@@ -130,7 +130,7 @@ export default async function ProjectGuardrailsPage({
             </Link>
           </div>
         ) : (
-          <div className="mt-6 overflow-hidden rounded-[24px] border border-zinc-800">
+          <div className="mt-6 overflow-hidden rounded-lg border border-zinc-800">
             <table className="min-w-full divide-y divide-zinc-800 text-sm">
               <thead className="bg-zinc-900 text-left text-xs uppercase tracking-[0.18em] text-zinc-500">
                 <tr>
@@ -159,7 +159,7 @@ export default async function ProjectGuardrailsPage({
         )}
       </div>
 
-      <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+      <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
         <div className="flex items-center gap-3">
           <Shield className="h-5 w-5 text-zinc-500" />
           <div>
@@ -168,14 +168,14 @@ export default async function ProjectGuardrailsPage({
           </div>
         </div>
         {guardrailMetrics.trace_policy_counts.length === 0 ? (
-          <div className="mt-6 rounded-[24px] border border-dashed border-zinc-800 bg-zinc-900 px-5 py-10 text-sm leading-6 text-zinc-400">
+          <div className="mt-6 rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-10 text-sm leading-6 text-zinc-400">
             No span-level guardrail annotations have been ingested yet. SDK runtime guardrails will appear here once
             distributed traces start sending first-class guardrail fields.
           </div>
         ) : (
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {guardrailMetrics.trace_policy_counts.map((item) => (
-              <div key={item.policy_type} className="rounded-[24px] border border-zinc-800 bg-zinc-900 px-5 py-4 shadow-sm">
+              <div key={item.policy_type} className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4 shadow-sm">
                 <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{item.policy_type}</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{item.trigger_count}</p>
                 <p className="mt-1 text-sm text-zinc-400">annotated spans</p>
@@ -185,7 +185,7 @@ export default async function ProjectGuardrailsPage({
         )}
       </div>
 
-      <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+      <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
         <div className="flex items-center gap-3">
           <Clock3 className="h-5 w-5 text-zinc-500" />
           <div>
@@ -194,7 +194,7 @@ export default async function ProjectGuardrailsPage({
           </div>
         </div>
         {guardrailMetrics.recent_events.length === 0 ? (
-          <div className="mt-6 rounded-[24px] border border-dashed border-zinc-800 bg-zinc-900 px-5 py-10 text-sm leading-6 text-zinc-400">
+          <div className="mt-6 rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-10 text-sm leading-6 text-zinc-400">
             No runtime guardrail events have been recorded yet. Enforced retries, blocks, and fallbacks will
             appear here once production traffic exercises those policies.
           </div>
@@ -225,7 +225,7 @@ export default async function ProjectGuardrailsPage({
               );
 
               return (
-                <div key={`${event.trace_id}-${event.created_at}`} className="rounded-[24px] border border-zinc-800 bg-zinc-900 px-5 py-4 shadow-sm">
+                <div key={`${event.trace_id}-${event.created_at}`} className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4 shadow-sm">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex items-center gap-3">
                       <div className="rounded-full bg-zinc-800 p-2 text-zinc-300">

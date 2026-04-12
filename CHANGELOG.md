@@ -38,6 +38,7 @@ All notable changes to Reliai will be documented in this file.
 - web-v2 regressions now aggregate project-scoped regressions and resolve project names; deployments resolve project display names.
 - web-v2 projects surface now pulls reliability metrics per project for data-backed tiles.
 - web-v2 SLOs now load from the new project SLO endpoint instead of derived client-side metrics.
+- Updated all ported pages (customer detail, incident compare, incident investigate, project subpages) to match web‑v2 dark theme design system.
 
 ### Fixed
 

@@ -64,7 +64,7 @@ export default async function ProjectProcessorsPage({
 
   return (
     <div className="space-y-6">
-      <header className="overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-950 shadow-sm">
+      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
         <div className="border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))] px-6 py-5">
           <Link href={`/projects/${id}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200">
             <ArrowLeft className="h-4 w-4" />
@@ -79,15 +79,15 @@ export default async function ProjectProcessorsPage({
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Processors</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{processors.length}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Active</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{processors.filter(p => p.enabled).length}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Event types</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">
                   {Array.from(new Set(processors.map(p => p.event_type))).length}
@@ -97,7 +97,7 @@ export default async function ProjectProcessorsPage({
           </div>
         </div>
         <div className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex items-start gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
             <Cpu className="mt-0.5 h-5 w-5 text-emerald-400" />
             <div>
               <p className="text-sm font-medium text-zinc-100">Real‑time forwarding</p>
@@ -106,7 +106,7 @@ export default async function ProjectProcessorsPage({
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
             <Key className="mt-0.5 h-5 w-5 text-sky-400" />
             <div>
               <p className="text-sm font-medium text-zinc-100">Secure delivery</p>
@@ -119,7 +119,7 @@ export default async function ProjectProcessorsPage({
       </header>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
           <div className="flex items-center gap-3">
             <Server className="h-5 w-5 text-zinc-500" />
             <div>
@@ -137,7 +137,7 @@ export default async function ProjectProcessorsPage({
                 minLength={2}
                 maxLength={120}
                 placeholder="Slack alerts"
-                className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               />
             </div>
 
@@ -147,7 +147,7 @@ export default async function ProjectProcessorsPage({
                 id="event_type"
                 name="event_type"
                 required
-                className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               >
                 <option value="incident.created">Incident created</option>
                 <option value="incident.resolved">Incident resolved</option>
@@ -168,7 +168,7 @@ export default async function ProjectProcessorsPage({
                 type="url"
                 required
                 placeholder="https://hooks.slack.com/services/..."
-                className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               />
             </div>
 
@@ -180,7 +180,7 @@ export default async function ProjectProcessorsPage({
                 type="password"
                 required
                 placeholder="supersecret"
-                className="mt-2 w-full rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
               />
               <p className="mt-2 text-sm text-zinc-400">
                 This secret will be sent as an `X‑Processor‑Secret` header.
@@ -197,7 +197,7 @@ export default async function ProjectProcessorsPage({
           </form>
         </div>
 
-        <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-6">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
           <div className="flex items-center gap-3">
             <Globe className="h-5 w-5 text-zinc-500" />
             <div>
