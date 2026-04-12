@@ -412,18 +412,22 @@ export function ProjectDetailView({
                   <div className="text-right">Created</div>
                 </div>
                 <div className="divide-y divide-zinc-800/40">
-                  {modelVersions.items.map((mv: ModelVersionRead) => (
-                    <div key={mv.id} className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
-                      <div className="text-sm font-medium text-zinc-100">{mv.model_version ?? "—"}</div>
-                      <div className="text-sm text-zinc-400">{mv.model_name}</div>
-                      <div className="text-sm text-zinc-500">{mv.provider ?? "—"}</div>
-                      <div className="text-right">
-                        <span className="text-xs text-zinc-600">
-                          {new Date(mv.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                   {modelVersions.items.map((mv: ModelVersionRead) => (
+                     <Link
+                       key={mv.id}
+                       href={`/model-versions/${mv.id}?projectId=${project.id}`}
+                       className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors"
+                     >
+                       <div className="text-sm font-medium text-zinc-100">{mv.model_version ?? "—"}</div>
+                       <div className="text-sm text-zinc-400">{mv.model_name}</div>
+                       <div className="text-sm text-zinc-500">{mv.provider ?? "—"}</div>
+                       <div className="text-right">
+                         <span className="text-xs text-zinc-600">
+                           {new Date(mv.created_at).toLocaleDateString()}
+                         </span>
+                       </div>
+                     </Link>
+                   ))}
                 </div>
               </div>
             ) : (
