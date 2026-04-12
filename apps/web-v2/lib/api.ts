@@ -32,11 +32,16 @@ import type {
   GuardrailMetrics,
   TimelineResponse,
   ModelVersionListResponse,
+  ModelVersionDetailRead,
   UsageQuotaStatusRead,
 } from "@reliai/types";
 
 import { getApiAccessToken } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
+
+export type BillingCheckoutResponse = {
+  checkout_url: string;
+};
 
 export type DashboardTriageRead = {
   attention: Array<{
@@ -345,4 +350,22 @@ export async function getIntelligenceGuardrails() {
 
 export async function getIncidentCommand(incidentId: string) {
   return request<IncidentCommandCenterRead>(`/api/v1/incidents/${incidentId}/command`);
+}
+
+export async function billingCheckout(organizationId: string, plan: string) {
+  return request<BillingCheckoutResponse>("/api/v1/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ organization_id: organizationId, plan }),
+  });
+}
+
+export async function getModelVersionDetail(projectId: string, modelVersionId: string) {
+  return request<ModelVersionDetailRead>(`/api/v1/projects/${projectId}/model-versions/${modelVersionId}`);
+}
+
+export async function updateOrganization(organizationId: string, data: { name?: string; slug?: string }) {
+  return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 }
