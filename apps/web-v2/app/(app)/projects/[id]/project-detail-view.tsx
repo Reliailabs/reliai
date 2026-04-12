@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { SeverityBadge } from "@/components/ui/severity-badge"
 import { MetricTile } from "@/components/metric-tile"
@@ -328,12 +329,21 @@ export function ProjectDetailView({
               <span className="text-xs font-semibold text-zinc-300">
                 Guardrail Policies
               </span>
-              <span className="text-xs text-zinc-500">
-                <span className="tabular-nums text-zinc-200 font-medium">
-                  {guardrailPolicies.reduce((s, p) => s + p.actionsLast24h, 0).toLocaleString()}
-                </span>{" "}
-                actions last 24h
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-zinc-500">
+                  <span className="tabular-nums text-zinc-200 font-medium">
+                    {guardrailPolicies.reduce((s, p) => s + p.actionsLast24h, 0).toLocaleString()}
+                  </span>{" "}
+                  actions last 24h
+                </span>
+                <Link
+                  href={`/projects/${project.id}/guardrails`}
+                  className="inline-flex items-center gap-1 rounded-full border border-zinc-700 px-3 py-1 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+                >
+                  Full dashboard
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 px-4 py-2 border border-zinc-800 rounded-t-lg bg-zinc-950/60 -mt-2">
@@ -569,26 +579,54 @@ export function ProjectDetailView({
         )}
 
         {tab === "metrics" && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
-            Metrics dashboard — coming soon
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-8 text-center">
+            <p className="text-sm text-zinc-400">Custom metrics management is now a dedicated page.</p>
+            <Link
+              href={`/projects/${project.id}/metrics`}
+              className="inline-flex items-center gap-2 mt-4 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            >
+              Go to Metrics page
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         )}
 
         {tab === "ingestion" && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
-            Ingestion stats — coming soon
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-8 text-center">
+            <p className="text-sm text-zinc-400">Ingestion pipeline configuration is now a dedicated page.</p>
+            <Link
+              href={`/projects/${project.id}/ingestion`}
+              className="inline-flex items-center gap-2 mt-4 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            >
+              Go to Ingestion page
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         )}
 
         {tab === "processors" && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
-            Processor status — coming soon
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-8 text-center">
+            <p className="text-sm text-zinc-400">External processors management is now a dedicated page.</p>
+            <Link
+              href={`/projects/${project.id}/processors`}
+              className="inline-flex items-center gap-2 mt-4 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            >
+              Go to Processors page
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         )}
 
         {tab === "settings" && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-6 text-center text-xs text-zinc-600">
-            Project settings — coming soon
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-8 text-center">
+            <p className="text-sm text-zinc-400">Project settings are now a dedicated page.</p>
+            <Link
+              href={`/projects/${project.id}/settings`}
+              className="inline-flex items-center gap-2 mt-4 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            >
+              Go to Settings page
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         )}
 
