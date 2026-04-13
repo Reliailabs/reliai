@@ -671,6 +671,7 @@ export const demoDeploymentDetail: DeploymentDetailRead = {
     release_reason: "refund handling improvement",
     linked_simulation: "sim_demo_v42",
   },
+  risk_analysis_json: { risk_level: "high", score: 72 },
   created_at: "2026-03-11T09:00:00Z",
   prompt_version: demoIncidentCommand.deployment_context?.prompt_version ?? null,
   model_version: demoIncidentCommand.deployment_context?.model_version ?? null,
