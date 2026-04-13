@@ -16,9 +16,9 @@ function compactNumber(value: number) {
 }
 
 function probabilityTone(value: number) {
-  if (value >= 0.5) return "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
-  if (value >= 0.25) return "bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20";
-  return "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20";
+  if (value >= 0.5) return "bg-red-500/10 text-red-400 border-red-500/30";
+  if (value >= 0.25) return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+  return "bg-blue-500/10 text-blue-400 border-blue-500/30";
 }
 
 export default async function ReliabilityPatternsPage() {
@@ -115,7 +115,7 @@ export default async function ReliabilityPatternsPage() {
                     <td className="px-5 py-4 text-sm text-zinc-400">{item.model_family ?? "unknown"}</td>
                     <td className="px-5 py-4 text-sm text-zinc-400">{item.failure_type.replaceAll("_", " ")}</td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${probabilityTone(item.failure_probability)}`}>
+                      <span className={`inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-medium ${probabilityTone(item.failure_probability)}`}>
                         {percent(item.failure_probability)}
                       </span>
                     </td>

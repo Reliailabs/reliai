@@ -80,11 +80,11 @@ function TraceCompareCard({
               {trace.refusal_detected === null ? (
                 <span className="text-sm text-zinc-400">n/a</span>
               ) : trace.refusal_detected ? (
-                <span className="inline-flex rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-400 ring-1 ring-rose-500/20">
+                <span className="inline-flex rounded-full border bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400 border-red-500/30">
                   Refusal detected
                 </span>
               ) : (
-                <span className="inline-flex rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-emerald-500/20">
+                <span className="inline-flex rounded-full border bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400 border-emerald-500/30">
                   Not detected
                 </span>
               )}
@@ -97,10 +97,10 @@ function TraceCompareCard({
                 {(trace.custom_metric_results ?? []).map((item) => (
                   <span
                     key={item.metric_key ?? item.name}
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
                       item.matched
-                        ? "bg-rose-500/10 text-rose-400 ring-rose-500/20"
-                        : "bg-zinc-900 text-zinc-500 ring-zinc-800"
+                        ? "bg-red-500/10 text-red-400 border-red-500/30"
+                        : "bg-zinc-900 text-zinc-500 border-zinc-800"
                     }`}
                   >
                     {item.matched ? "Triggered: " : ""}{item.name}

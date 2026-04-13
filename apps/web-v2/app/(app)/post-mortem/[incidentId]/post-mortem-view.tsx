@@ -61,10 +61,10 @@ const causeCategories: Record<CauseCategory, { label: string; short: string }> =
 }
 
 const priorityStyle: Record<Priority, string> = {
-  critical: "text-red-400    bg-red-500/10    border-red-500/20",
-  high:     "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  medium:   "text-amber-400  bg-amber-500/10  border-amber-500/20",
-  low:      "text-zinc-400   bg-zinc-700/30   border-zinc-700",
+  critical: "text-red-400    bg-red-500/10    border-red-500/30",
+  high:     "text-amber-400  bg-amber-500/10  border-amber-500/30",
+  medium:   "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+  low:      "text-blue-400   bg-blue-500/10   border-blue-500/30",
 }
 
 const severityBar: Record<SeverityLevel, string> = {
@@ -75,10 +75,10 @@ const severityBar: Record<SeverityLevel, string> = {
 }
 
 const severityBadge: Record<SeverityLevel, string> = {
-  critical: "text-red-400    bg-red-500/10    border-red-500/20",
-  high:     "text-amber-400  bg-amber-500/10  border-amber-500/20",
-  medium:   "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-  low:      "text-blue-400   bg-blue-500/10   border-blue-500/20",
+  critical: "text-red-400    bg-red-500/10    border-red-500/30",
+  high:     "text-amber-400  bg-amber-500/10  border-amber-500/30",
+  medium:   "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
+  low:      "text-blue-400   bg-blue-500/10   border-blue-500/30",
 }
 
 function TimelineSegment({
