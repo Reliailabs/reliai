@@ -6,7 +6,7 @@ export default async function BillingSuccessPage() {
 
   return (
     <div className="min-h-full p-6 flex items-center justify-center">
-      <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-[28px] px-6 py-8 text-center shadow-lg">
+      <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-lg px-6 py-8 text-center shadow-lg">
         <div className="text-4xl mb-4">✅</div>
         <h1 className="text-2xl font-semibold text-zinc-100">Upgrade successful</h1>
         <p className="mt-3 text-sm leading-6 text-zinc-400">

@@ -33,26 +33,26 @@ export default async function RegressionDetailPage({
 
       <div className="p-6 space-y-6">
         <section className="grid gap-4 xl:grid-cols-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <FolderKanban className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Project</p>
             <p className="mt-2 text-xl font-semibold text-zinc-100">{project?.name ?? regression.project_id}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <GitCompareArrows className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Current vs baseline</p>
             <p className="mt-2 text-xl font-semibold text-zinc-100">
               {regression.current_value} / {regression.baseline_value}
             </p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <Clock3 className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Detected</p>
             <p className="mt-2 text-xl font-semibold text-zinc-100">
               {new Date(regression.detected_at).toLocaleString()}
             </p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <ShieldAlert className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Related incident</p>
             {regression.related_incident ? (
@@ -69,7 +69,7 @@ export default async function RegressionDetailPage({
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Window compare</p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <div className="rounded-2xl border border-zinc-800 px-4 py-4">
@@ -85,7 +85,7 @@ export default async function RegressionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Delta</p>
             <div className="mt-4 space-y-4">
               <div className="rounded-2xl border border-zinc-800 px-4 py-3">
@@ -101,7 +101,7 @@ export default async function RegressionDetailPage({
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Likely contributing dimensions</p>
               <Link
@@ -129,7 +129,7 @@ export default async function RegressionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Compare path</p>
             <div className="mt-4 space-y-3 text-sm text-zinc-400">
               <p>Project regressions list stays scoped to this project and window history.</p>
@@ -152,7 +152,7 @@ export default async function RegressionDetailPage({
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Prompt version context</p>
             <div className="mt-4 space-y-3">
               {regression.prompt_version_contexts.map((context) => (
@@ -166,7 +166,7 @@ export default async function RegressionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Model version context</p>
             <div className="mt-4 space-y-3">
               {regression.model_version_contexts.map((context) => (
@@ -185,7 +185,7 @@ export default async function RegressionDetailPage({
         </section>
 
         <section className="grid gap-4 xl:grid-cols-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Current representative traces</p>
             <div className="mt-4 space-y-3">
               {regression.current_representative_traces.map((trace) => (
@@ -206,7 +206,7 @@ export default async function RegressionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Baseline representative traces</p>
             <div className="mt-4 space-y-3">
               {regression.baseline_representative_traces.map((trace) => (

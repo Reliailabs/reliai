@@ -43,26 +43,26 @@ export default async function PromptVersionDetailPage({
 
       <div className="p-6 space-y-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Total traces</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.usage_summary.trace_count}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Related incidents</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.usage_summary.incident_count}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Recent regressions</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.usage_summary.regression_count}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Recent traces</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.usage_summary.recent_trace_count}</p>
           </div>
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent traces</p>
             <div className="mt-4 space-y-3">
               {detail.recent_traces.map((trace) => (
@@ -85,7 +85,7 @@ export default async function PromptVersionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Investigation pivots</p>
             <div className="mt-4 space-y-3">
               <a
@@ -111,7 +111,7 @@ export default async function PromptVersionDetailPage({
         </div>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent regressions</p>
             <div className="mt-4 space-y-3">
               {detail.recent_regressions.map((regression) => (
@@ -129,7 +129,7 @@ export default async function PromptVersionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Related incidents</p>
             <div className="mt-4 space-y-3">
               {detail.related_incidents.map((incident) => (
@@ -149,7 +149,7 @@ export default async function PromptVersionDetailPage({
           </div>
         </section>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent reliability metrics</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {detail.recent_reliability_metrics.map((metric) => (

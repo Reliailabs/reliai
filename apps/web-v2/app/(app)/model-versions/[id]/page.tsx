@@ -44,22 +44,22 @@ export default async function ModelVersionDetailPage({
 
       <div className="p-6 space-y-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <Boxes className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Model family</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{model.model_family ?? "n/a"}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <ChartColumn className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Model revision</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{model.model_revision ?? "n/a"}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <ShieldAlert className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Related incidents</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.usage_summary.incident_count}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <FolderKanban className="h-5 w-5 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-500">Total traces</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.usage_summary.trace_count}</p>
@@ -67,7 +67,7 @@ export default async function ModelVersionDetailPage({
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Model metadata</p>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
@@ -89,7 +89,7 @@ export default async function ModelVersionDetailPage({
             </dl>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Investigation pivots</p>
             <div className="mt-4 space-y-3">
               <a
@@ -115,7 +115,7 @@ export default async function ModelVersionDetailPage({
         </div>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent traces</p>
             <div className="mt-4 space-y-3">
               {detail.recent_traces.map((trace) => (
@@ -138,7 +138,7 @@ export default async function ModelVersionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Related incidents</p>
             <div className="mt-4 space-y-3">
               {detail.related_incidents.map((incident) => (
@@ -159,7 +159,7 @@ export default async function ModelVersionDetailPage({
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent regressions</p>
             <div className="mt-4 space-y-3">
               {detail.recent_regressions.map((regression) => (
@@ -177,7 +177,7 @@ export default async function ModelVersionDetailPage({
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent reliability metrics</p>
             <div className="mt-4 grid gap-3">
               {detail.recent_reliability_metrics.map((metric) => (

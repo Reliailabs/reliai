@@ -16,9 +16,9 @@ function compactNumber(value: number) {
 }
 
 function probabilityTone(value: number) {
-  if (value >= 0.5) return "bg-rose-100 text-rose-700 ring-1 ring-rose-200";
-  if (value >= 0.25) return "bg-amber-100 text-amber-800 ring-1 ring-amber-200";
-  return "bg-sky-100 text-sky-700 ring-1 ring-sky-200";
+  if (value >= 0.5) return "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
+  if (value >= 0.25) return "bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20";
+  return "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20";
 }
 
 export default async function ReliabilityPatternsPage() {
@@ -28,71 +28,71 @@ export default async function ReliabilityPatternsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="overflow-hidden rounded-[30px] border border-zinc-300 bg-white shadow-sm">
-        <div className="relative border-b border-zinc-200 bg-[linear-gradient(135deg,rgba(15,23,42,0.08),transparent_38%),radial-gradient(circle_at_top_right,rgba(8,145,178,0.14),transparent_34%),linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,1))] px-6 py-6">
-          <Link href="/system/growth" className="inline-flex items-center gap-2 text-sm text-steel hover:text-ink">
+      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-sm">
+        <div className="relative border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_38%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_34%),linear-gradient(180deg,rgba(24,24,27,0.96),rgba(24,24,27,1))] px-6 py-6">
+          <Link href="/system/growth" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
             <ArrowLeft className="h-4 w-4" />
             Back to platform dashboard
           </Link>
           <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-steel">Reliability intelligence</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Cross-project failure patterns</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-steel">
+              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Reliability intelligence</p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">Cross-project failure patterns</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
                 Internal pattern board mined from warehouse traces. These rows feed deployment risk, simulation risk
                 adjustment, and guardrail recommendation logic across customer traffic.
               </p>
             </div>
-            <div className="rounded-full border border-zinc-300 bg-white/85 px-5 py-3 text-sm font-semibold text-ink shadow-sm backdrop-blur">
+            <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
               Operator-only intelligence layer
             </div>
           </div>
         </div>
 
         <div className="grid gap-4 px-6 py-5 lg:grid-cols-4">
-          <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
-            <div className="flex items-center gap-2 text-steel">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
+            <div className="flex items-center gap-2 text-zinc-400">
               <BrainCircuit className="h-4 w-4" />
               <p className="text-xs uppercase tracking-[0.18em]">Patterns</p>
             </div>
-            <p className="mt-3 text-3xl font-semibold text-ink">{items.length}</p>
-            <p className="mt-2 text-sm text-steel">Canonical reliability patterns currently available to internal engines.</p>
+            <p className="mt-3 text-3xl font-semibold text-zinc-100">{items.length}</p>
+            <p className="mt-2 text-sm text-zinc-400">Canonical reliability patterns currently available to internal engines.</p>
           </div>
-          <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
-            <div className="flex items-center gap-2 text-steel">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
+            <div className="flex items-center gap-2 text-zinc-400">
               <TriangleAlert className="h-4 w-4" />
               <p className="text-xs uppercase tracking-[0.18em]">Elevated</p>
             </div>
-            <p className="mt-3 text-3xl font-semibold text-ink">{highProbabilityCount}</p>
-            <p className="mt-2 text-sm text-steel">Patterns at or above 25% observed failure probability.</p>
+            <p className="mt-3 text-3xl font-semibold text-zinc-100">{highProbabilityCount}</p>
+            <p className="mt-2 text-sm text-zinc-400">Patterns at or above 25% observed failure probability.</p>
           </div>
-          <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
-            <div className="flex items-center gap-2 text-steel">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
+            <div className="flex items-center gap-2 text-zinc-400">
               <Waypoints className="h-4 w-4" />
               <p className="text-xs uppercase tracking-[0.18em]">Sample volume</p>
             </div>
-            <p className="mt-3 text-3xl font-semibold text-ink">{compactNumber(totalSamples)}</p>
-            <p className="mt-2 text-sm text-steel">Total trace observations contributing to the visible patterns.</p>
+            <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(totalSamples)}</p>
+            <p className="mt-2 text-sm text-zinc-400">Total trace observations contributing to the visible patterns.</p>
           </div>
-          <div className="rounded-[24px] border border-zinc-200 bg-zinc-50 px-5 py-4">
-            <div className="flex items-center gap-2 text-steel">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
+            <div className="flex items-center gap-2 text-zinc-400">
               <ShieldAlert className="h-4 w-4" />
               <p className="text-xs uppercase tracking-[0.18em]">Coverage</p>
             </div>
-            <p className="mt-3 text-3xl font-semibold text-ink">
+            <p className="mt-3 text-3xl font-semibold text-zinc-100">
               {new Set(items.map((item) => item.pattern_type)).size}
             </p>
-            <p className="mt-2 text-sm text-steel">Pattern families mined from model, prompt, and retrieval signals.</p>
+            <p className="mt-2 text-sm text-zinc-400">Pattern families mined from model, prompt, and retrieval signals.</p>
           </div>
         </div>
       </header>
 
-      <Card className="overflow-hidden rounded-[28px] border-zinc-300">
+      <Card className="overflow-hidden rounded-lg border-zinc-800">
         {items.length === 0 ? (
           <div className="px-6 py-12">
-            <div className="rounded-[24px] border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10">
-              <h2 className="text-xl font-semibold text-ink">No reliability patterns mined yet</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-steel">
+            <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-6 py-10">
+              <h2 className="text-xl font-semibold text-zinc-100">No reliability patterns mined yet</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
                 Run the reliability pattern mining worker after traces land in the warehouse to populate this internal
                 intelligence surface.
               </p>
@@ -101,7 +101,7 @@ export default async function ReliabilityPatternsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-left">
-              <thead className="bg-zinc-50 text-xs uppercase tracking-[0.16em] text-steel">
+              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-400">
                 <tr>
                   <th className="px-5 py-3 font-medium">Pattern</th>
                   <th className="px-5 py-3 font-medium">Model</th>
@@ -114,26 +114,26 @@ export default async function ReliabilityPatternsPage() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-t border-zinc-200 align-top">
+                  <tr key={item.id} className="border-t border-zinc-800 align-top">
                     <td className="px-5 py-4">
-                      <p className="text-sm font-medium capitalize text-ink">{item.pattern_type.replaceAll("_", " ")}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-steel">
+                      <p className="text-sm font-medium capitalize text-zinc-100">{item.pattern_type.replaceAll("_", " ")}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
                         {item.prompt_pattern_hash ?? "no prompt hash"}
                       </p>
                     </td>
-                    <td className="px-5 py-4 text-sm text-steel">{item.model_family ?? "unknown"}</td>
-                    <td className="px-5 py-4 text-sm text-steel">{item.failure_type.replaceAll("_", " ")}</td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">{item.model_family ?? "unknown"}</td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">{item.failure_type.replaceAll("_", " ")}</td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${probabilityTone(item.failure_probability)}`}>
                         {percent(item.failure_probability)}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-sm font-medium text-ink">{compactNumber(item.sample_count)}</td>
-                    <td className="px-5 py-4 text-sm text-steel">{new Date(item.last_seen_at).toLocaleString()}</td>
+                    <td className="px-5 py-4 text-sm font-medium text-zinc-100">{compactNumber(item.sample_count)}</td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">{new Date(item.last_seen_at).toLocaleString()}</td>
                     <td className="px-5 py-4 text-right">
                       <a
                         href={`/api/v1/intelligence/patterns/${item.id}`}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-ink hover:text-steel"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-100 hover:text-zinc-400"
                       >
                         API
                         <ChevronRight className="h-4 w-4" />

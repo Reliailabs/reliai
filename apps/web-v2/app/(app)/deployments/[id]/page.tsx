@@ -28,26 +28,26 @@ export default async function DeploymentDetailPage({
 
       <div className="p-6 space-y-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Environment</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.environment}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Deployed By</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.deployed_by || "n/a"}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Risk Level</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.latest_risk_score?.risk_level || "n/a"}</p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
             <p className="text-sm text-zinc-500">Gate Decision</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-100">{detail.gate?.decision || "n/a"}</p>
           </div>
         </section>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Deployment Info</p>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
@@ -69,7 +69,7 @@ export default async function DeploymentDetailPage({
             </dl>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Events</p>
             <div className="mt-4 space-y-3">
               {detail.events.length > 0 ? (
@@ -91,7 +91,7 @@ export default async function DeploymentDetailPage({
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Analysis</p>
            <pre className="mt-4 p-4 rounded-2xl border border-zinc-800 text-sm text-zinc-300 overflow-auto">
             {JSON.stringify(detail.risk_analysis_json, null, 2)}

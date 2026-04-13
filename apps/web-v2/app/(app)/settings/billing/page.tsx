@@ -100,7 +100,7 @@ export default async function BillingPage() {
 
       <div className="p-6 space-y-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_360px]">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Current plan</p>
@@ -124,7 +124,7 @@ export default async function BillingPage() {
              )}
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Cost breakdown</p>
             <h2 className="mt-3 text-xl font-semibold text-zinc-100">
               Transparent billing, no surprises.
@@ -172,7 +172,7 @@ export default async function BillingPage() {
           {planDetails.map((plan) => (
             <div
               key={plan.name}
-              className={`bg-zinc-900 border border-zinc-800 rounded-[24px] p-5 ${
+              className={`bg-zinc-900 border border-zinc-800 rounded-lg p-5 ${
                 plan.highlight ? "bg-zinc-800" : ""
               }`}
             >
@@ -209,7 +209,7 @@ export default async function BillingPage() {
           ))}
         </section>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-[24px] p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-amber-300">Why teams upgrade now</p>
           <ul className="mt-4 space-y-2 text-sm text-amber-300">
             <li>• Avoid losing traces during incidents</li>
