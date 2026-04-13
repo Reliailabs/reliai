@@ -5,8 +5,8 @@ FROM base AS builder
 WORKDIR /build
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/ ./packages/
-COPY apps/web/ ./apps/web/
+COPY apps/web ./apps/web/
+COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile
 WORKDIR /build/apps/web
