@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { AlertTriangle, ArrowLeft, Boxes, GitCommitHorizontal, ShieldAlert, Workflow } from "lucide-react";
+import { AlertTriangle, Boxes, GitCommitHorizontal, ShieldAlert, Workflow } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemCustomerDetail } from "@/lib/api";
 
 function compactNumber(value: number) {
@@ -49,72 +49,63 @@ export default async function SystemCustomerDetailPage({
   const chartMax = maxPoint(detail.trace_volume_chart);
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
-        <div className="border-b border-zinc-800 px-6 py-6">
-          <Link href="/system/customers" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300">
-            <ArrowLeft className="h-4 w-4" />
-            Back to customer health
-          </Link>
-          <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Customer drilldown</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{detail.project.project_name}</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">
-                Project-level operational readout combining warehouse trace volume, runtime guardrails, incident
-                history, deployment changes, and processor failures.
-              </p>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Customer drilldown"
+        title={detail.project.project_name}
+        description="Project-level operational readout combining warehouse trace volume, runtime guardrails, incident history, deployment changes, and processor failures."
+        backHref="/system/customers"
+        backLabel="Back to customer health"
+        right={
+          <div className="flex items-center gap-3">
+            <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-100">
+              {compactNumber(detail.project.trace_volume_24h)} traces in 24h
             </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-100">
-                {compactNumber(detail.project.trace_volume_24h)} traces in 24h
-              </div>
-              <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] ${riskTone(detail.project.risk_level)}`}>
-                {detail.project.risk_level} risk
-              </span>
-            </div>
+            <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] ${riskTone(detail.project.risk_level)}`}>
+              {detail.project.risk_level} risk
+            </span>
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <Workflow className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(detail.project.trace_volume_24h)}</p>
-            <p className="mt-2 text-sm text-zinc-500">Warehouse traces in the current 24-hour summary window.</p>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <Workflow className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <ShieldAlert className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Guardrail rate</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{(detail.project.guardrail_rate * 100).toFixed(1)}%</p>
-            <p className="mt-2 text-sm text-zinc-500">Runtime guardrail triggers relative to warehouse trace volume.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <AlertTriangle className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Incident rate</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{(detail.project.incident_rate * 100).toFixed(2)}%</p>
-            <p className="mt-2 text-sm text-zinc-500">Detected incidents relative to trace volume in the same window.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <Boxes className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Pipeline lag</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(detail.project.pipeline_lag)}</p>
-            <p className="mt-2 text-sm text-zinc-500">Approximate backlog from ingest versus warehouse/event processing.</p>
-          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(detail.project.trace_volume_24h)}</p>
+          <p className="mt-2 text-sm text-zinc-500">Warehouse traces in the current 24-hour summary window.</p>
         </div>
-      </header>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Guardrail rate</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{(detail.project.guardrail_rate * 100).toFixed(1)}%</p>
+          <p className="mt-2 text-sm text-zinc-500">Runtime guardrail triggers relative to warehouse trace volume.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <AlertTriangle className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Incident rate</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{(detail.project.incident_rate * 100).toFixed(2)}%</p>
+          <p className="mt-2 text-sm text-zinc-500">Detected incidents relative to trace volume in the same window.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <Boxes className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Pipeline lag</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(detail.project.pipeline_lag)}</p>
+          <p className="mt-2 text-sm text-zinc-500">Approximate backlog from ingest versus warehouse/event processing.</p>
+        </div>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
         <div className="space-y-6">
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Trace volume chart</p>
@@ -144,7 +135,7 @@ export default async function SystemCustomerDetailPage({
             </div>
           </Card>
 
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
               <ShieldAlert className="h-5 w-5 text-zinc-500" />
               <div>
@@ -154,12 +145,12 @@ export default async function SystemCustomerDetailPage({
             </div>
             <div className="mt-6 space-y-3">
               {detail.guardrail_triggers.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
                   No runtime guardrail triggers recorded for this project yet.
                 </div>
               ) : (
                 detail.guardrail_triggers.map((item) => (
-                  <div key={`${item.created_at}-${item.policy_type}`} className="rounded-2xl border border-zinc-800 px-4 py-4">
+                  <div key={`${item.created_at}-${item.policy_type}`} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{item.policy_type}</p>
                       <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{item.action_taken}</span>
@@ -174,7 +165,7 @@ export default async function SystemCustomerDetailPage({
             </div>
           </Card>
 
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-zinc-500" />
               <div>
@@ -184,12 +175,12 @@ export default async function SystemCustomerDetailPage({
             </div>
             <div className="mt-6 space-y-3">
               {detail.incident_history.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
                   No incidents recorded for this project in the current operator scope.
                 </div>
               ) : (
                 detail.incident_history.map((incident) => (
-                  <div key={incident.incident_id} className="rounded-2xl border border-zinc-800 px-4 py-4">
+                  <div key={incident.incident_id} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{incident.title}</p>
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${severityTone(incident.severity)}`}>
@@ -207,7 +198,7 @@ export default async function SystemCustomerDetailPage({
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
               <GitCommitHorizontal className="h-5 w-5 text-zinc-500" />
               <div>
@@ -217,12 +208,12 @@ export default async function SystemCustomerDetailPage({
             </div>
             <div className="mt-6 space-y-3">
               {detail.deployment_changes.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
                   No deployment records found for this project.
                 </div>
               ) : (
                 detail.deployment_changes.map((deployment) => (
-                  <div key={deployment.deployment_id} className="rounded-2xl border border-zinc-800 px-4 py-4">
+                  <div key={deployment.deployment_id} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{deployment.environment}</p>
                       <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{deployment.deployed_by ?? "unknown"}</span>
@@ -234,7 +225,7 @@ export default async function SystemCustomerDetailPage({
             </div>
           </Card>
 
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
               <Boxes className="h-5 w-5 text-zinc-500" />
               <div>
@@ -244,12 +235,12 @@ export default async function SystemCustomerDetailPage({
             </div>
             <div className="mt-6 space-y-3">
               {detail.processor_failures.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
                   No external processor failures recorded in the recent window.
                 </div>
               ) : (
                 detail.processor_failures.map((failure) => (
-                  <div key={failure.failure_id} className="rounded-2xl border border-zinc-800 px-4 py-4">
+                  <div key={failure.failure_id} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{failure.processor_name}</p>
                       <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{failure.event_type}</span>
@@ -263,16 +254,16 @@ export default async function SystemCustomerDetailPage({
             </div>
           </Card>
 
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent signals</p>
             <div className="mt-5 space-y-3">
               {detail.recent_timeline.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
                   No timeline events have been recorded for this project yet.
                 </div>
               ) : (
                 detail.recent_timeline.map((event, index) => (
-                  <div key={`${event.timestamp}-${index}`} className="rounded-2xl border border-zinc-800 px-4 py-4">
+                  <div key={`${event.timestamp}-${index}`} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{event.title}</p>
                       <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{event.event_type}</span>

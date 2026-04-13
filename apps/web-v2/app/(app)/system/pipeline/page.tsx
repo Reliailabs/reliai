@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { Activity, AlertTriangle, ArrowLeft, Cpu, DatabaseZap, Gauge, ShieldAlert } from "lucide-react";
+import { Activity, AlertTriangle, Cpu, DatabaseZap, Gauge, ShieldAlert } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemEventPipeline } from "@/lib/api";
 
 function tone(health: string) {
@@ -26,66 +26,57 @@ export default async function SystemPipelinePage() {
   const degradedCount = pipeline.consumers.filter((item) => item.health !== "healthy" && item.health !== "idle").length;
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-sm">
-        <div className="relative border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_40%),radial-gradient(circle_at_top_right,rgba(148,163,184,0.1),transparent_38%),linear-gradient(180deg,rgba(24,24,27,0.96),rgba(24,24,27,1))] px-6 py-6">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
-            <ArrowLeft className="h-4 w-4" />
-            Back to dashboard
-          </Link>
-          <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">System pipeline</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">Trace event processing telemetry</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                Internal readout for consumer throughput, derived lag, dead-letter routing, and recent failures
-                across the trace event pipeline.
-              </p>
-            </div>
-            <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
-              {pipeline.topic} {pipeline.dead_letter_topic ? `→ ${pipeline.dead_letter_topic}` : "· DLQ disabled"}
-            </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="System pipeline"
+        title="Trace event processing telemetry"
+        description="Internal readout for consumer throughput, derived lag, dead-letter routing, and recent failures across the trace event pipeline."
+        backHref="/dashboard"
+        backLabel="Back to dashboard"
+        right={
+          <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
+            {pipeline.topic} {pipeline.dead_letter_topic ? `→ ${pipeline.dead_letter_topic}` : "· DLQ disabled"}
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <DatabaseZap className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Published</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{pipeline.total_events_published}</p>
-            <p className="mt-2 text-sm text-zinc-400">Total ingested trace events on the primary topic.</p>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <DatabaseZap className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Published</p>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Activity className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Recent rate</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{pipeline.recent_events_published}</p>
-            <p className="mt-2 text-sm text-zinc-400">Published in the last {pipeline.window_minutes} minutes.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <AlertTriangle className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Degraded</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{degradedCount}</p>
-            <p className="mt-2 text-sm text-zinc-400">Consumers with recent errors or stalled progress.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <ShieldAlert className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">DLQ</p>
-            </div>
-            <p className="mt-3 text-lg font-semibold text-zinc-100">{pipeline.dead_letter_topic ?? "disabled"}</p>
-            <p className="mt-2 text-sm text-zinc-400">Failed consumer payloads are copied here when enabled.</p>
-          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{pipeline.total_events_published}</p>
+          <p className="mt-2 text-sm text-zinc-400">Total ingested trace events on the primary topic.</p>
         </div>
-      </header>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Activity className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Recent rate</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{pipeline.recent_events_published}</p>
+          <p className="mt-2 text-sm text-zinc-400">Published in the last {pipeline.window_minutes} minutes.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <AlertTriangle className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Degraded</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{degradedCount}</p>
+          <p className="mt-2 text-sm text-zinc-400">Consumers with recent errors or stalled progress.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">DLQ</p>
+          </div>
+          <p className="mt-3 text-lg font-semibold text-zinc-100">{pipeline.dead_letter_topic ?? "disabled"}</p>
+          <p className="mt-2 text-sm text-zinc-400">Failed consumer payloads are copied here when enabled.</p>
+        </div>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_360px]">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-3">
             <Cpu className="h-5 w-5 text-zinc-400" />
             <div>
@@ -114,7 +105,7 @@ export default async function SystemPipelinePage() {
                       <p className="mt-1 text-xs uppercase tracking-[0.14em] text-zinc-400">{consumer.topic}</p>
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${tone(consumer.health)}`}>
+                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${tone(consumer.health)}`}>
                         {consumer.health}
                       </span>
                     </td>
@@ -141,7 +132,7 @@ export default async function SystemPipelinePage() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
               <Gauge className="h-5 w-5 text-zinc-400" />
               <div>
@@ -150,33 +141,33 @@ export default async function SystemPipelinePage() {
               </div>
             </div>
             <div className="mt-5 space-y-3 text-sm text-zinc-400">
-              <div className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 px-4 py-3">
                 <p className="font-medium text-zinc-100">Healthy</p>
                 <p className="mt-1">Recent successful work and no recent consumer errors.</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 px-4 py-3">
                 <p className="font-medium text-zinc-100">Degraded</p>
                 <p className="mt-1">Recent processing errors were recorded and payloads may be in the DLQ.</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 px-4 py-3">
                 <p className="font-medium text-zinc-100">Stalled</p>
                 <p className="mt-1">Published trace volume exists, but the consumer has not completed recent work.</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 px-4 py-3">
                 <p className="font-medium text-zinc-100">Idle</p>
                 <p className="mt-1">No successful or failed work has been recorded for that consumer yet.</p>
               </div>
             </div>
           </Card>
 
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Recent window</p>
             <div className="mt-5 space-y-3">
               {pipeline.consumers.map((consumer) => (
-                <div key={`${consumer.consumer_name}-window`} className="rounded-2xl border border-zinc-800 px-4 py-3">
+                <div key={`${consumer.consumer_name}-window`} className="rounded-lg border border-zinc-800 px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-zinc-100">{consumer.consumer_name.replaceAll("_", " ")}</p>
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${tone(consumer.health)}`}>
+                    <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${tone(consumer.health)}`}>
                       {consumer.health}
                     </span>
                   </div>

@@ -1,8 +1,9 @@
 import { Fragment } from "react";
-import { ArrowLeft, ArrowRight, BellElectric, GitCommitHorizontal, ShieldAlert, TriangleAlert } from "lucide-react";
+import { ArrowRight, BellElectric, GitCommitHorizontal, ShieldAlert, TriangleAlert } from "lucide-react";
 
 import type { TimelineEventRead } from "@reliai/types";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getProject, getProjectTimeline } from "@/lib/api";
 
 function eventIcon(eventType: string) {
@@ -87,28 +88,19 @@ export default async function ProjectTimelinePage({
   ]);
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
-        <a
-          href={`/projects/${id}/reliability${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
-          className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-blue-400"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to reliability
-        </a>
-        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Investigation timeline</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-blue-400">{project.name}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500">
-              Unified project chronology across incidents, deployments, regressions, and triggered guardrails.
-            </p>
-          </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Investigation timeline"
+        title={project.name}
+        description="Unified project chronology across incidents, deployments, regressions, and triggered guardrails."
+        backHref={`/projects/${id}/reliability${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+        backLabel="Back to reliability"
+        right={
           <div className="rounded-lg border border-zinc-800 bg-zinc-800 px-4 py-3 text-sm text-zinc-500">
             {environment ?? project.environment} · {timeline.items.length} events
           </div>
-        </div>
-      </header>
+        }
+      />
 
       {timeline.items.length === 0 ? (
         <div className="rounded-lg border-zinc-800 p-6">

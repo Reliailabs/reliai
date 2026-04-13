@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, GitCompareArrows } from "lucide-react";
+import { ArrowRight, GitCompareArrows } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getMetricDisplayName } from "@/components/presenters/ops-format";
 import { LimitStatusInlineSlot } from "@/components/system/limit-status-inline-slot";
 import { getRegressionCompare } from "@/lib/api";
@@ -142,49 +143,38 @@ export default async function RegressionComparePage({
   }
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <Link
-            href={`/regressions/${id}`}
-            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to regression
-          </Link>
-          <Link
-            href={`/incidents/${compare.comparison_scope === "incident" ? compare.source_id : ""}`}
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            View incident →
-          </Link>
-        </div>
-        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Regression trace compare</p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-100">
-              Representative current vs baseline traces
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">
-              Side-by-side compare for the traces chosen from the current regression window and its baseline window.
-            </p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
-            {getMetricDisplayName(compare.metric_name)} · {compare.scope_type ?? "scope"}:{compare.scope_id ?? "n/a"}
-          </div>
-        </div>
-      </header>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Regression trace compare"
+        title="Representative current vs baseline traces"
+        description="Side-by-side compare for the traces chosen from the current regression window and its baseline window."
+        backHref={`/regressions/${id}`}
+        backLabel="Back to regression"
+        right={
+          <>
+            <Link
+              href={`/incidents/${compare.comparison_scope === "incident" ? compare.source_id : ""}`}
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              View incident →
+            </Link>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
+              {getMetricDisplayName(compare.metric_name)} · {compare.scope_type ?? "scope"}:{compare.scope_id ?? "n/a"}
+            </div>
+          </>
+        }
+      />
 
       <LimitStatusInlineSlot projectId={compare.project_id} types={["sampling"]} />
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <Card className="rounded-lg p-5">
+        <Card className="p-5">
           <GitCompareArrows className="h-5 w-5 text-zinc-400" />
           <p className="mt-3 text-sm text-zinc-400">Current window</p>
           <p className="mt-2 text-sm font-medium text-zinc-100">{compare.current_window_start ?? "n/a"}</p>
           <p className="mt-1 text-sm text-zinc-400">{compare.current_window_end ?? "n/a"}</p>
         </Card>
-        <Card className="rounded-lg p-5">
+        <Card className="p-5">
           <GitCompareArrows className="h-5 w-5 text-zinc-400" />
           <p className="mt-3 text-sm text-zinc-400">Baseline window</p>
           <p className="mt-2 text-sm font-medium text-zinc-100">{compare.baseline_window_start ?? "n/a"}</p>
@@ -193,7 +183,7 @@ export default async function RegressionComparePage({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Dimension summaries</p>
           <div className="mt-4 space-y-3">
             {compare.dimension_summaries.map((summary, index) => (
@@ -212,7 +202,7 @@ export default async function RegressionComparePage({
           </div>
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Trace pivots</p>
           <div className="mt-4 space-y-3">
             {compare.cohort_pivots.map((pivot) => (
@@ -229,7 +219,7 @@ export default async function RegressionComparePage({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Prompt version context</p>
           <div className="mt-4 space-y-3">
             {compare.prompt_version_contexts.map((context) => (
@@ -248,7 +238,7 @@ export default async function RegressionComparePage({
           </div>
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Model version context</p>
           <div className="mt-4 space-y-3">
             {compare.model_version_contexts.map((context) => (
@@ -276,7 +266,7 @@ export default async function RegressionComparePage({
               <TraceCompareCard trace={pair.current_trace} label={`Current #${pair.pair_index + 1}`} />
               <TraceCompareCard trace={pair.baseline_trace} label={`Baseline #${pair.pair_index + 1}`} />
             </div>
-            <Card className="rounded-lg p-5">
+            <Card className="p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Focused differences</p>
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {pair.diff_blocks.map((block) => (

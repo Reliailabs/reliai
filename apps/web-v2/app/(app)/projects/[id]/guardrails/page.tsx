@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, BellElectric, Clock3, Shield, TriangleAlert } from "lucide-react";
+import { ArrowRight, BellElectric, Clock3, Shield, TriangleAlert } from "lucide-react";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getProject, getProjectGuardrailMetrics } from "@/lib/api";
 
 function formatTime(value: string | null) {
@@ -35,79 +36,67 @@ export default async function ProjectGuardrailsPage({
   const activePolicies = guardrailMetrics.policies.length;
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
-        <div className="border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))] px-6 py-5">
-          <Link
-            href={`/projects/${id}${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
-            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to project dashboard
-          </Link>
-          <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Guardrail dashboard</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{project.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                Inspect runtime guardrail coverage, trigger volume, and the actions currently protecting
-                production traffic.
-              </p>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Guardrail dashboard"
+        title={project.name}
+        description="Inspect runtime guardrail coverage, trigger volume, and the actions currently protecting production traffic."
+        backHref={`/projects/${id}${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+        backLabel="Back to project dashboard"
+        right={
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Policies</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{activePolicies}</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Policies</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{activePolicies}</p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Triggers</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{totalTriggers}</p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Environment</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{environment ?? project.environment}</p>
-              </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Triggers</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{totalTriggers}</p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Environment</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{environment ?? project.environment}</p>
             </div>
           </div>
-        </div>
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <Shield className="mt-0.5 h-5 w-5 text-emerald-400" />
-            <div>
-              <p className="text-sm font-medium text-zinc-100">Protection coverage</p>
-              <p className="mt-1 text-sm leading-6 text-zinc-400">
-                Policies with zero triggers still appear here so operators can verify what is active before a
-                failure path is exercised.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <BellElectric className="mt-0.5 h-5 w-5 text-sky-400" />
-            <div>
-              <p className="text-sm font-medium text-zinc-100">Runtime focus</p>
-              <p className="mt-1 text-sm leading-6 text-zinc-400">
-                This dashboard reflects enforced runtime events, not offline policy simulation.
-              </p>
-            </div>
+        }
+      />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <Shield className="mt-0.5 h-5 w-5 text-emerald-400" />
+          <div>
+            <p className="text-sm font-medium text-zinc-100">Protection coverage</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Policies with zero triggers still appear here so operators can verify what is active before a
+              failure path is exercised.
+            </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-3 px-6 pb-5">
-          <Link
-            href={`/projects/${id}/metrics`}
-            className="inline-flex items-center gap-2 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-          >
-            Manage custom metrics
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href={`/projects/${id}/ingestion`}
-            className="inline-flex items-center gap-2 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
-          >
-            Manage ingestion policy
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+        <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <BellElectric className="mt-0.5 h-5 w-5 text-sky-400" />
+          <div>
+            <p className="text-sm font-medium text-zinc-100">Runtime focus</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              This dashboard reflects enforced runtime events, not offline policy simulation.
+            </p>
+          </div>
         </div>
-      </header>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href={`/projects/${id}/metrics`}
+          className="inline-flex items-center gap-2 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+        >
+          Manage custom metrics
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+        <Link
+          href={`/projects/${id}/ingestion`}
+          className="inline-flex items-center gap-2 rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+        >
+          Manage ingestion policy
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">
         <div className="flex items-center gap-3">

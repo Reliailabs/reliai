@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { Activity, ArrowLeft, Blocks, PlugZap, ShieldAlert } from "lucide-react";
+import { Activity, Blocks, PlugZap, ShieldAlert } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemExtensions } from "@/lib/api";
 
 function tone(health: string) {
@@ -17,67 +17,58 @@ export default async function SystemExtensionsPage() {
   const degraded = data.items.filter((item) => item.health === "degraded").length;
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-sm">
-        <div className="relative border-b border-zinc-800 bg-[linear-gradient(140deg,rgba(255,255,255,0.03),transparent_38%),radial-gradient(circle_at_top_right,rgba(20,184,166,0.08),transparent_34%),linear-gradient(180deg,rgba(24,24,27,0.96),rgba(24,24,27,1))] px-6 py-6">
-          <Link href="/system/platform" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
-            <ArrowLeft className="h-4 w-4" />
-            Back to platform health
-          </Link>
-          <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Processor extension platform</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">Installed extensions and runtime health</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                Formal view of core processors, organization processors, and installed platform extensions. Use this to
-                verify allowed events, runtime limits, dispatch throughput, and extension stability without opening raw logs.
-              </p>
-            </div>
-            <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
-              Admin-only runtime surface
-            </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Processor extension platform"
+        title="Installed extensions and runtime health"
+        description="Formal view of core processors, organization processors, and installed platform extensions. Use this to verify allowed events, runtime limits, dispatch throughput, and extension stability without opening raw logs."
+        backHref="/system/platform"
+        backLabel="Back to platform health"
+        right={
+          <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
+            Admin-only runtime surface
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Blocks className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Installed extensions</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{installed.length}</p>
-            <p className="mt-2 text-sm text-zinc-400">Customer-installed reliability processors and integrations.</p>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Blocks className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Installed extensions</p>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <ShieldAlert className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Healthy</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{healthy}</p>
-            <p className="mt-2 text-sm text-zinc-400">Extensions dispatching without recent failures.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Activity className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Degraded</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{degraded}</p>
-            <p className="mt-2 text-sm text-zinc-400">Extensions with recent failures or dispatch instability.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <PlugZap className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Hourly throughput</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">
-              {data.items.reduce((sum, item) => sum + item.event_throughput_per_hour, 0)}
-            </p>
-            <p className="mt-2 text-sm text-zinc-400">Observed extension invocations in the current runtime hour bucket.</p>
-          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{installed.length}</p>
+          <p className="mt-2 text-sm text-zinc-400">Customer-installed reliability processors and integrations.</p>
         </div>
-      </header>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Healthy</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{healthy}</p>
+          <p className="mt-2 text-sm text-zinc-400">Extensions dispatching without recent failures.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Activity className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Degraded</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{degraded}</p>
+          <p className="mt-2 text-sm text-zinc-400">Extensions with recent failures or dispatch instability.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <PlugZap className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Hourly throughput</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">
+            {data.items.reduce((sum, item) => sum + item.event_throughput_per_hour, 0)}
+          </p>
+          <p className="mt-2 text-sm text-zinc-400">Observed extension invocations in the current runtime hour bucket.</p>
+        </div>
+      </div>
 
-      <Card className="overflow-hidden rounded-lg border-zinc-800">
+      <Card className="overflow-hidden">
         <div className="border-b border-zinc-800 px-6 py-5">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Extension registry</p>
           <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Processor load order and health</h2>
@@ -114,7 +105,7 @@ export default async function SystemExtensionsPage() {
                     </td>
                     <td className="px-5 py-4 text-sm text-zinc-400">{item.processor_type}</td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${tone(item.health)}`}>
+                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${tone(item.health)}`}>
                         {item.health.toUpperCase()}
                       </span>
                     </td>

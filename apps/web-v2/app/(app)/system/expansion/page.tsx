@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { ArrowLeft, Radar, TowerControl, TrendingUp, Zap } from "lucide-react";
+import { Radar, TowerControl, TrendingUp, Zap } from "lucide-react";
 
 import { getSystemCustomerExpansion } from "@/lib/api";
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 
 function compactNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -35,65 +35,56 @@ export default async function SystemExpansionPage() {
   }));
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-sm">
-        <div className="relative border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_40%),radial-gradient(circle_at_top_right,rgba(20,184,166,0.06),transparent_34%),linear-gradient(180deg,rgba(24,24,27,0.96),rgba(24,24,27,1))] px-6 py-6">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
-            <ArrowLeft className="h-4 w-4" />
-            Back to dashboard
-          </Link>
-          <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Customer expansion</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">Telemetry expansion across customers</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                Internal warehouse-rollup view of which organizations are expanding telemetry after onboarding and which
-                accounts are showing infrastructure-style usage growth.
-              </p>
-            </div>
-            <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
-              Breakout threshold: 5x expansion
-            </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Customer expansion"
+        title="Telemetry expansion across customers"
+        description="Internal warehouse-rollup view of which organizations are expanding telemetry after onboarding and which accounts are showing infrastructure-style usage growth."
+        backHref="/dashboard"
+        backLabel="Back to dashboard"
+        right={
+          <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
+            Breakout threshold: 5x expansion
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <TrendingUp className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Average expansion</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{formatRatio(expansion.average_expansion_ratio)}</p>
-            <p className="mt-2 text-sm text-zinc-400">Mean current-30-day volume divided by first-30-day volume.</p>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <TrendingUp className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Average expansion</p>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <TowerControl className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Platform growth</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{formatPercent(expansion.total_platform_growth_pct)}</p>
-            <p className="mt-2 text-sm text-zinc-400">Aggregate current-vs-initial telemetry growth across organizations.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Zap className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Breakout customers</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{expansion.breakout_customers}</p>
-            <p className="mt-2 text-sm text-zinc-400">Organizations currently above the 5x telemetry expansion threshold.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Radar className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Tracked orgs</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{expansion.organizations.length}</p>
-            <p className="mt-2 text-sm text-zinc-400">Organizations with active tenant records in the current platform view.</p>
-          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{formatRatio(expansion.average_expansion_ratio)}</p>
+          <p className="mt-2 text-sm text-zinc-400">Mean current-30-day volume divided by first-30-day volume.</p>
         </div>
-      </header>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <TowerControl className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Platform growth</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{formatPercent(expansion.total_platform_growth_pct)}</p>
+          <p className="mt-2 text-sm text-zinc-400">Aggregate current-vs-initial telemetry growth across organizations.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Zap className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Breakout customers</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{expansion.breakout_customers}</p>
+          <p className="mt-2 text-sm text-zinc-400">Organizations currently above the 5x telemetry expansion threshold.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Radar className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Tracked orgs</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{expansion.organizations.length}</p>
+          <p className="mt-2 text-sm text-zinc-400">Organizations with active tenant records in the current platform view.</p>
+        </div>
+      </div>
 
-      <Card className="overflow-hidden rounded-lg border-zinc-800">
+      <Card className="overflow-hidden">
         {expansion.organizations.length === 0 ? (
           <div className="px-6 py-12">
             <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-6 py-10">
@@ -138,7 +129,7 @@ export default async function SystemExpansionPage() {
                     <td className="px-5 py-4 text-sm text-zinc-400">{formatPercent(organization.growth_rate)}</td>
                     <td className="px-5 py-4">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${breakoutTone(organization.breakout)}`}
+                        className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${breakoutTone(organization.breakout)}`}
                       >
                         {organization.breakout ? "breakout" : "normal"}
                       </span>

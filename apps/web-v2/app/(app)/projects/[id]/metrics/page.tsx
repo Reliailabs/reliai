@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ArrowLeft, ArrowRight, Gauge, ListFilter, Regex, ShieldAlert } from "lucide-react";
+import { ArrowRight, Gauge, ListFilter, Regex, ShieldAlert } from "lucide-react";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import {
   createProjectCustomMetric,
   getProject,
@@ -137,39 +138,30 @@ export default async function ProjectCustomMetricsPage({
   }
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
-        <div className="border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))] px-6 py-5">
-          <Link href={`/projects/${id}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200">
-            <ArrowLeft className="h-4 w-4" />
-            Back to project dashboard
-          </Link>
-          <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Behavioral signal config</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{project.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                Define project-level custom metrics using regex or keyword matching so your team can track behavior
-                shifts without waiting for new product hardcoding.
-              </p>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Behavioral signal config"
+        title={project.name}
+        description="Define project-level custom metrics using regex or keyword matching so your team can track behavior shifts without waiting for new product hardcoding."
+        backHref={`/projects/${id}`}
+        backLabel="Back to project dashboard"
+        right={
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total metrics</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{metrics.length}</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Total metrics</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{metrics.length}</p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Enabled</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{metrics.filter((item) => item.enabled).length}</p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Signal type</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">Regex + Keywords</p>
-              </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Enabled</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{metrics.filter((item) => item.enabled).length}</p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Signal type</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">Regex + Keywords</p>
             </div>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       {createdFlag ? (
         <div className="rounded-lg border border-amber-800 bg-amber-950/60 p-5">
@@ -335,7 +327,7 @@ export default async function ProjectCustomMetricsPage({
             ) : (
               <div className="mt-5 space-y-3">
                 {metrics.map((metric) => (
-                  <div key={metric.id} className="rounded-[22px] border border-zinc-800 px-4 py-4">
+                  <div key={metric.id} className="rounded-lg border border-zinc-800 px-4 py-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-sm font-medium text-zinc-100">{metric.name}</p>

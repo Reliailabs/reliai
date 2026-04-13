@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, ChevronRight, FolderKanban, ShieldAlert, Workflow } from "lucide-react";
+import { AlertTriangle, ChevronRight, FolderKanban, ShieldAlert, Workflow } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemCustomers } from "@/lib/api";
 
 function compactNumber(value: number) {
@@ -28,66 +29,59 @@ export default async function SystemCustomersPage() {
   const totalFailures = projects.reduce((sum, project) => sum + project.processor_failures, 0);
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
-          <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
-        </Link>
-        <div className="mt-4 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Customer reliability</p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-100">Project health by customer surface</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">
-              Internal operator view of warehouse throughput, guardrail pressure, incident density, processor
-              instability, and derived platform risk across active projects.
-            </p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm font-medium text-zinc-400">
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Customer reliability"
+        title="Project health by customer surface"
+        description="Internal operator view of warehouse throughput, guardrail pressure, incident density, processor instability, and derived platform risk across active projects."
+        backHref="/dashboard"
+        backLabel="Back to dashboard"
+        right={
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-400">
             Operator-only customer health board
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-4 mt-5 lg:grid-cols-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <FolderKanban className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Projects</p>
-            </div>
-            <p className="mt-3 text-2xl font-semibold text-zinc-100">{projects.length}</p>
-            <p className="mt-2 text-sm text-zinc-500">Customer projects visible to the current operator scope.</p>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <FolderKanban className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Projects</p>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <Workflow className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
-            </div>
-            <p className="mt-3 text-2xl font-semibold text-zinc-100">{compactNumber(totalTraceVolume)}</p>
-            <p className="mt-2 text-sm text-zinc-500">Warehouse traces recorded over the last 24 hours.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <AlertTriangle className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">High risk</p>
-            </div>
-            <p className="mt-3 text-2xl font-semibold text-zinc-100">{highRiskCount}</p>
-            <p className="mt-2 text-sm text-zinc-500">Projects currently crossing the highest composite risk thresholds.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <ShieldAlert className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Processor failures</p>
-            </div>
-            <p className="mt-3 text-2xl font-semibold text-zinc-100">{totalFailures}</p>
-            <p className="mt-2 text-sm text-zinc-500">External processor failures recorded across the same summary window.</p>
-          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{projects.length}</p>
+          <p className="mt-2 text-sm text-zinc-500">Customer projects visible to the current operator scope.</p>
         </div>
-      </header>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <Workflow className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{compactNumber(totalTraceVolume)}</p>
+          <p className="mt-2 text-sm text-zinc-500">Warehouse traces recorded over the last 24 hours.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <AlertTriangle className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">High risk</p>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{highRiskCount}</p>
+          <p className="mt-2 text-sm text-zinc-500">Projects currently crossing the highest composite risk thresholds.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Processor failures</p>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{totalFailures}</p>
+          <p className="mt-2 text-sm text-zinc-500">External processor failures recorded across the same summary window.</p>
+        </div>
+      </div>
 
-      <Card className="overflow-hidden rounded-lg border-zinc-800 bg-zinc-900">
+      <Card className="overflow-hidden">
         {projects.length === 0 ? (
           <div className="px-6 py-12">
-            <div className="rounded-lg border border-dashed border-zinc-700 bg-zinc-950 px-6 py-10 text-center">
+            <div className="rounded-lg border border-dashed border-zinc-700 bg-zinc-900 px-6 py-10 text-center">
               <h2 className="text-xl font-semibold text-zinc-100">No customer health data yet</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 mx-auto">
                 This view populates once traces land in the warehouse and project-level incidents, guardrails, or
@@ -129,7 +123,7 @@ export default async function SystemCustomersPage() {
                     </td>
                     <td className="px-5 py-4 text-sm font-medium text-zinc-100">{compactNumber(project.pipeline_lag)}</td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${riskTone(project.risk_level)}`}>
+                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${riskTone(project.risk_level)}`}>
                         {project.risk_level}
                       </span>
                     </td>

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ArrowLeft, ArrowRight, Database, Filter, HardDrive, Timer } from "lucide-react";
+import { ArrowRight, Database, Filter, HardDrive, Timer } from "lucide-react";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getProject, getProjectIngestionPolicy, updateProjectIngestionPolicy } from "@/lib/api";
 
 export default async function ProjectIngestionPage({
@@ -45,58 +45,50 @@ export default async function ProjectIngestionPage({
   }
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
-        <div className="border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))] px-6 py-5">
-          <Link href={`/projects/${id}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200">
-            <ArrowLeft className="h-4 w-4" />
-            Back to project dashboard
-          </Link>
-          <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Ingestion pipeline</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{project.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                Control which traces are stored, how much metadata is retained, and how long they persist.
-              </p>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Ingestion pipeline"
+        title={project.name}
+        description="Control which traces are stored, how much metadata is retained, and how long they persist."
+        backHref={`/projects/${id}`}
+        backLabel="Back to project dashboard"
+        right={
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Success sampling</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{policy.sampling_success_rate}%</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Success sampling</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{policy.sampling_success_rate}%</p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Error sampling</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{policy.sampling_error_rate}%</p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Retention</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{policy.retention_days_success}d</p>
-              </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Error sampling</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{policy.sampling_error_rate}%</p>
             </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Retention</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{policy.retention_days_success}d</p>
+            </div>
+          </div>
+        }
+      />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <Filter className="mt-0.5 h-5 w-5 text-emerald-400" />
+          <div>
+            <p className="text-sm font-medium text-zinc-100">Sampling focus</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Keep high‑resolution error traces for debugging while sampling successful traffic to manage cost.
+            </p>
           </div>
         </div>
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <Filter className="mt-0.5 h-5 w-5 text-emerald-400" />
-            <div>
-              <p className="text-sm font-medium text-zinc-100">Sampling focus</p>
-              <p className="mt-1 text-sm leading-6 text-zinc-400">
-                Keep high‑resolution error traces for debugging while sampling successful traffic to manage cost.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <HardDrive className="mt-0.5 h-5 w-5 text-sky-400" />
-            <div>
-              <p className="text-sm font-medium text-zinc-100">Retention tiers</p>
-              <p className="mt-1 text-sm leading-6 text-zinc-400">
-                Error traces are kept longer for post‑mortem analysis; successful traces age out sooner.
-              </p>
-            </div>
+        <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <HardDrive className="mt-0.5 h-5 w-5 text-sky-400" />
+          <div>
+            <p className="text-sm font-medium text-zinc-100">Retention tiers</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Error traces are kept longer for post‑mortem analysis; successful traces age out sooner.
+            </p>
           </div>
         </div>
-      </header>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">

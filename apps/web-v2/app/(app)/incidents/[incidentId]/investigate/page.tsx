@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, GitCompareArrows, ShieldAlert, Wrench } from "lucide-react";
+import { ExternalLink, GitCompareArrows, ShieldAlert, Wrench } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { RecommendationCallout } from "@/components/ui/recommendation-callout";
 import { getIncidentInvestigation } from "@/lib/api";
 
@@ -37,29 +38,21 @@ export default async function IncidentInvestigationPage({
   const incident = investigation.incident;
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <Link href={`/incidents/${incidentId}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
-            <ArrowLeft className="h-4 w-4" />
-            Back to incident
-          </Link>
-          <Link
-            href={`/incidents/${incidentId}`}
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            Open command center →
-          </Link>
-        </div>
-        <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Incident investigation</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{incident.title}</h1>
-            <p className="mt-2 text-sm text-zinc-500">
-              {incident.project_name} · {String(incident.summary_json.metric_name ?? "metric n/a")} · opened {formatDate(incident.started_at)}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Incident investigation"
+        title={incident.title}
+        description={`${incident.project_name} · ${String(incident.summary_json.metric_name ?? "metric n/a")} · opened ${formatDate(incident.started_at)}`}
+        backHref={`/incidents/${incidentId}`}
+        backLabel="Back to incident"
+        right={
+          <>
+            <Link
+              href={`/incidents/${incidentId}`}
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              Open command center →
+            </Link>
             <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${severityTone(incident.severity)}`}>
               {incident.severity}
             </span>
@@ -77,26 +70,26 @@ export default async function IncidentInvestigationPage({
                 <ExternalLink className="h-4 w-4" />
               </a>
             ) : null}
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <Card className="rounded-lg border-zinc-800 p-5">
+        <Card className="p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Incident summary</p>
           <p className="mt-3 text-sm text-zinc-400">Scope</p>
           <p className="mt-2 text-xl font-semibold text-zinc-100">
             {String(incident.summary_json.scope_type ?? "n/a")}:{String(incident.summary_json.scope_id ?? "n/a")}
           </p>
         </Card>
-        <Card className="rounded-lg border-zinc-800 p-5">
+        <Card className="p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Metric impact</p>
           <p className="mt-3 text-sm text-zinc-400">Current vs baseline</p>
           <p className="mt-2 text-xl font-semibold text-zinc-100">
             {incident.regressions[0] ? `${incident.regressions[0].current_value} vs ${incident.regressions[0].baseline_value}` : "n/a"}
           </p>
         </Card>
-        <Card className="rounded-lg border-zinc-800 p-5">
+        <Card className="p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Timeline</p>
           <p className="mt-3 text-sm text-zinc-400">Current window</p>
           <p className="mt-2 text-lg font-semibold text-zinc-100">{incident.compare.current_window_start ?? "n/a"}</p>
@@ -114,7 +107,7 @@ export default async function IncidentInvestigationPage({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_420px]">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Root cause</p>
           <div className="mt-4 space-y-3">
             {investigation.root_cause_analysis.ranked_causes.map((cause) => (
@@ -129,7 +122,7 @@ export default async function IncidentInvestigationPage({
           </div>
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Suggested fix</p>
           <div className="mt-4 space-y-3">
             {investigation.recommendations.length > 0 ? (
@@ -150,7 +143,7 @@ export default async function IncidentInvestigationPage({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Trace comparison</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div className="rounded-lg border border-zinc-800 px-4 py-4">
@@ -190,7 +183,7 @@ export default async function IncidentInvestigationPage({
           </div>
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Deployment context</p>
           <div className="mt-4 space-y-3">
             <div className="rounded-lg border border-zinc-800 px-4 py-3">
@@ -216,7 +209,7 @@ export default async function IncidentInvestigationPage({
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">AI investigation insights</p>
           <div className="mt-4 space-y-3">
             {investigation.possible_root_causes.length > 0 ? (
@@ -236,7 +229,7 @@ export default async function IncidentInvestigationPage({
           </div>
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Guardrail activity</p>
           {investigation.guardrail_activity.length > 0 ? (
             <div className="mt-4 space-y-3">
@@ -254,7 +247,7 @@ export default async function IncidentInvestigationPage({
           )}
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Recommended next step</p>
           <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
             <div className="flex items-start gap-3">

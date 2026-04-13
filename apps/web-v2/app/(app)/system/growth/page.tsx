@@ -1,6 +1,4 @@
-import Link from "next/link";
 import {
-  ArrowLeft,
   BarChart3,
   Building2,
   Bug,
@@ -10,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemCustomerExpansion, getSystemGrowth } from "@/lib/api";
 
 function compactNumber(value: number) {
@@ -60,7 +59,7 @@ function CohortChart({
     .join(" ");
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
       <svg viewBox={`0 0 ${width} ${height}`} className="h-56 w-full" role="img" aria-label="Usage expansion by cohort">
         {[0, 0.5, 1].map((ratio) => {
           const y = paddingTop + chartHeight * ratio;
@@ -99,7 +98,7 @@ function CohortChart({
       </svg>
       <div className="mt-4 flex flex-wrap gap-3">
         {points.filter((point) => point.organizations > 0).slice(0, 4).map((point) => (
-          <div key={point.month_index} className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400">
+          <div key={point.month_index} className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400">
             <span className="font-mono text-zinc-100">{point.usage_index.toFixed(1)}x</span> at month {point.month_index}
           </div>
         ))}
@@ -117,7 +116,7 @@ function DistributionChart({
   const maxTraces = maxNumber(topPoints.map((point) => point.traces_30d));
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
       <div className="grid h-56 grid-cols-12 items-end gap-3">
         {topPoints.map((point, index) => (
           <div key={point.organization_id} className="flex h-full flex-col justify-end gap-3">
@@ -136,7 +135,7 @@ function DistributionChart({
       </div>
       <div className="mt-4 grid gap-2 md:grid-cols-2">
         {topPoints.slice(0, 6).map((point) => (
-          <div key={point.organization_id} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-3 py-2">
+          <div key={point.organization_id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
             <span className="truncate pr-3 text-sm text-zinc-100">{point.organization_name}</span>
             <span className="font-mono text-sm text-zinc-400">{compactNumber(point.traces_30d)}</span>
           </div>
@@ -186,68 +185,59 @@ export default async function SystemGrowthPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-sm">
-        <div className="relative border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_35%),radial-gradient(circle_at_top_right,rgba(148,163,184,0.08),transparent_36%),linear-gradient(180deg,rgba(24,24,27,0.96),rgba(24,24,27,1))] px-6 py-6">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
-            <ArrowLeft className="h-4 w-4" />
-            Back to dashboard
-          </Link>
-          <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">System growth</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">Internal warehouse growth readout</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                Operator-facing internal dashboard for trace volume expansion, incident capture, guardrail intervention
-                load, and active project usage tiers.
-              </p>
-            </div>
-            <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
-              Warehouse-derived system metrics
-            </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="System growth"
+        title="Internal warehouse growth readout"
+        description="Operator-facing internal dashboard for trace volume expansion, incident capture, guardrail intervention load, and active project usage tiers."
+        backHref="/dashboard"
+        backLabel="Back to dashboard"
+        right={
+          <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
+            Warehouse-derived system metrics
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <TrendingUp className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(growth.trace_volume.today)}</p>
-            <p className="mt-2 text-sm text-zinc-400">Traces observed today across the warehouse.</p>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <TrendingUp className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <BarChart3 className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">7d baseline</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(growth.trace_volume.seven_day_avg)}</p>
-            <p className="mt-2 text-sm text-zinc-400">Average daily volume over the previous seven full UTC days.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Bug className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Incident capture</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{growth.incident_metrics.incidents_detected}</p>
-            <p className="mt-2 text-sm text-zinc-400">Incidents detected in the last seven UTC days.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <ShieldAlert className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Guardrail actions</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">
-              {growth.guardrail_metrics.retries + growth.guardrail_metrics.fallbacks + growth.guardrail_metrics.blocks}
-            </p>
-            <p className="mt-2 text-sm text-zinc-400">Runtime interventions recorded over the same seven-day window.</p>
-          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(growth.trace_volume.today)}</p>
+          <p className="mt-2 text-sm text-zinc-400">Traces observed today across the warehouse.</p>
         </div>
-      </header>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <BarChart3 className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">7d baseline</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(growth.trace_volume.seven_day_avg)}</p>
+          <p className="mt-2 text-sm text-zinc-400">Average daily volume over the previous seven full UTC days.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Bug className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Incident capture</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{growth.incident_metrics.incidents_detected}</p>
+          <p className="mt-2 text-sm text-zinc-400">Incidents detected in the last seven UTC days.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Guardrail actions</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">
+            {growth.guardrail_metrics.retries + growth.guardrail_metrics.fallbacks + growth.guardrail_metrics.blocks}
+          </p>
+          <p className="mt-2 text-sm text-zinc-400">Runtime interventions recorded over the same seven-day window.</p>
+        </div>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Usage expansion by cohort</p>
@@ -266,7 +256,7 @@ export default async function SystemGrowthPage() {
           </div>
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Customer usage distribution</p>
@@ -287,7 +277,7 @@ export default async function SystemGrowthPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-3">
             <TrendingUp className="h-5 w-5 text-zinc-400" />
             <div>
@@ -315,7 +305,7 @@ export default async function SystemGrowthPage() {
           </div>
         </Card>
 
-        <Card className="rounded-lg border-zinc-800 p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-3">
             <Building2 className="h-5 w-5 text-zinc-400" />
             <div>
@@ -325,7 +315,7 @@ export default async function SystemGrowthPage() {
           </div>
           <div className="mt-6 space-y-3">
             {expansion.organizations.slice(0, 5).map((organization) => (
-              <div key={organization.organization_id} className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+              <div key={organization.organization_id} className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                 <div>
                   <p className="text-sm font-medium text-zinc-100">{organization.organization_name}</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
@@ -346,7 +336,7 @@ export default async function SystemGrowthPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <div className="grid gap-6">
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Trace volume chart</p>
@@ -376,7 +366,7 @@ export default async function SystemGrowthPage() {
             </div>
           </Card>
 
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Incident detection chart</p>
@@ -405,7 +395,7 @@ export default async function SystemGrowthPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
               <ShieldAlert className="h-5 w-5 text-zinc-400" />
               <div>
@@ -414,22 +404,22 @@ export default async function SystemGrowthPage() {
               </div>
             </div>
             <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                 <span className="text-sm text-zinc-400">Retries</span>
                 <span className="text-sm font-medium text-zinc-100">{growth.guardrail_metrics.retries}</span>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                 <span className="text-sm text-zinc-400">Fallbacks</span>
                 <span className="text-sm font-medium text-zinc-100">{growth.guardrail_metrics.fallbacks}</span>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
                 <span className="text-sm text-zinc-400">Blocks</span>
                 <span className="text-sm font-medium text-zinc-100">{growth.guardrail_metrics.blocks}</span>
               </div>
             </div>
           </Card>
 
-          <Card className="rounded-lg border-zinc-800 p-6">
+          <Card className="p-6">
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-zinc-400" />
               <div>

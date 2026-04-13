@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ChartColumn, FolderKanban, History, ShieldCheck, ShieldX } from "lucide-react";
+import { ArrowRight, ChartColumn, FolderKanban, History, ShieldCheck, ShieldX } from "lucide-react";
 
 import type { ReliabilityMetricSeriesRead } from "@reliai/types";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getProject, getProjectReliability, listProjectCustomMetrics } from "@/lib/api";
 
 function percent(value: number | null) {
@@ -179,24 +180,14 @@ export default async function ProjectReliabilityPage({
   ];
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-lg border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
-        <a
-          href={`/projects/${id}/regressions${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
-          className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-100"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to regressions
-        </a>
-        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Project reliability</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{project.name}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500">
-              Track operator-facing reliability metrics derived from persisted incidents, alert deliveries,
-              regression snapshots, rollups, and trace completeness.
-            </p>
-          </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Project reliability"
+        title={project.name}
+        description="Track operator-facing reliability metrics derived from persisted incidents, alert deliveries, regression snapshots, rollups, and trace completeness."
+        backHref={`/projects/${id}/regressions${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
+        backLabel="Back to regressions"
+        right={
           <div className="flex flex-wrap items-center gap-3">
             <a
               href={`/projects/${id}/timeline${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
@@ -224,8 +215,8 @@ export default async function ProjectReliabilityPage({
               {environment ?? project.environment}
             </div>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {headlineCards.map((card) => (
