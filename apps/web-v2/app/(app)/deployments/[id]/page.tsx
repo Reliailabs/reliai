@@ -26,7 +26,7 @@ export default async function DeploymentDetailPage({
         title={`Deployment ${id.slice(0, 8)}`}
         description={`Deployed to ${detail.environment} at ${new Date(detail.deployed_at).toLocaleString()}`}
         right={
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
             {detail.project_id}
           </div>
         }
@@ -56,19 +56,19 @@ export default async function DeploymentDetailPage({
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Deployment Info</p>
             <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Deployment ID</dt>
                 <dd className="text-right text-zinc-100">{detail.id}</dd>
               </div>
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Project ID</dt>
                 <dd className="text-right text-zinc-100">{detail.project_id}</dd>
               </div>
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Prompt Version</dt>
                 <dd className="text-right text-zinc-100">{detail.prompt_version?.version || "n/a"}</dd>
               </div>
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Model Version</dt>
                 <dd className="text-right text-zinc-100">{detail.model_version?.model_name || "n/a"}</dd>
               </div>
@@ -82,7 +82,7 @@ export default async function DeploymentDetailPage({
                 detail.events.slice(0, 5).map((event) => (
                   <div
                     key={event.id}
-                    className="rounded-2xl border border-zinc-800 px-4 py-3"
+                    className="rounded-lg border border-zinc-800 px-4 py-3"
                   >
                     <p className="text-sm font-medium text-zinc-100">{event.event_type}</p>
                     <p className="mt-1 text-sm text-zinc-400">
@@ -99,7 +99,7 @@ export default async function DeploymentDetailPage({
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
           <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Analysis</p>
-           <pre className="mt-4 p-4 rounded-2xl border border-zinc-800 text-sm text-zinc-300 overflow-auto">
+           <pre className="mt-4 p-4 rounded-lg border border-zinc-800 text-sm text-zinc-300 overflow-auto">
             {JSON.stringify(detail.risk_analysis_json, null, 2)}
           </pre>
         </div>

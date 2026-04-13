@@ -29,7 +29,7 @@ export default async function RegressionDetailPage({
         title={regression.metric_name}
         description="Compare the current window against baseline, inspect the affected scope, and jump directly to the related incident when one exists."
         right={
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
             {regression.scope_type}:{regression.scope_id}
           </div>
         }
@@ -76,12 +76,12 @@ export default async function RegressionDetailPage({
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Window compare</p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-800 px-4 py-4">
+              <div className="rounded-lg border border-zinc-800 px-4 py-4">
                 <p className="text-sm font-medium text-zinc-100">Current window</p>
                 <p className="mt-2 text-sm text-zinc-400">{String(metadata.current_window_start ?? "n/a")}</p>
                 <p className="mt-1 text-sm text-zinc-400">{String(metadata.current_window_end ?? "n/a")}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-4">
+              <div className="rounded-lg border border-zinc-800 px-4 py-4">
                 <p className="text-sm font-medium text-zinc-100">Baseline window</p>
                 <p className="mt-2 text-sm text-zinc-400">{String(metadata.baseline_window_start ?? "n/a")}</p>
                 <p className="mt-1 text-sm text-zinc-400">{String(metadata.baseline_window_end ?? "n/a")}</p>
@@ -92,11 +92,11 @@ export default async function RegressionDetailPage({
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Delta</p>
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 px-4 py-3">
                 <p className="text-sm font-medium text-zinc-100">Absolute</p>
                 <p className="mt-2 text-sm text-zinc-400">{regression.delta_absolute}</p>
               </div>
-              <div className="rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="rounded-lg border border-zinc-800 px-4 py-3">
                 <p className="text-sm font-medium text-zinc-100">Percent</p>
                 <p className="mt-2 text-sm text-zinc-400">{regression.delta_percent ?? "n/a"}</p>
               </div>
@@ -118,7 +118,7 @@ export default async function RegressionDetailPage({
             <div className="mt-4 space-y-3">
               {regression.root_cause_hints.length > 0 ? (
                 regression.root_cause_hints.map((hint, index) => (
-                  <div key={`${hint.hint_type}-${index}`} className="rounded-2xl border border-zinc-800 px-4 py-3">
+                  <div key={`${hint.hint_type}-${index}`} className="rounded-lg border border-zinc-800 px-4 py-3">
                     <p className="text-sm font-medium text-zinc-100">{hint.hint_type.replaceAll("_", " ")}</p>
                     <p className="mt-1 text-sm text-zinc-400">
                       {hint.dimension}
@@ -140,14 +140,14 @@ export default async function RegressionDetailPage({
               {regression.related_incident ? (
                 <Link
                   href={`/incidents/${regression.related_incident.id}`}
-                  className="block rounded-2xl border border-zinc-800 px-4 py-3 font-medium text-zinc-100 underline-offset-4 hover:underline"
+                  className="block rounded-lg border border-zinc-800 px-4 py-3 font-medium text-zinc-100 underline-offset-4 hover:underline"
                 >
                   Open related incident
                 </Link>
               ) : null}
               <Link
                 href={`/regressions/${regression.id}/compare`}
-                className="block rounded-2xl border border-zinc-800 px-4 py-3 font-medium text-zinc-100 underline-offset-4 hover:underline"
+                className="block rounded-lg border border-zinc-800 px-4 py-3 font-medium text-zinc-100 underline-offset-4 hover:underline"
               >
                 Open regression compare
               </Link>
@@ -160,7 +160,7 @@ export default async function RegressionDetailPage({
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Prompt version context</p>
             <div className="mt-4 space-y-3">
               {regression.prompt_version_contexts.map((context) => (
-                <div key={context.id} className="rounded-2xl border border-zinc-800 px-4 py-3">
+                <div key={context.id} className="rounded-lg border border-zinc-800 px-4 py-3">
                   <p className="text-sm font-medium text-zinc-100">{context.version}</p>
                   <p className="mt-1 text-sm text-zinc-400">
                     current {context.current_count ?? 0} · baseline {context.baseline_count ?? 0}
@@ -174,7 +174,7 @@ export default async function RegressionDetailPage({
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Model version context</p>
             <div className="mt-4 space-y-3">
               {regression.model_version_contexts.map((context) => (
-                <div key={context.id} className="rounded-2xl border border-zinc-800 px-4 py-3">
+                <div key={context.id} className="rounded-lg border border-zinc-800 px-4 py-3">
                   <p className="text-sm font-medium text-zinc-100">
                     {context.provider ?? "provider n/a"} / {context.model_name}
                     {context.model_version ? ` / ${context.model_version}` : ""}
@@ -196,7 +196,7 @@ export default async function RegressionDetailPage({
                 <Link
                   key={trace.id}
                   href={`/traces/${trace.id}`}
-                  className="block rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="block rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <p className="text-sm font-medium text-zinc-100">{trace.request_id}</p>
                   <p className="mt-1 text-sm text-zinc-400">
@@ -217,7 +217,7 @@ export default async function RegressionDetailPage({
                 <Link
                   key={trace.id}
                   href={`/traces/${trace.id}`}
-                  className="block rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="block rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <p className="text-sm font-medium text-zinc-100">{trace.request_id}</p>
                   <p className="mt-1 text-sm text-zinc-400">

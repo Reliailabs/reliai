@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, FolderKanban, GitCompareArrows } from "lucide-react";
+import { ArrowRight, FolderKanban, GitCompareArrows } from "lucide-react";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getProject, getProjectRegressionsFiltered } from "@/lib/api";
 
 export default async function ProjectRegressionsPage({
@@ -24,34 +25,27 @@ export default async function ProjectRegressionsPage({
   ]);
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-lg border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
-        <Link href="/incidents" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-100">
-          <ArrowLeft className="h-4 w-4" />
-          Back to incidents
-        </Link>
-        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Project regressions</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{project.name}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500">
-              Persisted regression snapshots for this project. Use this view to inspect the metric and scope
-              that triggered an incident.
-            </p>
-          </div>
+    <div className="p-6 space-y-6">
+      <SubPageHeader
+        label="Project regressions"
+        title={project.name}
+        description="Persisted regression snapshots for this project. Use this view to inspect the metric and scope that triggered an incident."
+        backHref="/incidents"
+        backLabel="Back to incidents"
+        right={
           <div className="flex items-center gap-3">
             <Link
               href={`/projects/${id}/reliability`}
-              className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-900"
+              className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-900"
             >
               Reliability scorecard
             </Link>
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-500">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-500">
               {metricName || "all metrics"} · {scopeId || "all scopes"}
             </div>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="overflow-hidden rounded-lg border-zinc-800">
         <div className="border-b border-zinc-800 px-6 py-5">
