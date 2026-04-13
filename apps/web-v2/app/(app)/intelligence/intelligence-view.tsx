@@ -3,6 +3,7 @@
 
 import { useState } from "react"
 import { PageHeader } from "@/components/ui/page-header"
+import { TabBar } from "@/components/ui/tab-bar"
 import { cn } from "@/lib/utils"
 
 type Section = "high-risk" | "models" | "prompts" | "guardrails"
@@ -38,22 +39,11 @@ export function IntelligenceView({
         description="Cross‑project patterns, model risks, prompt failures, and guardrail effectiveness"
       />
 
-      <div className="flex gap-0 border-b border-zinc-800 px-6">
-        {sections.map((s) => (
-          <button
-            key={s}
-            onClick={() => setSection(s)}
-            className={cn(
-              "px-4 py-3 text-sm font-medium transition-colors -mb-px",
-              section === s
-                ? "text-zinc-100 border-b-2 border-zinc-200"
-                : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent"
-            )}
-          >
-            {sectionLabels[s]}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        items={sections.map((s) => ({ key: s, label: sectionLabels[s] }))}
+        activeKey={section}
+        onChange={(key) => setSection(key as Section)}
+      />
 
       <div className="p-6 space-y-6">
         {section === "high-risk" && (
