@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ArrowLeft, ArrowRight, Building, Edit, Hash, Text } from "lucide-react";
+import { ArrowRight, Building, Edit, Hash, Text } from "lucide-react";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getProject, updateProject } from "@/lib/api";
 
 export default async function ProjectSettingsPage({
@@ -35,60 +35,52 @@ export default async function ProjectSettingsPage({
   }
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 shadow-sm">
-        <div className="border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))] px-6 py-5">
-          <Link href={`/projects/${id}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200">
-            <ArrowLeft className="h-4 w-4" />
-            Back to project dashboard
-          </Link>
-          <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Project configuration</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{project.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
-                Edit project profile, identifier, and description. Changes affect how this project appears across Reliai.
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Project configuration"
+        title={project.name}
+        description="Edit project profile, identifier, and description. Changes affect how this project appears across Reliai."
+        backHref={`/projects/${id}`}
+        backLabel="Back to project dashboard"
+        right={
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Environment</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">{project.environment}</p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Created</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">
+                {new Date(project.created_at).toLocaleDateString()}
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Environment</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">{project.environment}</p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Created</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">
-                  {new Date(project.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Status</p>
-                <p className="mt-2 text-2xl font-semibold text-zinc-100">Active</p>
-              </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Status</p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-100">Active</p>
             </div>
+          </div>
+        }
+      />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <Building className="mt-0.5 h-5 w-5 text-emerald-400" />
+          <div>
+            <p className="text-sm font-medium text-zinc-100">Project identity</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              The name and slug are used in URLs, dashboards, and API references. Choose a clear, memorable identifier.
+            </p>
           </div>
         </div>
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <Building className="mt-0.5 h-5 w-5 text-emerald-400" />
-            <div>
-              <p className="text-sm font-medium text-zinc-100">Project identity</p>
-              <p className="mt-1 text-sm leading-6 text-zinc-400">
-                The name and slug are used in URLs, dashboards, and API references. Choose a clear, memorable identifier.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-            <Edit className="mt-0.5 h-5 w-5 text-sky-400" />
-            <div>
-              <p className="text-sm font-medium text-zinc-100">Non‑destructive</p>
-              <p className="mt-1 text-sm leading-6 text-zinc-400">
-                Changing these fields does not affect existing traces, incidents, or reliability metrics.
-              </p>
-            </div>
+        <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+          <Edit className="mt-0.5 h-5 w-5 text-sky-400" />
+          <div>
+            <p className="text-sm font-medium text-zinc-100">Non‑destructive</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-400">
+              Changing these fields does not affect existing traces, incidents, or reliability metrics.
+            </p>
           </div>
         </div>
-      </header>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-6">

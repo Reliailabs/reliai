@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, GitCommitHorizontal, ShieldAlert } from "lucide-react";
 
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getProject, getProjectDeployments } from "@/lib/api";
 
 function metadataLabel(metadata: Record<string, unknown> | null) {
@@ -27,21 +28,17 @@ export default async function ProjectDeploymentsPage({
   ]);
 
   return (
-    <div className="space-y-6">
-      <header className="rounded-lg border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Deployment history</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">{project.name}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500">
-              Review environment-scoped prompt and model rollouts before jumping into incident or regression investigation.
-            </p>
-          </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Deployment history"
+        title={project.name}
+        description="Review environment-scoped prompt and model rollouts before jumping into incident or regression investigation."
+        right={
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-500">
             {environment ?? project.environment} · {deployments.items.length} deployments
           </div>
-        </div>
-      </header>
+        }
+      />
 
       {deployments.items.length === 0 ? (
         <div className="rounded-lg border-zinc-800 p-6">

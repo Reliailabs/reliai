@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { ArrowLeft, BrainCircuit, ChevronRight, ShieldAlert, TriangleAlert, Waypoints } from "lucide-react";
+import { BrainCircuit, ChevronRight, ShieldAlert, TriangleAlert, Waypoints } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getReliabilityPatterns } from "@/lib/api";
 
 function percent(value: number) {
@@ -27,67 +27,58 @@ export default async function ReliabilityPatternsPage() {
   const totalSamples = items.reduce((sum, item) => sum + item.sample_count, 0);
 
   return (
-    <div className="space-y-6">
-      <header className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 shadow-sm">
-        <div className="relative border-b border-zinc-800 bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_38%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_34%),linear-gradient(180deg,rgba(24,24,27,0.96),rgba(24,24,27,1))] px-6 py-6">
-          <Link href="/system/growth" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100">
-            <ArrowLeft className="h-4 w-4" />
-            Back to platform dashboard
-          </Link>
-          <div className="mt-5 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Reliability intelligence</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-100">Cross-project failure patterns</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                Internal pattern board mined from warehouse traces. These rows feed deployment risk, simulation risk
-                adjustment, and guardrail recommendation logic across customer traffic.
-              </p>
-            </div>
-            <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
-              Operator-only intelligence layer
-            </div>
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Reliability intelligence"
+        title="Cross-project failure patterns"
+        description="Internal pattern board mined from warehouse traces. These rows feed deployment risk, simulation risk adjustment, and guardrail recommendation logic across customer traffic."
+        backHref="/system/growth"
+        backLabel="Back to platform dashboard"
+        right={
+          <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
+            Operator-only intelligence layer
           </div>
-        </div>
+        }
+      />
 
-        <div className="grid gap-4 px-6 py-5 lg:grid-cols-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <BrainCircuit className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Patterns</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{items.length}</p>
-            <p className="mt-2 text-sm text-zinc-400">Canonical reliability patterns currently available to internal engines.</p>
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <BrainCircuit className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Patterns</p>
           </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <TriangleAlert className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Elevated</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{highProbabilityCount}</p>
-            <p className="mt-2 text-sm text-zinc-400">Patterns at or above 25% observed failure probability.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Waypoints className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Sample volume</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(totalSamples)}</p>
-            <p className="mt-2 text-sm text-zinc-400">Total trace observations contributing to the visible patterns.</p>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-5 py-4">
-            <div className="flex items-center gap-2 text-zinc-400">
-              <ShieldAlert className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-[0.18em]">Coverage</p>
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-zinc-100">
-              {new Set(items.map((item) => item.pattern_type)).size}
-            </p>
-            <p className="mt-2 text-sm text-zinc-400">Pattern families mined from model, prompt, and retrieval signals.</p>
-          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{items.length}</p>
+          <p className="mt-2 text-sm text-zinc-400">Canonical reliability patterns currently available to internal engines.</p>
         </div>
-      </header>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <TriangleAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Elevated</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{highProbabilityCount}</p>
+          <p className="mt-2 text-sm text-zinc-400">Patterns at or above 25% observed failure probability.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Waypoints className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Sample volume</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(totalSamples)}</p>
+          <p className="mt-2 text-sm text-zinc-400">Total trace observations contributing to the visible patterns.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Coverage</p>
+          </div>
+          <p className="mt-3 text-3xl font-semibold text-zinc-100">
+            {new Set(items.map((item) => item.pattern_type)).size}
+          </p>
+          <p className="mt-2 text-sm text-zinc-400">Pattern families mined from model, prompt, and retrieval signals.</p>
+        </div>
+      </div>
 
-      <Card className="overflow-hidden rounded-lg border-zinc-800">
+      <Card className="overflow-hidden">
         {items.length === 0 ? (
           <div className="px-6 py-12">
             <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-6 py-10">
@@ -124,7 +115,7 @@ export default async function ReliabilityPatternsPage() {
                     <td className="px-5 py-4 text-sm text-zinc-400">{item.model_family ?? "unknown"}</td>
                     <td className="px-5 py-4 text-sm text-zinc-400">{item.failure_type.replaceAll("_", " ")}</td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${probabilityTone(item.failure_probability)}`}>
+                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${probabilityTone(item.failure_probability)}`}>
                         {percent(item.failure_probability)}
                       </span>
                     </td>
