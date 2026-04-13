@@ -40,7 +40,7 @@ export default async function PromptVersionDetailPage({
         title={prompt.version}
         description="Track prompt-scoped usage, incidents, regressions, and reliability signals from the persisted trace registry."
         right={
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
             {project?.name ?? projectId}
           </div>
         }
@@ -74,7 +74,7 @@ export default async function PromptVersionDetailPage({
                 <Link
                   key={trace.id}
                   href={`/traces/${trace.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <div>
                     <p className="text-sm font-medium text-zinc-100">{trace.request_id}</p>
@@ -95,19 +95,19 @@ export default async function PromptVersionDetailPage({
             <div className="mt-4 space-y-3">
               <a
                 href={detail.traces_path}
-                className="block rounded-2xl border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
+                className="block rounded-lg border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
               >
                 Open prompt-scoped traces
               </a>
               <a
                 href={detail.regressions_path}
-                className="block rounded-2xl border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
+                className="block rounded-lg border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
               >
                 Open prompt-scoped regressions
               </a>
               <a
                 href={detail.incidents_path}
-                className="block rounded-2xl border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
+                className="block rounded-lg border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
               >
                 Open prompt-scoped incidents
               </a>
@@ -123,7 +123,7 @@ export default async function PromptVersionDetailPage({
                 <Link
                   key={regression.id}
                   href={`/regressions/${regression.id}`}
-                  className="block rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="block rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <p className="text-sm font-medium text-zinc-100">{regression.metric_name}</p>
                   <p className="mt-1 text-sm text-zinc-400">
@@ -141,7 +141,7 @@ export default async function PromptVersionDetailPage({
                 <Link
                   key={incident.id}
                   href={`/incidents/${incident.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <div>
                     <p className="text-sm font-medium text-zinc-100">{incident.title}</p>
@@ -160,7 +160,7 @@ export default async function PromptVersionDetailPage({
             {detail.recent_reliability_metrics.map((metric) => (
               <div
                 key={`${metric.metric_name}-${metric.window_end}`}
-                className="rounded-2xl border border-zinc-800 px-4 py-3"
+                className="rounded-lg border border-zinc-800 px-4 py-3"
               >
                 <p className="text-sm font-medium text-zinc-100">{metric.metric_name}</p>
                 <p className="mt-2 text-lg font-semibold text-zinc-100">{metricValue(metric.value_number)}</p>

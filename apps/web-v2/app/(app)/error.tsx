@@ -15,7 +15,7 @@ export default function AppError({
 
   return (
     <div className="min-h-full flex items-center justify-center px-6 py-12">
-      <div className="max-w-md w-full rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8 text-center">
+      <div className="max-w-md w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-8 text-center">
         <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Operator Console</div>
         <h2 className="mt-3 text-lg font-semibold text-zinc-100">Unable to load data</h2>
         <p className="mt-2 text-sm text-zinc-500">

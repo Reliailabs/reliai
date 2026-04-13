@@ -46,7 +46,7 @@ export default async function OrganizationSettingsPage() {
         title={organization.name}
         description="Update the workspace profile used for operator routing, billing context, and alert ownership."
         right={
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
             Plan · {organization.plan}
           </div>
         }
@@ -62,7 +62,7 @@ export default async function OrganizationSettingsPage() {
                 <input
                   name="name"
                   defaultValue={organization.name}
-                  className="h-11 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 text-sm text-zinc-100 outline-none transition focus:border-zinc-600"
+                  className="h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 text-sm text-zinc-100 outline-none transition focus:border-zinc-600"
                 />
               </label>
               <label className="block space-y-2 text-sm text-zinc-400">
@@ -70,7 +70,7 @@ export default async function OrganizationSettingsPage() {
                 <input
                   name="slug"
                   defaultValue={organization.slug}
-                  className="h-11 w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 text-sm text-zinc-100 outline-none transition focus:border-zinc-600"
+                  className="h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 text-sm text-zinc-100 outline-none transition focus:border-zinc-600"
                 />
                 <span className="text-xs text-zinc-500">Lowercase letters, numbers, and dashes only.</span>
               </label>
@@ -86,20 +86,20 @@ export default async function OrganizationSettingsPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Organization metadata</p>
             <div className="mt-4 space-y-3 text-sm text-zinc-400">
-              <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
                 <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Organization ID</span>
                 <span className="text-sm font-medium text-zinc-100">{organization.id}</span>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
                 <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Created</span>
                 <span className="text-sm font-medium text-zinc-100">{formatDate(organization.created_at)}</span>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
                 <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Updated</span>
                 <span className="text-sm font-medium text-zinc-100">{formatDate(organization.updated_at)}</span>
               </div>
               {activeMembership && (
-                <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+                <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-500">Your role</span>
                   <span className="text-sm font-medium text-zinc-100">{activeMembership.role}</span>
                 </div>

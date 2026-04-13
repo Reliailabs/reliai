@@ -40,7 +40,7 @@ export default async function ModelVersionDetailPage({
         title={model.model_name}
         description="Track model-route usage with canonical family and revision context so incidents and compare views stay stable as traffic grows."
         right={
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
             {project?.name ?? projectId}
           </div>
         }
@@ -74,19 +74,19 @@ export default async function ModelVersionDetailPage({
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Model metadata</p>
             <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Provider</dt>
                 <dd className="text-right text-zinc-100">{model.provider ?? "n/a"}</dd>
               </div>
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Model version</dt>
                 <dd className="text-right text-zinc-100">{model.model_version ?? "n/a"}</dd>
               </div>
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Route key</dt>
                 <dd className="text-right text-zinc-100">{model.route_key ?? "n/a"}</dd>
               </div>
-              <div className="flex justify-between gap-4 rounded-2xl border border-zinc-800 px-4 py-3">
+              <div className="flex justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3">
                 <dt className="text-zinc-400">Identity key</dt>
                 <dd className="break-all text-right text-zinc-100">{model.identity_key}</dd>
               </div>
@@ -98,19 +98,19 @@ export default async function ModelVersionDetailPage({
             <div className="mt-4 space-y-3">
               <a
                 href={detail.traces_path}
-                className="block rounded-2xl border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
+                className="block rounded-lg border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
               >
                 Open model-scoped traces
               </a>
               <a
                 href={detail.regressions_path}
-                className="block rounded-2xl border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
+                className="block rounded-lg border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
               >
                 Open project regressions
               </a>
               <a
                 href={detail.incidents_path}
-                className="block rounded-2xl border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
+                className="block rounded-lg border border-zinc-800 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:bg-zinc-800"
               >
                 Open project incidents
               </a>
@@ -126,7 +126,7 @@ export default async function ModelVersionDetailPage({
                 <Link
                   key={trace.id}
                   href={`/traces/${trace.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <div>
                     <p className="text-sm font-medium text-zinc-100">{trace.request_id}</p>
@@ -149,7 +149,7 @@ export default async function ModelVersionDetailPage({
                 <Link
                   key={incident.id}
                   href={`/incidents/${incident.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <div>
                     <p className="text-sm font-medium text-zinc-100">{incident.title}</p>
@@ -170,7 +170,7 @@ export default async function ModelVersionDetailPage({
                 <Link
                   key={regression.id}
                   href={`/regressions/${regression.id}`}
-                  className="block rounded-2xl border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
+                  className="block rounded-lg border border-zinc-800 px-4 py-3 transition hover:bg-zinc-800"
                 >
                   <p className="text-sm font-medium text-zinc-100">{regression.metric_name}</p>
                   <p className="mt-1 text-sm text-zinc-400">
@@ -187,7 +187,7 @@ export default async function ModelVersionDetailPage({
               {detail.recent_reliability_metrics.map((metric) => (
                 <div
                   key={`${metric.metric_name}-${metric.window_end}`}
-                  className="rounded-2xl border border-zinc-800 px-4 py-3"
+                  className="rounded-lg border border-zinc-800 px-4 py-3"
                 >
                   <p className="text-sm font-medium text-zinc-100">{metric.metric_name}</p>
                   <p className="mt-2 text-lg font-semibold text-zinc-100">{metricValue(metric.value_number)}</p>
