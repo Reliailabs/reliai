@@ -206,7 +206,7 @@ export default async function ProjectProcessorsPage({
             </div>
           </div>
           {processors.length === 0 ? (
-            <div className="mt-5 rounded-[24px] border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-400">
+            <div className="mt-5 rounded-lg border border-dashed border-zinc-800 bg-zinc-900 px-5 py-8 text-sm leading-6 text-zinc-400">
               <p className="text-sm font-medium text-zinc-100">No external processors yet</p>
               <p className="mt-2">
                 Add a processor to forward events to Slack, Discord, webhooks, or your own API.
@@ -215,7 +215,7 @@ export default async function ProjectProcessorsPage({
           ) : (
             <div className="mt-5 space-y-3">
               {processors.map((processor) => (
-                <div key={processor.id} className="rounded-[22px] border border-zinc-800 px-4 py-4">
+                <div key={processor.id} className="rounded-lg border border-zinc-800 px-4 py-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-sm font-medium text-zinc-100">{processor.name}</p>

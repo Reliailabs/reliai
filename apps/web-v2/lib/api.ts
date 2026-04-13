@@ -427,6 +427,10 @@ export async function getRegressionDetail(regressionId: string) {
   return request<RegressionDetailRead>(`/api/v1/regressions/${regressionId}`);
 }
 
+export async function getRegressionCompare(regressionId: string) {
+  return request<TraceComparisonRead>(`/api/v1/regressions/${regressionId}/compare`);
+}
+
 export async function getModelVersionDetail(projectId: string, modelVersionId: string) {
   return request<ModelVersionDetailRead>(`/api/v1/projects/${projectId}/model-versions/${modelVersionId}`);
 }

@@ -25,7 +25,7 @@ export default async function ProjectRegressionsPage({
 
   return (
     <div className="space-y-6">
-      <header className="rounded-[28px] border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
+      <header className="rounded-lg border border-zinc-800 bg-zinc-950 px-6 py-6 shadow-sm">
         <Link href="/incidents" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-100">
           <ArrowLeft className="h-4 w-4" />
           Back to incidents
@@ -53,7 +53,7 @@ export default async function ProjectRegressionsPage({
         </div>
       </header>
 
-      <div className="overflow-hidden rounded-[28px] border-zinc-800">
+      <div className="overflow-hidden rounded-lg border-zinc-800">
         <div className="border-b border-zinc-800 px-6 py-5">
           <div className="flex items-center gap-3">
             <FolderKanban className="h-5 w-5 text-zinc-500" />
@@ -65,7 +65,7 @@ export default async function ProjectRegressionsPage({
             No regression snapshots match this filter.
           </div>
         ) : (
-          <div className="divide-y divide-zinc-200">
+          <div className="divide-y divide-zinc-800">
             {regressions.items.map((regression) => (
               <Link
                 key={regression.id}

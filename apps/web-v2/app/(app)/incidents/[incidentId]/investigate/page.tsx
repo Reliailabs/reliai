@@ -63,7 +63,7 @@ export default async function IncidentInvestigationPage({
             <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${severityTone(incident.severity)}`}>
               {incident.severity}
             </span>
-            <Link href={`/incidents/${incident.id}/command`} className="inline-flex items-center gap-2 rounded-full border border-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:bg-zinc-900">
+            <Link href={`/incidents/${incident.id}`} className="inline-flex items-center gap-2 rounded-full border border-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:bg-zinc-900">
               Open command center
               <ShieldAlert className="h-4 w-4" />
             </Link>

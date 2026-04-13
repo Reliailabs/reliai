@@ -54,7 +54,7 @@ export default async function OrganizationSettingsPage() {
 
       <div className="p-6 space-y-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Organization profile</p>
             <form action={updateOrganizationAction} className="mt-4 space-y-4">
               <label className="block space-y-2 text-sm text-zinc-400">
@@ -83,7 +83,7 @@ export default async function OrganizationSettingsPage() {
             </form>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-[28px] p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Organization metadata</p>
             <div className="mt-4 space-y-3 text-sm text-zinc-400">
               <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3">
