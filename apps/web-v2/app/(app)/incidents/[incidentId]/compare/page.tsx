@@ -144,13 +144,21 @@ export default async function IncidentComparePage({
   return (
     <div className="space-y-6">
       <header className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
-        <Link
-          href={`/incidents/${incidentId}`}
-          className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to incident
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href={`/incidents/${incidentId}`}
+            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to incident
+          </Link>
+          <Link
+            href={`/incidents/${incidentId}/investigate`}
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
+            Investigate →
+          </Link>
+        </div>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Trace compare</p>

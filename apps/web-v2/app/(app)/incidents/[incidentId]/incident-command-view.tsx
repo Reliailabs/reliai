@@ -494,12 +494,26 @@ export function IncidentCommandView({ incidentId, command }: Props) {
           <ArrowLeft className="w-3.5 h-3.5" />
           All incidents
         </Link>
-        <Link
-          href={`/post-mortem/${incidentId}`}
-          className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-        >
-          View post-mortem →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/incidents/${incidentId}/compare`}
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
+            Compare traces →
+          </Link>
+          <Link
+            href={`/incidents/${incidentId}/investigate`}
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
+            Investigate →
+          </Link>
+          <Link
+            href={`/post-mortem/${incidentId}`}
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
+            View post-mortem →
+          </Link>
+        </div>
       </div>
 
       {/* Header */}
