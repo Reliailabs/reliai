@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import logging
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Callable
+
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.core.settings import get_settings
 from app.db.session import get_queue
@@ -14,6 +18,8 @@ from app.workers.reliability_pattern_mining import run_reliability_pattern_minin
 from app.workers.stripe_usage_reporting import run_stripe_usage_reporting
 from app.workers.usage_expansion_metrics import run_usage_expansion_metrics
 from app.workers.reliability_sweep import run_reliability_sweep
+
+logger = logging.getLogger(__name__)
 
 RELIABILITY_SWEEP_INTERVAL_MINUTES = 10
 
@@ -39,7 +45,14 @@ _RELIABILITY_SWEEP_SCHEDULED = False
 
 
 def _enqueue_callable(func, *args) -> None:
-    get_queue().enqueue(func, *args)
+    try:
+        get_queue().enqueue(func, *args)
+    except RedisConnectionError as e:
+        logger.warning(
+            "Failed to enqueue job %s - Redis not available: %s",
+            func.__name__,
+            e,
+        )
 
 
 def reliability_sweep_job() -> None:
@@ -48,10 +61,16 @@ def reliability_sweep_job() -> None:
 
 
 def schedule_reliability_sweep() -> None:
-    get_queue().enqueue_in(
-        timedelta(minutes=RELIABILITY_SWEEP_INTERVAL_MINUTES),
-        reliability_sweep_job,
-    )
+    try:
+        get_queue().enqueue_in(
+            timedelta(minutes=RELIABILITY_SWEEP_INTERVAL_MINUTES),
+            reliability_sweep_job,
+        )
+    except RedisConnectionError as e:
+        logger.warning(
+            "Failed to enqueue reliability sweep job - Redis not available: %s",
+            e,
+        )
 
 
 def _register_default_jobs() -> dict[str, SchedulerJobState]:
@@ -128,19 +147,27 @@ def start_scheduler() -> None:
         return
     if _SCHEDULER is not None:
         return
-    scheduler = BackgroundScheduler(timezone=settings.scheduler_timezone)
-    for state in jobs.values():
-        scheduler.add_job(
-            _run_and_track,
-            "interval",
-            seconds=int(state.interval.total_seconds()),
-            args=[state.job_name],
-            id=state.job_name,
-            replace_existing=True,
+    try:
+        scheduler = BackgroundScheduler(timezone=settings.scheduler_timezone)
+        for state in jobs.values():
+            scheduler.add_job(
+                _run_and_track,
+                "interval",
+                seconds=int(state.interval.total_seconds()),
+                args=[state.job_name],
+                id=state.job_name,
+                replace_existing=True,
+            )
+            state.status = "scheduled"
+        scheduler.start()
+        _SCHEDULER = scheduler
+    except RedisConnectionError as e:
+        logger.warning(
+            "Failed to start BackgroundScheduler - Redis not available: %s",
+            e,
         )
-        state.status = "scheduled"
-    scheduler.start()
-    _SCHEDULER = scheduler
+        for state in jobs.values():
+            state.status = "redis-unavailable"
 
 
 def get_scheduler_status() -> list[dict[str, object]]:
