@@ -418,6 +418,7 @@ export const demoIncidentCommand: IncidentCommandCenterRead = {
         deployed_by: "release-bot@acme.test",
         deployed_at: "2026-03-11T09:00:00Z",
         metadata_json: { release_channel: "progressive" },
+        risk_analysis_json: { risk_level: "low", score: 15 },
         created_at: "2026-03-11T09:00:00Z",
       },
       prompt_version: {
