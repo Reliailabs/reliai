@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
+import { TabBar } from "@/components/ui/tab-bar"
 import { SeverityBadge } from "@/components/ui/severity-badge"
 import { MetricTile } from "@/components/metric-tile"
 import { Sparkline } from "@/components/charts/sparkline"
@@ -161,40 +162,15 @@ export function ProjectDetailView({
         }
       />
 
-      <div className="flex gap-0 border-b border-zinc-800 px-6">
-        {tabs.map((t) => {
-          const href = tabHrefs[t.key]
-          const isExternal = href !== ""
-          const isActive = tab === t.key
-          return isExternal ? (
-            <Link
-              key={t.key}
-              href={href}
-              className={cn(
-                "px-4 py-3 text-sm font-medium transition-colors -mb-px",
-                isActive
-                  ? "text-zinc-100 border-b-2 border-zinc-200"
-                  : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent"
-              )}
-            >
-              {t.label}
-            </Link>
-          ) : (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "px-4 py-3 text-sm font-medium transition-colors -mb-px",
-                isActive
-                  ? "text-zinc-100 border-b-2 border-zinc-200"
-                  : "text-zinc-500 hover:text-zinc-300 border-b-2 border-transparent"
-              )}
-            >
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
+      <TabBar
+        items={tabs.map((t) => ({
+          key: t.key,
+          label: t.label,
+          href: tabHrefs[t.key] || undefined,
+        }))}
+        activeKey={tab}
+        onChange={(key) => setTab(key as Tab)}
+      />
 
       <div className="p-6 space-y-6">
         {tab === "overview" && (
