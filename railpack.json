@@ -1,4 +1,7 @@
 {
-  "version": 2,
-  "builder": "docker"
+  "version": 1,
+  "build": {
+    "dockerComposeFile": "docker-compose.yml",
+    "targetService": "all"
+  }
 }
