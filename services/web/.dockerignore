@@ -1,0 +1,35 @@
+# Git
+.git
+.github
+
+# Local dev
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+.pytest_cache
+.ruff_cache
+
+# Node (will be rebuilt)
+# node_modules is needed for build, but excluded for smaller context
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs and demos
+docs
+*.md
+demo-*.png
+visual-*.png
+
+# Other services
+apps/api
+infra
+workers
