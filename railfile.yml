@@ -1,6 +1,6 @@
 name: reliai
+
 services:
-  # API service
   - name: api
     type: docker
     dockerfile: apps/api/Dockerfile
@@ -11,8 +11,8 @@ services:
     envSecure:
       API_KEY_HASH_SECRET: ${API_KEY_HASH_SECRET}
       AUTH_SESSION_HASH_SECRET: ${AUTH_SESSION_HASH_SECRET}
+    startCommand: cd apps/api && uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-  # Web frontend
   - name: web
     type: docker
     dockerfile: apps/web/Dockerfile
@@ -20,17 +20,26 @@ services:
     env:
       API_URL: ${api.URL}
       NEXT_PUBLIC_API_URL: ${api.URL}
-    envSecure:
       APP_URL: ${APP_URL}
       NEXT_PUBLIC_APP_URL: ${APP_URL}
+    startCommand: node apps/web/.next/standalone/apps/web/server.js
 
-volumes:
-  # PostgreSQL database
-  - name: postgres-data
-    type: postgres
-    size: 10
+  - name: worker
+    type: docker
+    dockerfile: apps/api/Dockerfile
+    buildContext: .
+    env:
+      DATABASE_URL: ${postgres.DATABASE_URL}
+      REDIS_URL: ${redis.REDIS_URL}
+    startCommand: cd apps/api && PYTHONPATH=/app/apps/api python -m app.scripts.rq_worker
 
-  # Redis cache (managed service)
+postgres:
+  - name: postgres
+    engine: postgres16
+    databaseName: reliai
+    user: reliai
+
+redis:
   - name: redis
-    type: redis
-    size: 1
+    engine: redis7
+    maxmemoryPolicy: noeviction
