@@ -17,5 +17,5 @@ export default async function AuditPage({
     metadata: event.metadata_json,
   }))
 
-  return <AuditView events={rows} />
+  return <AuditView events={rows} incidentId={incidentId} />
 }

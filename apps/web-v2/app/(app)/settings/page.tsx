@@ -67,7 +67,7 @@ export default async function SettingsPage() {
           <div className="px-4 py-3 border-b border-zinc-800 text-xs font-semibold text-zinc-300">
             Members
           </div>
-          <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-zinc-600 grid grid-cols-3">
+          <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-zinc-600 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <span>Email</span>
             <span>Role</span>
             <span>Joined</span>
@@ -77,7 +77,7 @@ export default async function SettingsPage() {
               <div className="px-4 py-3 text-zinc-500">No members found.</div>
             )}
             {members.items.map((member) => (
-              <div key={member.user_id} className="px-4 py-3 grid grid-cols-3 gap-2">
+              <div key={member.user_id} className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <span className="text-zinc-100">{member.email ?? "—"}</span>
                 <span className="text-zinc-400">{member.role}</span>
                 <span className="text-zinc-500">{formatRelativeTime(member.created_at, now)}</span>

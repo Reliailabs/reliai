@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ChevronRight, ChevronDown, CheckCircle } from "lucide-react"
+import { ChevronRight, ChevronDown, CheckCircle, ShieldAlert } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { SeverityBadge } from "@/components/ui/severity-badge"
 import { FilterChips, type FilterOption } from "@/components/ui/filter-chips"
@@ -321,16 +321,26 @@ export function RegressionsView({
         onClear={() => pushParams({ metricName: "" })}
       />
 
-      <div className="divide-y divide-zinc-800/40">
-        {visible.map((reg) => (
-          <RegressionRow
-            key={reg.id}
-            reg={reg}
-            expanded={expandedId === reg.id}
-            onToggle={() => setExpandedId(expandedId === reg.id ? null : reg.id)}
-          />
-        ))}
-      </div>
+      {visible.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center mb-3">
+            <ShieldAlert className="w-5 h-5 text-zinc-500" />
+          </div>
+          <div className="text-sm font-medium text-zinc-400">No regressions found</div>
+          <div className="text-xs text-zinc-600 mt-1">Regressions appear when metrics deviate from baseline</div>
+        </div>
+      ) : (
+        <div className="divide-y divide-zinc-800/40">
+          {visible.map((reg) => (
+            <RegressionRow
+              key={reg.id}
+              reg={reg}
+              expanded={expandedId === reg.id}
+              onToggle={() => setExpandedId(expandedId === reg.id ? null : reg.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

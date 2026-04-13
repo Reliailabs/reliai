@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Clock3, FolderKanban, GitCompareArrows, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Clock3, FolderKanban, GitCompareArrows, ShieldAlert } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { getRegressionDetail, getProject } from "@/lib/api";
 
@@ -21,6 +21,10 @@ export default async function RegressionDetailPage({
 
   return (
     <div className="min-h-full">
+      <Link href="/regressions" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Back to regressions
+      </Link>
       <PageHeader
         title={regression.metric_name}
         description="Compare the current window against baseline, inspect the affected scope, and jump directly to the related incident when one exists."

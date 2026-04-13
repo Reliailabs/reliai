@@ -63,7 +63,7 @@ export function IntelligenceView({
             </div>
             {globalPatterns?.items && globalPatterns.items.length > 0 ? (
               <div className="border border-zinc-800 rounded-lg overflow-hidden">
-                <div className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
                   <div>Pattern</div>
                   <div>Projects</div>
                   <div className="text-right">Impact</div>
@@ -71,7 +71,7 @@ export function IntelligenceView({
                 </div>
                 <div className="divide-y divide-zinc-800/40">
                   {globalPatterns.items.slice(0, 10).map((p: any) => (
-                    <div key={p.id} className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
+                    <div key={p.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
                       <div className="text-sm font-medium text-zinc-100">{p.pattern_type}</div>
                       <div className="text-sm text-zinc-400">{p.project_count} projects</div>
                       <div className="text-right">
@@ -107,7 +107,7 @@ export function IntelligenceView({
             </div>
             {models?.items && models.items.length > 0 ? (
               <div className="border border-zinc-800 rounded-lg overflow-hidden">
-                <div className="grid grid-cols-5 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
                   <div>Model</div>
                   <div>Provider</div>
                   <div className="text-right">Pass Rate</div>
@@ -116,7 +116,7 @@ export function IntelligenceView({
                 </div>
                 <div className="divide-y divide-zinc-800/40">
                   {models.items.slice(0, 10).map((m: any) => (
-                    <div key={m.id} className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
+                    <div key={m.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
                       <div className="text-sm font-medium text-zinc-100">{m.model_name}</div>
                       <div className="text-sm text-zinc-400">{m.provider ?? "—"}</div>
                       <div className="text-right">
@@ -157,7 +157,7 @@ export function IntelligenceView({
             </div>
             {prompts?.items && prompts.items.length > 0 ? (
               <div className="border border-zinc-800 rounded-lg overflow-hidden">
-                <div className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
                   <div>Pattern</div>
                   <div>Projects</div>
                   <div className="text-right">Failure Rate</div>
@@ -165,7 +165,7 @@ export function IntelligenceView({
                 </div>
                 <div className="divide-y divide-zinc-800/40">
                   {prompts.items.slice(0, 10).map((p: any) => (
-                    <div key={p.id} className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
+                    <div key={p.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
                       <div className="text-sm font-medium text-zinc-100">{p.pattern_type}</div>
                       <div className="text-sm text-zinc-400">{p.project_count} projects</div>
                       <div className="text-right">
@@ -201,7 +201,7 @@ export function IntelligenceView({
             </div>
             {guardrails?.items && guardrails.items.length > 0 ? (
               <div className="border border-zinc-800 rounded-lg overflow-hidden">
-                <div className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-3 border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
                   <div>Policy</div>
                   <div>Projects</div>
                   <div className="text-right">Effectiveness</div>
@@ -209,7 +209,7 @@ export function IntelligenceView({
                 </div>
                 <div className="divide-y divide-zinc-800/40">
                   {guardrails.items.slice(0, 10).map((g: any) => (
-                    <div key={g.id} className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
+                    <div key={g.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 py-3 hover:bg-zinc-900/40 transition-colors">
                       <div className="text-sm font-medium text-zinc-100">{g.policy_type}</div>
                       <div className="text-sm text-zinc-400">{g.project_count} projects</div>
                       <div className="text-right">

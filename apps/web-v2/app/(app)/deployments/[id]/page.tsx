@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { getDeploymentDetail } from "@/lib/api";
 
@@ -16,6 +18,10 @@ export default async function DeploymentDetailPage({
 
   return (
     <div className="min-h-full">
+      <Link href="/deployments" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Back to deployments
+      </Link>
       <PageHeader
         title={`Deployment ${id.slice(0, 8)}`}
         description={`Deployed to ${detail.environment} at ${new Date(detail.deployed_at).toLocaleString()}`}

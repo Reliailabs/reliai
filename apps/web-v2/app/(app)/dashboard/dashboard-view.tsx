@@ -119,7 +119,7 @@ export function DashboardView({
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-0 p-6 gap-x-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] p-6 gap-x-6 gap-y-6">
         <div className="space-y-6">
           <section>
             <div className="flex items-center justify-between mb-3">
@@ -209,7 +209,7 @@ export function DashboardView({
                 Investigate
               </h2>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Link
                 href="/traces"
                 className="group bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-lg px-4 py-3.5 transition-colors"

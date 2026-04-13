@@ -19,7 +19,7 @@ function severityTone(severity: string) {
   if (severity === "critical") return "bg-red-500/10 text-red-400 border border-red-500/20";
   if (severity === "high") return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
   if (severity === "medium") return "bg-orange-500/10 text-orange-400 border border-orange-500/20";
-  return "bg-zinc-9000/10 text-zinc-400 border border-zinc-500/20";
+  return "bg-zinc-900/50 text-zinc-400 border border-zinc-500/20";
 }
 
 export default async function IncidentInvestigationPage({
