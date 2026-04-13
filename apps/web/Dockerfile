@@ -3,12 +3,12 @@ RUN corepack enable pnpm
 
 # ── Builder: install deps and compile ──────────────────────────────────────
 FROM base AS builder
-WORKDIR /monorepo
+WORKDIR /build
 
 # Copy workspace manifests first for layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy all workspace packages (web depends on @reliai/types)
+# Copy all workspace packages
 COPY packages/ ./packages/
 
 # Copy web app source
@@ -17,7 +17,7 @@ COPY apps/web/ ./apps/web/
 # Install all workspace dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build the web app (outputs to apps/web/.next/standalone via output: 'standalone')
+# Build the web app
 RUN pnpm --filter web build
 
 # ── Runner: lean production image ──────────────────────────────────────────
@@ -28,12 +28,11 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# standalone output contains everything needed to run the app
-COPY --from=builder /monorepo/apps/web/.next/standalone ./
-# Static assets and public files must be copied separately
-COPY --from=builder /monorepo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder /monorepo/apps/web/public ./apps/web/public
+# Copy entire built app structure
+COPY --from=builder /build/apps/web/.next/standalone ./standalone
+COPY --from=builder /build/apps/web/.next/static ./static
+COPY --from=builder /build/apps/web/public ./public
 
 EXPOSE 3000
 
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "standalone/apps/web/server.js"]
