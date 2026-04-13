@@ -78,6 +78,7 @@ export default async function PostMortemPage({
         causeCategory,
         contributingFactors,
       }}
+    incidentId={incidentId}
     />
   )
 }

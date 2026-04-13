@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown, CheckCircle, AlertTriangle, User, Clock } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, ChevronRight, ChevronDown, CheckCircle, AlertTriangle, User, Clock } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { cn } from "@/lib/utils"
 
@@ -27,7 +28,7 @@ const eventConfig: Record<string, { label: string; color: string; icon: React.Co
   config_undone: { label: "Config Undone", color: "text-zinc-500", icon: Clock },
 }
 
-export function AuditView({ events }: { events: AuditEventRow[] }) {
+export function AuditView({ events, incidentId }: { events: AuditEventRow[]; incidentId: string }) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
   const toggle = (id: string) => {
@@ -42,6 +43,10 @@ export function AuditView({ events }: { events: AuditEventRow[] }) {
 
   return (
     <div className="min-h-full">
+      <Link href={`/incidents/${incidentId}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Back to incident
+      </Link>
       <PageHeader
         title="Audit Log"
         description="Incident-scoped activity and change history"

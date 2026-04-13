@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Boxes, ChartColumn, FolderKanban, ShieldAlert } from "lucide-react";
+import { ArrowLeft, ArrowRight, Boxes, ChartColumn, FolderKanban, ShieldAlert } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { getModelVersionDetail, getProject } from "@/lib/api";
 
@@ -32,6 +32,10 @@ export default async function ModelVersionDetailPage({
 
   return (
     <div className="min-h-full">
+      <Link href="/traces" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Back to traces
+      </Link>
       <PageHeader
         title={model.model_name}
         description="Track model-route usage with canonical family and revision context so incidents and compare views stay stable as traffic grows."

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, ChevronDown } from "lucide-react"
+import { ChevronRight, ChevronDown, Rocket } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { cn } from "@/lib/utils"
 
@@ -298,20 +298,30 @@ export function DeploymentsView({ deployments }: { deployments: DeploymentRecord
         description="Track and govern model deployments across your projects."
       />
 
-      <div className="divide-y divide-zinc-800/40">
-        {deployments.map((dep) => (
-          <DeploymentRow
-            key={dep.id}
-            dep={dep}
-            expanded={expandedId === dep.id}
-            onToggle={() => setExpandedId(expandedId === dep.id ? null : dep.id)}
-            rollbackConfirmId={rollbackConfirmId}
-            onRollbackRequest={(id) => setRollbackConfirmId(id)}
-            onRollbackCancel={() => setRollbackConfirmId(null)}
-            onRollbackConfirm={() => setRollbackConfirmId(null)}
-          />
-        ))}
-      </div>
+      {deployments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center mb-3">
+            <Rocket className="w-5 h-5 text-zinc-500" />
+          </div>
+          <div className="text-sm font-medium text-zinc-400">No deployments yet</div>
+          <div className="text-xs text-zinc-600 mt-1">Deployments appear when model versions are promoted</div>
+        </div>
+      ) : (
+        <div className="divide-y divide-zinc-800/40">
+          {deployments.map((dep) => (
+            <DeploymentRow
+              key={dep.id}
+              dep={dep}
+              expanded={expandedId === dep.id}
+              onToggle={() => setExpandedId(expandedId === dep.id ? null : dep.id)}
+              rollbackConfirmId={rollbackConfirmId}
+              onRollbackRequest={(id) => setRollbackConfirmId(id)}
+              onRollbackCancel={() => setRollbackConfirmId(null)}
+              onRollbackConfirm={() => setRollbackConfirmId(null)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle, Plus, Clock, Zap, AlertTriangle, ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, CheckCircle, Plus, Clock, Zap, AlertTriangle, ArrowRight } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { CostPerIncident, calculateCostMetrics } from "@/components/cost-per-incident"
 import { cn } from "@/lib/utils"
@@ -118,7 +119,7 @@ function TimelineSegment({
   )
 }
 
-export function PostMortemView({ incident }: { incident: PostMortemIncident }) {
+export function PostMortemView({ incident, incidentId }: { incident: PostMortemIncident; incidentId: string }) {
   const [causeCategory,  setCauseCategory]  = useState<CauseCategory>(incident.causeCategory)
   const [actionItems,    setActionItems]    = useState<ActionItem[]>([])
   const [newItem,        setNewItem]        = useState<Partial<ActionItem>>({})
@@ -141,6 +142,10 @@ export function PostMortemView({ incident }: { incident: PostMortemIncident }) {
 
   return (
     <div className="min-h-full">
+      <Link href={`/incidents/${incidentId}`} className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Back to incident
+      </Link>
       <PageHeader
         title="Post-Mortem Review"
         description="Structured incident review and corrective action tracking"

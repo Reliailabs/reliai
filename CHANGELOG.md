@@ -23,10 +23,18 @@ All notable changes to Reliai will be documented in this file.
 - Evaluation replay page now uses real trace data and prompt versions in web-v2.
 - Project detail page enhanced with guardrail metrics, cost, timeline, and model versions.
 - Model versions tab in project detail showing version history and metadata.
-- Reliability intelligence page with high‑risk patterns, model reliability, prompt failures, and guardrail recommendations.
-  - Advanced project subpages: guardrail configuration, custom‑metric dashboards, ingestion‑pipeline views, processor management, and project settings (web‑v2 Tier‑3).
-  - Internal system operator pages: customer expansion, reliability intelligence, platform health, event pipeline telemetry, customer reliability dashboard, and system growth analytics (web‑v2 Tier‑4).
-  - Missing incident pages: trace compare and investigation views (web‑v2 parity).
+- Reliability intelligence page with high-risk patterns, model reliability, prompt failures, and guardrail recommendations.
+  - Advanced project subpages: guardrail configuration, custom-metric dashboards, ingestion-pipeline views, processor management, and project settings (web-v2 Tier-3).
+  - Internal system operator pages: customer expansion, reliability intelligence, platform health, event pipeline telemetry, customer reliability dashboard, and system growth analytics (web-v2 Tier-4).
+  - Missing incident pages: trace compare and investigation views (web-v2 parity).
+- Regression compare page (/regressions/[id]/compare) for full route parity with original web app.
+- Bidirectional navigation links between incident command center, trace compare, and investigation pages.
+- Back navigation links on regressions detail, deployments detail, model versions, prompt versions, post-mortem, and audit pages.
+- Loading skeleton states (loading.tsx) for 10 data-heavy routes.
+- Error boundary states (error.tsx) for 10 data-heavy routes.
+- Performance test infrastructure (Playwright config + page load metrics) for web-v2.
+- Permanent redirect from /incidents/:id/command to /incidents/:id.
+- Empty states for regressions list and deployments list.
 
 ### Changed
 
@@ -38,7 +46,11 @@ All notable changes to Reliai will be documented in this file.
 - web-v2 regressions now aggregate project-scoped regressions and resolve project names; deployments resolve project display names.
 - web-v2 projects surface now pulls reliability metrics per project for data-backed tiles.
 - web-v2 SLOs now load from the new project SLO endpoint instead of derived client-side metrics.
-- Updated all ported pages (customer detail, incident compare, incident investigate, project subpages) to match web‑v2 dark theme design system.
+- Updated all ported pages (customer detail, incident compare, incident investigate, project subpages) to match web-v2 dark theme design system.
+- Migrated all remaining 17 pages from light theme to dark theme (zinc palette), eliminating all ink/steel/surface/line tokens.
+- Fixed responsive breakpoints on dashboard, intelligence tables, and settings members grid for mobile stacking.
+- Fixed conflicting gap utilities in dashboard layout.
+- All ported pages now use rounded-lg consistently (replacing rounded-[28px]/[24px]/[30px]).
 
 ### Fixed
 
@@ -48,6 +60,9 @@ All notable changes to Reliai will be documented in this file.
 - Refined AI root-cause explanation card hierarchy and readability to stay clearly subordinate to deterministic root-cause evidence.
 - Improved AI Ticket Draft modal clarity and readability, plus contrast fixes for AI Summary and Explanation cards.
 - AI ticket drafts now include deterministic root-cause confidence, omit generic impact filler, and improve copy + staleness UX.
+- Fixed invalid CSS class bg-zinc-9000/10 in investigate page severityTone (should be bg-zinc-900/50).
+- Fixed dead link to /incidents/:id/command in investigate page (now links to /incidents/:id).
+- Fixed visible flash-of-white by adding loading skeletons to data-heavy routes.
 - Incident reopen now deterministically reuses the most recently updated incident for a given fingerprint.
 - AI root-cause explanation staleness now compares UTC-aware timestamps to avoid naive datetime drift.
 - Trace detail now surfaces payload truncation when metadata limits are applied.
