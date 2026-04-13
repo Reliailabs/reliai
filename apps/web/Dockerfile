@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM node:22-alpine AS base
 RUN corepack enable pnpm
 
@@ -8,7 +9,7 @@ WORKDIR /build
 # Copy workspace manifests first for layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy all workspace packages
+# Copy packages first
 COPY packages/ ./packages/
 
 # Copy web app source
@@ -17,8 +18,9 @@ COPY apps/web/ ./apps/web/
 # Install all workspace dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build the web app
-RUN pnpm --filter web build
+# Build the web app with standalone output
+WORKDIR /build/apps/web
+RUN pnpm build
 
 # ── Runner: lean production image ──────────────────────────────────────────
 FROM base AS runner
@@ -28,11 +30,12 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Copy entire built app structure
-COPY --from=builder /build/apps/web/.next/standalone ./standalone
-COPY --from=builder /build/apps/web/.next/static ./static
-COPY --from=builder /build/apps/web/public ./public
+# Copy all build outputs
+COPY --from=builder /build/apps/web/.next/standalone ./apps/web/.next/standalone
+COPY --from=builder /build/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /build/apps/web/public ./apps/web/public
 
 EXPOSE 3000
 
-CMD ["node", "standalone/apps/web/server.js"]
+# Use the standalone server.js
+CMD ["node", "apps/web/.next/standalone/apps/web/server.js"]
