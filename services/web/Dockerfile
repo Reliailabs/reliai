@@ -1,21 +1,21 @@
 # Web Service Dockerfile for Railway
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS base
+RUN corepack enable pnpm
 
+FROM base AS builder
 WORKDIR /build
 
-COPY apps/web/package*.json ./apps/web/
-RUN cd apps/web && npm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web ./apps/web/
+COPY packages ./packages
 
-COPY apps/web/ ./apps/web/
-COPY packages/ ./packages/
-
+RUN pnpm install --frozen-lockfile
 WORKDIR /build/apps/web
-RUN npm run build
+RUN pnpm build
 
-# Production server
-FROM node:20-alpine AS runner
-
+FROM base AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
