@@ -46,8 +46,8 @@ const severityBar: Record<TriggerSeverity, string> = {
 }
 
 const severityBadge: Record<TriggerSeverity, string> = {
-  critical: "text-red-400 bg-red-500/10 border-red-500/20",
-  high:     "text-amber-400 bg-amber-500/10 border-amber-500/20",
+  critical: "text-red-400 bg-red-500/10 border-red-500/30",
+  high:     "text-amber-400 bg-amber-500/10 border-amber-500/30",
   all:      "text-zinc-400 bg-zinc-700/30 border-zinc-700",
 }
 

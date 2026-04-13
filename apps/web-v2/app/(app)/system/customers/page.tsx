@@ -17,9 +17,9 @@ function percent(value: number) {
 }
 
 function riskTone(riskLevel: string) {
-  if (riskLevel === "high") return "bg-red-500/10 text-red-400 border border-red-500/20";
-  if (riskLevel === "medium") return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
-  return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+  if (riskLevel === "high") return "bg-red-500/10 text-red-400 border-red-500/30";
+  if (riskLevel === "medium") return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+  return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
 }
 
 export default async function SystemCustomersPage() {
@@ -123,7 +123,7 @@ export default async function SystemCustomersPage() {
                     </td>
                     <td className="px-5 py-4 text-sm font-medium text-zinc-100">{compactNumber(project.pipeline_lag)}</td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${riskTone(project.risk_level)}`}>
+                      <span className={`inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-medium ${riskTone(project.risk_level)}`}>
                         {project.risk_level}
                       </span>
                     </td>

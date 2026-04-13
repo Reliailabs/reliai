@@ -22,8 +22,8 @@ function formatPercent(value: number) {
 
 function breakoutTone(breakout: boolean) {
   return breakout
-    ? "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20"
-    : "bg-zinc-800 text-zinc-300 ring-1 ring-zinc-700";
+    ? "bg-red-500/10 text-red-400 border-red-500/30"
+    : "bg-zinc-800 text-zinc-300 border-zinc-700";
 }
 
 export default async function SystemExpansionPage() {
@@ -129,7 +129,7 @@ export default async function SystemExpansionPage() {
                     <td className="px-5 py-4 text-sm text-zinc-400">{formatPercent(organization.growth_rate)}</td>
                     <td className="px-5 py-4">
                       <span
-                        className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${breakoutTone(organization.breakout)}`}
+                        className={`inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-medium ${breakoutTone(organization.breakout)}`}
                       >
                         {organization.breakout ? "breakout" : "normal"}
                       </span>

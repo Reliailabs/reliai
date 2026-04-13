@@ -9,9 +9,9 @@ import {
 } from "@/lib/api";
 
 function tone(level: string) {
-  if (level === "high") return "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20";
-  if (level === "medium") return "bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20";
-  return "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20";
+  if (level === "high") return "bg-red-500/10 text-red-400 border-red-500/30";
+  if (level === "medium") return "bg-yellow-500/10 text-yellow-400 border-yellow-500/30";
+  return "bg-blue-500/10 text-blue-400 border-blue-500/30";
 }
 
 function pct(value: number) {
@@ -101,7 +101,7 @@ export default async function SystemIntelligencePage() {
                   <tr key={`${item.source_node_id}:${item.target_node_id}:${item.relationship_type}`} className="border-t border-zinc-800 align-top">
                     <td className="px-5 py-4 text-sm font-medium text-zinc-100">{item.pattern.replaceAll("_", " ")}</td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${tone(item.risk_level)}`}>
+                      <span className={`inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-medium ${tone(item.risk_level)}`}>
                         {item.risk_level.toUpperCase()}
                       </span>
                     </td>
@@ -142,7 +142,7 @@ export default async function SystemIntelligencePage() {
                 <div key={`${item.model_family}:${item.issue}`} className="rounded-lg border border-zinc-800 px-4 py-3">
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-sm font-medium text-zinc-100">{item.issue.replaceAll("_", " ")}</p>
-                    <span className={`inline-flex rounded-lg px-2 py-1 text-[11px] font-medium ${tone(item.risk_level)}`}>
+                    <span className={`inline-flex rounded-lg border px-2 py-1 text-[11px] font-medium ${tone(item.risk_level)}`}>
                       {item.risk_level.toUpperCase()}
                     </span>
                   </div>

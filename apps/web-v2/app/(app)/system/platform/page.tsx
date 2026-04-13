@@ -5,9 +5,11 @@ import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemPlatform } from "@/lib/api";
 
 function riskTone(value: string) {
-  if (value === "critical") return "border-rose-800 bg-rose-500/10 text-rose-400";
-  if (value === "high") return "border-amber-800 bg-amber-500/10 text-amber-400";
-  return "border-emerald-800 bg-emerald-500/10 text-emerald-400";
+  if (value === "critical") return "border-red-500/30 bg-red-500/10 text-red-400";
+  if (value === "high") return "border-amber-500/30 bg-amber-500/10 text-amber-400";
+  if (value === "medium") return "border-yellow-500/30 bg-yellow-500/10 text-yellow-400";
+  if (value === "low") return "border-blue-500/30 bg-blue-500/10 text-blue-400";
+  return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
 }
 
 function rate(value: number) {
