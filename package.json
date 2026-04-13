@@ -11,7 +11,8 @@
     "audit:screenshots": "pnpm exec tsx scripts/screenshot_audit.ts",
     "screenshots:marketing": "pnpm exec tsx scripts/generate_screenshots.ts",
     "screenshots:marketing:core": "pnpm exec tsx scripts/generate_marketing_screenshots.ts",
-    "screenshots:playground": "pnpm exec tsx scripts/generate_playground_screenshots.ts"
+    "screenshots:playground": "pnpm exec tsx scripts/generate_playground_screenshots.ts",
+    "start": "echo 'Use Railway Config-as-Code to deploy'"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
