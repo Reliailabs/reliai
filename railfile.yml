@@ -1,56 +1,36 @@
 name: reliai
 services:
-  # PostgreSQL database
-  - name: postgres
-    type: postgres
-    port: 5432
-    env:
-      POSTGRES_DB: reliai
-      POSTGRES_USER: reliai
-    disk:
-      name: postgres-data
-      mountPath: /var/lib/postgresql/data
-      size: 10
-
-  # Redis cache
-  - name: redis
-    type: redis
-    port: 6379
-
   # API service
   - name: api
     type: docker
     dockerfile: apps/api/Dockerfile
     buildContext: .
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
     env:
       DATABASE_URL: ${postgres.DATABASE_URL}
       REDIS_URL: ${redis.REDIS_URL}
     envSecure:
       API_KEY_HASH_SECRET: ${API_KEY_HASH_SECRET}
       AUTH_SESSION_HASH_SECRET: ${AUTH_SESSION_HASH_SECRET}
-    ports:
-      - port: 8000
-        handler: http
-    healthcheckPath: /api/v1/health
-    healthcheckInterval: 10
 
   # Web frontend
   - name: web
     type: docker
     dockerfile: apps/web/Dockerfile
     buildContext: .
-    startCommand: node apps/web/.next/standalone/apps/web/server.js
     env:
       API_URL: ${api.URL}
       NEXT_PUBLIC_API_URL: ${api.URL}
     envSecure:
       APP_URL: ${APP_URL}
       NEXT_PUBLIC_APP_URL: ${APP_URL}
-    ports:
-      - port: 3000
-        handler: http
 
 volumes:
+  # PostgreSQL database
   - name: postgres-data
+    type: postgres
     size: 10
+
+  # Redis cache (managed service)
+  - name: redis
+    type: redis
+    size: 1
