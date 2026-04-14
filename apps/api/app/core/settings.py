@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_DIR = Path(__file__).resolve().parents[4]
@@ -74,6 +75,15 @@ class Settings(BaseSettings):
     trace_output_text_max_chars: int = 20000
     trace_metadata_max_bytes: int = 16384
     dev_inline_regression: bool = False
+
+    @field_validator("database_url")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Convert postgresql:// to postgresql+psycopg:// for SQLAlchemy 2.0."""
+        if v.startswith("postgresql://") and not v.startswith("postgresql+psycopg://"):
+            # Replace the first occurrence of postgresql:// with postgresql+psycopg://
+            v = v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
 
     model_config = SettingsConfigDict(
         env_file=(ROOT_DIR / ".env",),
