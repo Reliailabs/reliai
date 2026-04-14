@@ -25,7 +25,7 @@ function signedPercent(value: number) {
 
 function growthTone(value: number) {
   if (value > 0) return "text-emerald-400";
-  if (value < 0) return "text-rose-400";
+  if (value < 0) return "text-red-400";
   return "text-zinc-500";
 }
 

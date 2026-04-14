@@ -58,7 +58,7 @@ function statusSummary(panel: ProjectReliabilityControlPanel) {
       label: "NO",
       summary: "This AI system is not safe right now.",
       detail: "Recent incidents, deployment risk, or weak policy coverage require operator attention.",
-      tone: "border-rose-800 bg-rose-900 text-rose-300",
+      tone: "border-red-800 bg-red-900 text-red-300",
       icon: ShieldX,
     };
   }
@@ -278,7 +278,7 @@ export function ControlPanelView({
                     `mt-3 text-3xl font-semibold ${metricValueClass}`,
                     scoreTone(panel.reliability_score),
                     highlightedMetrics.includes("reliability_score") &&
-                      "rounded-lg px-3 py-2 ring-2 ring-sky-600 ring-offset-2 ring-offset-zinc-950",
+                      "rounded-lg px-3 py-2 ring-2 ring-blue-600 ring-offset-2 ring-offset-zinc-950",
                   )}
                   data-tour-id="metric-reliability-score"
                 >

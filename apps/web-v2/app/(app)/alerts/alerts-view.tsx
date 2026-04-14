@@ -40,9 +40,9 @@ const severityColor: Record<AlertSeverity, string> = {
 }
 
 const statusConfig: Record<string, string> = {
-  sent: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  failed: "bg-red-500/10 text-red-400 border-red-500/20",
-  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  sent: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  failed: "bg-red-500/10 text-red-400 border-red-500/30",
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/30",
   suppressed: "bg-zinc-700/40 text-zinc-400 border-zinc-700/60",
 }
 
@@ -97,7 +97,7 @@ export function AlertsView({
                 className={cn(
                   "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border",
                   alertTarget.is_active
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                     : "bg-zinc-700/50 text-zinc-500 border-zinc-700/50"
                 )}
               >

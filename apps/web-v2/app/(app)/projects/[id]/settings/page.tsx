@@ -187,7 +187,7 @@ export default async function ProjectSettingsPage({
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center rounded-full border border-rose-800 bg-rose-950/30 px-4 py-2 text-sm font-medium text-rose-300 transition hover:bg-rose-950/60"
+              className="mt-4 inline-flex items-center rounded-full border border-red-800 bg-red-950/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-950/30"
               disabled
             >
               Delete project (disabled)

@@ -13,16 +13,16 @@ function compactNumber(value: number) {
 }
 
 function riskTone(riskLevel: string) {
-  if (riskLevel === "high") return "bg-red-500/10 text-red-400 border border-red-500/20";
-  if (riskLevel === "medium") return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
-  return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+  if (riskLevel === "high") return "bg-red-500/10 text-red-400 border border-red-500/30";
+  if (riskLevel === "medium") return "bg-amber-500/10 text-amber-400 border border-amber-500/30";
+  return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
 }
 
 function severityTone(severity: string) {
-  if (severity === "critical") return "bg-red-500/10 text-red-400 border border-red-500/20";
-  if (severity === "high") return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
-  if (severity === "medium") return "bg-sky-500/10 text-sky-400 border border-sky-500/20";
-  return "bg-zinc-500/10 text-zinc-400 border border-zinc-500/20";
+  if (severity === "critical") return "bg-red-500/10 text-red-400 border border-red-500/30";
+  if (severity === "high") return "bg-amber-500/10 text-amber-400 border border-amber-500/30";
+  if (severity === "medium") return "bg-blue-500/10 text-blue-400 border border-blue-500/30";
+  return "bg-zinc-500/10 text-zinc-400 border border-zinc-500/30";
 }
 
 function maxPoint(points: { trace_volume: number }[]) {

@@ -52,24 +52,24 @@ function spanLabel(spanType: string) {
 
 function spanBorderClass(spanType: string) {
   switch (spanType) {
-    case "retrieval":    return "border-l-2 border-sky-500"
+    case "retrieval":    return "border-l-2 border-blue-500"
     case "prompt_build": return "border-l-2 border-indigo-500"
     case "llm_call":    return "border-l-2 border-emerald-500"
-    case "tool_call":   return "border-l-2 border-orange-500"
+    case "tool_call":   return "border-l-2 border-amber-500"
     case "postprocess": return "border-l-2 border-amber-500"
-    case "guardrail":   return "border-l-2 border-rose-500"
+    case "guardrail":   return "border-l-2 border-red-500"
     default:            return "border-l-2 border-zinc-600"
   }
 }
 
 function spanBadgeClass(spanType: string) {
   switch (spanType) {
-    case "retrieval":    return "border-sky-500/30 text-sky-400"
+    case "retrieval":    return "border-blue-500/30 text-blue-400"
     case "prompt_build": return "border-indigo-500/30 text-indigo-400"
     case "llm_call":    return "border-emerald-500/30 text-emerald-400"
-    case "tool_call":   return "border-orange-500/30 text-orange-400"
+    case "tool_call":   return "border-amber-500/30 text-amber-400"
     case "postprocess": return "border-amber-500/30 text-amber-400"
-    case "guardrail":   return "border-rose-500/30 text-rose-400"
+    case "guardrail":   return "border-red-500/30 text-red-400"
     default:            return "border-zinc-700 text-zinc-400"
   }
 }
@@ -266,7 +266,7 @@ export function TraceGraphView({ graph, analysis }: TraceGraphViewProps) {
         <div className="space-y-4">
           {/* Root cause callout */}
           {rootCauseSummary ? (
-            <div className="rounded-lg border border-red-500/20 bg-red-950/30 px-4 py-3">
+            <div className="rounded-lg border border-red-500/30 bg-red-950/10 px-4 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-red-500">Root cause</p>
               <p className="mt-1.5 text-sm font-semibold text-zinc-100">{rootCauseSummary.title}</p>
               <p className="mt-1 text-xs text-zinc-400">{rootCauseSummary.summary}</p>
@@ -448,7 +448,7 @@ export function TraceGraphView({ graph, analysis }: TraceGraphViewProps) {
                     <>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {node.guardrail_policy && (
-                          <span className="inline-flex items-center gap-1.5 rounded border border-amber-500/20 bg-amber-950/30 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                          <span className="inline-flex items-center gap-1.5 rounded border border-amber-500/30 bg-amber-950/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
                             <ShieldAlert className="h-3 w-3" />
                             {node.guardrail_policy} · {node.guardrail_action ?? "—"}
                           </span>
@@ -473,7 +473,7 @@ export function TraceGraphView({ graph, analysis }: TraceGraphViewProps) {
                         )}
                       </div>
                       {showRetrievalFailure && (
-                        <div className="mt-3 rounded border border-red-500/20 bg-red-950/30 p-2.5">
+                        <div className="mt-3 rounded border border-red-500/30 bg-red-950/10 p-2.5">
                           <div className="text-[10px] font-semibold text-red-400">
                             Retrieval failed: {failureReason ?? "unknown"}
                           </div>
@@ -486,7 +486,7 @@ export function TraceGraphView({ graph, analysis }: TraceGraphViewProps) {
                         </div>
                       )}
                       {recoveredAfterRetry && (
-                        <div className="mt-3 rounded border border-emerald-500/20 bg-emerald-950/30 p-2.5">
+                        <div className="mt-3 rounded border border-emerald-500/30 bg-emerald-950/10 p-2.5">
                           <div className="text-[10px] font-semibold text-emerald-400">
                             {retryAttemptLabel ? `Recovered after retry (${retryAttemptLabel})` : "Recovered after retry"}
                           </div>

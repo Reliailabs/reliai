@@ -19,7 +19,7 @@ const eventConfig: Record<string, { label: string; color: string; icon: React.Co
   resolved:     { label: "Resolved",     color: "text-emerald-400", icon: CheckCircle   },
   owner_assigned: { label: "Owner Assigned", color: "text-violet-400", icon: User },
   owner_cleared: { label: "Owner Cleared", color: "text-zinc-400", icon: User },
-  alert_sent:   { label: "Alert Sent",   color: "text-orange-400", icon: AlertTriangle },
+  alert_sent:   { label: "Alert Sent",   color: "text-amber-400", icon: AlertTriangle },
   alert_failed: { label: "Alert Failed", color: "text-red-400",    icon: AlertTriangle },
   opened:       { label: "Opened",       color: "text-zinc-400",   icon: Clock },
   updated:      { label: "Updated",      color: "text-zinc-400",   icon: Clock },

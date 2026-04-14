@@ -61,8 +61,8 @@ const severityBorderColor: Record<Severity, string> = {
 const guardrailTypeColor: Record<string, string> = {
   refusal:  "text-amber-400",
   pii:      "text-violet-400",
-  toxicity: "text-rose-400",
-  latency:  "text-sky-400",
+  toxicity: "text-red-400",
+  latency:  "text-blue-400",
   cost:     "text-emerald-400",
 }
 
@@ -570,7 +570,7 @@ export function ProjectDetailView({
                          ) : "—"}
                        </div>
                        <div className="text-right">
-                         <span className="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400">
+                         <span className="text-xs px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                            deployed
                          </span>
                        </div>

@@ -145,7 +145,7 @@ export default async function BillingPage() {
                 <span>{totalEstimated === null ? "Custom" : `$${totalEstimated.toFixed(2)}`}</span>
               </div>
             </div>
-            <div className="mt-6 rounded-lg border border-amber-800 bg-amber-900/20 px-4 py-3 text-sm text-amber-300">
+            <div className="mt-6 rounded-lg border border-amber-700 bg-amber-950/10 px-4 py-3 text-sm text-amber-300">
               Upgrade to Production to maintain full visibility and reduce overage costs.
             </div>
             {teamEstimate !== null && productionEstimate !== null && (
@@ -161,8 +161,8 @@ export default async function BillingPage() {
               </div>
             )}
             {enterpriseTrigger && (
-              <div className="mt-4 rounded-lg border border-sky-800 bg-sky-900/20 px-4 py-3 text-sm text-sky-300">
-                You’re operating at enterprise scale. Talk to us about dedicated infrastructure and priority ingestion.
+<div className="mt-4 rounded-lg border border-blue-700 bg-blue-950/10 px-4 py-3 text-sm text-blue-300">
+                You&apos;re operating at enterprise scale. Talk to us about dedicated infrastructure and priority ingestion.
               </div>
             )}
           </div>

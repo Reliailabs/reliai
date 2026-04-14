@@ -204,7 +204,7 @@ export function TraceDetailView({ trace }: { trace: TraceDetailData }) {
 
         {/* ── Error callout ── */}
         {trace.status === "failed" && trace.errorType && (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 flex items-start gap-3">
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-3">
             <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
             <div>
               <div className="text-xs font-semibold text-red-400 mb-0.5">Error</div>
@@ -215,7 +215,7 @@ export function TraceDetailView({ trace }: { trace: TraceDetailData }) {
 
         {/* ── Guardrail callout ── */}
         {trace.guardrailPolicy && (
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 flex items-start gap-3">
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-3">
             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
             <div>
               <div className="text-xs font-semibold text-amber-400 mb-0.5">Guardrail triggered</div>
@@ -346,7 +346,7 @@ export function TraceDetailView({ trace }: { trace: TraceDetailData }) {
                       className={cn(
                         "inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded border",
                         m.matched
-                          ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                           : "bg-zinc-800 border-zinc-700 text-zinc-500"
                       )}
                     >

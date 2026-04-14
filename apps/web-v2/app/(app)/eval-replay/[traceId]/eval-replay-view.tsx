@@ -40,8 +40,8 @@ function ScoreBadge({ score, pass }: { score: number; pass: boolean }) {
     <span className={cn(
       "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider border",
       pass
-        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-        : "bg-red-500/10 border-red-500/20 text-red-400"
+        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+        : "bg-red-500/10 border-red-500/30 text-red-400"
     )}>
       {pass ? "PASS" : "FAIL"} · {(score * 100).toFixed(0)}%
     </span>

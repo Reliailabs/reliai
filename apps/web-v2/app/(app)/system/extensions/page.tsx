@@ -5,9 +5,9 @@ import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemExtensions } from "@/lib/api";
 
 function tone(health: string) {
-  if (health === "degraded") return "bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20";
-  if (health === "disabled") return "bg-zinc-800 text-zinc-300 ring-1 ring-zinc-700";
-  return "bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20";
+  if (health === "degraded") return "bg-amber-500/10 text-amber-400 border border-amber-500/30";
+  if (health === "disabled") return "bg-zinc-800 text-zinc-300 border border-zinc-700";
+  return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
 }
 
 export default async function SystemExtensionsPage() {

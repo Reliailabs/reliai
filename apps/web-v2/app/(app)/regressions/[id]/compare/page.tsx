@@ -51,7 +51,7 @@ function TraceCompareCard({
       {trace ? (
         <div className="mt-3 space-y-3 text-sm text-zinc-400">
           {trace.payload_truncated ? (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
               <p>Trace truncated — full payload not stored.</p>
               <p className="mt-1 text-[11px] text-amber-400">Some evidence may be missing due to payload size limits.</p>
             </div>
@@ -80,11 +80,11 @@ function TraceCompareCard({
               {trace.refusal_detected === null ? (
                 <span className="text-sm text-zinc-400">n/a</span>
               ) : trace.refusal_detected ? (
-                <span className="inline-flex rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-400 ring-1 ring-rose-500/20">
+                <span className="inline-flex rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400 border border-red-500/30">
                   Refusal detected
                 </span>
               ) : (
-                <span className="inline-flex rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-emerald-500/20">
+                <span className="inline-flex rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400 border border-emerald-500/30">
                   Not detected
                 </span>
               )}
@@ -99,8 +99,8 @@ function TraceCompareCard({
                     key={item.metric_key ?? item.name}
                     className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
                       item.matched
-                        ? "bg-rose-500/10 text-rose-400 ring-rose-500/20"
-                        : "bg-zinc-900 text-zinc-500 ring-zinc-800"
+                        ? "bg-red-500/10 text-red-400 border border-red-500/30"
+                        : "bg-zinc-900 text-zinc-500 border border-zinc-800"
                     }`}
                   >
                     {item.matched ? "Triggered: " : ""}{item.name}
@@ -296,7 +296,7 @@ export default async function RegressionComparePage({
           (t?.custom_metric_results ?? []).some((m) => m.matched),
         ),
       ) ? (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-5 py-4">
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-5 py-4">
           <p className="text-xs uppercase tracking-[0.24em] text-amber-400">Behavioral signal</p>
           <p className="mt-2 text-sm font-medium text-amber-400">
             Custom metrics triggered in this comparison

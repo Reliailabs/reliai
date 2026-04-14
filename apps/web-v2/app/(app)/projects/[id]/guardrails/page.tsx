@@ -10,10 +10,10 @@ function formatTime(value: string | null) {
 }
 
 function actionTone(action: string) {
-  if (action === "block") return "bg-rose-950 text-rose-300 ring-1 ring-rose-800";
-  if (action === "fallback_model") return "bg-amber-950 text-amber-300 ring-1 ring-amber-800";
-  if (action === "retry") return "bg-sky-950 text-sky-300 ring-1 ring-sky-800";
-  return "bg-zinc-900 text-zinc-300 ring-1 ring-zinc-800";
+  if (action === "block") return "bg-red-950 text-red-300 border border-red-800/30";
+  if (action === "fallback_model") return "bg-amber-950 text-amber-300 border border-amber-800/30";
+  if (action === "retry") return "bg-blue-950 text-blue-300 border border-blue-800/30";
+  return "bg-zinc-900 text-zinc-300 border border-zinc-800";
 }
 
 export default async function ProjectGuardrailsPage({

@@ -16,22 +16,22 @@ interface ProviderHealthData {
 const statusConfig: Record<ProviderStatus, { color: string; bg: string; icon: React.ComponentType<{ className?: string }> }> = {
   operational: {
     color: "text-emerald-400",
-    bg: "bg-emerald-500/10 border-emerald-500/20",
+    bg: "bg-emerald-500/10 border-emerald-500/30",
     icon: CheckCircle,
   },
   degraded: {
     color: "text-amber-400",
-    bg: "bg-amber-500/10 border-amber-500/20",
+    bg: "bg-amber-500/10 border-amber-500/30",
     icon: AlertTriangle,
   },
   partial_outage: {
-    color: "text-orange-400",
-    bg: "bg-orange-500/10 border-orange-500/20",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10 border-amber-500/30",
     icon: AlertTriangle,
   },
   major_outage: {
     color: "text-red-400",
-    bg: "bg-red-500/10 border-red-500/20",
+    bg: "bg-red-500/10 border-red-500/30",
     icon: AlertCircle,
   },
 }

@@ -10,7 +10,7 @@ export default async function BillingSuccessPage() {
         <div className="text-4xl mb-4">✅</div>
         <h1 className="text-2xl font-semibold text-zinc-100">Upgrade successful</h1>
         <p className="mt-3 text-sm leading-6 text-zinc-400">
-          You’re now on Production. Full visibility is active and trace loss is avoided during incidents.
+          You&apos;re now on Production. Full visibility is active and trace loss is avoided during incidents.
         </p>
         <Link
           href="/dashboard"

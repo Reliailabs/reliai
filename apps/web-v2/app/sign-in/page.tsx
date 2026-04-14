@@ -45,7 +45,7 @@ export default async function SignInPage({
         </div>
 
         {hasError ? (
-          <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+          <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-200">
             Invalid credentials. Please try again.
           </div>
         ) : null}

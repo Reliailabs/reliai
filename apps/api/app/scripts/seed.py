@@ -600,9 +600,17 @@ def run() -> None:
                 db,
                 email=SEED_OPERATOR_EMAIL,
                 password=SEED_OPERATOR_PASSWORD,
+                is_system_admin=True,
             )
             db.commit()
             db.refresh(operator)
+        else:
+            operator.is_system_admin = True
+            db.flush()
+            if operator.app_user:
+                operator.app_user.is_system_admin = True
+                db.flush()
+            db.commit()
 
         organization = db.scalar(select(Organization).where(Organization.slug == "acme"))
         if organization is None:

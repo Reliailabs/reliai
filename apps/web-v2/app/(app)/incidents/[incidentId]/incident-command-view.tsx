@@ -301,7 +301,7 @@ function AiRootCausePanel({ incidentId }: { incidentId: string }) {
             <>
               <p className="text-sm text-zinc-300 leading-relaxed">{result.explanation}</p>
               {result.what_to_check_next && (
-                <div className="rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                <div className="rounded border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                   <p className="text-[10px] text-amber-500/70 uppercase tracking-wider mb-1">
                     What to check next
                   </p>
@@ -682,7 +682,7 @@ export function IncidentCommandView({ incidentId, command }: Props) {
                   {
                     label: "Failing trace",
                     trace: command.trace_compare.failing_trace_summary,
-                    accent: "border-red-500/20 bg-red-500/5",
+                    accent: "border-red-500/30 bg-red-500/10",
                     labelColor: "text-red-400",
                   },
                   {
@@ -802,7 +802,7 @@ export function IncidentCommandView({ incidentId, command }: Props) {
         {/* Right column */}
         <div className="space-y-4">
           {/* Recommended action */}
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3.5">
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3.5">
             <p className="text-[10px] font-semibold text-amber-500/80 uppercase tracking-wider mb-2">
               Recommended action
             </p>

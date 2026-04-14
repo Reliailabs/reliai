@@ -59,11 +59,11 @@ export default async function ProjectDeploymentsPage({
                 >
                   <div>
                     <div className="flex items-center gap-3">
-                      <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700 ring-1 ring-sky-200">
+                      <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 border border-blue-200">
                         {deployment.environment}
                       </span>
                       {label ? (
-                        <span className="inline-flex rounded-full bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-700 ring-1 ring-zinc-700">
+                        <span className="inline-flex rounded-full bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-600 border border-zinc-700">
                           {label}
                         </span>
                       ) : null}

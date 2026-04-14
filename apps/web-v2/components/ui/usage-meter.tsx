@@ -18,9 +18,9 @@ function getUsageState(used: number, limit: number) {
 const stateColors: Record<string, string> = {
   normal: "bg-emerald-500",
   warning: "bg-amber-500",
-  critical: "bg-rose-500",
-  blocked: "bg-rose-600",
-  enterprise: "bg-sky-500",
+  critical: "bg-red-500",
+  blocked: "bg-red-600",
+  enterprise: "bg-blue-500",
 };
 
 const stateMessages: Record<string, string> = {

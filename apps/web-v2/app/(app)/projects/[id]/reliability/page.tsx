@@ -18,12 +18,12 @@ function numberValue(value: number | null, suffix = "") {
 
 function toneForRate(value: number | null, threshold = 0.9) {
   if (value === null) return "text-zinc-500";
-  return value >= threshold ? "text-emerald-400" : "text-rose-400";
+  return value >= threshold ? "text-emerald-400" : "text-red-400";
 }
 
 function toneForInverse(value: number | null, maxValue: number) {
   if (value === null) return "text-zinc-500";
-  return value <= maxValue ? "text-emerald-400" : "text-rose-400";
+  return value <= maxValue ? "text-emerald-400" : "text-red-400";
 }
 
 function Sparkline({ series }: { series: ReliabilityMetricSeriesRead }) {
@@ -53,14 +53,14 @@ function Sparkline({ series }: { series: ReliabilityMetricSeriesRead }) {
 
 function ScorePill({ score }: { score: number | null }) {
   if (score === null) {
-    return <span className="inline-flex rounded-full bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-700 ring-1 ring-zinc-700">No score</span>;
+    return <span className="inline-flex rounded-full bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-700 border border-zinc-700">No score</span>;
   }
   const tone =
     score >= 0.875
-      ? "bg-emerald-900 text-emerald-400 ring-1 ring-emerald-800"
+      ? "bg-emerald-950 text-emerald-400 border border-emerald-800/30"
       : score >= 0.625
-        ? "bg-amber-900 text-amber-400 ring-1 ring-amber-800"
-        : "bg-rose-900 text-rose-400 ring-1 ring-rose-800";
+        ? "bg-amber-950 text-amber-400 border border-amber-800/30"
+        : "bg-red-950 text-red-400 border border-red-800/30";
   return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${tone}`}>{percent(score)}</span>;
 }
 
@@ -263,7 +263,7 @@ export default async function ProjectReliabilityPage({
               {reliability.telemetry_freshness_minutes !== null && reliability.telemetry_freshness_minutes <= 15 ? (
                 <ShieldCheck className="h-5 w-5 text-emerald-400" />
               ) : (
-                <ShieldX className="h-5 w-5 text-rose-400" />
+                <ShieldX className="h-5 w-5 text-red-400" />
               )}
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Operational state</p>

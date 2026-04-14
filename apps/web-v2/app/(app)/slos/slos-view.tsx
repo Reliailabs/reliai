@@ -29,19 +29,19 @@ const statusConfig = {
     dot:    "bg-emerald-500",
     color:  "text-emerald-400",
     bg:     "bg-emerald-500/10",
-    border: "border-emerald-500/20",
+    border: "border-emerald-500/30",
   },
   at_risk: {
     dot:    "bg-amber-500",
     color:  "text-amber-400",
     bg:     "bg-amber-500/10",
-    border: "border-amber-500/20",
+    border: "border-amber-500/30",
   },
   breached: {
     dot:    "bg-red-500",
     color:  "text-red-400",
     bg:     "bg-red-500/10",
-    border: "border-red-500/20",
+    border: "border-red-500/30",
   },
   neutral: {
     dot: "bg-zinc-600",

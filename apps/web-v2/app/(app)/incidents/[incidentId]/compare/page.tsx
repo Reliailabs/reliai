@@ -51,7 +51,7 @@ function TraceCompareCard({
       {trace ? (
         <div className="mt-3 space-y-3 text-sm text-zinc-400">
           {trace.payload_truncated ? (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
               <p>Trace truncated — full payload not stored.</p>
               <p className="mt-1 text-[11px] text-amber-400">Some evidence may be missing due to payload size limits.</p>
             </div>
@@ -298,7 +298,7 @@ export default async function IncidentComparePage({
           (t?.custom_metric_results ?? []).some((m) => m.matched),
         ),
       ) ? (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10/60 px-5 py-4">
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-5 py-4">
           <p className="text-xs uppercase tracking-[0.24em] text-amber-400">Behavioral signal</p>
           <p className="mt-2 text-sm font-medium text-amber-400">
             Custom metrics triggered in this comparison

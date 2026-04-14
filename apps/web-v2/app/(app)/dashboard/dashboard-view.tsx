@@ -50,9 +50,9 @@ const changeIcon = {
 }
 
 const deliveryStatusConfig: Record<string, string> = {
-  sent: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  failed: "bg-red-500/10 text-red-400 border-red-500/20",
-  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  sent: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  failed: "bg-red-500/10 text-red-400 border-red-500/30",
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/30",
   suppressed: "bg-zinc-700/40 text-zinc-400 border-zinc-700/60",
 }
 
@@ -101,15 +101,15 @@ export function DashboardView({
         description="Monitor and respond to AI reliability events across your projects."
         right={
           <>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-medium text-emerald-400">API healthy</span>
             </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/10 border border-red-500/20">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-500/10 border border-red-500/30">
               <span className="text-xs font-medium text-red-400">{openIncidents.length} open</span>
             </div>
             {unacknowledgedCount > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30">
                 <span className="text-xs font-medium text-amber-400">
                   {unacknowledgedCount} unacknowledged
                 </span>

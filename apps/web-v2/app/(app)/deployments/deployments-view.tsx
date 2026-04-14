@@ -44,29 +44,29 @@ const statusDotColor: Record<DeploymentStatus, string> = {
 function RiskPill({ score }: { score: number }) {
   if (score <= 30) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border bg-emerald-500/10 text-emerald-400 border-emerald-500/20 tabular-nums">
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border bg-emerald-500/10 text-emerald-400 border-emerald-500/30 tabular-nums">
         LOW · {score}
       </span>
     )
   }
   if (score <= 60) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border bg-amber-500/10 text-amber-400 border-amber-500/20 tabular-nums">
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border bg-amber-500/10 text-amber-400 border-amber-500/30 tabular-nums">
         MED · {score}
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border bg-red-500/10 text-red-400 border-red-500/20 tabular-nums">
-      HIGH · {score}
-    </span>
+<span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border bg-red-500/10 text-red-400 border-red-500/30 tabular-nums">
+        HIGH · {score}
+      </span>
   )
 }
 
 const gateConfig: Record<GateStatus, string> = {
-  pass:    "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  fail:    "bg-red-500/10 text-red-400 border-red-500/20",
-  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  pass:    "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  fail:    "bg-red-500/10 text-red-400 border-red-500/30",
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/30",
   skipped: "bg-zinc-700/50 text-zinc-500 border-zinc-700/50",
 }
 
