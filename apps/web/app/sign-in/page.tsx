@@ -60,11 +60,6 @@ export default async function SignInPage({
             Local seed credentials: `owner@acme.test` / `reliai-dev-password`
           </div>
         ) : null}
-        {!workosEnabled && !showDevFallback ? (
-          <div className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
-            Configure the WorkOS env vars or re-enable `RELIAI_DEV_AUTH_ENABLED` to sign in locally.
-          </div>
-        ) : null}
         {hasError ? (
           <div className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200">
             Invalid credentials.

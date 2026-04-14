@@ -10,6 +10,10 @@ export function devAuthEnabled() {
   if (explicit === "false") {
     return false;
   }
+  // If WorkOS is not configured, enable dev auth as fallback
+  if (!workosConfigured()) {
+    return true;
+  }
   return process.env.NODE_ENV !== "production";
 }
 
