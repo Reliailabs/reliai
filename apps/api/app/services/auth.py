@@ -106,10 +106,9 @@ def set_active_organization(
 
 def _dev_auth_enabled() -> bool:
     settings = get_settings()
-    if not settings.workos_dev_auth_enabled:
-        return False
-    # Enable dev auth if not in production OR if WorkOS is not configured
-    return settings.app_env != "production" or not _workos_enabled()
+    # Dev auth is enabled when workos_dev_auth_enabled is True
+    # (regardless of environment or WorkOS configuration)
+    return settings.workos_dev_auth_enabled
 
 
 def _workos_enabled() -> bool:
