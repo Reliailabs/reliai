@@ -103,11 +103,11 @@ export default async function BillingPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Current plan</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Current plan</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">{currentPlanLabel}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Est. monthly cost</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Est. monthly cost</p>
                 <p className="mt-2 text-2xl font-semibold text-zinc-100">
                   {totalEstimated ? `$${totalEstimated.toFixed(0)}` : "—"}
                 </p>
@@ -125,7 +125,7 @@ export default async function BillingPage() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Cost breakdown</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Cost breakdown</p>
             <h2 className="mt-3 text-xl font-semibold text-zinc-100">
               Transparent billing, no surprises.
             </h2>

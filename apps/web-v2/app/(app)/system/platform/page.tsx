@@ -73,22 +73,22 @@ export default async function SystemPlatformPage() {
 
       <div className="grid gap-4 lg:grid-cols-4">
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Warehouse rows</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Warehouse rows</p>
           <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.warehouse_rows.toLocaleString()}</p>
           <p className="mt-2 text-sm text-zinc-400">Rows visible inside the current warehouse health window.</p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Active partitions</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Active partitions</p>
           <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.active_partitions}</p>
           <p className="mt-2 text-sm text-zinc-400">Date partitions currently active for recent operational reads.</p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Scan rate</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Scan rate</p>
           <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.scan_rate.toFixed(0)}</p>
           <p className="mt-2 text-sm text-zinc-400">Approximate rows scanned across the current health query window.</p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Avg query latency</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Avg query latency</p>
           <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.avg_query_latency.toFixed(0)}ms</p>
           <p className="mt-2 text-sm text-zinc-400">Warehouse query latency currently reported by the adapter layer.</p>
         </Card>
@@ -98,7 +98,7 @@ export default async function SystemPlatformPage() {
         <div className="flex items-center gap-3">
           <ShieldAlert className="h-5 w-5 text-zinc-400" />
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Interpretation</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Interpretation</p>
             <h2 className="mt-2 text-2xl font-semibold text-zinc-100">How to read this panel</h2>
           </div>
         </div>

@@ -1,8 +1,8 @@
 # API Service Dockerfile for Railway
 FROM python:3.12-slim
 
-# Install curl for healthchecks and redis-tools for redis-cli
-RUN apt-get update && apt-get install -y --no-install-recommends curl redis-tools \
+# Install curl for healthchecks, redis-tools for redis-cli, and ca-certificates for TLS
+RUN apt-get update && apt-get install -y --no-install-recommends curl redis-tools ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

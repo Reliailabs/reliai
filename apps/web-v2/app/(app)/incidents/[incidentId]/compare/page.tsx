@@ -47,7 +47,7 @@ function TraceCompareCard({
 }) {
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{label}</p>
+      <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</p>
       {trace ? (
         <div className="mt-3 space-y-3 text-sm text-zinc-400">
           {trace.payload_truncated ? (
@@ -184,7 +184,7 @@ export default async function IncidentComparePage({
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Dimension summaries</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Dimension summaries</p>
           <div className="mt-4 space-y-3">
             {compare.dimension_summaries.map((summary, index) => (
               <div key={`${summary.summary_type}-${index}`} className="rounded-lg border border-zinc-800 px-4 py-3">
@@ -205,7 +205,7 @@ export default async function IncidentComparePage({
         </Card>
 
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Trace pivots</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Trace pivots</p>
           <div className="mt-4 space-y-3">
             {compare.cohort_pivots.map((pivot) => (
               <a
@@ -222,7 +222,7 @@ export default async function IncidentComparePage({
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Prompt version context</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Prompt version context</p>
           <div className="mt-4 space-y-3">
             {compare.prompt_version_contexts.map((context) => (
               <div key={context.id} className="rounded-lg border border-zinc-800 px-4 py-3">
@@ -241,7 +241,7 @@ export default async function IncidentComparePage({
         </Card>
 
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Model version context</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Model version context</p>
           <div className="mt-4 space-y-3">
             {compare.model_version_contexts.map((context) => (
               <div key={context.id} className="rounded-lg border border-zinc-800 px-4 py-3">
@@ -269,7 +269,7 @@ export default async function IncidentComparePage({
               <TraceCompareCard trace={pair.baseline_trace} label={`Baseline #${pair.pair_index + 1}`} />
             </div>
         <Card className="p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Focused differences</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Focused differences</p>
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {pair.diff_blocks.map((block) => (
                   <div key={block.block_type} className="rounded-lg border border-zinc-800 px-4 py-3">

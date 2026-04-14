@@ -80,7 +80,7 @@ export default async function SystemPipelinePage() {
           <div className="flex items-center gap-3">
             <Cpu className="h-5 w-5 text-zinc-400" />
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Consumer health</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Consumer health</p>
               <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Pipeline stages</h2>
             </div>
           </div>
@@ -136,7 +136,7 @@ export default async function SystemPipelinePage() {
             <div className="flex items-center gap-3">
               <Gauge className="h-5 w-5 text-zinc-400" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Operating rule</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Operating rule</p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Health semantics</h2>
               </div>
             </div>
@@ -161,7 +161,7 @@ export default async function SystemPipelinePage() {
           </Card>
 
           <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Recent window</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Recent window</p>
             <div className="mt-5 space-y-3">
               {pipeline.consumers.map((consumer) => (
                 <div key={`${consumer.consumer_name}-window`} className="rounded-lg border border-zinc-800 px-4 py-3">

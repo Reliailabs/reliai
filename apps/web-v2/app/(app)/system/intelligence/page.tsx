@@ -83,7 +83,7 @@ export default async function SystemIntelligencePage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
         <Card className="overflow-hidden">
           <div className="border-b border-zinc-800 px-6 py-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Top reliability patterns</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Top reliability patterns</p>
             <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Model and retrieval failure graph</h2>
           </div>
           <div className="overflow-x-auto">
@@ -116,7 +116,7 @@ export default async function SystemIntelligencePage() {
 
         <div className="space-y-6">
           <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Recommended guardrails</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Recommended guardrails</p>
             <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Graph-derived protection moves</h2>
             <div className="mt-6 space-y-4">
               {recommendations.items.map((item) => (
@@ -135,7 +135,7 @@ export default async function SystemIntelligencePage() {
           </Card>
 
           <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Emerging model regressions</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Emerging model regressions</p>
             <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Global intelligence feed</h2>
             <div className="mt-6 space-y-3">
               {recentGlobal.map((item) => (

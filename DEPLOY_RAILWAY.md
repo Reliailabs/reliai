@@ -90,6 +90,12 @@ WORKOS_CLIENT_ID=your-workos-client-id
 WORKOS_REDIRECT_URI=https://your-app.railway.app/api/auth/callback
 ```
 
+**Redis wait script**: When using Railway's auto-connect for Redis, set this variable to skip the Redis wait script:
+
+```bash
+RELIAI_SKIP_REDIS_WAIT=1
+```
+
 ## Service URLs
 
 After deployment, Railway assigns URLs in this format:
@@ -103,8 +109,8 @@ The web service is your main entry point.
 
 1. Run database migrations:
 ```bash
-railway variables set PYTHONPATH=/app/apps/api
-railway run -- python -m alembic -c alembic.ini upgrade head
+# PYTHONPATH is already set in the Dockerfile
+railway run -s api -- python -m alembic -c /app/apps/api/alembic.ini upgrade head
 ```
 
 2. Seed initial data:
@@ -154,7 +160,7 @@ Ensure your Dockerfile exposes the correct port (8000 for API, 3000 for Web).
 
 ### Running migrations
 ```bash
-railway run -- python -m alembic -c alembic.ini upgrade head
+railway run -s api -- python -m alembic -c /app/apps/api/alembic.ini upgrade head
 ```
 
 ### Restarting services

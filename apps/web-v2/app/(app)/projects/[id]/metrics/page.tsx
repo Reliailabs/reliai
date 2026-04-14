@@ -166,7 +166,7 @@ export default async function ProjectCustomMetricsPage({
       {createdFlag ? (
         <div className="rounded-lg border border-amber-800 bg-amber-950/60 p-5">
           <p className="text-xs uppercase tracking-[0.24em] text-amber-400">Metric enabled</p>
-          <h2 className="mt-2 text-xl font-semibold text-amber-200">
+          <h2 className="mt-2 text-2xl font-semibold text-amber-200">
             {createdName ? `${createdName} is now tracked` : "Metric is now tracked"}
           </h2>
           <p className="mt-2 text-sm text-amber-300">
@@ -195,7 +195,7 @@ export default async function ProjectCustomMetricsPage({
           <div className="flex items-center gap-3">
             <Gauge className="h-5 w-5 text-zinc-500" />
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Create custom metric</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Create custom metric</p>
               <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Add a behavioral signal</h2>
               {prefillSource ? (
                 <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-400">
@@ -313,7 +313,7 @@ export default async function ProjectCustomMetricsPage({
             <div className="flex items-center gap-3">
               <ListFilter className="h-5 w-5 text-zinc-500" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Configured metrics</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Configured metrics</p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Project custom metric registry</h2>
               </div>
             </div>
@@ -375,7 +375,7 @@ export default async function ProjectCustomMetricsPage({
             <div className="flex items-center gap-3">
               <ShieldAlert className="h-5 w-5 text-zinc-500" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Behavior signal guidance</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Behavior signal guidance</p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Keep metrics narrow and operational</h2>
               </div>
             </div>

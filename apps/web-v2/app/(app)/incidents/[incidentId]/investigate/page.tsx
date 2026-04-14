@@ -76,21 +76,21 @@ export default async function IncidentInvestigationPage({
 
       <section className="grid gap-4 xl:grid-cols-4">
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Incident summary</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Incident summary</p>
           <p className="mt-3 text-sm text-zinc-400">Scope</p>
-          <p className="mt-2 text-xl font-semibold text-zinc-100">
+          <p className="mt-2 text-2xl font-semibold text-zinc-100">
             {String(incident.summary_json.scope_type ?? "n/a")}:{String(incident.summary_json.scope_id ?? "n/a")}
           </p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Metric impact</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Metric impact</p>
           <p className="mt-3 text-sm text-zinc-400">Current vs baseline</p>
-          <p className="mt-2 text-xl font-semibold text-zinc-100">
+          <p className="mt-2 text-2xl font-semibold text-zinc-100">
             {incident.regressions[0] ? `${incident.regressions[0].current_value} vs ${incident.regressions[0].baseline_value}` : "n/a"}
           </p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Timeline</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Timeline</p>
           <p className="mt-3 text-sm text-zinc-400">Current window</p>
           <p className="mt-2 text-lg font-semibold text-zinc-100">{incident.compare.current_window_start ?? "n/a"}</p>
           <p className="mt-1 text-sm text-zinc-400">{incident.compare.current_window_end ?? "n/a"}</p>
@@ -108,7 +108,7 @@ export default async function IncidentInvestigationPage({
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_420px]">
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Root cause</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Root cause</p>
           <div className="mt-4 space-y-3">
             {investigation.root_cause_analysis.ranked_causes.map((cause) => (
               <div key={cause.cause_type} className="rounded-lg border border-zinc-800 px-4 py-3">
@@ -123,7 +123,7 @@ export default async function IncidentInvestigationPage({
         </Card>
 
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Suggested fix</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Suggested fix</p>
           <div className="mt-4 space-y-3">
             {investigation.recommendations.length > 0 ? (
               investigation.recommendations.map((item, index) => (
@@ -144,7 +144,7 @@ export default async function IncidentInvestigationPage({
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Trace comparison</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Trace comparison</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div className="rounded-lg border border-zinc-800 px-4 py-4">
               <p className="text-sm font-medium text-zinc-100">Failing trace</p>
@@ -184,7 +184,7 @@ export default async function IncidentInvestigationPage({
         </Card>
 
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Deployment context</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Deployment context</p>
           <div className="mt-4 space-y-3">
             <div className="rounded-lg border border-zinc-800 px-4 py-3">
               <p className="text-sm font-medium text-zinc-100">Recent deployment</p>
@@ -210,7 +210,7 @@ export default async function IncidentInvestigationPage({
 
       <section className="grid gap-4 xl:grid-cols-2">
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">AI investigation insights</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">AI investigation insights</p>
           <div className="mt-4 space-y-3">
             {investigation.possible_root_causes.length > 0 ? (
               investigation.possible_root_causes.map((item, index) => (
@@ -230,7 +230,7 @@ export default async function IncidentInvestigationPage({
         </Card>
 
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Guardrail activity</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Guardrail activity</p>
           {investigation.guardrail_activity.length > 0 ? (
             <div className="mt-4 space-y-3">
               {investigation.guardrail_activity.map((item) => (
@@ -248,7 +248,7 @@ export default async function IncidentInvestigationPage({
         </Card>
 
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Recommended next step</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Recommended next step</p>
           <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
             <div className="flex items-start gap-3">
               <Wrench className="mt-0.5 h-4 w-4 text-zinc-400" />
