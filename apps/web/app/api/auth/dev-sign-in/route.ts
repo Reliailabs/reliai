@@ -30,7 +30,8 @@ export async function POST(request: Request) {
     return NextResponse.redirect(new URL("/sign-in?error=1", request.url), { status: 303 });
   }
   
-  const redirectTo = new URL(returnTo, request.url);
+  const baseUrl = process.env.APP_URL || request.url;
+  const redirectTo = new URL(returnTo, baseUrl);
   const response = NextResponse.redirect(redirectTo, { status: 303 });
   const secureCookie = new URL(request.url).protocol === "https:";
   response.cookies.set(SESSION_COOKIE_NAME, result.session_token, {
