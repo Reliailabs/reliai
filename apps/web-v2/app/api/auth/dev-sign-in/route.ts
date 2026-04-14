@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { signIn } from "@/lib/auth";
-import { SESSION_COOKIE_NAME } from "@/lib/constants";
+import { SESSION_COOKIE_NAME, devAuthEnabled } from "@/lib/constants";
 
 const sanitizeReturnTo = (value: FormDataEntryValue | null): string => {
   if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//")) {
@@ -11,22 +11,27 @@ const sanitizeReturnTo = (value: FormDataEntryValue | null): string => {
 };
 
 export async function POST(request: Request) {
+  if (!devAuthEnabled()) {
+    return NextResponse.json({ detail: "dev auth disabled" }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const email = formData.get("email");
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
 
+  const baseUrl = process.env.APP_URL || request.url;
+
   if (typeof email !== "string" || typeof password !== "string") {
-    return NextResponse.redirect(new URL("/sign-in?error=1", request.url), { status: 303 });
+    return NextResponse.redirect(new URL("/sign-in?error=1", baseUrl), { status: 303 });
   }
 
   const result = await signIn(email, password);
 
   if (!result) {
-    return NextResponse.redirect(new URL("/sign-in?error=1", request.url), { status: 303 });
+    return NextResponse.redirect(new URL("/sign-in?error=1", baseUrl), { status: 303 });
   }
 
-  const baseUrl = process.env.APP_URL || request.url;
   const redirectTo = new URL(returnTo, baseUrl);
   const response = NextResponse.redirect(redirectTo, { status: 303 });
   const secureCookie = new URL(request.url).protocol === "https:";
