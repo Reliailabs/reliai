@@ -101,7 +101,7 @@ export default async function ProjectProcessorsPage({
           </div>
         </div>
         <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-          <Key className="mt-0.5 h-5 w-5 text-sky-400" />
+          <Key className="mt-0.5 h-5 w-5 text-blue-400" />
           <div>
             <p className="text-sm font-medium text-zinc-100">Secure delivery</p>
             <p className="mt-1 text-sm leading-6 text-zinc-400">

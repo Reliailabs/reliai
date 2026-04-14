@@ -72,7 +72,7 @@ export default async function ProjectSettingsPage({
           </div>
         </div>
         <div className="flex items-start gap-3 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-          <Edit className="mt-0.5 h-5 w-5 text-sky-400" />
+          <Edit className="mt-0.5 h-5 w-5 text-blue-400" />
           <div>
             <p className="text-sm font-medium text-zinc-100">Non‑destructive</p>
             <p className="mt-1 text-sm leading-6 text-zinc-400">

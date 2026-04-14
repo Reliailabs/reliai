@@ -83,7 +83,7 @@ export default async function BillingPage() {
       <form action={handleBillingCheckout.bind(null, plan)}>
         <button
           type="submit"
-          className="w-full rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 px-4 py-3 text-sm font-semibold transition-colors"
+          className="w-full rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-900 px-4 py-3 text-sm font-semibold transition-colors"
         >
           {label}
         </button>
@@ -193,7 +193,7 @@ export default async function BillingPage() {
               {plan.planKey === "enterprise" ? (
                 <a
                   href="mailto:billing@reliai.dev"
-                  className="mt-5 block w-full rounded-xl border border-zinc-700 bg-transparent px-4 py-3 text-sm font-semibold text-zinc-300 text-center hover:bg-zinc-800 transition-colors"
+                  className="mt-5 block w-full rounded-lg border border-zinc-700 bg-transparent px-4 py-3 text-sm font-semibold text-zinc-300 text-center hover:bg-zinc-800 transition-colors"
                 >
                   Contact sales
                 </a>

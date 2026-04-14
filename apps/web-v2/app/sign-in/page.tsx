@@ -23,7 +23,7 @@ export default async function SignInPage({
 
   return (
     <main className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/60 shadow-xl p-8">
+      <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900/60 shadow-xl p-8">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-zinc-100 flex items-center justify-center">
             <span className="text-[11px] font-bold text-zinc-950 tracking-tight select-none">
@@ -38,14 +38,14 @@ export default async function SignInPage({
           </div>
         </div>
 
-        <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-xs text-zinc-500">
+        <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-xs text-zinc-500">
           Local seed credentials:{" "}
           <span className="font-mono text-zinc-300">owner@acme.test</span> /{" "}
           <span className="font-mono text-zinc-300">reliai-dev-password</span>
         </div>
 
         {hasError ? (
-          <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+          <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-200">
             Invalid credentials. Please try again.
           </div>
         ) : null}
@@ -58,7 +58,7 @@ export default async function SignInPage({
               name="email"
               type="email"
               placeholder="owner@acme.test"
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-zinc-600"
               required
             />
           </div>
@@ -68,11 +68,11 @@ export default async function SignInPage({
               name="password"
               type="password"
               placeholder="Password"
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+              className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-zinc-600"
               required
             />
           </div>
-          <button className="w-full rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-white">
+          <button className="w-full rounded-lg bg-zinc-100 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-white">
             Sign in
           </button>
         </form>

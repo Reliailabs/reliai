@@ -24,7 +24,7 @@ const eventConfig: Record<string, { label: string; color: string; icon: React.Co
   opened:       { label: "Opened",       color: "text-zinc-400",   icon: Clock },
   updated:      { label: "Updated",      color: "text-zinc-400",   icon: Clock },
   reopened:     { label: "Reopened",     color: "text-amber-400",  icon: Clock },
-  config_applied: { label: "Config Applied", color: "text-sky-400", icon: Clock },
+  config_applied: { label: "Config Applied", color: "text-blue-400", icon: Clock },
   config_undone: { label: "Config Undone", color: "text-zinc-500", icon: Clock },
 }
 

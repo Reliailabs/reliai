@@ -76,7 +76,7 @@ export default async function OrganizationSettingsPage() {
               </label>
               <button
                 type="submit"
-                className="rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 px-4 py-3 text-sm font-semibold transition-colors"
+                className="rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-900 px-4 py-3 text-sm font-semibold transition-colors"
               >
                 Save changes
               </button>

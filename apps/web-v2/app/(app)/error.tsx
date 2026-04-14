@@ -23,7 +23,7 @@ export default function AppError({
         </p>
         <button
           onClick={reset}
-          className="mt-6 w-full rounded-xl bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-200"
+          className="mt-6 w-full rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-zinc-200"
         >
           Retry
         </button>

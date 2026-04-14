@@ -59,9 +59,9 @@ function filterUpgradeCtas(limit: LimitStatus, cta?: LimitStatus["cta"] | null) 
 }
 
 function severityTone(severity: LimitStatus["severity"]) {
-  if (severity === "critical") return "border-red-800 bg-red-900/20 text-red-300";
-  if (severity === "warning") return "border-amber-800 bg-amber-900/20 text-amber-300";
-  return "border-zinc-800 bg-zinc-900/20 text-zinc-300";
+  if (severity === "critical") return "border-red-800 bg-red-500/10 text-red-400";
+  if (severity === "warning") return "border-amber-800 bg-amber-500/10 text-amber-400";
+  return "border-zinc-800 bg-zinc-900/10 text-zinc-400";
 }
 
 function statusIcon(status: LimitStatus["status"]) {

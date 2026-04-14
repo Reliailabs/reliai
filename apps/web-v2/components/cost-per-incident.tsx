@@ -92,7 +92,7 @@ export function CostPerIncident({ metrics, className }: CostPerIncidentProps) {
             </div>
           </div>
         </div>
-        <div className="flex items-start gap-2 p-3 bg-zinc-800/20 border border-zinc-800/50 rounded text-xs">
+        <div className="flex items-start gap-2 p-3 bg-zinc-800/10 border border-zinc-800 rounded text-xs">
           <Zap className="w-3 h-3 text-amber-400 mt-0.5 shrink-0" />
           <span className="text-zinc-400">
             This cost estimate assumes model prices as of Q1 2024. Check your provider&apos;s latest pricing for accuracy.
