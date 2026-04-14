@@ -16,12 +16,14 @@ import {
   GitBranch,
   FlaskConical,
   LogOut,
+  Rocket as Onboarding,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   // ── Primary triage surfaces ──
   { href: "/dashboard",    icon: LayoutDashboard, label: "Dashboard"    },
+  { href: "/onboarding",   icon: Onboarding,      label: "Onboarding"  },
   { href: "/incidents",    icon: ShieldAlert,     label: "Incidents"    },
   { href: "/traces",       icon: ScanLine,        label: "Traces"       },
   { href: "/eval-replay",  icon: FlaskConical,    label: "Eval Replay"  },

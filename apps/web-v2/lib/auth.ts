@@ -102,3 +102,14 @@ export async function signOut(): Promise<void> {
   cookieStore.delete(SESSION_COOKIE_NAME);
   redirect("/sign-in");
 }
+
+export async function switchOrganization(organizationId: string): Promise<OperatorSession> {
+  const token = await getApiAccessToken();
+  if (!token) {
+    throw new Error("No session");
+  }
+  return authRequest<OperatorSession>("/api/v1/auth/switch-organization", token, {
+    method: "POST",
+    body: JSON.stringify({ organization_id: organizationId })
+  });
+}
