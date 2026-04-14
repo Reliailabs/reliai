@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
 
-  const baseUrl = process.env.APP_URL || request.url;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || request.url;
 
   if (typeof email !== "string" || typeof password !== "string") {
     return NextResponse.redirect(new URL("/sign-in?error=1", baseUrl), { status: 303 });
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.redirect(new URL("/sign-in?error=1", baseUrl), { status: 303 });
   }
   
-  const baseUrl = process.env.APP_URL || request.url;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || request.url;
   const redirectTo = new URL(returnTo, baseUrl);
   const response = NextResponse.redirect(redirectTo, { status: 303 });
   const secureCookie = new URL(request.url).protocol === "https:";
