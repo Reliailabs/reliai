@@ -21,8 +21,8 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 COPY --from=builder /build/apps/web/.next/standalone ./apps/web/.next/standalone
-COPY --from=builder /build/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder /build/apps/web/public ./apps/web/public
+COPY --from=builder /build/apps/web/.next/static ./apps/web/.next/standalone/apps/web/.next/static
+COPY --from=builder /build/apps/web/public ./apps/web/.next/standalone/apps/web/public
 
 EXPOSE 3000
 

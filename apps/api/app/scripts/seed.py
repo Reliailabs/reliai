@@ -11,6 +11,7 @@ from app.models.deployment_event import DeploymentEvent
 from app.models.deployment_rollback import DeploymentRollback
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.operator_user import OperatorUser
+from app.models.user import User
 from app.models.organization import Organization
 from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
@@ -607,8 +608,9 @@ def run() -> None:
         else:
             operator.is_system_admin = True
             db.flush()
-            if operator.app_user:
-                operator.app_user.is_system_admin = True
+            app_user = db.scalar(select(User).where(User.legacy_operator_user_id == operator.id))
+            if app_user:
+                app_user.is_system_admin = True
                 db.flush()
             db.commit()
 
