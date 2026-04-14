@@ -1,11 +1,29 @@
 import Link from "next/link"
+import { Users, CreditCard, Building2, Shield, Server } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { getOrganization, getOrganizationMembers } from "@/lib/api"
 import { requireOperatorSession } from "@/lib/auth"
 import { formatRelativeTime } from "@/lib/time"
 
+const settingsLinks = [
+  { href: "/organization/settings", icon: Building2, label: "Organization", description: "Workspace profile and settings" },
+  { href: "/settings/billing", icon: CreditCard, label: "Billing", description: "Plan, usage, and upgrade" },
+]
+
+const adminLinks = [
+  { href: "/system/pipeline", icon: Server, label: "Pipeline", description: "Ingestion pipeline health" },
+  { href: "/system/extensions", icon: Server, label: "Extensions", description: "Processor extensions" },
+  { href: "/system/customers", icon: Users, label: "Customers", description: "Customer expansion" },
+  { href: "/system/growth", icon: Users, label: "Growth", description: "Tenant growth" },
+  { href: "/system/expansion", icon: Users, label: "Expansion", description: "Expansion metrics" },
+  { href: "/system/platform", icon: Server, label: "Platform", description: "Platform reliability" },
+  { href: "/system/reliability-patterns", icon: Shield, label: "Reliability", description: "System-level patterns" },
+  { href: "/system/intelligence", icon: Shield, label: "Intelligence", description: "Reliability intelligence" },
+]
+
 export default async function SettingsPage() {
   const session = await requireOperatorSession()
+  const isSystemAdmin = session.operator.is_system_admin
   const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id
   const activeMembership =
     session.memberships.find((membership) => membership.organization_id === orgId) ??
@@ -27,9 +45,53 @@ export default async function SettingsPage() {
       />
 
       <div className="p-6 space-y-6">
+        <section className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-800 text-xs font-semibold text-zinc-300">
+            Settings
+          </div>
+          <div className="divide-y divide-zinc-800">
+            {settingsLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-4 px-4 py-4 hover:bg-zinc-800/50 transition-colors"
+              >
+                <link.icon className="w-5 h-5 text-zinc-500" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-zinc-100">{link.label}</div>
+                  <div className="text-xs text-zinc-500">{link.description}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {isSystemAdmin && (
+          <section className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-zinc-800 text-xs font-semibold text-zinc-300">
+              System Admin
+            </div>
+            <div className="divide-y divide-zinc-800">
+              {adminLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex items-center gap-4 px-4 py-4 hover:bg-zinc-800/50 transition-colors"
+                >
+                  <link.icon className="w-5 h-5 text-zinc-500" />
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-zinc-100">{link.label}</div>
+                    <div className="text-xs text-zinc-500">{link.description}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="bg-zinc-900 border border-zinc-800 rounded-lg">
           <div className="px-4 py-3 border-b border-zinc-800 text-xs font-semibold text-zinc-300">
-            Operator
+            Account
           </div>
           <div className="px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-zinc-400">
             <div>
