@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ArrowRight, Building, Edit, Hash, Text } from "lucide-react";
+import { ArrowRight, Building, Edit, Hash, Text, Key } from "lucide-react";
 
 import { SubPageHeader } from "@/components/ui/sub-page-header";
-import { getProject, updateProject } from "@/lib/api";
+import { getProject, updateProject, listProjectApiKeys, createApiKey } from "@/lib/api";
 
 export default async function ProjectSettingsPage({
   params,
@@ -15,6 +15,8 @@ export default async function ProjectSettingsPage({
   if (!project) {
     notFound();
   }
+
+  const apiKeys = await listProjectApiKeys(id).catch(() => ({ items: [] }));
 
   async function updateProjectAction(formData: FormData) {
     "use server";
@@ -32,6 +34,17 @@ export default async function ProjectSettingsPage({
     revalidatePath(`/projects/${id}/settings`);
     revalidatePath(`/projects/${id}`);
     redirect(`/projects/${id}/settings`);
+  }
+
+  async function createApiKeyAction(formData: FormData) {
+    "use server";
+
+    const label = String(formData.get("label") ?? "").trim() || "Default key";
+
+    const result = await createApiKey(id, { label });
+
+    revalidatePath(`/projects/${id}/settings`);
+    redirect(`/projects/${id}/settings?key=${result.api_key}`);
   }
 
   return (
@@ -179,7 +192,52 @@ export default async function ProjectSettingsPage({
             </div>
 
           </div>
+
           <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+            <div className="flex items-center gap-3">
+              <Key className="h-5 w-5 text-zinc-500" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">API Keys</p>
+                <h2 className="mt-2 text-xl font-semibold text-zinc-100">Ingestion credentials</h2>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {apiKeys.items.length === 0 ? (
+                <p className="text-sm text-zinc-400">No API keys created yet.</p>
+              ) : (
+                apiKeys.items.map((key) => (
+                  <div key={key.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-zinc-100">{key.label}</p>
+                      <p className="text-xs text-zinc-500 font-mono">{key.key_prefix}****</p>
+                    </div>
+                    <span className="text-xs text-zinc-500">
+                      {key.revoked_at ? "Revoked" : "Active"}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form action={createApiKeyAction} className="mt-4">
+              <div className="flex gap-2">
+                <input
+                  name="label"
+                  placeholder="Key label (e.g. production)"
+                  className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-zinc-500"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200 transition"
+                >
+                  Generate key
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-4">
             <p className="text-sm font-medium text-zinc-100">Danger zone</p>
             <p className="mt-2 text-sm text-zinc-400">
               Deleting this project will remove all traces, incidents, and reliability data permanently.

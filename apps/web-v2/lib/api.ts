@@ -642,6 +642,20 @@ export async function createApiKey(projectId: string, payload: { label: string }
   });
 }
 
+type ApiKeyListResponse = {
+  items: Array<{
+    id: string;
+    label: string;
+    key_prefix: string;
+    created_at: string;
+    revoked_at: string | null;
+  }>;
+};
+
+export async function listProjectApiKeys(projectId: string) {
+  return request<ApiKeyListResponse>(`/api/v1/projects/${projectId}/api-keys`);
+}
+
 export async function updateOrganization(organizationId: string, data: { name?: string; slug?: string }) {
   return request<OrganizationRead>(`/api/v1/organizations/${organizationId}`, {
     method: "PATCH",
