@@ -68,7 +68,7 @@ export default async function PromptVersionDetailPage({
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent traces</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Recent traces</p>
             <div className="mt-4 space-y-3">
               {detail.recent_traces.map((trace) => (
                 <Link
@@ -91,7 +91,7 @@ export default async function PromptVersionDetailPage({
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Investigation pivots</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Investigation pivots</p>
             <div className="mt-4 space-y-3">
               <a
                 href={detail.traces_path}
@@ -117,7 +117,7 @@ export default async function PromptVersionDetailPage({
 
         <section className="grid gap-6 xl:grid-cols-2">
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent regressions</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Recent regressions</p>
             <div className="mt-4 space-y-3">
               {detail.recent_regressions.map((regression) => (
                 <Link
@@ -135,7 +135,7 @@ export default async function PromptVersionDetailPage({
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Related incidents</p>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Related incidents</p>
             <div className="mt-4 space-y-3">
               {detail.related_incidents.map((incident) => (
                 <Link
@@ -155,7 +155,7 @@ export default async function PromptVersionDetailPage({
         </section>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent reliability metrics</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Recent reliability metrics</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {detail.recent_reliability_metrics.map((metric) => (
               <div

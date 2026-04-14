@@ -240,7 +240,7 @@ export default async function SystemGrowthPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Usage expansion by cohort</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Usage expansion by cohort</p>
               <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Does usage compound after onboarding?</h2>
             </div>
             <div className="text-right">
@@ -259,7 +259,7 @@ export default async function SystemGrowthPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Customer usage distribution</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Customer usage distribution</p>
               <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Is a power-law forming?</h2>
             </div>
             <div className="text-right">
@@ -281,25 +281,25 @@ export default async function SystemGrowthPage() {
           <div className="flex items-center gap-3">
             <TrendingUp className="h-5 w-5 text-zinc-400" />
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Platform expansion metrics</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Platform expansion metrics</p>
               <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Usage growth signals</h2>
             </div>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-4">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Median expansion</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Median expansion</p>
               <p className="mt-3 text-3xl font-semibold text-zinc-100">{growth.expansion_metrics.median_expansion_ratio.toFixed(1)}x</p>
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Top expansion</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Top expansion</p>
               <p className="mt-3 text-3xl font-semibold text-zinc-100">{growth.expansion_metrics.top_expansion_ratio.toFixed(1)}x</p>
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Breakout accounts</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Breakout accounts</p>
               <p className="mt-3 text-3xl font-semibold text-zinc-100">{growth.expansion_metrics.breakout_accounts_detected}</p>
             </div>
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Telemetry (30d)</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Telemetry (30d)</p>
               <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(growth.expansion_metrics.total_telemetry_30d)}</p>
             </div>
           </div>
@@ -309,7 +309,7 @@ export default async function SystemGrowthPage() {
           <div className="flex items-center gap-3">
             <Building2 className="h-5 w-5 text-zinc-400" />
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Top expanding customers</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Top expanding customers</p>
               <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Who is breaking out</h2>
             </div>
           </div>
@@ -339,7 +339,7 @@ export default async function SystemGrowthPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Trace volume chart</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Trace volume chart</p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Daily warehouse throughput</h2>
               </div>
               <p className={`text-sm font-semibold ${growthTone(growth.trace_volume.growth_pct)}`}>
@@ -369,7 +369,7 @@ export default async function SystemGrowthPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Incident detection chart</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Incident detection chart</p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Recent incident intake</h2>
               </div>
               <div className="text-right">
@@ -399,7 +399,7 @@ export default async function SystemGrowthPage() {
             <div className="flex items-center gap-3">
               <ShieldAlert className="h-5 w-5 text-zinc-400" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Guardrail interventions</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Guardrail interventions</p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Protection load</h2>
               </div>
             </div>
@@ -423,7 +423,7 @@ export default async function SystemGrowthPage() {
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-zinc-400" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Customer usage tiers</p>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Customer usage tiers</p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">30-day project distribution</h2>
               </div>
             </div>

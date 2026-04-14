@@ -24,11 +24,11 @@ function eventTypeTone(eventType: string) {
 
 function severityBadge(severity?: string | null) {
   if (!severity) return null;
-  if (severity === "critical") return "inline-flex rounded-full bg-red-900 text-red-300 px-2.5 py-1 text-xs font-medium";
-  if (severity === "high") return "inline-flex rounded-full bg-amber-900 text-amber-300 px-2.5 py-1 text-xs font-medium";
-  if (severity === "medium") return "inline-flex rounded-full bg-zinc-800 text-zinc-300 px-2.5 py-1 text-xs font-medium";
-  if (severity === "low") return "inline-flex rounded-full bg-zinc-800 text-zinc-300 px-2.5 py-1 text-xs font-medium";
-  return "inline-flex rounded-full bg-zinc-800 text-zinc-300 px-2.5 py-1 text-xs font-medium";
+  if (severity === "critical") return "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border bg-red-500/10 text-red-400 border-red-500/30";
+  if (severity === "high") return "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border bg-amber-500/10 text-amber-400 border-amber-500/30";
+  if (severity === "medium") return "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border bg-yellow-500/10 text-yellow-400 border-yellow-500/30";
+  if (severity === "low") return "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border bg-blue-500/10 text-blue-400 border-blue-500/30";
+  return "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider border bg-zinc-500/10 text-zinc-400 border-zinc-500/30";
 }
 
 function eventLabel(eventType: string) {
@@ -62,7 +62,7 @@ function renderSummary(summary: string) {
   if (parts.length === 1) return summary;
   return parts.map((part, index) =>
     index % 2 === 1 ? (
-      <span key={`${part}-${index}`} className="metric-value font-mono text-zinc-300">
+      <span key={`${part}-${index}`} className="font-mono text-zinc-300">
         {part}
       </span>
     ) : (
@@ -96,17 +96,19 @@ export default async function ProjectTimelinePage({
         backHref={`/projects/${id}/reliability${environment ? `?environment=${encodeURIComponent(environment)}` : ""}`}
         backLabel="Back to reliability"
         right={
-          <div className="rounded-lg border border-zinc-800 bg-zinc-800 px-4 py-3 text-sm text-zinc-500">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-400">
             {environment ?? project.environment} · {timeline.items.length} events
           </div>
         }
       />
 
       {timeline.items.length === 0 ? (
-        <div className="rounded-lg border-zinc-800 p-6">
-          <p className="text-sm leading-6 text-zinc-500">
-            No timeline events yet. Deploy a change, ingest traces, or trigger a regression to populate the investigation feed.
-          </p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center mb-3">
+            <TriangleAlert className="w-5 h-5 text-zinc-500" />
+          </div>
+          <div className="text-sm font-medium text-zinc-400">No timeline events yet</div>
+          <div className="text-xs text-zinc-600 mt-1">Deploy a change, ingest traces, or trigger a regression to populate the investigation feed.</div>
         </div>
       ) : (
         <section className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-6 shadow-sm">
@@ -125,16 +127,16 @@ export default async function ProjectTimelinePage({
                   <article className="rounded-lg border border-zinc-800 bg-zinc-800 p-5">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em]">
-                          <span className={`font-semibold ${eventTone}`}>{eventLabel(event.event_type)}</span>
-                          {meta ? <span className="text-zinc-500">· {meta}</span> : null}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">{eventLabel(event.event_type)}</span>
+                          {meta ? <span className="text-[10px] text-zinc-600">· {meta}</span> : null}
                         </div>
-                        <h2 className="text-lg font-semibold text-blue-400">{event.title}</h2>
+                        <h2 className="text-sm font-medium text-zinc-100">{event.title}</h2>
                         <p className="text-sm leading-6 text-zinc-500">{renderSummary(event.summary)}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 shrink-0">
                         {severityClass ? <span className={severityClass}>{event.severity}</span> : null}
-                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+                        <p className="text-xs text-zinc-600">
                           {new Date(event.timestamp).toLocaleString()}
                         </p>
                       </div>
@@ -143,7 +145,7 @@ export default async function ProjectTimelinePage({
                       <div className="mt-4">
                         <a
                           href={href}
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 underline-offset-4 hover:underline"
+                          className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
                         >
                           Open detail
                           <ArrowRight className="h-4 w-4" />

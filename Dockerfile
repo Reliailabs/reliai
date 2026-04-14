@@ -9,7 +9,7 @@
 
 FROM python:3.12-slim AS api-base
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl redis-tools \
+RUN apt-get update && apt-get install -y --no-install-recommends curl redis-tools ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

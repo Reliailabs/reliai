@@ -70,7 +70,7 @@ export default async function SystemExtensionsPage() {
 
       <Card className="overflow-hidden">
         <div className="border-b border-zinc-800 px-6 py-5">
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Extension registry</p>
+          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Extension registry</p>
           <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Processor load order and health</h2>
         </div>
         <div className="overflow-x-auto">

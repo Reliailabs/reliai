@@ -309,7 +309,7 @@ export function ProjectDetailView({
                   </div>
                   <div
                     className={cn(
-                      "text-xl font-semibold tabular-nums mt-1 leading-none tracking-tight",
+                      "text-2xl font-semibold tabular-nums mt-1 leading-none tracking-tight",
                       latencyTone === "critical" ? "text-red-400"
                       : latencyTone === "warning" ? "text-amber-400"
                       : "text-zinc-50"
@@ -322,7 +322,7 @@ export function ProjectDetailView({
                   <div className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest">
                     Traces / day
                   </div>
-                  <div className="text-xl font-semibold tabular-nums mt-1 leading-none tracking-tight text-zinc-50">
+                  <div className="text-2xl font-semibold tabular-nums mt-1 leading-none tracking-tight text-zinc-50">
                     {project.tracesPerDay}
                   </div>
                 </div>
