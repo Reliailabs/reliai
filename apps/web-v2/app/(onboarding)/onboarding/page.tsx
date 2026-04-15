@@ -8,11 +8,7 @@ import { createApiKey, createOrganization, createProject, getProjects, getTraces
 import { getOperatorSession, requireOperatorSession, switchOrganization } from "@/lib/auth";
 
 function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
 }
 
 function defaultOrgName(email?: string | null) {
@@ -62,6 +58,10 @@ export default async function OnboardingPage({
   const hasTrace = Boolean(traceList.items?.length);
   const apiKeyCreated = Boolean(apiKeyValue) || hasTrace;
 
+  const activeOrgName = organizationId 
+    ? session.memberships.find(m => m.organization_id === organizationId)?.organization_name ?? "Organization"
+    : "None";
+
   const steps = [
     { state: hasOrganization ? "done" : "current" },
     { state: hasOrganization ? (hasProject ? "done" : "current") : "next" },
@@ -74,8 +74,7 @@ export default async function OnboardingPage({
     const session = await requireOperatorSession();
     const nameInput = String(formData.get("name") ?? "").trim();
     const slugInput = String(formData.get("slug") ?? "").trim();
-    const fallbackName = defaultOrgName(session.operator.email);
-    const finalName = nameInput || fallbackName;
+    const finalName = nameInput || defaultOrgName(session.operator.email);
     const finalSlug = slugify(slugInput || finalName);
     if (!finalName || !finalSlug) return;
     const organization = await createOrganization({
@@ -98,8 +97,7 @@ export default async function OnboardingPage({
     const envInput = String(formData.get("environment") ?? "prod").trim();
     const environment = envInput === "staging" || envInput === "dev" ? envInput : "prod";
     const finalName = nameInput || "Production";
-    const finalSlug = slugify(finalName);
-    await createProject(orgId, { name: finalName, slug: finalSlug, environment: environment as "prod" | "staging" | "dev", description: "Onboarding project" });
+    await createProject(orgId, { name: finalName, slug: slugify(finalName), environment: environment as "prod" | "staging" | "dev", description: "Onboarding project" });
     redirect("/onboarding?path=sdk");
   }
 
@@ -132,7 +130,8 @@ export default async function OnboardingPage({
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-4">
+      {/* Step indicators */}
+      <div className="grid gap-4 lg:grid-cols-4">
         {stepConfig.map((step, index) => {
           const stepState = steps[index].state;
           const Icon = step.icon;
@@ -147,6 +146,7 @@ export default async function OnboardingPage({
         })}
       </div>
 
+      {/* Choose path */}
       {selectedPath === "choose" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
@@ -164,81 +164,105 @@ export default async function OnboardingPage({
         </div>
       )}
 
+      {/* SDK path */}
       {selectedPath === "sdk" && (
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_380px]">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-            <p className="text-xs uppercase tracking-widest text-zinc-500">Connect your app</p>
-            <h2 className="mt-3 text-2xl font-semibold text-zinc-100">Install SDK and send first traces</h2>
-            <p className="mt-2 text-sm text-zinc-400">Use this setup checklist to create a workspace, issue a key, and verify ingestion. If your traffic is quiet, switch to simulation and return later.</p>
-
-            <div className="mt-8 space-y-4">
-              {stepConfig.map((step, index) => {
-                const stepState = steps[index].state;
-                const Icon = step.icon;
-                const isDone = stepState === "done";
-                const isCurrent = stepState === "current";
-                return (
-                  <div key={step.label} className={`grid gap-4 rounded-lg border px-4 py-4 md:grid-cols-[48px_1fr_auto] ${isDone ? "border-emerald-500/30 bg-emerald-500/10" : isCurrent ? "border-zinc-700 bg-zinc-950" : "border-zinc-800 bg-zinc-950 opacity-50"}`}>
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${isDone ? "bg-emerald-500/20" : isCurrent ? "bg-zinc-800" : "bg-zinc-900"}`}>
-                      <Icon className={`h-5 w-5 ${isDone ? "text-emerald-400" : isCurrent ? "text-zinc-400" : "text-zinc-700"}`} />
-                    </div>
-                    <div>
-                      <p className="text-sm text-zinc-500">Step {index + 1}</p>
-                      <h3 className="mt-1 text-lg font-semibold text-zinc-100">{step.label}</h3>
-                      {index === 0 && !hasOrganization && (
-                        <form action={createOrganizationAction} className="mt-3 space-y-2">
-                          <input name="name" defaultValue={defaultName} placeholder="Organization name" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" />
-                          <input name="slug" defaultValue={defaultSlug} placeholder="Slug" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" />
-                          <button type="submit" className="rounded bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900">Create</button>
-                        </form>
-                      )}
-                      {index === 1 && hasOrganization && !hasProject && (
-                        <form action={createProjectAction} className="mt-3 space-y-2">
-                          <input name="project_name" placeholder="Production" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" />
-                          <select name="environment" defaultValue="prod" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
-                            <option value="prod">Production</option>
-                            <option value="staging">Staging</option>
-                            <option value="dev">Development</option>
-                          </select>
-                          <button type="submit" className="rounded bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900">Create</button>
-                        </form>
-                      )}
-                      {index === 2 && hasProject && !apiKeyCreated && (
-                        <form action={createApiKeyAction} className="mt-3">
-                          <button type="submit" className="rounded bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900">Generate API key</button>
-                        </form>
-                      )}
-                    </div>
-                    <div className="flex items-center">
-                      {isDone ? <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-400">Complete</span> : isCurrent ? <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-400">Current</span> : <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-medium text-zinc-600">Pending</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {apiKeyValue && (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-6">
-                <p className="text-xs uppercase tracking-widest text-emerald-400">API key generated</p>
-                <h2 className="mt-2 text-lg font-semibold text-zinc-100">API key (copy once)</h2>
-                <div className="mt-2 rounded bg-zinc-950 px-3 py-2 text-sm text-zinc-100 font-mono break-all">{apiKeyValue}</div>
-              </div>
-            )}
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_380px]">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-              <p className="text-xs uppercase tracking-widest text-zinc-500">Ingest example</p>
-              <h2 className="mt-2 text-lg font-semibold text-zinc-100">Send your first trace</h2>
-              <pre className="mt-4 rounded bg-zinc-950 p-4 text-xs text-zinc-300 overflow-x-auto font-mono">{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
+              <p className="text-xs uppercase tracking-widest text-zinc-500">Connect your app</p>
+              <h2 className="mt-3 text-2xl font-semibold text-zinc-100">Install SDK and send first traces</h2>
+              <p className="mt-2 text-sm text-zinc-400">Use this setup checklist to create a workspace, issue a key, and verify ingestion.</p>
+
+              <div className="mt-8 space-y-4">
+                {stepConfig.map((step, index) => {
+                  const stepState = steps[index].state;
+                  const Icon = step.icon;
+                  const isDone = stepState === "done";
+                  const isCurrent = stepState === "current";
+                  return (
+                    <div key={step.label} className={`grid gap-4 rounded-lg border px-4 py-4 md:grid-cols-[48px_1fr_auto] ${isDone ? "border-emerald-500/30 bg-emerald-500/10" : isCurrent ? "border-zinc-700 bg-zinc-950" : "border-zinc-800 bg-zinc-950 opacity-50"}`}>
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${isDone ? "bg-emerald-500/20" : isCurrent ? "bg-zinc-800" : "bg-zinc-900"}`}>
+                        <Icon className={`h-5 w-5 ${isDone ? "text-emerald-400" : isCurrent ? "text-zinc-400" : "text-zinc-700"}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm text-zinc-500">Step {index + 1}</p>
+                        <h3 className="mt-1 text-lg font-semibold text-zinc-100">{step.label}</h3>
+                        {index === 0 && !hasOrganization && (
+                          <form action={createOrganizationAction} className="mt-3 space-y-2">
+                            <input name="name" defaultValue={defaultName} placeholder="Organization name" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" />
+                            <input name="slug" defaultValue={defaultSlug} placeholder="Slug" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" />
+                            <button type="submit" className="rounded bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900">Create</button>
+                          </form>
+                        )}
+                        {index === 1 && hasOrganization && !hasProject && (
+                          <form action={createProjectAction} className="mt-3 space-y-2">
+                            <input name="project_name" placeholder="Production" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100" />
+                            <select name="environment" defaultValue="prod" className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100">
+                              <option value="prod">Production</option>
+                              <option value="staging">Staging</option>
+                              <option value="dev">Development</option>
+                            </select>
+                            <button type="submit" className="rounded bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900">Create</button>
+                          </form>
+                        )}
+                        {index === 2 && hasProject && !apiKeyCreated && (
+                          <form action={createApiKeyAction} className="mt-3">
+                            <button type="submit" className="rounded bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900">Generate API key</button>
+                          </form>
+                        )}
+                      </div>
+                      <div className="flex items-center">
+                        {isDone ? <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-400">Complete</span> : isCurrent ? <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-400">Current</span> : <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-medium text-zinc-600">Pending</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {apiKeyValue && (
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-6">
+                  <p className="text-xs uppercase tracking-widest text-emerald-400">API key generated</p>
+                  <h2 className="mt-2 text-lg font-semibold text-zinc-100">API key (copy once)</h2>
+                  <div className="mt-2 rounded bg-zinc-950 px-3 py-2 text-sm text-zinc-100 font-mono break-all">{apiKeyValue}</div>
+                </div>
+              )}
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+                <p className="text-xs uppercase tracking-widest text-zinc-500">Ingest example</p>
+                <h2 className="mt-2 text-lg font-semibold text-zinc-100">Send your first trace</h2>
+                <pre className="mt-4 rounded bg-zinc-950 p-4 text-xs text-zinc-300 overflow-x-auto font-mono">{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
   -H "x-api-key: ${apiKeyValue ?? "reliai_..."}" \\
   -H "content-type: application/json" \\
   -d '{"timestamp":"2026-03-09T12:00:00Z","request_id":"req_123","model_name":"gpt-4.1-mini","success":true}'`}</pre>
+              </div>
+              {hasTrace && <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">First trace received for {primaryProject?.name}. You can now open incidents.</div>}
             </div>
-            {hasTrace && <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">First trace received for {primaryProject?.name}. You can now open incidents and verify ingestion.</div>}
+          </div>
+
+          {/* Organization section - always visible at bottom */}
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-4">
+            <p className="text-xs uppercase tracking-widest text-zinc-500">Organization</p>
+            <p className="mt-2 text-sm text-zinc-400">Active: <span className="font-medium text-zinc-100">{activeOrgName}</span></p>
+            <p className="mt-2 text-sm text-zinc-500">{hasOrganization ? "You can create another organization at any time." : "Create your first organization to start."}</p>
+            <form action={createOrganizationAction} className="mt-4 grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Organization name</label>
+                <input name="name" defaultValue={defaultName} className="h-11 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100" />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-500 mb-1">Slug</label>
+                <input name="slug" defaultValue={defaultSlug} className="h-11 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100" />
+              </div>
+              <div className="md:col-span-2">
+                <button type="submit" className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200 transition">{hasOrganization ? "Create another organization" : "Create organization"}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
+      {/* Simulation path */}
       {selectedPath === "simulation" && (
         hasOrganization && hasProject ? (
           <OnboardingSimulationRunner defaultProjectName="onboarding-simulation" autoStart />
@@ -246,11 +270,11 @@ export default async function OnboardingPage({
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
             <p className="text-xs uppercase tracking-widest text-zinc-500">Guided simulation</p>
             <h2 className="mt-2 text-xl font-semibold text-zinc-100">See your first AI incident in under 2 minutes</h2>
-            <p className="mt-2 text-sm text-zinc-400">We simulate a realistic failure, open an incident automatically, and walk you through root cause and resolution impact. No SDK required.</p>
+            <p className="mt-2 text-sm text-zinc-400">We simulate a realistic failure, open an incident automatically, and walk you through root cause and resolution impact.</p>
             <div className="mt-4 grid gap-2 text-sm text-zinc-400">
               <p>1. Hallucination spike detected — 19% failure rate vs 4% baseline.</p>
               <p>2. Root cause scored — prompt v42 identified at 71% confidence.</p>
-              <p>3. Fix verified — failure rate reduced from 19% → 5% after reverting.</p>
+              <p>3. Fix verified — failure rate reduced from 19% to 5% after reverting.</p>
             </div>
             {!hasOrganization && <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">Please create an organization and project first using the SDK path.</div>}
           </div>
