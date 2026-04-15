@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, CircleDashed, KeyRound, Network, Radar } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/page-header";
+import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
 import { createApiKey, createOrganization, createProject, getProjects, getTraces } from "@/lib/api";
 import { getOperatorSession, requireOperatorSession, switchOrganization } from "@/lib/auth";
 
@@ -392,24 +393,27 @@ export default async function OnboardingPage({
       )}
 
       {selectedPath === "simulation" && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-          <p className="text-xs uppercase tracking-widest text-zinc-500">Guided simulation</p>
-          <h2 className="mt-2 text-xl font-semibold text-zinc-100">See your first AI incident in under 2 minutes</h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            We simulate a realistic failure, open an incident automatically, and walk you through root cause and resolution impact. No SDK required.
-          </p>
-          <div className="mt-4 grid gap-2 text-sm text-zinc-400">
-            <p>1. Hallucination spike detected — 19% failure rate vs 4% baseline.</p>
-            <p>2. Root cause scored — prompt v42 identified at 71% confidence.</p>
-            <p>3. Fix verified — failure rate reduced from 19% → 5% after reverting.</p>
+        hasOrganization && hasProject ? (
+          <OnboardingSimulationRunner defaultProjectName="onboarding-simulation" autoStart />
+        ) : (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+            <p className="text-xs uppercase tracking-widest text-zinc-500">Guided simulation</p>
+            <h2 className="mt-2 text-xl font-semibold text-zinc-100">See your first AI incident in under 2 minutes</h2>
+            <p className="mt-2 text-sm text-zinc-400">
+              We simulate a realistic failure, open an incident automatically, and walk you through root cause and resolution impact. No SDK required.
+            </p>
+            <div className="mt-4 grid gap-2 text-sm text-zinc-400">
+              <p>1. Hallucination spike detected — 19% failure rate vs 4% baseline.</p>
+              <p>2. Root cause scored — prompt v42 identified at 71% confidence.</p>
+              <p>3. Fix verified — failure rate reduced from 19% → 5% after reverting.</p>
+            </div>
+            {!hasOrganization && (
+              <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+                Please create an organization and project first using the SDK path.
+              </div>
+            )}
           </div>
-          <button
-            disabled
-            className="mt-4 rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 opacity-50 cursor-not-allowed"
-          >
-            Simulation coming soon
-          </button>
-        </div>
+        )
       )}
     </div>
   );
