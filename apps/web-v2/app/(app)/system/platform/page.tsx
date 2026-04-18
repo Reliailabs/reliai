@@ -1,6 +1,8 @@
 import { Activity, Gauge, ServerCrash, ShieldAlert, Warehouse } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SectionHeading, SectionLabel } from "@/components/ui/heading";
+import { Stat } from "@/components/ui/stat";
 import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemPlatform } from "@/lib/api";
 
@@ -38,58 +40,58 @@ export default async function SystemPlatformPage() {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Activity className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Ingest rate</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Ingest rate</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{rate(metrics.trace_ingest_rate)}</p>
+          <Stat variant="xl">{rate(metrics.trace_ingest_rate)}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Average traces accepted per minute over the recent window.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Gauge className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Pipeline latency</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Pipeline latency</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">
+          <Stat variant="xl">
             {metrics.pipeline_latency !== null ? `${metrics.pipeline_latency}ms` : "n/a"}
-          </p>
+          </Stat>
           <p className="mt-2 text-sm text-zinc-400">Mean consumer processing latency across active processors.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <ServerCrash className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Failure rate</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Failure rate</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{(metrics.processor_failure_rate * 100).toFixed(2)}%</p>
+          <Stat variant="xl">{(metrics.processor_failure_rate * 100).toFixed(2)}%</Stat>
           <p className="mt-2 text-sm text-zinc-400">Recent processor failures as a share of recent ingested traces.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Warehouse className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Warehouse lag</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Warehouse lag</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.warehouse_lag}</p>
+          <Stat variant="xl">{metrics.warehouse_lag}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Gap between recent accepted traces and recent warehouse rows.</p>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-4">
         <Card className="p-5">
-          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Warehouse rows</p>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.warehouse_rows.toLocaleString()}</p>
+          <SectionLabel>Warehouse rows</SectionLabel>
+          <Stat variant="xl">{metrics.warehouse_rows.toLocaleString()}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Rows visible inside the current warehouse health window.</p>
         </Card>
         <Card className="p-5">
-          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Active partitions</p>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.active_partitions}</p>
+          <SectionLabel>Active partitions</SectionLabel>
+          <Stat variant="xl">{metrics.active_partitions}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Date partitions currently active for recent operational reads.</p>
         </Card>
         <Card className="p-5">
-          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Scan rate</p>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.scan_rate.toFixed(0)}</p>
+          <SectionLabel>Scan rate</SectionLabel>
+          <Stat variant="xl">{metrics.scan_rate.toFixed(0)}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Approximate rows scanned across the current health query window.</p>
         </Card>
         <Card className="p-5">
-          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Avg query latency</p>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{metrics.avg_query_latency.toFixed(0)}ms</p>
+          <SectionLabel>Avg query latency</SectionLabel>
+          <Stat variant="xl">{metrics.avg_query_latency.toFixed(0)}ms</Stat>
           <p className="mt-2 text-sm text-zinc-400">Warehouse query latency currently reported by the adapter layer.</p>
         </Card>
       </div>
@@ -98,8 +100,8 @@ export default async function SystemPlatformPage() {
         <div className="flex items-center gap-3">
           <ShieldAlert className="h-5 w-5 text-zinc-400" />
           <div>
-            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Interpretation</p>
-            <h2 className="mt-2 text-2xl font-semibold text-zinc-100">How to read this panel</h2>
+            <SectionLabel>Interpretation</SectionLabel>
+            <SectionHeading>How to read this panel</SectionHeading>
           </div>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">

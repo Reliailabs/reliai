@@ -28,6 +28,27 @@ Canonical design system for the web-v2 app, derived from the original April 8 20
 
 ## Typography
 
+### Global Base (in globals.css)
+```css
+@layer base {
+  body { @apply text-sm text-zinc-400; }
+  h1 { @apply text-2xl font-semibold text-zinc-100; }
+  h2 { @apply text-xl font-semibold text-zinc-100; }
+  h3 { @apply text-lg font-medium text-zinc-100; }
+}
+```
+
+### Font Scale
+| Element | Class | Notes |
+|---------|-------|-------|
+| PageHeader title | `text-[15px]` | List pages |
+| SubPageHeader title | `text-2xl` | Detail pages |
+| Section heading | `text-lg` | In cards |
+| Section label | `text-[11px] uppercase tracking-widest` | Above section headings |
+| Stat value | `text-lg` or `text-2xl` | Use `<Stat>` component |
+| Body text | `text-sm` | Default |
+| Small text | `text-xs` | Captions, metadata |
+
 ### Page Titles
 - List pages (using `<PageHeader>`): `text-[15px] font-semibold text-zinc-50 tracking-tight`
 - Detail/sub-pages (using `<SubPageHeader>`): `text-2xl font-semibold text-zinc-100`
@@ -69,6 +90,12 @@ Canonical design system for the web-v2 app, derived from the original April 8 20
 - Stat card padding: `px-5 py-4`
 
 ## Components
+
+### Typography Components
+- `<Stat variant="lg">` - Dashboard stats (`text-lg font-semibold tabular-nums`)
+- `<Stat variant="xl">` - Detail page stats (`text-2xl font-semibold tabular-nums`)
+- `<SectionHeading as="h2|h3">` - Section titles (`text-lg font-semibold`)
+- `<SectionLabel>` - Section labels (`text-[11px] uppercase tracking-widest`)
 
 ### Back Navigation
 - Sub-page back links: `inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 transition-colors`

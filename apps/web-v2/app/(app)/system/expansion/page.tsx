@@ -2,6 +2,7 @@ import { Radar, TowerControl, TrendingUp, Zap } from "lucide-react";
 
 import { getSystemCustomerExpansion } from "@/lib/api";
 import { Card } from "@/components/ui/card";
+import { Stat } from "@/components/ui/stat";
 import { SubPageHeader } from "@/components/ui/sub-page-header";
 
 function compactNumber(value: number) {
@@ -23,7 +24,7 @@ function formatPercent(value: number) {
 function breakoutTone(breakout: boolean) {
   return breakout
     ? "bg-red-500/10 text-red-400 border-red-500/30"
-    : "bg-zinc-800 text-zinc-300 border-zinc-700";
+    : "bg-zinc-900 text-zinc-100 border-zinc-800";
 }
 
 export default async function SystemExpansionPage() {
@@ -53,33 +54,33 @@ export default async function SystemExpansionPage() {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <TrendingUp className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Average expansion</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Average expansion</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{formatRatio(expansion.average_expansion_ratio)}</p>
+          <Stat variant="xl">{formatRatio(expansion.average_expansion_ratio)}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Mean current-30-day volume divided by first-30-day volume.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <TowerControl className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Platform growth</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Platform growth</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{formatPercent(expansion.total_platform_growth_pct)}</p>
+          <Stat variant="xl">{formatPercent(expansion.total_platform_growth_pct)}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Aggregate current-vs-initial telemetry growth across organizations.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Zap className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Breakout customers</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Breakout customers</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{expansion.breakout_customers}</p>
+          <Stat variant="xl">{expansion.breakout_customers}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Organizations currently above the 5x telemetry expansion threshold.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Radar className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Tracked orgs</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Tracked orgs</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{expansion.organizations.length}</p>
+          <Stat variant="xl">{expansion.organizations.length}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Organizations with active tenant records in the current platform view.</p>
         </div>
       </div>
@@ -98,7 +99,7 @@ export default async function SystemExpansionPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-left">
-              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-400">
+              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-500">
                 <tr>
                   <th className="px-5 py-3 font-medium">Customer</th>
                   <th className="px-5 py-3 font-medium">First 30 days</th>

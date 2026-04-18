@@ -1,6 +1,7 @@
 import { BrainCircuit, ChevronRight, ShieldAlert, TriangleAlert, Waypoints } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { Stat } from "@/components/ui/stat";
 import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getReliabilityPatterns } from "@/lib/api";
 
@@ -45,35 +46,35 @@ export default async function ReliabilityPatternsPage() {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <BrainCircuit className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Patterns</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Patterns</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{items.length}</p>
+          <Stat variant="xl">{items.length}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Canonical reliability patterns currently available to internal engines.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <TriangleAlert className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Elevated</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Elevated</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{highProbabilityCount}</p>
+          <Stat variant="xl">{highProbabilityCount}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Patterns at or above 25% observed failure probability.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Waypoints className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Sample volume</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Sample volume</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(totalSamples)}</p>
+          <Stat variant="xl">{compactNumber(totalSamples)}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Total trace observations contributing to the visible patterns.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <ShieldAlert className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Coverage</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Coverage</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">
+          <Stat variant="xl">
             {new Set(items.map((item) => item.pattern_type)).size}
-          </p>
+          </Stat>
           <p className="mt-2 text-sm text-zinc-400">Pattern families mined from model, prompt, and retrieval signals.</p>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default async function ReliabilityPatternsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-left">
-              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-400">
+              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-500">
                 <tr>
                   <th className="px-5 py-3 font-medium">Pattern</th>
                   <th className="px-5 py-3 font-medium">Model</th>

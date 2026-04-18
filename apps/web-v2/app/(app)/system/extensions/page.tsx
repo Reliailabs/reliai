@@ -1,12 +1,14 @@
 import { Activity, Blocks, PlugZap, ShieldAlert } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SectionHeading, SectionLabel } from "@/components/ui/heading";
+import { Stat } from "@/components/ui/stat";
 import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemExtensions } from "@/lib/api";
 
 function tone(health: string) {
   if (health === "degraded") return "bg-amber-500/10 text-amber-400 border border-amber-500/30";
-  if (health === "disabled") return "bg-zinc-800 text-zinc-300 border border-zinc-700";
+  if (health === "disabled") return "bg-zinc-900 text-zinc-100 border border-zinc-800";
   return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
 }
 
@@ -35,47 +37,47 @@ export default async function SystemExtensionsPage() {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Blocks className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Installed extensions</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Installed extensions</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{installed.length}</p>
+          <Stat variant="xl">{installed.length}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Customer-installed reliability processors and integrations.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <ShieldAlert className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Healthy</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Healthy</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{healthy}</p>
+          <Stat variant="xl">{healthy}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Extensions dispatching without recent failures.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Activity className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Degraded</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Degraded</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{degraded}</p>
+          <Stat variant="xl">{degraded}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Extensions with recent failures or dispatch instability.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <PlugZap className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Hourly throughput</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Hourly throughput</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">
+          <Stat variant="xl">
             {data.items.reduce((sum, item) => sum + item.event_throughput_per_hour, 0)}
-          </p>
+          </Stat>
           <p className="mt-2 text-sm text-zinc-400">Observed extension invocations in the current runtime hour bucket.</p>
         </div>
       </div>
 
       <Card className="overflow-hidden">
         <div className="border-b border-zinc-800 px-6 py-5">
-          <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Extension registry</p>
-          <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Processor load order and health</h2>
+          <SectionLabel>Extension registry</SectionLabel>
+          <SectionHeading>Processor load order and health</SectionHeading>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-left">
-            <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-400">
+            <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-500">
               <tr>
                 <th className="px-5 py-3 font-medium">Processor</th>
                 <th className="px-5 py-3 font-medium">Type</th>

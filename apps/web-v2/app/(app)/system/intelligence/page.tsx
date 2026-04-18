@@ -1,6 +1,8 @@
 import { AlertTriangle, BrainCircuit, Network, ShieldAlert } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
+import { SectionHeading, SectionLabel } from "@/components/ui/heading";
+import { Stat } from "@/components/ui/stat";
 import { SubPageHeader } from "@/components/ui/sub-page-header";
 import {
   getGlobalReliabilityPatterns,
@@ -47,35 +49,35 @@ export default async function SystemIntelligencePage() {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <BrainCircuit className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">High-risk patterns</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">High-risk patterns</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{patterns.items.length}</p>
+          <Stat variant="xl">{patterns.items.length}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Strong relationships mined from the operational graph.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <ShieldAlert className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Guardrail actions</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Guardrail actions</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{recommendations.items.length}</p>
+          <Stat variant="xl">{recommendations.items.length}</Stat>
           <p className="mt-2 text-sm text-zinc-400">Distinct graph-derived guardrail moves ready for review.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Network className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Global correlations</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Global correlations</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{globalPatterns.patterns.length}</p>
+          <Stat variant="xl">{globalPatterns.patterns.length}</Stat>
           <p className="mt-2 text-sm text-zinc-400">System-wide patterns aggregated across accessible traffic.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <AlertTriangle className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Top confidence</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Top confidence</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">
+          <Stat variant="xl">
             {patterns.items.length ? pct(Math.max(...patterns.items.map((item) => item.confidence))) : "0%"}
-          </p>
+          </Stat>
           <p className="mt-2 text-sm text-zinc-400">Highest observed confidence across currently exposed graph edges.</p>
         </div>
       </div>
@@ -83,12 +85,12 @@ export default async function SystemIntelligencePage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
         <Card className="overflow-hidden">
           <div className="border-b border-zinc-800 px-6 py-5">
-            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Top reliability patterns</p>
-            <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Model and retrieval failure graph</h2>
+            <SectionLabel>Top reliability patterns</SectionLabel>
+            <SectionHeading>Model and retrieval failure graph</SectionHeading>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-left">
-              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-400">
+              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-500">
                 <tr>
                   <th className="px-5 py-3 font-medium">Pattern</th>
                   <th className="px-5 py-3 font-medium">Risk</th>
@@ -116,8 +118,8 @@ export default async function SystemIntelligencePage() {
 
         <div className="space-y-6">
           <Card className="p-6">
-            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Recommended guardrails</p>
-            <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Graph-derived protection moves</h2>
+            <SectionLabel>Recommended guardrails</SectionLabel>
+            <SectionHeading className="mt-2">Graph-derived protection moves</SectionHeading>
             <div className="mt-6 space-y-4">
               {recommendations.items.map((item) => (
                 <div key={item.policy_type} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
@@ -135,8 +137,8 @@ export default async function SystemIntelligencePage() {
           </Card>
 
           <Card className="p-6">
-            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Emerging model regressions</p>
-            <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Global intelligence feed</h2>
+            <SectionLabel>Emerging model regressions</SectionLabel>
+            <SectionHeading className="mt-2">Global intelligence feed</SectionHeading>
             <div className="mt-6 space-y-3">
               {recentGlobal.map((item) => (
                 <div key={`${item.model_family}:${item.issue}`} className="rounded-lg border border-zinc-800 px-4 py-3">

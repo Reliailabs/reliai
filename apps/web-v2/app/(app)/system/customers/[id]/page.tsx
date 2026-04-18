@@ -2,6 +2,8 @@ import { AlertTriangle, Boxes, GitCommitHorizontal, ShieldAlert, Workflow } from
 import { notFound } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
+import { SectionHeading, SectionLabel } from "@/components/ui/heading";
+import { Stat } from "@/components/ui/stat";
 import { SubPageHeader } from "@/components/ui/sub-page-header";
 import { getSystemCustomerDetail } from "@/lib/api";
 
@@ -70,36 +72,36 @@ export default async function SystemCustomerDetailPage({
 
       <div className="grid gap-4 lg:grid-cols-4">
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <Workflow className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Trace volume</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(detail.project.trace_volume_24h)}</p>
-          <p className="mt-2 text-sm text-zinc-500">Warehouse traces in the current 24-hour summary window.</p>
+          <Stat variant="xl">{compactNumber(detail.project.trace_volume_24h)}</Stat>
+          <p className="mt-2 text-sm text-zinc-400">Warehouse traces in the current 24-hour summary window.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <ShieldAlert className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Guardrail rate</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Guardrail rate</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{(detail.project.guardrail_rate * 100).toFixed(1)}%</p>
-          <p className="mt-2 text-sm text-zinc-500">Runtime guardrail triggers relative to warehouse trace volume.</p>
+          <Stat variant="xl">{(detail.project.guardrail_rate * 100).toFixed(1)}%</Stat>
+          <p className="mt-2 text-sm text-zinc-400">Runtime guardrail triggers relative to warehouse trace volume.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <AlertTriangle className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Incident rate</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Incident rate</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{(detail.project.incident_rate * 100).toFixed(2)}%</p>
-          <p className="mt-2 text-sm text-zinc-500">Detected incidents relative to trace volume in the same window.</p>
+          <Stat variant="xl">{(detail.project.incident_rate * 100).toFixed(2)}%</Stat>
+          <p className="mt-2 text-sm text-zinc-400">Detected incidents relative to trace volume in the same window.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <Boxes className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-[0.18em]">Pipeline lag</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Pipeline lag</p>
           </div>
-          <p className="mt-3 text-3xl font-semibold text-zinc-100">{compactNumber(detail.project.pipeline_lag)}</p>
-          <p className="mt-2 text-sm text-zinc-500">Approximate backlog from ingest versus warehouse/event processing.</p>
+          <Stat variant="xl">{compactNumber(detail.project.pipeline_lag)}</Stat>
+          <p className="mt-2 text-sm text-zinc-400">Approximate backlog from ingest versus warehouse/event processing.</p>
         </div>
       </div>
 
@@ -108,10 +110,10 @@ export default async function SystemCustomerDetailPage({
           <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Trace volume chart</p>
-                <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Seven-day warehouse throughput</h2>
+                <SectionLabel>Trace volume chart</SectionLabel>
+                <SectionHeading>Seven-day warehouse throughput</SectionHeading>
               </div>
-              <p className="text-sm text-zinc-500">{detail.trace_volume_chart.length} UTC days</p>
+              <p className="text-sm text-zinc-400">{detail.trace_volume_chart.length} UTC days</p>
             </div>
             <div className="mt-8 grid h-64 grid-cols-7 items-end gap-3">
               {detail.trace_volume_chart.map((point, index) => (
@@ -127,7 +129,7 @@ export default async function SystemCustomerDetailPage({
                       height: `${Math.max((point.trace_volume / chartMax) * 100, point.trace_volume > 0 ? 8 : 0)}%`,
                     }}
                   />
-                  <div className="text-center text-[11px] uppercase tracking-[0.16em] text-zinc-500">
+                  <div className="text-center text-[11px] uppercase tracking-[0.16em] text-zinc-400">
                     {new Date(`${point.date}T00:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                   </div>
                 </div>
@@ -137,15 +139,15 @@ export default async function SystemCustomerDetailPage({
 
           <Card className="p-6">
             <div className="flex items-center gap-3">
-              <ShieldAlert className="h-5 w-5 text-zinc-500" />
+              <ShieldAlert className="h-5 w-5 text-zinc-400" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Guardrail triggers</p>
+                <SectionLabel>Guardrail triggers</SectionLabel>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Recent interventions</h2>
               </div>
             </div>
             <div className="mt-6 space-y-3">
               {detail.guardrail_triggers.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-400">
                   No runtime guardrail triggers recorded for this project yet.
                 </div>
               ) : (
@@ -153,9 +155,9 @@ export default async function SystemCustomerDetailPage({
                   <div key={`${item.created_at}-${item.policy_type}`} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{item.policy_type}</p>
-                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{item.action_taken}</span>
+                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-400">{item.action_taken}</span>
                     </div>
-                    <p className="mt-2 text-sm text-zinc-500">
+                    <p className="mt-2 text-sm text-zinc-400">
                       {item.provider_model ?? "unknown model"} · {item.latency_ms ?? 0} ms ·{" "}
                       {new Date(item.created_at).toLocaleString()}
                     </p>
@@ -167,15 +169,15 @@ export default async function SystemCustomerDetailPage({
 
           <Card className="p-6">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-zinc-500" />
+              <AlertTriangle className="h-5 w-5 text-zinc-400" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Incident history</p>
+                <SectionLabel>Incident history</SectionLabel>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Recent reliability incidents</h2>
               </div>
             </div>
             <div className="mt-6 space-y-3">
               {detail.incident_history.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-400">
                   No incidents recorded for this project in the current operator scope.
                 </div>
               ) : (
@@ -187,7 +189,7 @@ export default async function SystemCustomerDetailPage({
                         {incident.severity}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-zinc-500">
+                    <p className="mt-2 text-sm text-zinc-400">
                       {incident.status} · started {new Date(incident.started_at).toLocaleString()}
                     </p>
                   </div>
@@ -200,15 +202,15 @@ export default async function SystemCustomerDetailPage({
         <div className="space-y-6">
           <Card className="p-6">
             <div className="flex items-center gap-3">
-              <GitCommitHorizontal className="h-5 w-5 text-zinc-500" />
+              <GitCommitHorizontal className="h-5 w-5 text-zinc-400" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Deployment changes</p>
+                <SectionLabel>Deployment changes</SectionLabel>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Recent rollout context</h2>
               </div>
             </div>
             <div className="mt-6 space-y-3">
               {detail.deployment_changes.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-400">
                   No deployment records found for this project.
                 </div>
               ) : (
@@ -216,9 +218,9 @@ export default async function SystemCustomerDetailPage({
                   <div key={deployment.deployment_id} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{deployment.environment}</p>
-                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{deployment.deployed_by ?? "unknown"}</span>
+                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-400">{deployment.deployed_by ?? "unknown"}</span>
                     </div>
-                    <p className="mt-2 text-sm text-zinc-500">{new Date(deployment.deployed_at).toLocaleString()}</p>
+                    <p className="mt-2 text-sm text-zinc-400">{new Date(deployment.deployed_at).toLocaleString()}</p>
                   </div>
                 ))
               )}
@@ -227,15 +229,15 @@ export default async function SystemCustomerDetailPage({
 
           <Card className="p-6">
             <div className="flex items-center gap-3">
-              <Boxes className="h-5 w-5 text-zinc-500" />
+              <Boxes className="h-5 w-5 text-zinc-400" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Processor failures</p>
+                <SectionLabel>Processor failures</SectionLabel>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-100">External processor instability</h2>
               </div>
             </div>
             <div className="mt-6 space-y-3">
               {detail.processor_failures.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-400">
                   No external processor failures recorded in the recent window.
                 </div>
               ) : (
@@ -243,9 +245,9 @@ export default async function SystemCustomerDetailPage({
                   <div key={failure.failure_id} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{failure.processor_name}</p>
-                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{failure.event_type}</span>
+                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-400">{failure.event_type}</span>
                     </div>
-                    <p className="mt-2 text-sm text-zinc-500">
+                    <p className="mt-2 text-sm text-zinc-400">
                       {failure.attempts} attempts · {failure.last_error} · {new Date(failure.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -255,10 +257,10 @@ export default async function SystemCustomerDetailPage({
           </Card>
 
           <Card className="p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Recent signals</p>
+            <SectionLabel>Recent signals</SectionLabel>
             <div className="mt-5 space-y-3">
               {detail.recent_timeline.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">
+                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-400">
                   No timeline events have been recorded for this project yet.
                 </div>
               ) : (
@@ -266,10 +268,10 @@ export default async function SystemCustomerDetailPage({
                   <div key={`${event.timestamp}-${index}`} className="rounded-lg border border-zinc-800 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-100">{event.title}</p>
-                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-500">{event.event_type}</span>
+                      <span className="text-xs uppercase tracking-[0.16em] text-zinc-400">{event.event_type}</span>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-zinc-500">{event.summary}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-zinc-500">
+                    <p className="mt-2 text-sm leading-6 text-zinc-400">{event.summary}</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-zinc-400">
                       {new Date(event.timestamp).toLocaleString()}
                     </p>
                   </div>

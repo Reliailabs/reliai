@@ -12,6 +12,22 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  body {
+    @apply text-sm text-zinc-400;
+  }
+
+  h1 {
+    @apply text-2xl font-semibold text-zinc-100;
+  }
+
+  h2 {
+    @apply text-xl font-semibold text-zinc-100;
+  }
+
+  h3 {
+    @apply text-lg font-medium text-zinc-100;
+  }
+
   /* Thin dark scrollbars */
   ::-webkit-scrollbar {
     width: 5px;

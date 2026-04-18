@@ -45,36 +45,36 @@ export default async function SystemCustomersPage() {
 
       <div className="grid gap-4 lg:grid-cols-4">
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <FolderKanban className="h-4 w-4" />
             <p className="text-xs uppercase tracking-[0.18em]">Projects</p>
           </div>
           <p className="mt-3 text-2xl font-semibold text-zinc-100">{projects.length}</p>
-          <p className="mt-2 text-sm text-zinc-500">Customer projects visible to the current operator scope.</p>
+          <p className="mt-2 text-sm text-zinc-400">Customer projects visible to the current operator scope.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <Workflow className="h-4 w-4" />
             <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
           </div>
           <p className="mt-3 text-2xl font-semibold text-zinc-100">{compactNumber(totalTraceVolume)}</p>
-          <p className="mt-2 text-sm text-zinc-500">Warehouse traces recorded over the last 24 hours.</p>
+          <p className="mt-2 text-sm text-zinc-400">Warehouse traces recorded over the last 24 hours.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <AlertTriangle className="h-4 w-4" />
             <p className="text-xs uppercase tracking-[0.18em]">High risk</p>
           </div>
           <p className="mt-3 text-2xl font-semibold text-zinc-100">{highRiskCount}</p>
-          <p className="mt-2 text-sm text-zinc-500">Projects currently crossing the highest composite risk thresholds.</p>
+          <p className="mt-2 text-sm text-zinc-400">Projects currently crossing the highest composite risk thresholds.</p>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
-          <div className="flex items-center gap-2 text-zinc-500">
+          <div className="flex items-center gap-2 text-zinc-400">
             <ShieldAlert className="h-4 w-4" />
             <p className="text-xs uppercase tracking-[0.18em]">Processor failures</p>
           </div>
           <p className="mt-3 text-2xl font-semibold text-zinc-100">{totalFailures}</p>
-          <p className="mt-2 text-sm text-zinc-500">External processor failures recorded across the same summary window.</p>
+          <p className="mt-2 text-sm text-zinc-400">External processor failures recorded across the same summary window.</p>
         </div>
       </div>
 
@@ -83,7 +83,7 @@ export default async function SystemCustomersPage() {
           <div className="px-6 py-12">
             <div className="rounded-lg border border-dashed border-zinc-700 bg-zinc-900 px-6 py-10 text-center">
               <h2 className="text-xl font-semibold text-zinc-100">No customer health data yet</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 mx-auto">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400 mx-auto">
                 This view populates once traces land in the warehouse and project-level incidents, guardrails, or
                 processor telemetry exist.
               </p>
