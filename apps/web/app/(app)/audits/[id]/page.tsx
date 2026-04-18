@@ -96,13 +96,13 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
                   <input type="hidden" name="audit_id" value={detail.audit.id} />
                   <input type="hidden" name="run_id" value={latestRun.id} />
                   <input type="hidden" name="action" value="start" />
-                  <Button type="submit">Start Audit</Button>
+                  <Button type="submit">Start Run</Button>
                 </form>
                 <form action={actionHandler}>
                   <input type="hidden" name="audit_id" value={detail.audit.id} />
                   <input type="hidden" name="run_id" value={latestRun.id} />
                   <input type="hidden" name="action" value="continue" />
-                  <Button type="submit" variant="outline">Continue Review</Button>
+                  <Button type="submit" variant="outline">Continue To Certification</Button>
                 </form>
                 <Button asChild variant="outline">
                   <Link href={`/audits/${detail.audit.id}/results`}>View Results</Link>
@@ -130,13 +130,13 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
                   {stage.started_at ? `Started ${new Date(stage.started_at).toLocaleString()}` : "Not started"}
                   {stage.completed_at ? ` · Completed ${new Date(stage.completed_at).toLocaleString()}` : ""}
                 </p>
-                {latestRun ? (
+                {latestRun && stage.status !== "not_started" ? (
                   <form action={actionHandler} className="mt-3">
                     <input type="hidden" name="audit_id" value={detail.audit.id} />
                     <input type="hidden" name="run_id" value={latestRun.id} />
                     <input type="hidden" name="action" value="rerun" />
                     <input type="hidden" name="stage_key" value={stage.stage_key} />
-                    <Button type="submit" size="sm" variant="outline">Re-run Stage</Button>
+                    <Button type="submit" size="sm" variant="outline">Re-run From This Stage</Button>
                   </form>
                 ) : null}
               </div>
@@ -191,11 +191,12 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
         <Card className="rounded-2xl border-line bg-surface p-6">
           <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Production Context</h2>
           {!detail.audit.linked_production_enabled ? (
-            <p className="mt-3 text-sm text-secondary">This audit is not linked to a production project.</p>
+            <p className="mt-3 text-sm text-secondary">Status: Not linked. This run is based only on intake materials.</p>
           ) : !detail.linked_production_context ? (
-            <p className="mt-3 text-sm text-secondary">Production linkage is enabled, but no snapshot has been captured yet.</p>
+            <p className="mt-3 text-sm text-secondary">Status: Linked, not captured. Start the run to capture the evidence snapshot.</p>
           ) : (
             <div className="mt-4 space-y-2 text-sm text-secondary">
+              <p className="font-medium text-primary">Status: Captured point-in-time evidence snapshot</p>
               <p>
                 Evidence window: {String(detail.linked_production_context.evidenceWindow?.start ?? "—")} →{" "}
                 {String(detail.linked_production_context.evidenceWindow?.end ?? "—")}

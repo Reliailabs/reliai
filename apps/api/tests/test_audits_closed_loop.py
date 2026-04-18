@@ -233,6 +233,26 @@ def test_project_summary_and_certification_at_risk(client, db_session):
             owner_operator_user_id=None,
         )
     )
+    db_session.add(
+        Incident(
+            organization_id=UUID(organization["id"]),
+            project_id=UUID(project["id"]),
+            environment_id=environment.id,
+            deployment_id=None,
+            incident_type="reliability_drop",
+            severity="critical",
+            title="Second post-certification critical incident",
+            status="open",
+            fingerprint=f"critical-2-{run_id}",
+            summary_json={"detail": "post-cert risk #2"},
+            started_at=datetime.now(timezone.utc) + timedelta(minutes=2),
+            updated_at=datetime.now(timezone.utc) + timedelta(minutes=2),
+            resolved_at=None,
+            acknowledged_at=None,
+            acknowledged_by_operator_user_id=None,
+            owner_operator_user_id=None,
+        )
+    )
     db_session.commit()
 
     at_risk_response = client.get(f"/api/v1/projects/{project['id']}/audit-summary", headers=headers)
@@ -265,6 +285,7 @@ def test_project_summary_not_fresh_when_latest_run_in_progress(client, db_sessio
     summary_in_progress = client.get(f"/api/v1/projects/{project['id']}/audit-summary", headers=headers)
     assert summary_in_progress.status_code == 200
     assert summary_in_progress.json()["certification_status"] == "pending"
+    assert summary_in_progress.json()["certification_at_risk"] is False
 
 
 def test_audit_migration_schema_tables_present(db_session):

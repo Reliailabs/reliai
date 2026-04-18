@@ -26,6 +26,7 @@ export default async function ProjectControlPanelPage({
     getProjectAuditSummary(projectId).catch(() => null),
     getProjectAuditMonitoringRecommendations(projectId).catch(() => ({ items: [] })),
   ]);
+  const recommendationPreview = auditRecommendations.items.slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -63,15 +64,14 @@ export default async function ProjectControlPanelPage({
           </div>
           {auditSummary.certification_at_risk ? (
             <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Certification at risk due to new production issues since the last completed audit.
-              {auditSummary.certification_risk_reason ? ` ${auditSummary.certification_risk_reason}` : ""}
+              Certification at risk. {auditSummary.certification_risk_reason ?? "New post-certification signals crossed defined thresholds."}
             </div>
           ) : null}
-          {auditRecommendations.items.length > 0 ? (
+          {recommendationPreview.length > 0 ? (
             <div className="mt-4 space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-secondary">Suggested monitoring</p>
               <div className="grid gap-2 md:grid-cols-2">
-                {auditRecommendations.items.map((item) => (
+                {recommendationPreview.map((item) => (
                   <div key={item.id} className="rounded-lg border border-line bg-white p-3 text-xs text-secondary">
                     <p className="font-medium text-primary">{item.recommendation_type}</p>
                     <p className="mt-1">Scope: {item.scope || "—"}</p>
@@ -79,6 +79,9 @@ export default async function ProjectControlPanelPage({
                   </div>
                 ))}
               </div>
+              {auditRecommendations.items.length > recommendationPreview.length ? (
+                <p className="text-xs text-secondary">Showing top {recommendationPreview.length} recommendations from latest validated findings.</p>
+              ) : null}
             </div>
           ) : null}
         </Card>

@@ -313,3 +313,12 @@ If uncertain, choose the path that:
 Reliai uses a protected-main, short-lived branch, PR-before-merge workflow with a small validation gate, tagged releases, and strict production-clean discipline.
 
 NOTE: Avoid destructive cleans (e.g., git clean -fdx) because they remove .env and other local secrets. Prefer targeted cleanup and keep .env local (gitignored).
+
+
+<claude-mem-context>
+# Memory Context
+
+# [Reliai] recent context, 2026-04-18 5:08pm EDT
+
+No previous sessions found.
+</claude-mem-context>

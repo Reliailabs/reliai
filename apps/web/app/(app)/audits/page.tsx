@@ -6,6 +6,10 @@ import { listAudits } from "@/lib/api";
 
 const statusOptions = ["all", "draft", "active", "completed", "archived", "failed"];
 
+function prettyLabel(value: string) {
+  return value.replaceAll("_", " ");
+}
+
 function currentStageLabel(item: { latest_run_stages: Array<{ stage_key: string; status: string }> }) {
   const active = item.latest_run_stages.find((stage) => stage.status === "running" || stage.status === "queued");
   if (active) return active.stage_key;
@@ -36,7 +40,7 @@ export default async function AuditsPage({
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">Audits</p>
             <h1 className="mt-3 text-lg font-semibold text-primary">Audit Runs</h1>
-            <p className="mt-2 text-sm text-secondary">Manage audit runs and certification posture across systems.</p>
+            <p className="mt-2 text-sm text-secondary">Track certification posture, run state, and decision readiness across audited systems.</p>
           </div>
           <Button asChild>
             <Link href="/audits/new">New Audit</Link>
@@ -101,7 +105,7 @@ export default async function AuditsPage({
                 <tr className="text-xs uppercase tracking-[0.22em] text-secondary">
                   <th className="px-2 py-2">Audit</th>
                   <th className="px-2 py-2">Type</th>
-                  <th className="px-2 py-2">Status</th>
+                  <th className="px-2 py-2">Run status</th>
                   <th className="px-2 py-2">Current stage</th>
                   <th className="px-2 py-2">Risk</th>
                   <th className="px-2 py-2">Certification</th>
@@ -117,11 +121,11 @@ export default async function AuditsPage({
                       </Link>
                       <p className="mt-1 text-xs text-secondary">{item.audit.target_system_name}</p>
                     </td>
-                    <td className="px-3 py-3 align-top">{item.audit.audit_type.replaceAll("_", " ")}</td>
-                    <td className="px-3 py-3 align-top">{item.latest_run?.status ?? item.audit.status}</td>
-                    <td className="px-3 py-3 align-top">{currentStageLabel(item)}</td>
+                    <td className="px-3 py-3 align-top">{prettyLabel(item.audit.audit_type)}</td>
+                    <td className="px-3 py-3 align-top">{prettyLabel(item.latest_run?.status ?? item.audit.status)}</td>
+                    <td className="px-3 py-3 align-top">{prettyLabel(currentStageLabel(item))}</td>
                     <td className="px-3 py-3 align-top">{item.latest_run?.risk_score ?? "—"}</td>
-                    <td className="px-3 py-3 align-top">{item.latest_run?.certification_status ?? "pending"}</td>
+                    <td className="px-3 py-3 align-top">{prettyLabel(item.latest_run?.certification_status ?? "pending")}</td>
                     <td className="px-3 py-3 align-top">{new Date(item.audit.updated_at).toLocaleDateString()}</td>
                   </tr>
                 ))}

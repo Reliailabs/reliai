@@ -16,7 +16,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-INDEX_NAME = op.f("ix_evaluations_project_created_at")
+INDEX_NAME = "ix_evaluations_project_created_at"
 
 
 def upgrade() -> None:

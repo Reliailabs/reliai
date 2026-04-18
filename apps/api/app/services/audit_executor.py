@@ -17,6 +17,7 @@ class StageFindingDraft:
     repro_steps: list[str]
     confidence: float
     evidence_type: str
+    evidence_ref: str | None = None
     recommendation_type: str | None = None
     recommendation_scope: str | None = None
     recommendation_threshold_hint: str | None = None
@@ -98,6 +99,7 @@ class DeterministicMockAuditStageExecutor(AuditStageExecutor):
                     ],
                     confidence=0.92,
                     evidence_type="workflow_test",
+                    evidence_ref="topRiskySurfaces[0]",
                     recommendation_type="guardrail_violation_watch",
                     recommendation_scope=primary_surface,
                     recommendation_threshold_hint=">=1 bypass event in 24h",
@@ -114,6 +116,7 @@ class DeterministicMockAuditStageExecutor(AuditStageExecutor):
                     ],
                     confidence=0.84,
                     evidence_type="policy_coverage",
+                    evidence_ref="guardrailViolationSummary",
                     recommendation_type="incident_escalation_watch",
                     recommendation_scope="policy.coverage.indirect_tool",
                     recommendation_threshold_hint=">=3 uncovered invocations per day",
@@ -131,6 +134,7 @@ class DeterministicMockAuditStageExecutor(AuditStageExecutor):
                     ],
                     confidence=0.88,
                     evidence_type="evidence_traceability",
+                    evidence_ref="traceSampleSummary",
                     recommendation_type="output_reliability_watch",
                     recommendation_scope="response.provenance",
                     recommendation_threshold_hint=">=5 missing provenance events per 100 responses",
@@ -147,6 +151,7 @@ class DeterministicMockAuditStageExecutor(AuditStageExecutor):
                     ],
                     confidence=0.79,
                     evidence_type="audit_log_gap",
+                    evidence_ref="regressionSummary",
                     recommendation_type="regression_watch",
                     recommendation_scope="policy.retry.exceptions",
                     recommendation_threshold_hint=">=2 missing events per day",
@@ -164,6 +169,7 @@ class DeterministicMockAuditStageExecutor(AuditStageExecutor):
                     ],
                     confidence=0.86,
                     evidence_type="prompt_test",
+                    evidence_ref="traceSampleSummary",
                     recommendation_type="output_reliability_watch",
                     recommendation_scope=primary_surface,
                     recommendation_threshold_hint=">=2 unsupported assertions per 100 responses",
@@ -180,6 +186,7 @@ class DeterministicMockAuditStageExecutor(AuditStageExecutor):
                     ],
                     confidence=0.91,
                     evidence_type="workflow_test",
+                    evidence_ref="guardrailViolationSummary",
                     recommendation_type="guardrail_violation_watch",
                     recommendation_scope="policy.runtime.block",
                     recommendation_threshold_hint=">=1 critical bypass in 24h",

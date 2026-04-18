@@ -252,18 +252,20 @@ def _compute_certification_at_risk(
     if certification_effective_at is None:
         return False, None
 
+    unresolved_statuses = {"open", "acknowledged", "investigating"}
     critical_incident_count = int(
         db.scalar(
             select(func.count(Incident.id)).where(
                 Incident.project_id == project_id,
                 Incident.started_at > certification_effective_at,
                 func.lower(Incident.severity) == "critical",
+                func.lower(Incident.status).in_(unresolved_statuses),
             )
         )
         or 0
     )
-    if critical_incident_count > 0:
-        return True, "New critical production incident detected after certification."
+    if critical_incident_count >= 2:
+        return True, "Multiple unresolved critical incidents were detected after certification."
 
     regression_count = int(
         db.scalar(
@@ -274,8 +276,8 @@ def _compute_certification_at_risk(
         )
         or 0
     )
-    if regression_count >= 3:
-        return True, "Repeated regression events detected after certification."
+    if regression_count >= 5:
+        return True, "Repeated regression events exceeded the post-certification threshold."
 
     guardrail_spike = int(
         db.scalar(
@@ -284,12 +286,13 @@ def _compute_certification_at_risk(
             .where(
                 GuardrailPolicy.project_id == project_id,
                 GuardrailRuntimeEvent.created_at > certification_effective_at,
+                func.lower(GuardrailRuntimeEvent.action_taken).in_(["blocked", "rejected", "escalated"]),
             )
         )
         or 0
     )
-    if guardrail_spike >= 10:
-        return True, "High-severity guardrail violation spike detected after certification."
+    if guardrail_spike >= 20:
+        return True, "Guardrail block/reject events spiked above the post-certification threshold."
 
     return False, None
 
@@ -410,14 +413,15 @@ def get_project_audit_summary(db: Session, *, organization_id: UUID, project_id:
         project_id=project_id,
         certification_effective_at=summary.latest_audit_completed_at,
     )
-    summary.certification_at_risk = at_risk
     if not _summary_is_fresh(db, summary=summary, latest_run=latest_run):
         summary.certification_status = "pending"
-        summary.certification_risk_reason = "A newer run is in progress or has invalidated the latest completed certification."
+        summary.certification_at_risk = False
+        summary.certification_risk_reason = None
         if latest_run is not None:
             summary.latest_audit_id = latest_run.audit_id
             summary.latest_audit_run_id = latest_run.id
     else:
+        summary.certification_at_risk = at_risk
         summary.certification_risk_reason = reason
     db.flush()
     return summary

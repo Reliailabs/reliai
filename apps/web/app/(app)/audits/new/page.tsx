@@ -50,7 +50,11 @@ async function createAuditAction(formData: FormData) {
     include_model_changes: formData.get("include_model_changes") === "on",
   };
 
-  const result = await createAudit(payload);
+  const hasProjectLink = Boolean(payload.project_id);
+  const result = await createAudit({
+    ...payload,
+    linked_production_enabled: hasProjectLink && payload.linked_production_enabled,
+  });
   redirect(`/audits/${result.audit.id}`);
 }
 
@@ -64,7 +68,7 @@ export default async function NewAuditPage() {
       <header className="rounded-2xl border border-line bg-surface px-6 py-5">
         <p className="text-xs uppercase tracking-[0.24em] text-secondary">Audits</p>
         <h1 className="mt-3 text-lg font-semibold text-primary">Create Audit</h1>
-        <p className="mt-2 text-sm text-secondary">Define scope, production context, and evidence inputs for a new run.</p>
+        <p className="mt-2 text-sm text-secondary">Define scope, link production context, and capture evidence settings for a decision-ready run.</p>
       </header>
 
       <form action={createAuditAction} className="space-y-6">
@@ -160,7 +164,7 @@ export default async function NewAuditPage() {
             </label>
             <label className="mt-7 flex items-center gap-2 text-sm text-secondary">
               <input type="checkbox" name="linked_production_enabled" defaultChecked />
-              Include production evidence snapshot
+              Capture production evidence snapshot at run start
             </label>
             <label className="flex items-center gap-2 text-sm text-secondary"><input type="checkbox" name="include_incidents" defaultChecked />Include incidents</label>
             <label className="flex items-center gap-2 text-sm text-secondary"><input type="checkbox" name="include_trace_samples" defaultChecked />Include trace samples</label>

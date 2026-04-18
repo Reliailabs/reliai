@@ -16,7 +16,7 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-FK_NAME = op.f("fk_org_escalation_policies_organization_id_organizations")
+FK_NAME = "fk_org_escalation_policies_organization_id_organizations"
 
 
 def upgrade() -> None:

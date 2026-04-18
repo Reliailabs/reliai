@@ -12,6 +12,10 @@ function riskLevel(score: number | null) {
   return "critical";
 }
 
+function prettyLabel(value: string) {
+  return value.replaceAll("_", " ");
+}
+
 export default async function AuditResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const results = await getAuditResults(id).catch(() => null);
@@ -23,6 +27,8 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
       </Card>
     );
   }
+
+  const blockers = results.findings.filter((item) => item.certification_blocking && item.status === "open");
 
   return (
     <div className="space-y-6">
@@ -49,16 +55,20 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="rounded-2xl border-line bg-surface p-6 lg:col-span-2">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Executive Summary</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Executive Decision</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-line bg-white p-3 text-sm">
-              <p className="text-xs uppercase tracking-[0.18em] text-secondary">Certification</p>
-              <p className="mt-1 font-semibold text-primary">{results.run.certification_status}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-secondary">Decision</p>
+              <p className="mt-1 font-semibold text-primary">{prettyLabel(results.run.certification_status)}</p>
             </div>
             <div className="rounded-lg border border-line bg-white p-3 text-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-secondary">Risk score</p>
               <p className="mt-1 font-semibold text-primary">{results.run.risk_score ?? "—"} ({riskLevel(results.run.risk_score)})</p>
             </div>
+          </div>
+          <div className="mt-3 rounded-lg border border-line bg-white p-3 text-sm text-secondary">
+            <p className="text-xs uppercase tracking-[0.18em] text-secondary">Blockers</p>
+            <p className="mt-1 text-primary">{blockers.length === 0 ? "No open certification blockers." : `${blockers.length} open blocker(s) require remediation.`}</p>
           </div>
           <p className="mt-4 text-sm text-secondary">{results.summary}</p>
           <div className="mt-4 text-sm text-secondary">
@@ -120,7 +130,8 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
                 <th className="px-2 py-1">Severity</th>
                 <th className="px-2 py-1">Validated</th>
                 <th className="px-2 py-1">Confidence</th>
-                <th className="px-2 py-1">Origin</th>
+                <th className="px-2 py-1">Evidence ref</th>
+                <th className="px-2 py-1">Source stage</th>
               </tr>
             </thead>
             <tbody>
@@ -129,12 +140,16 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
                   <td className="px-2 py-2 align-top">
                     <p className="font-medium text-primary">{finding.title}</p>
                     <p className="mt-1 text-xs">{finding.summary}</p>
+                    {finding.certification_blocking ? (
+                      <p className="mt-1 text-[11px] font-semibold text-rose-700">Certification blocker</p>
+                    ) : null}
                   </td>
                   <td className="px-2 py-2 align-top">{finding.category}</td>
                   <td className="px-2 py-2 align-top">{finding.severity}</td>
                   <td className="px-2 py-2 align-top">{finding.is_validated ? "yes" : "no"}</td>
                   <td className="px-2 py-2 align-top">{finding.confidence ?? "—"}</td>
-                  <td className="px-2 py-2 align-top">{finding.origin_source}</td>
+                  <td className="px-2 py-2 align-top">{finding.evidence_ref ?? "—"}</td>
+                  <td className="px-2 py-2 align-top">{finding.source_stage_key ?? finding.origin_source}</td>
                 </tr>
               ))}
             </tbody>
@@ -144,9 +159,9 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
 
       <Card className="rounded-2xl border-line bg-surface p-6">
         <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Certification</h2>
-        <p className="mt-3 text-sm text-secondary">Final decision: <span className="font-semibold text-primary">{results.run.certification_status}</span></p>
+        <p className="mt-3 text-sm text-secondary">Final decision: <span className="font-semibold text-primary">{prettyLabel(results.run.certification_status)}</span></p>
         <p className="mt-2 text-sm text-secondary">Blockers: {results.findings_summary.blocking_open}</p>
-        <p className="mt-2 text-sm text-secondary">Required remediation: resolve open high/critical findings and re-run certification stage.</p>
+        <p className="mt-2 text-sm text-secondary">Required remediation: close blocker findings, confirm evidence updates, and rerun certification.</p>
       </Card>
 
       <Card className="rounded-2xl border-line bg-surface p-6">
@@ -172,7 +187,7 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
         <div className="mt-3 flex flex-wrap gap-2">
           {results.artifacts.map((artifact) => (
             <span key={artifact.id} className="rounded-full border border-line bg-white px-3 py-1 text-xs text-secondary">
-              {artifact.artifact_type}: {artifact.title}
+              {prettyLabel(artifact.artifact_type)}: {artifact.title}
             </span>
           ))}
         </div>

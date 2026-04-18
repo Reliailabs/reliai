@@ -45,6 +45,52 @@ class AuditRunCreateRequest(BaseModel):
     pass
 
 
+class EvidenceWindowSummary(APIModel):
+    days: int
+    start: str
+    end: str
+
+
+class IncidentSummary(APIModel):
+    count: int
+    criticalCount: int
+
+
+class TraceSampleSummary(APIModel):
+    sampleCount: int
+    services: list[str]
+
+
+class GuardrailViolationSummary(APIModel):
+    count: int
+
+
+class RegressionSummary(APIModel):
+    count: int
+
+
+class ModelChangeItem(APIModel):
+    provider: str | None
+    modelName: str | None
+    modelVersion: str | None
+    deployedAt: str | None
+
+
+class ModelChangeSummary(APIModel):
+    count: int
+    models: list[ModelChangeItem]
+
+
+class ProductionSnapshotMetadata(APIModel):
+    evidenceWindow: EvidenceWindowSummary
+    incidentSummary: IncidentSummary
+    traceSampleSummary: TraceSampleSummary
+    guardrailViolationSummary: GuardrailViolationSummary
+    regressionSummary: RegressionSummary
+    modelChangeSummary: ModelChangeSummary
+    topRiskySurfaces: list[str]
+
+
 class AuditRead(APIModel):
     id: UUID
     organization_id: UUID
@@ -141,7 +187,7 @@ class AuditRunRead(APIModel):
     certification_effective_at: datetime | None
     evidence_window_start: datetime | None
     evidence_window_end: datetime | None
-    production_snapshot_metadata: dict | None
+    production_snapshot_metadata: ProductionSnapshotMetadata | None
     snapshot_description: str | None
     snapshot_use_cases: list[str] | None
     snapshot_workflow_summary: str | None
@@ -196,7 +242,7 @@ class AuditDetailResponse(APIModel):
     stages: list[AuditStageRead]
     findings_summary: FindingsSummaryRead
     artifacts: list[AuditArtifactRead]
-    linked_production_context: dict | None
+    linked_production_context: ProductionSnapshotMetadata | None
 
 
 class AuditActionResponse(APIModel):

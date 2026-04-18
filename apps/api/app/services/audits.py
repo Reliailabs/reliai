@@ -73,6 +73,19 @@ def _default_executor() -> AuditStageExecutor:
     return DeterministicMockAuditStageExecutor()
 
 
+def _artifact_source_stage_key(artifact: AuditArtifact) -> str | None:
+    metadata = artifact.metadata_json or {}
+    source_stage = metadata.get("source_stage_key")
+    return str(source_stage) if source_stage is not None else None
+
+
+def _recommendation_from_finding(finding: AuditFinding) -> str:
+    scope = finding.recommended_scope or finding.evidence_ref or finding.category
+    if finding.certification_blocking:
+        return f"Resolve blocker: {finding.title} in {scope}."
+    return f"Reduce risk: {finding.title} in {scope}."
+
+
 def _seed_run_stages(db: Session, *, run: AuditRun) -> list[AuditStage]:
     stages = [
         AuditStage(
@@ -365,7 +378,7 @@ def _persist_stage_execution(
                 origin_source="audit_test",
                 source_stage_key=stage.stage_key,
                 evidence_type=finding.evidence_type,
-                evidence_ref=None,
+                evidence_ref=finding.evidence_ref,
                 finding_fingerprint=fingerprint,
                 is_validated=stage.stage_key in {AuditStageKey.VALIDATION.value, AuditStageKey.REVIEW.value, AuditStageKey.CERTIFICATION.value},
                 validated_at=_utc_now() if stage.stage_key in {AuditStageKey.VALIDATION.value, AuditStageKey.REVIEW.value, AuditStageKey.CERTIFICATION.value} else None,
@@ -386,7 +399,7 @@ def _persist_stage_execution(
                 artifact_type=artifact.artifact_type,
                 title=artifact.title,
                 storage_ref=artifact.storage_ref,
-                metadata_json=artifact.metadata_json,
+                metadata_json={**artifact.metadata_json, "source_stage_key": stage.stage_key},
                 is_stale=False,
             )
         )
@@ -465,6 +478,7 @@ def _mark_downstream_stale(db: Session, *, run_id: UUID, stage_order: int) -> No
     ]
 
     if downstream_stage_keys:
+        downstream_set = set(downstream_stage_keys)
         for finding in db.scalars(
             select(AuditFinding).where(
                 AuditFinding.audit_run_id == run_id,
@@ -476,7 +490,9 @@ def _mark_downstream_stale(db: Session, *, run_id: UUID, stage_order: int) -> No
         for artifact in db.scalars(
             select(AuditArtifact).where(AuditArtifact.audit_run_id == run_id)
         ).all():
-            if artifact.artifact_type in {"executive_report", "certification_report", "stage_output", "evidence_bundle"}:
+            source_stage_key = _artifact_source_stage_key(artifact)
+            is_downstream_stage_artifact = source_stage_key in downstream_set
+            if artifact.artifact_type in {"executive_report", "certification_report", "evidence_bundle"} or is_downstream_stage_artifact:
                 artifact.is_stale = True
 
 
@@ -611,6 +627,13 @@ def continue_audit_review(
         audit.status = AuditStatus.COMPLETED.value
 
         # Produce summary artifacts.
+        non_stale_findings = [item for item in findings if not item.is_stale]
+        blocking_findings = [
+            item
+            for item in non_stale_findings
+            if item.certification_blocking and item.status == AuditFindingStatus.OPEN.value
+        ]
+        report_recommendations = [_recommendation_from_finding(item) for item in blocking_findings[:3]]
         db.add(
             AuditArtifact(
                 audit_run_id=run.id,
@@ -618,7 +641,13 @@ def continue_audit_review(
                 artifact_type="evidence_bundle",
                 title="Evidence Bundle",
                 storage_ref=None,
-                metadata_json={"generated_at": _utc_now().isoformat()},
+                metadata_json={
+                    "generated_at": _utc_now().isoformat(),
+                    "finding_count": len(non_stale_findings),
+                    "blocking_count": len(blocking_findings),
+                    "top_evidence_refs": [item.evidence_ref for item in non_stale_findings if item.evidence_ref][:5],
+                    "recommendations": report_recommendations,
+                },
                 is_stale=False,
             )
         )
@@ -653,11 +682,20 @@ def _build_results(db: Session, *, audit: Audit, run: AuditRun) -> AuditResultsR
     findings_summary = _findings_summary(db, run_id=run.id)
 
     top_risks = [item.title for item in findings if item.severity in {AuditSeverity.CRITICAL.value, AuditSeverity.HIGH.value}][:3]
-    recommended_actions = [
-        "Remediate critical and high-severity findings before full production rollout.",
-        "Enable targeted monitoring recommendations for validated risk areas.",
-        "Run a follow-up audit after remediation to confirm risk reduction.",
+    blocking_findings = [
+        item
+        for item in findings
+        if item.certification_blocking and item.status == AuditFindingStatus.OPEN.value
     ]
+    if blocking_findings:
+        recommended_actions = [_recommendation_from_finding(item) for item in blocking_findings[:3]]
+        recommended_actions.append("Re-run certification after blocker remediation is complete.")
+    else:
+        recommended_actions = [
+            "Maintain current controls and monitor validated risk surfaces.",
+            "Apply suggested monitoring recommendations to protect certification posture.",
+            "Run a scheduled follow-up audit to confirm reliability trend stability.",
+        ]
     if run.status == AuditRunStatus.COMPLETED.value and run.certification_status != CertificationStatus.PENDING.value:
         summary = (
             "Audit run completed with reproducible findings and evidence-backed risk scoring. "
