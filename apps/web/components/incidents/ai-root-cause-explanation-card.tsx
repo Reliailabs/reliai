@@ -102,8 +102,8 @@ export function AiRootCauseExplanationCard({
   const isStale = explanation?.is_stale ?? false;
 
   return (
-    <div className="rounded-2xl border border-zinc-200 border-l-4 border-l-zinc-300 bg-zinc-50 p-5">
-      <p className="mb-3 text-[11px] uppercase tracking-widest text-zinc-500">
+    <div className="rounded-2xl border border-zinc-200 border-l-4 border-l-zinc-300 bg-zinc-50 px-4 py-4">
+      <p className="mb-3 text-[11px] uppercase tracking-widest text-zinc-400">
         AI-assisted interpretation
       </p>
 
@@ -111,7 +111,7 @@ export function AiRootCauseExplanationCard({
         <div>
           <p className="text-sm font-semibold text-zinc-900">AI Explanation</p>
           <p className="text-xs text-zinc-500">Interprets the current root-cause evidence</p>
-        <DocsLink href="/docs/ai" label="How AI works in Reliai" variant="light" />
+          <DocsLink href="/docs/ai" label="How AI works in Reliai" variant="light" />
         </div>
         <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
           Draft
@@ -136,11 +136,11 @@ export function AiRootCauseExplanationCard({
       ) : null}
 
       {isLoading ? (
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-3">
           <div className="h-4 w-full animate-pulse rounded bg-zinc-200" />
           <div className="h-4 w-5/6 animate-pulse rounded bg-zinc-200" />
           <div className="h-4 w-3/5 animate-pulse rounded bg-zinc-200" />
-          <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3">
+          <div className="mt-4 rounded-xl bg-white/70 px-3 py-3">
             <div className="h-3 w-1/3 animate-pulse rounded bg-zinc-200" />
             <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-zinc-200" />
           </div>
@@ -155,7 +155,7 @@ export function AiRootCauseExplanationCard({
       {status === "ready" && explanation ? (
         <div className="mt-4 space-y-4">
           <p className="text-sm leading-6 text-zinc-800">{explanation.explanation}</p>
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
+          <div className="rounded-xl bg-white/70 px-3 py-2">
             <p className="text-xs uppercase tracking-wide text-zinc-500">What to check next</p>
             <p className="mt-1 text-sm text-zinc-700">{explanation.what_to_check_next ?? "n/a"}</p>
           </div>
@@ -176,10 +176,8 @@ export function AiRootCauseExplanationCard({
       ) : null}
 
       {status === "insufficient" ? (
-        <div className="mt-4 space-y-4">
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
-            There isn&apos;t enough root-cause evidence yet to generate a reliable explanation.
-          </div>
+        <div className="mt-4 space-y-3 text-sm text-zinc-800">
+          <p>There isn&apos;t enough root-cause evidence yet to generate a reliable explanation.</p>
           <div className="rounded-xl border border-zinc-200 bg-white px-3 py-3">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Based on</p>
             <ul className="mt-2 space-y-1">
@@ -195,11 +193,9 @@ export function AiRootCauseExplanationCard({
       ) : null}
 
       {status === "error" ? (
-        <div className="mt-4 space-y-4">
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            AI explanation unavailable right now.
-          </div>
-          <div>
+        <div className="mt-4 text-sm text-zinc-800">
+          <p>AI explanation unavailable right now.</p>
+          <div className="mt-3">
             <Button size="sm" variant="outline" onClick={() => fetchExplanation()}>
               Retry
             </Button>
