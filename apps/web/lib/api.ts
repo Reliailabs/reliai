@@ -10,6 +10,13 @@ import type {
   AiTicketDraftRequest,
   AiTicketDraftResponse,
   AlertDeliveryListResponse,
+  AuditActionResponse,
+  AuditDetailResponse,
+  AuditListResponse,
+  AuditResultsRead,
+  AuditRunListResponse,
+  AuditRunRead,
+  AuditType,
   CustomerReliabilityDetailRead,
   CustomerReliabilityListRead,
   SystemCustomerExpansionRead,
@@ -40,6 +47,8 @@ import type {
   PlatformMetricsRead,
   ProjectCustomMetricListResponse,
   ProjectCustomMetricRead,
+  ProjectAuditSummaryRead,
+  ProjectMonitoringRecommendationListResponse,
   PlatformExtensionListResponse,
   GraphGuardrailRecommendationListResponse,
   ReliabilityActionLogListResponse,
@@ -247,6 +256,103 @@ export async function getOrganizationUsageQuota(organizationId: string) {
 
 export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
+}
+
+export type AuditCreatePayload = {
+  name: string;
+  target_system_name: string;
+  company_name?: string | null;
+  audit_type: AuditType;
+  policy_profile?: AuditType | null;
+  description?: string | null;
+  use_cases?: string[];
+  workflow_summary?: string | null;
+  endpoints_notes?: string | null;
+  risk_focus_areas?: string[];
+  project_id?: string | null;
+  environment?: string | null;
+  linked_production_enabled?: boolean;
+  evidence_window_days?: number;
+  include_incidents?: boolean;
+  include_trace_samples?: boolean;
+  include_guardrail_violations?: boolean;
+  include_regressions?: boolean;
+  include_model_changes?: boolean;
+};
+
+export async function listAudits(params?: {
+  status?: string;
+  auditType?: string;
+  search?: string;
+  projectId?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params?.status) query.set("status", params.status);
+  if (params?.auditType) query.set("auditType", params.auditType);
+  if (params?.search) query.set("search", params.search);
+  if (params?.projectId) query.set("projectId", params.projectId);
+  return request<AuditListResponse>(`/api/v1/audits${query.size ? `?${query.toString()}` : ""}`);
+}
+
+export async function createAudit(payload: AuditCreatePayload) {
+  return request<AuditActionResponse>("/api/v1/audits", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function getAudit(auditId: string) {
+  return request<AuditDetailResponse>(`/api/v1/audits/${auditId}`);
+}
+
+export async function getAuditRuns(auditId: string) {
+  return request<AuditRunListResponse>(`/api/v1/audits/${auditId}/runs`);
+}
+
+export async function createAuditRun(auditId: string) {
+  return request<AuditActionResponse>(`/api/v1/audits/${auditId}/runs`, {
+    method: "POST"
+  });
+}
+
+export async function getAuditRun(auditId: string, runId: string) {
+  return request<AuditRunRead>(`/api/v1/audits/${auditId}/runs/${runId}`);
+}
+
+export async function startAuditRun(auditId: string, runId: string) {
+  return request<AuditActionResponse>(`/api/v1/audits/${auditId}/runs/${runId}/start`, {
+    method: "POST"
+  });
+}
+
+export async function rerunAuditStage(auditId: string, runId: string, stageKey: string) {
+  return request<AuditActionResponse>(`/api/v1/audits/${auditId}/runs/${runId}/stages/${stageKey}/rerun`, {
+    method: "POST"
+  });
+}
+
+export async function continueAuditReview(auditId: string, runId: string) {
+  return request<AuditActionResponse>(`/api/v1/audits/${auditId}/runs/${runId}/continue-review`, {
+    method: "POST"
+  });
+}
+
+export async function getAuditResults(auditId: string) {
+  return request<AuditResultsRead>(`/api/v1/audits/${auditId}/results`);
+}
+
+export async function getAuditRunResults(auditId: string, runId: string) {
+  return request<AuditResultsRead>(`/api/v1/audits/${auditId}/runs/${runId}/results`);
+}
+
+export async function getProjectAuditSummary(projectId: string) {
+  return request<ProjectAuditSummaryRead>(`/api/v1/projects/${projectId}/audit-summary`);
+}
+
+export async function getProjectAuditMonitoringRecommendations(projectId: string) {
+  return request<ProjectMonitoringRecommendationListResponse>(
+    `/api/v1/projects/${projectId}/audit-monitoring-recommendations`
+  );
 }
 
 export async function updateProject(

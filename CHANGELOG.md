@@ -8,6 +8,9 @@ All notable changes to Reliai will be documented in this file.
 
 ### Added
 
+- Run-first audit workflow with DB-backed `/audits` product routes, run-scoped results, deterministic stage execution, and rerun invalidation semantics.
+- Closed-loop Audit↔Production bridge with linked project evidence snapshots, project certification summary APIs, at-risk signaling, and monitoring recommendations.
+- Public `/ai-reliability-audit` process section updated to customer-facing five-stage audit flow.
 - AI root-cause explanation panel that interprets deterministic evidence beneath the root-cause block.
 - AI ticket draft modal that generates editable incident tickets from deterministic evidence.
 - Limit visibility system with /system/limits endpoint, global banner, and contextual limit states.

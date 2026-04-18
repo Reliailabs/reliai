@@ -12,6 +12,7 @@ from app.api.dependencies import require_operator
 from app.core.settings import get_settings
 from app.db.session import get_db
 from app.models.deployment import Deployment
+from app.models.audit_artifact import AuditArtifact
 from app.models.trace import Trace
 from app.models.model_version import ModelVersion
 from app.models.organization import Organization
@@ -22,6 +23,15 @@ from app.models.reliability_graph_node import ReliabilityGraphNode
 from app.schemas.api_key import APIKeyCreate, APIKeyCreateResponse, APIKeyRead
 from app.schemas.alert_delivery import AlertDeliveryListResponse, AlertDeliveryRead
 from app.schemas.archive_status import ArchiveStatusRead
+from app.schemas.audit import (
+    AuditActionResponse,
+    AuditCreateRequest,
+    AuditDetailResponse,
+    AuditListResponse,
+    AuditResultsRead,
+    AuditRunListResponse,
+    AuditRunRead,
+)
 from app.schemas.ai import (
     AiFixPrSummaryRequest,
     AiFixPrSummaryResponse,
@@ -217,6 +227,10 @@ from app.schemas.project import (
     VersionTraceRead,
 )
 from app.schemas.project_slo import ProjectSLOListResponse, ProjectSLORead
+from app.schemas.project_audit_summary import (
+    ProjectAuditSummaryRead,
+    ProjectMonitoringRecommendationListResponse,
+)
 from app.schemas.reliability import (
     ProjectReliabilityRead,
     ReliabilityMetricPointRead,
@@ -295,6 +309,24 @@ from app.schemas.trace_ingestion_policy import (
     TraceIngestionPolicyUpdate,
 )
 from app.services.api_keys import authenticate_api_key, create_api_key
+from app.services.audits import (
+    continue_audit_review,
+    create_audit_run,
+    create_audit_with_initial_run,
+    get_audit,
+    get_audit_detail,
+    get_audit_run,
+    get_latest_results,
+    get_run_results,
+    list_audit_runs,
+    list_audits,
+    rerun_audit_stage,
+    start_audit_run,
+)
+from app.services.audit_production_bridge import (
+    derive_monitoring_recommendations,
+    get_project_audit_summary,
+)
 from app.services.cohort_queries import aggregate_cohort_metrics, query_trace_cohort
 from app.services.cost_intelligence import get_project_cost_intelligence
 from app.services.customer_exports import create_customer_export, get_customer_export
@@ -532,6 +564,13 @@ def _read_datetime(value):
     if value is None or isinstance(value, datetime):
         return value
     return datetime.fromisoformat(value)
+
+
+def _active_organization_id(operator: OperatorContext) -> UUID:
+    organization_id = operator.active_organization_id or (operator.organization_ids[0] if operator.organization_ids else None)
+    if organization_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active organization")
+    return organization_id
 
 
 def _membership_items(db: Session, memberships) -> list[OperatorMembershipRead]:
@@ -2686,6 +2725,180 @@ def create_project_endpoint(
     return create_project(db, organization_id, payload)
 
 
+@router.get("/audits", response_model=AuditListResponse)
+def list_audits_endpoint(
+    status_filter: str | None = Query(default=None, alias="status"),
+    audit_type: str | None = Query(default=None, alias="auditType"),
+    search: str | None = Query(default=None),
+    project_id: UUID | None = Query(default=None, alias="projectId"),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditListResponse:
+    organization_id = _active_organization_id(operator)
+    return list_audits(
+        db,
+        organization_id=organization_id,
+        status_filter=status_filter,
+        audit_type=audit_type,
+        search=search,
+        project_id=project_id,
+    )
+
+
+@router.post("/audits", response_model=AuditActionResponse, status_code=status.HTTP_201_CREATED)
+def create_audit_endpoint(
+    payload: AuditCreateRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditActionResponse:
+    organization_id = _active_organization_id(operator)
+    require_org_role(operator, organization_id, "viewer")
+    try:
+        audit, run, stages = create_audit_with_initial_run(
+            db,
+            organization_id=organization_id,
+            payload=payload,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return AuditActionResponse(audit=audit, run=run, stages=stages)
+
+
+@router.get("/audits/{audit_id}", response_model=AuditDetailResponse)
+def get_audit_endpoint(
+    audit_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditDetailResponse:
+    organization_id = _active_organization_id(operator)
+    return get_audit_detail(db, organization_id=organization_id, audit_id=audit_id)
+
+
+@router.get("/audits/{audit_id}/runs", response_model=AuditRunListResponse)
+def get_audit_runs_endpoint(
+    audit_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditRunListResponse:
+    organization_id = _active_organization_id(operator)
+    return list_audit_runs(db, organization_id=organization_id, audit_id=audit_id)
+
+
+@router.post("/audits/{audit_id}/runs", response_model=AuditActionResponse, status_code=status.HTTP_201_CREATED)
+def create_audit_run_endpoint(
+    audit_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditActionResponse:
+    organization_id = _active_organization_id(operator)
+    audit, run, stages = create_audit_run(db, organization_id=organization_id, audit_id=audit_id)
+    return AuditActionResponse(audit=audit, run=run, stages=stages)
+
+
+@router.get("/audits/{audit_id}/runs/{run_id}", response_model=AuditRunRead)
+def get_audit_run_endpoint(
+    audit_id: UUID,
+    run_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditRunRead:
+    organization_id = _active_organization_id(operator)
+    run = get_audit_run(db, organization_id=organization_id, audit_id=audit_id, run_id=run_id)
+    return AuditRunRead.model_validate(run)
+
+
+@router.post("/audits/{audit_id}/runs/{run_id}/start", response_model=AuditActionResponse)
+def start_audit_run_endpoint(
+    audit_id: UUID,
+    run_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditActionResponse:
+    organization_id = _active_organization_id(operator)
+    audit, run, stages = start_audit_run(db, organization_id=organization_id, audit_id=audit_id, run_id=run_id)
+    return AuditActionResponse(audit=audit, run=run, stages=stages)
+
+
+@router.post("/audits/{audit_id}/runs/{run_id}/stages/{stage_key}/rerun", response_model=AuditActionResponse)
+def rerun_audit_stage_endpoint(
+    audit_id: UUID,
+    run_id: UUID,
+    stage_key: str,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditActionResponse:
+    organization_id = _active_organization_id(operator)
+    audit, run, stages = rerun_audit_stage(
+        db,
+        organization_id=organization_id,
+        audit_id=audit_id,
+        run_id=run_id,
+        stage_key=stage_key,
+    )
+    return AuditActionResponse(audit=audit, run=run, stages=stages)
+
+
+@router.post("/audits/{audit_id}/runs/{run_id}/continue-review", response_model=AuditActionResponse)
+def continue_audit_review_endpoint(
+    audit_id: UUID,
+    run_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditActionResponse:
+    organization_id = _active_organization_id(operator)
+    audit, run, stages = continue_audit_review(
+        db,
+        organization_id=organization_id,
+        audit_id=audit_id,
+        run_id=run_id,
+    )
+    return AuditActionResponse(audit=audit, run=run, stages=stages)
+
+
+@router.get("/audits/{audit_id}/results", response_model=AuditResultsRead)
+def get_latest_audit_results_endpoint(
+    audit_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditResultsRead:
+    organization_id = _active_organization_id(operator)
+    return get_latest_results(db, organization_id=organization_id, audit_id=audit_id)
+
+
+@router.get("/audits/{audit_id}/runs/{run_id}/results", response_model=AuditResultsRead)
+def get_audit_run_results_endpoint(
+    audit_id: UUID,
+    run_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> AuditResultsRead:
+    organization_id = _active_organization_id(operator)
+    return get_run_results(db, organization_id=organization_id, audit_id=audit_id, run_id=run_id)
+
+
+@router.get("/audits/{audit_id}/artifacts/{artifact_id}/download")
+def download_audit_artifact_endpoint(
+    audit_id: UUID,
+    artifact_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> dict:
+    organization_id = _active_organization_id(operator)
+    get_audit(db, organization_id=organization_id, audit_id=audit_id)
+    artifact = db.get(AuditArtifact, artifact_id)
+    if artifact is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Artifact not found")
+    if artifact.organization_id != organization_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return {
+        "artifact_id": artifact.id,
+        "artifact_type": artifact.artifact_type,
+        "title": artifact.title,
+        "storage_ref": artifact.storage_ref,
+        "metadata": artifact.metadata_json,
+    }
+
+
 @router.get("/projects", response_model=ProjectListResponse)
 def list_projects_endpoint(
     query: ProjectListQuery = Depends(),
@@ -3300,6 +3513,50 @@ def get_project_reliability_control_panel_endpoint(
     return ProjectReliabilityControlPanelRead.model_validate(
         get_project_reliability_control_panel(db, project_id, environment)
     )
+
+
+@router.get("/projects/{project_id}/audit-summary", response_model=ProjectAuditSummaryRead)
+def get_project_audit_summary_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectAuditSummaryRead:
+    project = require_project_access(db, operator, project_id)
+    summary = get_project_audit_summary(db, organization_id=project.organization_id, project_id=project.id)
+    if summary is None:
+        return ProjectAuditSummaryRead(
+            project_id=project.id,
+            organization_id=project.organization_id,
+            latest_audit_id=None,
+            latest_audit_run_id=None,
+            certification_status="pending",
+            audit_risk_score=None,
+            audit_risk_level=None,
+            open_critical_findings_count=0,
+            open_blocking_findings_count=0,
+            latest_audit_completed_at=None,
+            certification_at_risk=False,
+            certification_risk_reason=None,
+        )
+    db.commit()
+    return ProjectAuditSummaryRead.model_validate(summary)
+
+
+@router.get(
+    "/projects/{project_id}/audit-monitoring-recommendations",
+    response_model=ProjectMonitoringRecommendationListResponse,
+)
+def get_project_monitoring_recommendations_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectMonitoringRecommendationListResponse:
+    project = require_project_access(db, operator, project_id)
+    summary = get_project_audit_summary(db, organization_id=project.organization_id, project_id=project.id)
+    if summary is None or summary.latest_audit_run_id is None:
+        return ProjectMonitoringRecommendationListResponse(items=[])
+    recommendations = derive_monitoring_recommendations(db, run_id=summary.latest_audit_run_id)
+    return ProjectMonitoringRecommendationListResponse(items=recommendations)
 
 
 @router.get("/projects/{project_id}/cost", response_model=ProjectCostRead)

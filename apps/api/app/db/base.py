@@ -1,5 +1,12 @@
 from app.models.audit_log import AuditLog
 from app.models.audit_event import AuditEvent
+from app.models.audit import Audit
+from app.models.audit_artifact import AuditArtifact
+from app.models.audit_finding import AuditFinding
+from app.models.audit_finding_incident import AuditFindingIncident
+from app.models.audit_finding_trace import AuditFindingTrace
+from app.models.audit_run import AuditRun
+from app.models.audit_stage import AuditStage
 from app.models.admin_event import AdminEvent
 from app.models.alert_delivery import AlertDelivery
 from app.models.automation_rule import AutomationRule
@@ -45,6 +52,7 @@ from app.models.project import Project
 from app.models.project_custom_metric import ProjectCustomMetric
 from app.models.project_slo import ProjectSLO
 from app.models.project_member import ProjectMember
+from app.models.project_audit_summary import ProjectAuditSummary
 from app.models.prompt_failure_pattern import PromptFailurePattern
 from app.models.prompt_version import PromptVersion
 from app.models.reliability_metric import ReliabilityMetric
@@ -67,6 +75,13 @@ __all__ = [
     "AlertDelivery",
     "AuditEvent",
     "AuditLog",
+    "Audit",
+    "AuditArtifact",
+    "AuditFinding",
+    "AuditFindingIncident",
+    "AuditFindingTrace",
+    "AuditRun",
+    "AuditStage",
     "AdminEvent",
     "AutomationRule",
     "APIKey",
@@ -108,6 +123,7 @@ __all__ = [
     "PlatformExtension",
     "ProcessorFailure",
     "Project",
+    "ProjectAuditSummary",
     "ProjectCustomMetric",
     "ProjectSLO",
     "ProjectMember",
