@@ -1820,6 +1820,38 @@ export interface AuditRead {
   updated_at: string;
 }
 
+export interface ProductionSnapshotMetadata {
+  evidenceWindow: {
+    days: number;
+    start: string;
+    end: string;
+  };
+  incidentSummary: {
+    count: number;
+    criticalCount: number;
+  };
+  traceSampleSummary: {
+    sampleCount: number;
+    services: string[];
+  };
+  guardrailViolationSummary: {
+    count: number;
+  };
+  regressionSummary: {
+    count: number;
+  };
+  modelChangeSummary: {
+    count: number;
+    models: Array<{
+      provider: string | null;
+      modelName: string | null;
+      modelVersion: string | null;
+      deployedAt: string | null;
+    }>;
+  };
+  topRiskySurfaces: string[];
+}
+
 export interface AuditRunRead {
   id: string;
   audit_id: string;
@@ -1831,7 +1863,7 @@ export interface AuditRunRead {
   certification_effective_at: string | null;
   evidence_window_start: string | null;
   evidence_window_end: string | null;
-  production_snapshot_metadata: Record<string, unknown> | null;
+  production_snapshot_metadata: ProductionSnapshotMetadata | null;
   snapshot_description: string | null;
   snapshot_use_cases: string[] | null;
   snapshot_workflow_summary: string | null;
@@ -1959,7 +1991,7 @@ export interface AuditDetailResponse {
   stages: AuditStageRead[];
   findings_summary: AuditFindingsSummary;
   artifacts: AuditArtifactRead[];
-  linked_production_context: Record<string, unknown> | null;
+  linked_production_context: ProductionSnapshotMetadata | null;
 }
 
 export interface ProjectAuditSummaryRead {

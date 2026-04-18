@@ -190,16 +190,29 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
 
         <Card className="rounded-2xl border-line bg-surface p-6">
           <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Production Context</h2>
-          {!detail.linked_production_context ? (
-            <p className="mt-3 text-sm text-secondary">No production snapshot captured yet.</p>
+          {!detail.audit.linked_production_enabled ? (
+            <p className="mt-3 text-sm text-secondary">This audit is not linked to a production project.</p>
+          ) : !detail.linked_production_context ? (
+            <p className="mt-3 text-sm text-secondary">Production linkage is enabled, but no snapshot has been captured yet.</p>
           ) : (
             <div className="mt-4 space-y-2 text-sm text-secondary">
-              <p>Evidence window: {String(detail.linked_production_context.window_start ?? "—")} → {String(detail.linked_production_context.window_end ?? "—")}</p>
-              <p>Incidents: {String(detail.linked_production_context.incident_count ?? 0)} (critical {String(detail.linked_production_context.critical_incident_count ?? 0)})</p>
-              <p>Trace samples: {String(detail.linked_production_context.trace_count_sampled ?? 0)}</p>
-              <p>Guardrail violations: {String(detail.linked_production_context.guardrail_violation_count ?? 0)}</p>
-              <p>Regressions: {String(detail.linked_production_context.regression_event_count ?? 0)}</p>
-              <p>Top risky workflows: {Array.isArray(detail.linked_production_context.top_risky_workflows) ? detail.linked_production_context.top_risky_workflows.join(", ") : "—"}</p>
+              <p>
+                Evidence window: {String(detail.linked_production_context.evidenceWindow?.start ?? "—")} →{" "}
+                {String(detail.linked_production_context.evidenceWindow?.end ?? "—")}
+              </p>
+              <p>
+                Incidents: {String(detail.linked_production_context.incidentSummary?.count ?? 0)} (critical{" "}
+                {String(detail.linked_production_context.incidentSummary?.criticalCount ?? 0)})
+              </p>
+              <p>Trace samples: {String(detail.linked_production_context.traceSampleSummary?.sampleCount ?? 0)}</p>
+              <p>Guardrail violations: {String(detail.linked_production_context.guardrailViolationSummary?.count ?? 0)}</p>
+              <p>Regressions: {String(detail.linked_production_context.regressionSummary?.count ?? 0)}</p>
+              <p>
+                Top risky surfaces:{" "}
+                {Array.isArray(detail.linked_production_context.topRiskySurfaces)
+                  ? detail.linked_production_context.topRiskySurfaces.join(", ")
+                  : "—"}
+              </p>
             </div>
           )}
         </Card>

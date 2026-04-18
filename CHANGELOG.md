@@ -10,6 +10,7 @@ All notable changes to Reliai will be documented in this file.
 
 - Run-first audit workflow with DB-backed `/audits` product routes, run-scoped results, deterministic stage execution, and rerun invalidation semantics.
 - Closed-loop Audit↔Production bridge with linked project evidence snapshots, project certification summary APIs, at-risk signaling, and monitoring recommendations.
+- Audit schema migration for closed-loop tables (`audits`, `audit_runs`, `audit_stages`, `audit_findings`, `audit_artifacts`, linkage tables, and `project_audit_summaries`) with explicit org+project uniqueness and stale-state fields.
 - Public `/ai-reliability-audit` process section updated to customer-facing five-stage audit flow.
 - AI root-cause explanation panel that interprets deterministic evidence beneath the root-cause block.
 - AI ticket draft modal that generates editable incident tickets from deterministic evidence.
@@ -41,6 +42,9 @@ All notable changes to Reliai will be documented in this file.
 
 ### Changed
 
+- Hardened project audit freshness logic so project summaries only present fresh certification when the latest relevant run is completed, non-pending, and non-invalidated.
+- Standardized production snapshot metadata contract (`evidenceWindow`, `incidentSummary`, `traceSampleSummary`, `guardrailViolationSummary`, `regressionSummary`, `modelChangeSummary`, `topRiskySurfaces`) across API and web UI.
+- Improved deterministic audit executor output realism by varying findings/remediation by audit profile and anchoring evidence refs to production snapshot surfaces.
 - Migrated key marketing, onboarding, and core product surfaces to semantic design tokens for higher readability.
 - Restored demo/docs CTA styling and removed unintended white surfaces in the dashboard sidebar and docs/demo shells.
 - Refined the /demo shell with framed light previews and dark walkthrough overlays to eliminate theme bleed and improve presentation clarity.
@@ -57,6 +61,8 @@ All notable changes to Reliai will be documented in this file.
 
 ### Fixed
 
+- Audit detail/results now exclude stale artifacts from current executive decision surfaces after rerun invalidation.
+- Audit results and project control surfaces now correctly show pending/non-fresh posture when newer runs invalidate prior completed certification.
 - Escalation policy seeding now succeeds by enforcing the organization foreign key.
 - AI Summary no longer reuses cached output when the provider changes, and failures now surface as a safe error state instead of breaking the command route.
 - Increased AI Summary body text contrast for readability.

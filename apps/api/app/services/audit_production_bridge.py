@@ -10,6 +10,7 @@ from app.models.audit import Audit
 from app.models.audit_artifact import AuditArtifact
 from app.models.audit_finding import AuditFinding
 from app.models.audit_run import AuditRun
+from app.models.audit_stage import AuditStage
 from app.models.deployment import Deployment
 from app.models.guardrail_policy import GuardrailPolicy
 from app.models.guardrail_runtime_event import GuardrailRuntimeEvent
@@ -45,9 +46,17 @@ def capture_production_evidence_snapshot(db: Session, *, audit: Audit, run: Audi
     start, end = _window_bounds(audit.evidence_window_days)
     project_id = audit.project_id
     metadata: dict[str, object] = {
-        "window_days": audit.evidence_window_days,
-        "window_start": start.isoformat(),
-        "window_end": end.isoformat(),
+        "evidenceWindow": {
+            "days": audit.evidence_window_days,
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+        },
+        "incidentSummary": {"count": 0, "criticalCount": 0},
+        "traceSampleSummary": {"sampleCount": 0, "services": []},
+        "guardrailViolationSummary": {"count": 0},
+        "regressionSummary": {"count": 0},
+        "modelChangeSummary": {"count": 0, "models": []},
+        "topRiskySurfaces": [],
     }
 
     artifact_rows: list[AuditArtifact] = []
@@ -61,9 +70,11 @@ def capture_production_evidence_snapshot(db: Session, *, audit: Audit, run: Audi
             )
         ).all()
         critical = [item for item in incidents if (item.severity or "").lower() == "critical"]
-        metadata["incident_count"] = len(incidents)
-        metadata["critical_incident_count"] = len(critical)
-        metadata["top_risky_workflows"] = [item.title for item in incidents[:3]]
+        metadata["incidentSummary"] = {
+            "count": len(incidents),
+            "criticalCount": len(critical),
+        }
+        metadata["topRiskySurfaces"] = [item.title for item in incidents[:3]]
         artifact_rows.append(
             AuditArtifact(
                 audit_run_id=run.id,
@@ -89,8 +100,10 @@ def capture_production_evidence_snapshot(db: Session, *, audit: Audit, run: Audi
             .order_by(desc(Trace.timestamp))
             .limit(50)
         ).all()
-        metadata["trace_count_sampled"] = len(trace_samples)
-        metadata["trace_services"] = sorted({item.service_name for item in trace_samples if item.service_name})[:5]
+        metadata["traceSampleSummary"] = {
+            "sampleCount": len(trace_samples),
+            "services": sorted({item.service_name for item in trace_samples if item.service_name})[:5],
+        }
         artifact_rows.append(
             AuditArtifact(
                 audit_run_id=run.id,
@@ -115,7 +128,7 @@ def capture_production_evidence_snapshot(db: Session, *, audit: Audit, run: Audi
             )
             or 0
         )
-        metadata["guardrail_violation_count"] = guardrail_count
+        metadata["guardrailViolationSummary"] = {"count": guardrail_count}
         artifact_rows.append(
             AuditArtifact(
                 audit_run_id=run.id,
@@ -138,7 +151,7 @@ def capture_production_evidence_snapshot(db: Session, *, audit: Audit, run: Audi
             )
             or 0
         )
-        metadata["regression_event_count"] = regression_count
+        metadata["regressionSummary"] = {"count": regression_count}
         artifact_rows.append(
             AuditArtifact(
                 audit_run_id=run.id,
@@ -161,16 +174,18 @@ def capture_production_evidence_snapshot(db: Session, *, audit: Audit, run: Audi
             .order_by(desc(Deployment.deployed_at))
             .limit(20)
         ).all()
-        metadata["model_change_count"] = len(deployment_rows)
-        metadata["model_provider_version_summary"] = [
-            {
-                "provider": row.provider,
-                "model_name": row.model_name,
-                "model_version": row.model_version,
-                "deployed_at": row.deployed_at.isoformat() if row.deployed_at else None,
-            }
-            for row in deployment_rows[:5]
-        ]
+        metadata["modelChangeSummary"] = {
+            "count": len(deployment_rows),
+            "models": [
+                {
+                    "provider": row.provider,
+                    "modelName": row.model_name,
+                    "modelVersion": row.model_version,
+                    "deployedAt": row.deployed_at.isoformat() if row.deployed_at else None,
+                }
+                for row in deployment_rows[:5]
+            ],
+        }
         artifact_rows.append(
             AuditArtifact(
                 audit_run_id=run.id,
@@ -339,6 +354,45 @@ def upsert_project_audit_summary(db: Session, *, run: AuditRun) -> ProjectAuditS
     return summary
 
 
+def _latest_project_run(db: Session, *, organization_id: UUID, project_id: UUID) -> AuditRun | None:
+    return db.scalar(
+        select(AuditRun)
+        .join(Audit, Audit.id == AuditRun.audit_id)
+        .where(
+            AuditRun.organization_id == organization_id,
+            Audit.organization_id == organization_id,
+            Audit.project_id == project_id,
+        )
+        .order_by(desc(AuditRun.created_at), desc(AuditRun.id))
+    )
+
+
+def _summary_is_fresh(db: Session, *, summary: ProjectAuditSummary, latest_run: AuditRun | None) -> bool:
+    if summary.certification_status == "pending":
+        return False
+    if summary.latest_audit_run_id is None:
+        return False
+    if summary.latest_audit_completed_at is None:
+        return False
+    if latest_run is None:
+        return False
+    if latest_run.id != summary.latest_audit_run_id:
+        # A newer run exists or summary points to a non-latest run.
+        return False
+    if latest_run.status != "completed":
+        return False
+    if latest_run.certification_status == "pending":
+        return False
+    has_incomplete_downstream = db.scalar(
+        select(func.count(AuditStage.id)).where(
+            AuditStage.audit_run_id == latest_run.id,
+            AuditStage.stage_order > 1,
+            AuditStage.status.in_(["not_started", "queued", "running", "failed"]),
+        )
+    ) or 0
+    return has_incomplete_downstream == 0
+
+
 def get_project_audit_summary(db: Session, *, organization_id: UUID, project_id: UUID) -> ProjectAuditSummary | None:
     summary = db.scalar(
         select(ProjectAuditSummary).where(
@@ -349,12 +403,21 @@ def get_project_audit_summary(db: Session, *, organization_id: UUID, project_id:
     if summary is None:
         return None
 
+    latest_run = _latest_project_run(db, organization_id=organization_id, project_id=project_id)
+
     at_risk, reason = _compute_certification_at_risk(
         db,
         project_id=project_id,
         certification_effective_at=summary.latest_audit_completed_at,
     )
     summary.certification_at_risk = at_risk
-    summary.certification_risk_reason = reason
+    if not _summary_is_fresh(db, summary=summary, latest_run=latest_run):
+        summary.certification_status = "pending"
+        summary.certification_risk_reason = "A newer run is in progress or has invalidated the latest completed certification."
+        if latest_run is not None:
+            summary.latest_audit_id = latest_run.audit_id
+            summary.latest_audit_run_id = latest_run.id
+    else:
+        summary.certification_risk_reason = reason
     db.flush()
     return summary

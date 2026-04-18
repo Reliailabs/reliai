@@ -39,6 +39,14 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
         </div>
       </header>
 
+      {results.run.certification_status === "pending" ? (
+        <Card className="rounded-2xl border-amber-300 bg-amber-50 p-4">
+          <p className="text-sm text-amber-900">
+            Certification is currently pending. A rerun or in-progress stage has invalidated fresh completed results.
+          </p>
+        </Card>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="rounded-2xl border-line bg-surface p-6 lg:col-span-2">
           <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Executive Summary</h2>
@@ -89,12 +97,15 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
       <Card className="rounded-2xl border-line bg-surface p-6">
         <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Production Evidence</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-2 text-sm text-secondary">
-          <p>Window: {results.run.evidence_window_start || "—"} → {results.run.evidence_window_end || "—"}</p>
+          <p>
+            Window: {String(results.run.production_snapshot_metadata?.evidenceWindow?.start ?? "—")} →{" "}
+            {String(results.run.production_snapshot_metadata?.evidenceWindow?.end ?? "—")}
+          </p>
           <p>Evidence impact: {results.run.production_snapshot_metadata ? "Included in risk and certification review." : "No linked production snapshot."}</p>
-          <p>Incidents: {String(results.run.production_snapshot_metadata?.incident_count ?? 0)}</p>
-          <p>Guardrail violations: {String(results.run.production_snapshot_metadata?.guardrail_violation_count ?? 0)}</p>
-          <p>Regressions: {String(results.run.production_snapshot_metadata?.regression_event_count ?? 0)}</p>
-          <p>Trace samples: {String(results.run.production_snapshot_metadata?.trace_count_sampled ?? 0)}</p>
+          <p>Incidents: {String(results.run.production_snapshot_metadata?.incidentSummary?.count ?? 0)}</p>
+          <p>Guardrail violations: {String(results.run.production_snapshot_metadata?.guardrailViolationSummary?.count ?? 0)}</p>
+          <p>Regressions: {String(results.run.production_snapshot_metadata?.regressionSummary?.count ?? 0)}</p>
+          <p>Trace samples: {String(results.run.production_snapshot_metadata?.traceSampleSummary?.sampleCount ?? 0)}</p>
         </div>
       </Card>
 

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 
 from app.models.environment import Environment
 from app.models.incident import Incident
@@ -138,7 +138,13 @@ def test_run_start_captures_snapshot_and_artifacts(client, db_session):
     detail = detail_response.json()
     context = detail["linked_production_context"]
     assert context is not None
-    assert "window_start" in context and "window_end" in context
+    assert "evidenceWindow" in context
+    assert "incidentSummary" in context
+    assert "traceSampleSummary" in context
+    assert "guardrailViolationSummary" in context
+    assert "regressionSummary" in context
+    assert "modelChangeSummary" in context
+    assert "topRiskySurfaces" in context
 
     artifact_types = {
         row.artifact_type
@@ -182,6 +188,10 @@ def test_rerun_stage_invalidates_downstream_and_resets_summary(client, db_sessio
     )
     assert summary is not None
     assert summary.certification_status == "pending"
+
+    results = client.get(f"/api/v1/audits/{audit_id}/results", headers=headers)
+    assert results.status_code == 200
+    assert results.json()["run"]["certification_status"] == "pending"
 
 
 def test_project_summary_and_certification_at_risk(client, db_session):
@@ -228,6 +238,49 @@ def test_project_summary_and_certification_at_risk(client, db_session):
     at_risk_response = client.get(f"/api/v1/projects/{project['id']}/audit-summary", headers=headers)
     assert at_risk_response.status_code == 200
     assert at_risk_response.json()["certification_at_risk"] is True
+
+
+def test_project_summary_not_fresh_when_latest_run_in_progress(client, db_session):
+    operator = create_operator(db_session, email="freshness-owner@acme.test")
+    session = sign_in(client, email=operator.email)
+    headers = auth_headers(session)
+    organization = create_organization(client, session, name="Freshness Org", slug="freshness-org")
+    project = create_project(client, session, organization["id"], name="Freshness Project")
+
+    created = _create_audit(client, headers, _default_payload(project_id=project["id"]))
+    audit_id = created["audit"]["id"]
+    run_id = created["run"]["id"]
+    assert client.post(f"/api/v1/audits/{audit_id}/runs/{run_id}/start", headers=headers).status_code == 200
+    assert client.post(f"/api/v1/audits/{audit_id}/runs/{run_id}/continue-review", headers=headers).status_code == 200
+
+    summary_completed = client.get(f"/api/v1/projects/{project['id']}/audit-summary", headers=headers)
+    assert summary_completed.status_code == 200
+    assert summary_completed.json()["certification_status"] != "pending"
+
+    second_run = client.post(f"/api/v1/audits/{audit_id}/runs", headers=headers)
+    assert second_run.status_code == 201
+    second_run_id = second_run.json()["run"]["id"]
+    assert client.post(f"/api/v1/audits/{audit_id}/runs/{second_run_id}/start", headers=headers).status_code == 200
+
+    summary_in_progress = client.get(f"/api/v1/projects/{project['id']}/audit-summary", headers=headers)
+    assert summary_in_progress.status_code == 200
+    assert summary_in_progress.json()["certification_status"] == "pending"
+
+
+def test_audit_migration_schema_tables_present(db_session):
+    inspector = inspect(db_session.bind)
+    table_names = set(inspector.get_table_names())
+    assert "audits" in table_names
+    assert "audit_runs" in table_names
+    assert "audit_stages" in table_names
+    assert "audit_findings" in table_names
+    assert "audit_artifacts" in table_names
+    assert "audit_finding_traces" in table_names
+    assert "audit_finding_incidents" in table_names
+    assert "project_audit_summaries" in table_names
+    project_summary_uniques = inspector.get_unique_constraints("project_audit_summaries")
+    unique_columns = {tuple(item.get("column_names", [])) for item in project_summary_uniques}
+    assert ("organization_id", "project_id") in unique_columns
 
 
 def test_audit_tenancy_forbidden_cross_org(client, db_session):

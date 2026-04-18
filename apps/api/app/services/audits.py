@@ -263,7 +263,14 @@ def get_audit_detail(db: Session, *, organization_id: UUID, audit_id: UUID) -> A
         stages = _ordered_stages(db, run_id=latest_run.id)
         findings_summary = _findings_summary(db, run_id=latest_run.id)
         artifacts = list(
-            db.scalars(select(AuditArtifact).where(AuditArtifact.audit_run_id == latest_run.id).order_by(desc(AuditArtifact.created_at))).all()
+            db.scalars(
+                select(AuditArtifact)
+                .where(
+                    AuditArtifact.audit_run_id == latest_run.id,
+                    AuditArtifact.is_stale.is_(False),
+                )
+                .order_by(desc(AuditArtifact.created_at))
+            ).all()
         )
         linked_context = latest_run.production_snapshot_metadata
 
@@ -636,7 +643,10 @@ def _build_results(db: Session, *, audit: Audit, run: AuditRun) -> AuditResultsR
     artifacts = list(
         db.scalars(
             select(AuditArtifact)
-            .where(AuditArtifact.audit_run_id == run.id)
+            .where(
+                AuditArtifact.audit_run_id == run.id,
+                AuditArtifact.is_stale.is_(False),
+            )
             .order_by(desc(AuditArtifact.created_at))
         ).all()
     )
@@ -648,10 +658,16 @@ def _build_results(db: Session, *, audit: Audit, run: AuditRun) -> AuditResultsR
         "Enable targeted monitoring recommendations for validated risk areas.",
         "Run a follow-up audit after remediation to confirm risk reduction.",
     ]
-    summary = (
-        "Audit run completed with reproducible findings and evidence-backed risk scoring. "
-        "Certification reflects current production-readiness posture and remediation priorities."
-    )
+    if run.status == AuditRunStatus.COMPLETED.value and run.certification_status != CertificationStatus.PENDING.value:
+        summary = (
+            "Audit run completed with reproducible findings and evidence-backed risk scoring. "
+            "Certification reflects current production-readiness posture and remediation priorities."
+        )
+    else:
+        summary = (
+            "Audit run is in progress or has been invalidated by a rerun. "
+            "Certification is pending until downstream stages complete."
+        )
 
     return AuditResultsRead(
         audit=audit,

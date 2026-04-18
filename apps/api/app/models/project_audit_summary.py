@@ -9,7 +9,13 @@ from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 class ProjectAuditSummary(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "project_audit_summaries"
-    __table_args__ = (UniqueConstraint("project_id", name="uq_project_audit_summaries_project_id"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "project_id",
+            name="uq_project_audit_summaries_org_project",
+        ),
+    )
 
     organization_id: Mapped[UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
     project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"), nullable=False, index=True)
