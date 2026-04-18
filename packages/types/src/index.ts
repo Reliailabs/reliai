@@ -1612,7 +1612,7 @@ export interface AiRootCauseExplanationResponse {
 }
 
 export interface AiTicketDraftRequest {
-  destination: "jira" | "github";
+  destination?: "jira" | "github";
   regenerate?: boolean;
 }
 
