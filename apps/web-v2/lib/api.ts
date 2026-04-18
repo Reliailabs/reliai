@@ -15,6 +15,7 @@ import type {
   IncidentInvestigationRead,
   IncidentListResponse,
   OrganizationAlertTargetRead,
+  OrganizationAlertTargetTestResponse,
   OrganizationMemberListResponse,
   OrganizationRead,
   OrganizationGuardrailPolicyListResponse,
@@ -221,6 +222,14 @@ export async function getProjects() {
   return request<ProjectListResponse>("/api/v1/projects");
 }
 
+export async function listProjects(options?: { organizationId?: string; limit?: number }) {
+  const params = new URLSearchParams();
+  if (options?.organizationId) params.set("organization_id", options.organizationId);
+  if (options?.limit) params.set("limit", String(options.limit));
+  const query = params.size ? `?${params.toString()}` : "";
+  return request<ProjectListResponse>(`/api/v1/projects${query}`);
+}
+
 export async function getProject(projectId: string) {
   return request<ProjectRead>(`/api/v1/projects/${projectId}`);
 }
@@ -323,6 +332,44 @@ export async function getPromptDiff(fromVersionId: string, toVersionId: string) 
 export async function getOrganizationAlertTarget(organizationId: string) {
   return request<OrganizationAlertTargetRead>(
     `/api/v1/organizations/${organizationId}/alert-target`
+  );
+}
+
+export async function upsertOrganizationAlertTarget(
+  organizationId: string,
+  data: {
+    channel_target: string;
+    slack_webhook_url?: string;
+    is_active: boolean;
+  }
+) {
+  return request<OrganizationAlertTargetRead>(
+    `/api/v1/organizations/${organizationId}/alert-target`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function enableOrganizationAlertTarget(organizationId: string) {
+  return request<OrganizationAlertTargetRead>(
+    `/api/v1/organizations/${organizationId}/alert-target/enable`,
+    { method: "POST" }
+  );
+}
+
+export async function disableOrganizationAlertTarget(organizationId: string) {
+  return request<OrganizationAlertTargetRead>(
+    `/api/v1/organizations/${organizationId}/alert-target/disable`,
+    { method: "POST" }
+  );
+}
+
+export async function testOrganizationAlertTarget(organizationId: string) {
+  return request<OrganizationAlertTargetTestResponse>(
+    `/api/v1/organizations/${organizationId}/alert-target/test`,
+    { method: "POST" }
   );
 }
 

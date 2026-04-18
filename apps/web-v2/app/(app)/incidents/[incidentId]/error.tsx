@@ -18,7 +18,7 @@ export default function IncidentError({
       <div className="max-w-md w-full rounded-lg border border-zinc-800 bg-zinc-900/60 p-8 text-center">
         <div className="text-xs uppercase tracking-[0.24em] text-zinc-500">Incident</div>
         <h2 className="mt-3 text-lg font-semibold text-zinc-100">Unable to load incident details</h2>
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-400">
           Something went wrong. Try again or return later.
         </p>
         <button

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, CircleDashed, KeyRound, Network, Radar } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/page-header";
+import { SectionLabel } from "@/components/ui/heading";
 import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
 import { createApiKey, createOrganization, createProject, getProjects, getTraces } from "@/lib/api";
 import { getOperatorSession, requireOperatorSession, switchOrganization } from "@/lib/auth";
@@ -125,7 +126,7 @@ export default async function OnboardingPage({
             <Link href="/onboarding" className={`px-3 py-1.5 text-xs rounded-md transition ${selectedPath === "choose" ? "bg-zinc-100 text-zinc-900" : "text-zinc-400 hover:text-zinc-100"}`}>Choose</Link>
             <Link href="/onboarding?path=sdk" className={`px-3 py-1.5 text-xs rounded-md transition ${selectedPath === "sdk" ? "bg-zinc-100 text-zinc-900" : "text-zinc-400 hover:text-zinc-100"}`}>SDK</Link>
             <Link href="/onboarding?path=simulation" className={`px-3 py-1.5 text-xs rounded-md transition ${selectedPath === "simulation" ? "bg-zinc-100 text-zinc-900" : "text-zinc-400 hover:text-zinc-100"}`}>Simulation</Link>
-            <Link href="/dashboard" className="px-3 py-1.5 text-xs rounded-md text-zinc-500 hover:text-zinc-300 transition">Skip</Link>
+            <Link href="/dashboard" className="px-3 py-1.5 text-xs rounded-md text-zinc-400 hover:text-zinc-300 transition">Skip</Link>
           </div>
         }
       />
@@ -150,13 +151,13 @@ export default async function OnboardingPage({
       {selectedPath === "choose" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-            <p className="text-xs uppercase tracking-widest text-zinc-500">Option 1</p>
+            <SectionLabel>Option 1</SectionLabel>
             <h2 className="mt-2 text-xl font-semibold text-zinc-100">Connect your SDK</h2>
             <p className="mt-2 text-sm text-zinc-400">Install the SDK and send traces from your own environment. This path is best when you already have traffic and want production signals immediately.</p>
             <Link href="/onboarding?path=sdk" className="mt-4 inline-flex rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200 transition">Connect SDK</Link>
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-            <p className="text-xs uppercase tracking-widest text-zinc-500">Option 2</p>
+            <SectionLabel>Option 2</SectionLabel>
             <h2 className="mt-2 text-xl font-semibold text-zinc-100">Try a guided simulation</h2>
             <p className="mt-2 text-sm text-zinc-400">See a hallucination spike — detected at 19%, root-caused to prompt v42, and fixed in 6 minutes. The same incident you saw on the homepage, live in the product.</p>
             <Link href="/onboarding?path=simulation" className="mt-4 inline-flex rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200 transition">Start simulation</Link>
@@ -169,7 +170,7 @@ export default async function OnboardingPage({
         <div className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_380px]">
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-              <p className="text-xs uppercase tracking-widest text-zinc-500">Connect your app</p>
+              <SectionLabel>Connect your app</SectionLabel>
               <h2 className="mt-3 text-2xl font-semibold text-zinc-100">Install SDK and send first traces</h2>
               <p className="mt-2 text-sm text-zinc-400">Use this setup checklist to create a workspace, issue a key, and verify ingestion.</p>
 
@@ -185,7 +186,7 @@ export default async function OnboardingPage({
                         <Icon className={`h-5 w-5 ${isDone ? "text-emerald-400" : isCurrent ? "text-zinc-400" : "text-zinc-700"}`} />
                       </div>
                       <div>
-                        <p className="text-sm text-zinc-500">Step {index + 1}</p>
+                        <p className="text-sm text-zinc-400">Step {index + 1}</p>
                         <h3 className="mt-1 text-lg font-semibold text-zinc-100">{step.label}</h3>
                         {index === 0 && !hasOrganization && (
                           <form action={createOrganizationAction} className="mt-3 space-y-2">
@@ -223,13 +224,13 @@ export default async function OnboardingPage({
             <div className="space-y-6">
               {apiKeyValue && (
                 <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-6">
-                  <p className="text-xs uppercase tracking-widest text-emerald-400">API key generated</p>
+                  <SectionLabel className="text-emerald-400">API key generated</SectionLabel>
                   <h2 className="mt-2 text-lg font-semibold text-zinc-100">API key (copy once)</h2>
                   <div className="mt-2 rounded bg-zinc-950 px-3 py-2 text-sm text-zinc-100 font-mono break-all">{apiKeyValue}</div>
                 </div>
               )}
               <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-                <p className="text-xs uppercase tracking-widest text-zinc-500">Ingest example</p>
+                <SectionLabel>Ingest example</SectionLabel>
                 <h2 className="mt-2 text-lg font-semibold text-zinc-100">Send your first trace</h2>
                 <pre className="mt-4 rounded bg-zinc-950 p-4 text-xs text-zinc-300 overflow-x-auto font-mono">{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
   -H "x-api-key: ${apiKeyValue ?? "reliai_..."}" \\
@@ -242,9 +243,9 @@ export default async function OnboardingPage({
 
           {/* Organization section - always visible at bottom */}
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-4">
-            <p className="text-xs uppercase tracking-widest text-zinc-500">Organization</p>
+            <SectionLabel>Organization</SectionLabel>
             <p className="mt-2 text-sm text-zinc-400">Active: <span className="font-medium text-zinc-100">{activeOrgName}</span></p>
-            <p className="mt-2 text-sm text-zinc-500">{hasOrganization ? "You can create another organization at any time." : "Create your first organization to start."}</p>
+            <p className="mt-2 text-sm text-zinc-400">{hasOrganization ? "You can create another organization at any time." : "Create your first organization to start."}</p>
             <form action={createOrganizationAction} className="mt-4 grid gap-3 md:grid-cols-2">
               <div>
                 <label className="block text-xs text-zinc-500 mb-1">Organization name</label>
@@ -254,8 +255,16 @@ export default async function OnboardingPage({
                 <label className="block text-xs text-zinc-500 mb-1">Slug</label>
                 <input name="slug" defaultValue={defaultSlug} className="h-11 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100" />
               </div>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 flex flex-wrap gap-2">
                 <button type="submit" className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200 transition">{hasOrganization ? "Create another organization" : "Create organization"}</button>
+                <Link href="/organization/settings" className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition">Manage organizations</Link>
+                {hasProject && (
+                  <Link href={`/projects/${primaryProject?.id}/settings`} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition">Edit project</Link>
+                )}
+                {!hasProject && hasOrganization && (
+                  <Link href="/projects" className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition">View projects</Link>
+                )}
+                <Link href="/onboarding?path=simulation" className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition">Run simulation instead</Link>
               </div>
             </form>
           </div>
@@ -268,7 +277,7 @@ export default async function OnboardingPage({
           <OnboardingSimulationRunner defaultProjectName="onboarding-simulation" autoStart />
         ) : (
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-            <p className="text-xs uppercase tracking-widest text-zinc-500">Guided simulation</p>
+            <SectionLabel>Guided simulation</SectionLabel>
             <h2 className="mt-2 text-xl font-semibold text-zinc-100">See your first AI incident in under 2 minutes</h2>
             <p className="mt-2 text-sm text-zinc-400">We simulate a realistic failure, open an incident automatically, and walk you through root cause and resolution impact.</p>
             <div className="mt-4 grid gap-2 text-sm text-zinc-400">
