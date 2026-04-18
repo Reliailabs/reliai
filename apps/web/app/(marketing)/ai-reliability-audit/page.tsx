@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import {
-  Activity,
   AlertTriangle,
   ArrowRight,
   LineChart,
   Radar,
-  ShieldCheck,
   Signal,
   Wrench,
 } from "lucide-react";
@@ -83,21 +81,26 @@ const deliverables = [
   },
 ];
 
-const steps = [
+const auditStages = [
   {
-    title: "Instrument",
-    body: "Instrument your AI workflows so the critical paths, handoffs, and failure surfaces are visible.",
-    icon: Activity,
+    title: "Scope Analysis",
+    body: "We map your AI system, use cases, and highest-risk failure surfaces.",
   },
   {
-    title: "Analyze",
-    body: "Review real traces to identify concrete failure modes and understand where risk is accumulating.",
-    icon: Radar,
+    title: "Reliability Testing",
+    body: "We stress-test prompts, workflows, and outputs for failures in realistic conditions.",
   },
   {
-    title: "Harden",
-    body: "Implement guardrails and alerts to reduce the risk of user-facing AI incidents.",
-    icon: ShieldCheck,
+    title: "Findings Validation",
+    body: "We verify each issue to remove noise and confirm reproducible risk.",
+  },
+  {
+    title: "Risk Review",
+    body: "We assess system-wide reliability patterns and prioritize the highest-impact concerns.",
+  },
+  {
+    title: "Certification Decision",
+    body: "We issue a clear production readiness outcome with remediation guidance.",
   },
 ];
 
@@ -188,6 +191,31 @@ export default function AiReliabilityAuditPage() {
       </section>
 
       <section className={`${marketingContainerClass} ${marketingSectionClass}`}>
+        <div className="rounded-[28px] border border-zinc-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.36em] text-secondary">How the Reliai Audit Works</p>
+              <h2 className="mt-4 text-3xl font-semibold text-primary">
+                Identify failures, validate evidence, and harden before production.
+              </h2>
+            </div>
+            <p className="max-w-md text-sm leading-7 text-secondary">
+              A five-stage audit workflow built for decision-ready reliability and certification outcomes.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-5 md:grid-cols-5">
+            {auditStages.map((stage, index) => (
+              <div key={stage.title} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+                <p className="text-xs uppercase tracking-[0.32em] text-secondary">Stage {index + 1}</p>
+                <h3 className="mt-3 text-lg font-semibold text-primary">{stage.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-secondary">{stage.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className={`${marketingContainerClass} ${marketingSectionClass}`}>
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
             <p className="text-xs uppercase tracking-[0.36em] text-secondary">The risk</p>
@@ -243,32 +271,6 @@ export default function AiReliabilityAuditPage() {
         <p className="mt-6 text-sm font-semibold text-primary">
           This is not a report. It’s a working system with guardrails in place.
         </p>
-      </section>
-
-      <section className={`${marketingContainerClass} ${marketingSectionClass}`}>
-        <div className="rounded-[28px] border border-zinc-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.36em] text-secondary">How it works</p>
-              <h2 className="mt-4 text-3xl font-semibold text-primary">Instrument. Analyze. Harden.</h2>
-            </div>
-            <p className="max-w-md text-sm leading-7 text-secondary">
-              A focused 3-step engagement designed to surface risk quickly and harden what matters most.
-            </p>
-          </div>
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {steps.map((step, index) => (
-              <div key={step.title} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.32em] text-secondary">
-                  <span>Step {index + 1}</span>
-                  <step.icon className="h-4 w-4 text-primary" />
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-primary">{step.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-secondary">{step.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
       <section className={`${marketingContainerClass} ${marketingSectionClass}`}>

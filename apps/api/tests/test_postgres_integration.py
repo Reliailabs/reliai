@@ -8,7 +8,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect as sa_inspect, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -179,6 +179,85 @@ def _run_signal_pipeline(postgres_session: Session, trace_id: str) -> None:
             detected_at=trace.timestamp,
         )
     postgres_session.commit()
+
+
+def test_postgres_migration_head_includes_audit_domain_tables_and_crud(
+    postgres_client: TestClient,
+    postgres_session: Session,
+):
+    inspector = sa_inspect(postgres_session.bind)
+    tables = set(inspector.get_table_names())
+    assert "audits" in tables
+    assert "audit_runs" in tables
+    assert "audit_stages" in tables
+    assert "audit_findings" in tables
+    assert "audit_artifacts" in tables
+    assert "audit_finding_traces" in tables
+    assert "audit_finding_incidents" in tables
+    assert "project_audit_summaries" in tables
+    project_summary_uniques = inspector.get_unique_constraints("project_audit_summaries")
+    unique_columns = {tuple(item.get("column_names", [])) for item in project_summary_uniques}
+    assert ("organization_id", "project_id") in unique_columns
+
+    owner = create_operator_user(
+        postgres_session,
+        email="audit-postgres-owner@acme.test",
+        password="reliai-test-password",
+    )
+    postgres_session.commit()
+    postgres_session.refresh(owner)
+    owner_session = _sign_in(postgres_client, email=owner.email)
+    organization = _create_organization(
+        postgres_client,
+        owner_session,
+        name="Audit Pg Org",
+        slug="audit-pg-org",
+    )
+    project = _create_project(postgres_client, owner_session, organization["id"])
+
+    create_response = postgres_client.post(
+        "/api/v1/audits",
+        headers=_auth_headers(owner_session),
+        json={
+            "name": "PG Migration Audit",
+            "target_system_name": "PG Support Copilot",
+            "company_name": "Acme",
+            "audit_type": "production_readiness",
+            "policy_profile": "production_readiness",
+            "description": "Postgres migration smoke audit",
+            "use_cases": ["support"],
+            "workflow_summary": "chat->tool",
+            "endpoints_notes": "POST /assist",
+            "risk_focus_areas": ["hallucination"],
+            "project_id": project["id"],
+            "environment": "production",
+            "linked_production_enabled": True,
+            "evidence_window_days": 14,
+            "include_incidents": True,
+            "include_trace_samples": True,
+            "include_guardrail_violations": True,
+            "include_regressions": True,
+            "include_model_changes": True,
+        },
+    )
+    assert create_response.status_code == 201, create_response.text
+    payload = create_response.json()
+    assert payload["audit"]["id"]
+    assert payload["run"]["id"]
+
+    detail_response = postgres_client.get(
+        f"/api/v1/audits/{payload['audit']['id']}",
+        headers=_auth_headers(owner_session),
+    )
+    assert detail_response.status_code == 200
+
+    start_response = postgres_client.post(
+        f"/api/v1/audits/{payload['audit']['id']}/runs/{payload['run']['id']}/start",
+        headers=_auth_headers(owner_session),
+    )
+    assert start_response.status_code == 200
+    started = start_response.json()
+    assert started["run"]["production_snapshot_metadata"] is not None
 
 
 def test_postgres_migrations_auth_and_trace_queries(

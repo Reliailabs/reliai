@@ -1776,3 +1776,239 @@ export interface LimitStatus {
 export interface LimitStatusResponse {
   limits: LimitStatus[];
 }
+
+export type AuditStatus = "draft" | "active" | "completed" | "archived" | "failed";
+export type AuditRunStatus = "queued" | "running" | "needs_review" | "completed" | "failed";
+export type AuditStageStatus = "not_started" | "queued" | "running" | "completed" | "failed";
+export type CertificationStatus = "pending" | "pass" | "fail" | "conditional";
+export type AuditSeverity = "low" | "medium" | "high" | "critical";
+export type OriginSource = "manual" | "production_signal" | "audit_test" | "hybrid";
+export type AuditRiskLevel = "low" | "moderate" | "high" | "critical";
+export type AuditType =
+  | "production_readiness"
+  | "hallucination_reliability"
+  | "guardrails_safety"
+  | "compliance_governance"
+  | "custom";
+export type PolicyProfile = AuditType;
+export type AuditStageKey = "scoping" | "testing" | "validation" | "review" | "certification";
+
+export interface AuditRead {
+  id: string;
+  organization_id: string;
+  name: string;
+  target_system_name: string;
+  company_name: string | null;
+  audit_type: AuditType;
+  policy_profile: PolicyProfile;
+  description: string | null;
+  use_cases: string[] | null;
+  workflow_summary: string | null;
+  endpoints_notes: string | null;
+  risk_focus_areas: string[] | null;
+  status: AuditStatus;
+  project_id: string | null;
+  environment: string | null;
+  linked_production_enabled: boolean;
+  evidence_window_days: number;
+  include_incidents: boolean;
+  include_trace_samples: boolean;
+  include_guardrail_violations: boolean;
+  include_regressions: boolean;
+  include_model_changes: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductionSnapshotMetadata {
+  evidenceWindow: {
+    days: number;
+    start: string;
+    end: string;
+  };
+  incidentSummary: {
+    count: number;
+    criticalCount: number;
+  };
+  traceSampleSummary: {
+    sampleCount: number;
+    services: string[];
+  };
+  guardrailViolationSummary: {
+    count: number;
+  };
+  regressionSummary: {
+    count: number;
+  };
+  modelChangeSummary: {
+    count: number;
+    models: Array<{
+      provider: string | null;
+      modelName: string | null;
+      modelVersion: string | null;
+      deployedAt: string | null;
+    }>;
+  };
+  topRiskySurfaces: string[];
+}
+
+export interface AuditRunRead {
+  id: string;
+  audit_id: string;
+  organization_id: string;
+  status: AuditRunStatus;
+  current_stage_key: AuditStageKey;
+  risk_score: number | null;
+  certification_status: CertificationStatus;
+  certification_effective_at: string | null;
+  evidence_window_start: string | null;
+  evidence_window_end: string | null;
+  production_snapshot_metadata: ProductionSnapshotMetadata | null;
+  snapshot_description: string | null;
+  snapshot_use_cases: string[] | null;
+  snapshot_workflow_summary: string | null;
+  snapshot_endpoints_notes: string | null;
+  snapshot_risk_focus_areas: string[] | null;
+  snapshot_target_system_name: string | null;
+  snapshot_environment: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditStageRead {
+  id: string;
+  audit_run_id: string;
+  organization_id: string;
+  internal_stage_key: string;
+  stage_key: AuditStageKey;
+  stage_label: string;
+  stage_order: number;
+  status: AuditStageStatus;
+  summary: string | null;
+  output_metadata: Record<string, unknown> | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditFindingRead {
+  id: string;
+  audit_run_id: string;
+  organization_id: string;
+  title: string;
+  category: string;
+  severity: AuditSeverity;
+  summary: string;
+  evidence: string | null;
+  repro_steps: string[] | null;
+  confidence: number | null;
+  status: "open" | "resolved" | "accepted_risk";
+  origin_source: OriginSource;
+  source_stage_key: string | null;
+  evidence_type: string | null;
+  evidence_ref: string | null;
+  finding_fingerprint: string | null;
+  is_validated: boolean;
+  validated_at: string | null;
+  monitoring_recommended: boolean;
+  certification_blocking: boolean;
+  recommended_monitor_type: string | null;
+  recommended_scope: string | null;
+  recommended_threshold_hint: string | null;
+  is_stale: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditArtifactRead {
+  id: string;
+  audit_run_id: string;
+  organization_id: string;
+  artifact_type: string;
+  title: string;
+  storage_ref: string | null;
+  metadata_json: Record<string, unknown> | null;
+  is_stale: boolean;
+  created_at: string;
+}
+
+export interface AuditFindingsSummary {
+  total: number;
+  validated: number;
+  critical_open: number;
+  blocking_open: number;
+  severity_counts: Record<string, number>;
+}
+
+export interface AuditListItemRead {
+  audit: AuditRead;
+  latest_run: AuditRunRead | null;
+  latest_run_stages: AuditStageRead[];
+}
+
+export interface AuditListResponse {
+  items: AuditListItemRead[];
+}
+
+export interface AuditRunListResponse {
+  items: AuditRunRead[];
+}
+
+export interface AuditActionResponse {
+  audit: AuditRead;
+  run: AuditRunRead;
+  stages: AuditStageRead[];
+}
+
+export interface MonitoringRecommendationRead {
+  id: string;
+  finding_id: string;
+  recommendation_type: string;
+  scope: string | null;
+  threshold_hint: string | null;
+  reason: string;
+}
+
+export interface AuditResultsRead {
+  audit: AuditRead;
+  run: AuditRunRead;
+  stages: AuditStageRead[];
+  findings: AuditFindingRead[];
+  findings_summary: AuditFindingsSummary;
+  artifacts: AuditArtifactRead[];
+  top_risks: string[];
+  summary: string;
+  recommended_actions: string[];
+  monitoring_recommendations: MonitoringRecommendationRead[];
+}
+
+export interface AuditDetailResponse {
+  audit: AuditRead;
+  latest_run: AuditRunRead | null;
+  stages: AuditStageRead[];
+  findings_summary: AuditFindingsSummary;
+  artifacts: AuditArtifactRead[];
+  linked_production_context: ProductionSnapshotMetadata | null;
+}
+
+export interface ProjectAuditSummaryRead {
+  project_id: string;
+  organization_id: string;
+  latest_audit_id: string | null;
+  latest_audit_run_id: string | null;
+  certification_status: CertificationStatus;
+  audit_risk_score: number | null;
+  audit_risk_level: AuditRiskLevel | null;
+  open_critical_findings_count: number;
+  open_blocking_findings_count: number;
+  latest_audit_completed_at: string | null;
+  certification_at_risk: boolean;
+  certification_risk_reason: string | null;
+}
+
+export interface ProjectMonitoringRecommendationListResponse {
+  items: MonitoringRecommendationRead[];
+}

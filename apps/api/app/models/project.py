@@ -58,3 +58,5 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         "ReliabilityRecommendation",
         back_populates="project",
     )
+    audits = relationship("Audit", back_populates="project")
+    audit_summary = relationship("ProjectAuditSummary", uselist=False, back_populates="project")
