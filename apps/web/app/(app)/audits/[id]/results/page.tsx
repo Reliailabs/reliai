@@ -16,6 +16,25 @@ function prettyLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 
+function stageLabel(stageKey: string | null) {
+  if (!stageKey) return "—";
+  if (stageKey === "scoping") return "Scoping";
+  if (stageKey === "testing") return "Testing";
+  if (stageKey === "validation") return "Validation";
+  if (stageKey === "review") return "Review";
+  if (stageKey === "certification") return "Certification";
+  return prettyLabel(stageKey);
+}
+
+function evidenceRefLabel(ref: string | null) {
+  if (!ref) return "—";
+  if (ref.startsWith("topRiskySurfaces")) return "Top risky surfaces";
+  if (ref === "traceSampleSummary") return "Trace sample summary";
+  if (ref === "guardrailViolationSummary") return "Guardrail violation summary";
+  if (ref === "regressionSummary") return "Regression summary";
+  return prettyLabel(ref);
+}
+
 export default async function AuditResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const results = await getAuditResults(id).catch(() => null);
@@ -28,7 +47,7 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
     );
   }
 
-  const blockers = results.findings.filter((item) => item.certification_blocking && item.status === "open");
+  const narrative = results.report_narrative;
 
   return (
     <div className="space-y-6">
@@ -59,30 +78,31 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-line bg-white p-3 text-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-secondary">Decision</p>
-              <p className="mt-1 font-semibold text-primary">{prettyLabel(results.run.certification_status)}</p>
+              <p className="mt-1 font-semibold text-primary">{prettyLabel(narrative.decision)}</p>
             </div>
             <div className="rounded-lg border border-line bg-white p-3 text-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-secondary">Risk score</p>
-              <p className="mt-1 font-semibold text-primary">{results.run.risk_score ?? "—"} ({riskLevel(results.run.risk_score)})</p>
+              <p className="mt-1 font-semibold text-primary">{results.run.risk_score ?? "—"} ({narrative.risk_level})</p>
             </div>
           </div>
           <div className="mt-3 rounded-lg border border-line bg-white p-3 text-sm text-secondary">
             <p className="text-xs uppercase tracking-[0.18em] text-secondary">Blockers</p>
-            <p className="mt-1 text-primary">{blockers.length === 0 ? "No open certification blockers." : `${blockers.length} open blocker(s) require remediation.`}</p>
+            <p className="mt-1 text-primary">{narrative.blocker_status}</p>
           </div>
-          <p className="mt-4 text-sm text-secondary">{results.summary}</p>
+          <div className="mt-3 rounded-lg border border-line bg-white p-3 text-sm text-secondary">
+            <p className="text-xs uppercase tracking-[0.18em] text-secondary">Required Remediation</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5">
+              {narrative.required_remediation.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <p className="mt-4 text-sm text-secondary">{narrative.summary}</p>
+          <p className="mt-2 text-sm font-medium text-primary">Next action: {narrative.required_next_action}</p>
           <div className="mt-4 text-sm text-secondary">
             <p className="font-medium text-primary">Top risks</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {results.top_risks.length === 0 ? <li>No high-impact risks reported.</li> : results.top_risks.map((risk) => <li key={risk}>{risk}</li>)}
-            </ul>
-          </div>
-          <div className="mt-4 text-sm text-secondary">
-            <p className="font-medium text-primary">Recommended next actions</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              {results.recommended_actions.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
             </ul>
           </div>
         </Card>
@@ -116,6 +136,7 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
           <p>Guardrail violations: {String(results.run.production_snapshot_metadata?.guardrailViolationSummary?.count ?? 0)}</p>
           <p>Regressions: {String(results.run.production_snapshot_metadata?.regressionSummary?.count ?? 0)}</p>
           <p>Trace samples: {String(results.run.production_snapshot_metadata?.traceSampleSummary?.sampleCount ?? 0)}</p>
+          <p>Narrative evidence impact: {narrative.evidence_impact_summary}</p>
         </div>
       </Card>
 
@@ -130,8 +151,8 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
                 <th className="px-2 py-1">Severity</th>
                 <th className="px-2 py-1">Validated</th>
                 <th className="px-2 py-1">Confidence</th>
-                <th className="px-2 py-1">Evidence ref</th>
-                <th className="px-2 py-1">Source stage</th>
+                <th className="px-2 py-1">Evidence Source</th>
+                <th className="px-2 py-1">Audit Stage</th>
               </tr>
             </thead>
             <tbody>
@@ -148,8 +169,8 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
                   <td className="px-2 py-2 align-top">{finding.severity}</td>
                   <td className="px-2 py-2 align-top">{finding.is_validated ? "yes" : "no"}</td>
                   <td className="px-2 py-2 align-top">{finding.confidence ?? "—"}</td>
-                  <td className="px-2 py-2 align-top">{finding.evidence_ref ?? "—"}</td>
-                  <td className="px-2 py-2 align-top">{finding.source_stage_key ?? finding.origin_source}</td>
+                  <td className="px-2 py-2 align-top">{evidenceRefLabel(finding.evidence_ref)}</td>
+                  <td className="px-2 py-2 align-top">{stageLabel(finding.source_stage_key)}</td>
                 </tr>
               ))}
             </tbody>
@@ -161,7 +182,7 @@ export default async function AuditResultsPage({ params }: { params: Promise<{ i
         <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Certification</h2>
         <p className="mt-3 text-sm text-secondary">Final decision: <span className="font-semibold text-primary">{prettyLabel(results.run.certification_status)}</span></p>
         <p className="mt-2 text-sm text-secondary">Blockers: {results.findings_summary.blocking_open}</p>
-        <p className="mt-2 text-sm text-secondary">Required remediation: close blocker findings, confirm evidence updates, and rerun certification.</p>
+        <p className="mt-2 text-sm text-secondary">Decision basis: {narrative.blocker_status}</p>
       </Card>
 
       <Card className="rounded-2xl border-line bg-surface p-6">

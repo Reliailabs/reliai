@@ -55,6 +55,18 @@ function stageBadge(status: string) {
   return "bg-zinc-50 text-zinc-600 border-zinc-200";
 }
 
+function formatCompactDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export default async function AuditDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const detail = await getAudit(id).catch(() => null);
@@ -69,6 +81,8 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
 
   const latestRun = detail.latest_run;
   const findings = detail.findings_summary;
+  const previousRuns = detail.recent_runs.slice(0, 6);
+  const latestCompletedRunId = detail.recent_runs.find((run) => run.status === "completed")?.id;
 
   return (
     <div className="space-y-6">
@@ -127,8 +141,8 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
                 </div>
                 <p className="mt-2 text-xs text-secondary">{stage.summary || "No output yet."}</p>
                 <p className="mt-2 text-[11px] text-secondary">
-                  {stage.started_at ? `Started ${new Date(stage.started_at).toLocaleString()}` : "Not started"}
-                  {stage.completed_at ? ` · Completed ${new Date(stage.completed_at).toLocaleString()}` : ""}
+                  {stage.started_at ? `Started ${formatCompactDateTime(stage.started_at)}` : "Not started"}
+                  {stage.completed_at ? ` · Completed ${formatCompactDateTime(stage.completed_at)}` : ""}
                 </p>
                 {latestRun && stage.status !== "not_started" ? (
                   <form action={actionHandler} className="mt-3">
@@ -160,6 +174,46 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
           ) : null}
         </Card>
       </div>
+
+      <Card className="rounded-2xl border-line bg-surface p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-secondary">Previous Runs</h2>
+        {previousRuns.length === 0 ? (
+          <p className="mt-3 text-sm text-secondary">No previous runs yet.</p>
+        ) : (
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {previousRuns.map((run) => (
+              <div key={run.id} className="rounded-lg border border-line bg-white p-3 text-xs text-secondary">
+                <p className="font-medium text-primary">Created {formatCompactDateTime(run.created_at)}</p>
+                <p className="mt-1">Completed {formatCompactDateTime(run.completed_at)}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-line bg-surface px-2 py-0.5">
+                    run {run.status.replaceAll("_", " ")}
+                  </span>
+                  <span className="rounded-full border border-line bg-surface px-2 py-0.5">
+                    cert {run.certification_status.replaceAll("_", " ")}
+                  </span>
+                  {run.id === latestRun?.id ? (
+                    <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-blue-700">
+                      current run
+                    </span>
+                  ) : null}
+                  {run.id === latestCompletedRunId ? (
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-700">
+                      latest completed
+                    </span>
+                  ) : null}
+                  {run.status === "queued" || run.status === "running" || run.status === "needs_review" ? (
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700">
+                      in progress
+                    </span>
+                  ) : null}
+                </div>
+                <p>Risk score: <span className="font-semibold text-primary">{run.risk_score ?? "—"}</span></p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="rounded-2xl border-line bg-surface p-6">
