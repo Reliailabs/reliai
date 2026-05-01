@@ -1,0 +1,447 @@
+import {
+  BarChart3,
+  Building2,
+  Bug,
+  ShieldAlert,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+
+import { Card } from "@/components/ui/card";
+import { SectionHeading, SectionLabel } from "@/components/ui/heading";
+import { Stat } from "@/components/ui/stat";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
+import { getSystemCustomerExpansion, getSystemGrowth } from "@/lib/api";
+
+function compactNumber(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: value >= 1_000_000 ? 1 : 0,
+  }).format(value);
+}
+
+function signedPercent(value: number) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value}%`;
+}
+
+function growthTone(value: number) {
+  if (value > 0) return "text-emerald-400";
+  if (value < 0) return "text-red-400";
+  return "text-zinc-500";
+}
+
+function maxPoint(points: { count: number }[]) {
+  return Math.max(...points.map((point) => point.count), 1);
+}
+
+function maxNumber(values: number[]) {
+  return Math.max(...values, 1);
+}
+
+function CohortChart({
+  points,
+}: {
+  points: Array<{ month_index: number; usage_index: number; organizations: number }>;
+}) {
+  const width = 680;
+  const height = 220;
+  const paddingX = 28;
+  const paddingTop = 18;
+  const paddingBottom = 34;
+  const chartWidth = width - paddingX * 2;
+  const chartHeight = height - paddingTop - paddingBottom;
+  const maxUsage = maxNumber(points.map((point) => point.usage_index));
+  const polyline = points
+    .map((point, index) => {
+      const x = paddingX + (index / Math.max(points.length - 1, 1)) * chartWidth;
+      const y = paddingTop + chartHeight - (point.usage_index / maxUsage) * chartHeight;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-56 w-full" role="img" aria-label="Usage expansion by cohort">
+        {[0, 0.5, 1].map((ratio) => {
+          const y = paddingTop + chartHeight * ratio;
+          return (
+            <line
+              key={ratio}
+              x1={paddingX}
+              x2={width - paddingX}
+              y1={y}
+              y2={y}
+              stroke="rgba(148,163,184,0.35)"
+              strokeDasharray="4 6"
+            />
+          );
+        })}
+        <polyline
+          fill="none"
+          stroke="#0f172a"
+          strokeWidth="4"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          points={polyline}
+        />
+        {points.map((point, index) => {
+          const x = paddingX + (index / Math.max(points.length - 1, 1)) * chartWidth;
+          const y = paddingTop + chartHeight - (point.usage_index / maxUsage) * chartHeight;
+          return (
+            <g key={point.month_index}>
+              <circle cx={x} cy={y} r="4.5" fill="#0f172a" />
+              <text x={x} y={height - 10} textAnchor="middle" className="fill-slate-500 text-[10px] font-medium">
+                M{point.month_index}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="mt-4 flex flex-wrap gap-3">
+        {points.filter((point) => point.organizations > 0).slice(0, 4).map((point) => (
+          <div key={point.month_index} className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400">
+            <span className="font-mono text-zinc-100">{point.usage_index.toFixed(1)}x</span> at month {point.month_index}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DistributionChart({
+  points,
+}: {
+  points: Array<{ rank: number; organization_id: string; organization_name: string; traces_30d: number }>;
+}) {
+  const topPoints = points.slice(0, 12);
+  const maxTraces = maxNumber(topPoints.map((point) => point.traces_30d));
+
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+      <div className="grid h-56 grid-cols-12 items-end gap-3">
+        {topPoints.map((point, index) => (
+          <div key={point.organization_id} className="flex h-full flex-col justify-end gap-3">
+            <div className="text-center text-[11px] font-medium text-zinc-100">{compactNumber(point.traces_30d)}</div>
+            <div
+              className={`rounded-t-[16px] ${
+                index < 3
+                  ? "bg-[linear-gradient(180deg,#0f172a,#334155)]"
+                  : "bg-[linear-gradient(180deg,rgba(71,85,105,0.7),rgba(148,163,184,0.95))]"
+              }`}
+              style={{ height: `${Math.max((point.traces_30d / maxTraces) * 100, point.traces_30d > 0 ? 8 : 0)}%` }}
+            />
+            <div className="text-center text-[10px] uppercase tracking-[0.16em] text-zinc-400">#{point.rank}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-2 md:grid-cols-2">
+        {topPoints.slice(0, 6).map((point) => (
+          <div key={point.organization_id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
+            <span className="truncate pr-3 text-sm text-zinc-100">{point.organization_name}</span>
+            <span className="font-mono text-sm text-zinc-400">{compactNumber(point.traces_30d)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UsageBar({
+  label,
+  count,
+  max,
+}: {
+  label: string;
+  count: number;
+  max: number;
+}) {
+  const width = `${Math.max((count / Math.max(max, 1)) * 100, count > 0 ? 8 : 0)}%`;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <span className="text-zinc-400">{label}</span>
+        <span className="font-medium text-zinc-100">{count}</span>
+      </div>
+      <div className="h-2 rounded-full bg-zinc-800">
+        <div
+          className="h-2 rounded-full bg-[linear-gradient(90deg,#0f172a,#334155)]"
+          style={{ width }}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default async function SystemGrowthPage() {
+  const [growth, expansion] = await Promise.all([getSystemGrowth(), getSystemCustomerExpansion()]);
+  const traceMax = maxPoint(growth.trace_volume.daily_points);
+  const incidentMax = maxPoint(growth.incident_metrics.daily_points);
+  const tierMax = Math.max(
+    growth.usage_tiers.under_1m,
+    growth.usage_tiers["1m_10m"],
+    growth.usage_tiers["10m_100m"],
+    growth.usage_tiers["100m_plus"],
+    1,
+  );
+
+  return (
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="System growth"
+        title="Internal warehouse growth readout"
+        description="Operator-facing internal dashboard for trace volume expansion, incident capture, guardrail intervention load, and active project usage tiers."
+        backHref="/pulse"
+        backLabel="Back to dashboard"
+        right={
+          <div className="rounded-full border border-zinc-800 bg-zinc-900/85 px-5 py-3 text-sm font-semibold text-zinc-100 shadow-sm backdrop-blur">
+            Warehouse-derived system metrics
+          </div>
+        }
+      />
+
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <TrendingUp className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Trace volume</p>
+          </div>
+          <Stat variant="xl">{compactNumber(growth.trace_volume.today)}</Stat>
+          <p className="mt-2 text-sm text-zinc-400">Traces observed today across the warehouse.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <BarChart3 className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">7d baseline</p>
+          </div>
+          <Stat variant="xl">{compactNumber(growth.trace_volume.seven_day_avg)}</Stat>
+          <p className="mt-2 text-sm text-zinc-400">Average daily volume over the previous seven full UTC days.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Bug className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Incident capture</p>
+          </div>
+          <Stat variant="xl">{growth.incident_metrics.incidents_detected}</Stat>
+          <p className="mt-2 text-sm text-zinc-400">Incidents detected in the last seven UTC days.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Guardrail actions</p>
+          </div>
+          <Stat variant="xl">
+            {growth.guardrail_metrics.retries + growth.guardrail_metrics.fallbacks + growth.guardrail_metrics.blocks}
+          </Stat>
+          <p className="mt-2 text-sm text-zinc-400">Runtime interventions recorded over the same seven-day window.</p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <SectionLabel>Usage expansion by cohort</SectionLabel>
+              <SectionHeading>Does usage compound after onboarding?</SectionHeading>
+            </div>
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">Month 0 baseline</p>
+              <Stat className="mt-2 font-mono">1.0x</Stat>
+            </div>
+          </div>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
+            Monthly cohort curve normalized to each organization&apos;s first eligible month. Rising values indicate usage expansion after onboarding.
+          </p>
+          <div className="mt-6">
+            <CohortChart points={growth.usage_expansion_cohort} />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <SectionLabel>Customer usage distribution</SectionLabel>
+              <SectionHeading>Is a power-law forming?</SectionHeading>
+            </div>
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">Coverage</p>
+              <Stat className="mt-2 font-mono">Top 50</Stat>
+            </div>
+          </div>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">
+            Thirty-day trace volume by organization, sorted descending. Steep curves highlight breakout customers and enterprise concentration.
+          </p>
+          <div className="mt-6">
+            <DistributionChart points={growth.customer_usage_distribution} />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+        <Card className="p-6">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="h-5 w-5 text-zinc-400" />
+            <div>
+              <SectionLabel>Platform expansion metrics</SectionLabel>
+              <SectionHeading>Usage growth signals</SectionHeading>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+              <SectionLabel>Median expansion</SectionLabel>
+              <Stat variant="xl">{growth.expansion_metrics.median_expansion_ratio.toFixed(1)}x</Stat>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+              <SectionLabel>Top expansion</SectionLabel>
+              <Stat variant="xl">{growth.expansion_metrics.top_expansion_ratio.toFixed(1)}x</Stat>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+              <SectionLabel>Breakout accounts</SectionLabel>
+              <Stat variant="xl">{growth.expansion_metrics.breakout_accounts_detected}</Stat>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-4">
+              <SectionLabel>Telemetry (30d)</SectionLabel>
+              <Stat variant="xl">{compactNumber(growth.expansion_metrics.total_telemetry_30d)}</Stat>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center gap-3">
+            <Building2 className="h-5 w-5 text-zinc-400" />
+            <div>
+              <SectionLabel>Top expanding customers</SectionLabel>
+              <SectionHeading>Who is breaking out</SectionHeading>
+            </div>
+          </div>
+          <div className="mt-6 space-y-3">
+            {expansion.organizations.slice(0, 5).map((organization) => (
+              <div key={organization.organization_id} className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-zinc-100">{organization.organization_name}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-zinc-400">
+                    {compactNumber(organization.current_30_day_volume)} traces / 30d
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-zinc-100">{organization.expansion_ratio.toFixed(1)}x</p>
+                  <p className={`text-xs uppercase tracking-[0.16em] ${organization.breakout ? "text-amber-400" : "text-zinc-400"}`}>
+                    {organization.breakout ? "Breakout" : "Growing"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <div className="grid gap-6">
+          <Card className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <SectionLabel>Trace volume chart</SectionLabel>
+                <SectionHeading className="mt-2">Daily warehouse throughput</SectionHeading>
+              </div>
+              <p className={`text-sm font-semibold ${growthTone(growth.trace_volume.growth_pct)}`}>
+                {signedPercent(growth.trace_volume.growth_pct)} vs 7d baseline
+              </p>
+            </div>
+            <div className="mt-8 grid h-64 grid-cols-7 items-end gap-3">
+              {growth.trace_volume.daily_points.map((point, index) => (
+                <div key={point.date} className="flex h-full flex-col justify-end gap-3">
+                  <div className="text-center text-xs font-medium text-zinc-100">{compactNumber(point.count)}</div>
+                  <div
+                    className={`rounded-t-[18px] ${
+                      index === growth.trace_volume.daily_points.length - 1
+                        ? "bg-[linear-gradient(180deg,#0f172a,#334155)]"
+                        : "bg-zinc-300"
+                    }`}
+                    style={{ height: `${Math.max((point.count / traceMax) * 100, point.count > 0 ? 8 : 0)}%` }}
+                  />
+                  <div className="text-center text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+                    {new Date(`${point.date}T00:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <SectionLabel>Incident detection chart</SectionLabel>
+                <SectionHeading className="mt-2">Recent incident intake</SectionHeading>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-zinc-400">Average MTTR</p>
+                <p className="text-lg font-semibold text-zinc-100">{growth.incident_metrics.avg_mttr_minutes} min</p>
+              </div>
+            </div>
+            <div className="mt-8 grid h-56 grid-cols-7 items-end gap-3">
+              {growth.incident_metrics.daily_points.map((point) => (
+                <div key={point.date} className="flex h-full flex-col justify-end gap-3">
+                  <div className="text-center text-xs font-medium text-zinc-100">{point.count}</div>
+                  <div
+                    className="rounded-t-[16px] bg-[linear-gradient(180deg,rgba(180,83,9,0.75),rgba(120,53,15,0.95))]"
+                    style={{ height: `${Math.max((point.count / incidentMax) * 100, point.count > 0 ? 10 : 0)}%` }}
+                  />
+                  <div className="text-center text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+                    {new Date(`${point.date}T00:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card className="p-6">
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="h-5 w-5 text-zinc-400" />
+              <div>
+                <SectionLabel>Guardrail interventions</SectionLabel>
+                <SectionHeading className="mt-2">Protection load</SectionHeading>
+              </div>
+            </div>
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
+                <span className="text-sm text-zinc-400">Retries</span>
+                <span className="text-sm font-medium text-zinc-100">{growth.guardrail_metrics.retries}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
+                <span className="text-sm text-zinc-400">Fallbacks</span>
+                <span className="text-sm font-medium text-zinc-100">{growth.guardrail_metrics.fallbacks}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
+                <span className="text-sm text-zinc-400">Blocks</span>
+                <span className="text-sm font-medium text-zinc-100">{growth.guardrail_metrics.blocks}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-zinc-400" />
+              <div>
+                <SectionLabel>Customer usage tiers</SectionLabel>
+                <SectionHeading className="mt-2">30-day project distribution</SectionHeading>
+              </div>
+            </div>
+            <div className="mt-6 space-y-5">
+              <UsageBar label="Under 1M traces" count={growth.usage_tiers.under_1m} max={tierMax} />
+              <UsageBar label="1M to 10M traces" count={growth.usage_tiers["1m_10m"]} max={tierMax} />
+              <UsageBar label="10M to 100M traces" count={growth.usage_tiers["10m_100m"]} max={tierMax} />
+              <UsageBar label="100M+ traces" count={growth.usage_tiers["100m_plus"]} max={tierMax} />
+            </div>
+            <p className="mt-5 text-sm leading-6 text-zinc-400">
+              Tiering is based on 30-day warehouse trace counts per active project. Zero-volume active projects remain
+              in the lowest tier so adoption gaps are visible.
+            </p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

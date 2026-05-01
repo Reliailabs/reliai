@@ -1,4 +1,5 @@
 packages:
+  - app/dashboard-v1
   - apps/web
   - apps/web-v2
   - packages/config
