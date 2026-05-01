@@ -20,6 +20,8 @@ from app.models.project_audit_summary import ProjectAuditSummary
 from app.models.regression_snapshot import RegressionSnapshot
 from app.models.trace import Trace
 
+from app.services.audit_thresholds import ThresholdContext, resolve_thresholds, evaluate_certification_at_risk
+
 
 def validate_audit_project_linkage(db: Session, *, organization_id: UUID, project_id: UUID | None) -> Project | None:
     if project_id is None:
@@ -264,9 +266,6 @@ def _compute_certification_at_risk(
         )
         or 0
     )
-    if critical_incident_count >= 2:
-        return True, "Multiple unresolved critical incidents were detected after certification."
-
     regression_count = int(
         db.scalar(
             select(func.count(RegressionSnapshot.id)).where(
@@ -276,9 +275,6 @@ def _compute_certification_at_risk(
         )
         or 0
     )
-    if regression_count >= 5:
-        return True, "Repeated regression events exceeded the post-certification threshold."
-
     guardrail_spike = int(
         db.scalar(
             select(func.count(GuardrailRuntimeEvent.id))
@@ -291,10 +287,16 @@ def _compute_certification_at_risk(
         )
         or 0
     )
-    if guardrail_spike >= 20:
-        return True, "Guardrail block/reject events spiked above the post-certification threshold."
 
-    return False, None
+    thresholds = resolve_thresholds(ThresholdContext())
+    evaluation = evaluate_certification_at_risk(
+        certification_effective_at=certification_effective_at,
+        thresholds=thresholds,
+        critical_incident_count=critical_incident_count,
+        regression_count=regression_count,
+        guardrail_block_count=guardrail_spike,
+    )
+    return evaluation.at_risk, evaluation.reason
 
 
 def upsert_project_audit_summary(db: Session, *, run: AuditRun) -> ProjectAuditSummary | None:

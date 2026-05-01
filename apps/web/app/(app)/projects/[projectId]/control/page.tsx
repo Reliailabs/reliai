@@ -9,6 +9,18 @@ import {
 import { Card } from "@/components/ui/card";
 import { ControlPanelView } from "@/components/presenters/control-panel-view";
 
+function formatCompactDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export default async function ProjectControlPanelPage({
   params,
   searchParams,
@@ -58,13 +70,14 @@ export default async function ProjectControlPanelPage({
             ) : null}
             {auditSummary.latest_audit_completed_at ? (
               <p className="text-xs text-secondary">
-                Last completed audit: {new Date(auditSummary.latest_audit_completed_at).toLocaleString()}
+                Last completed audit: {formatCompactDateTime(auditSummary.latest_audit_completed_at)}
               </p>
             ) : null}
           </div>
           {auditSummary.certification_at_risk ? (
             <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Certification at risk. {auditSummary.certification_risk_reason ?? "New post-certification signals crossed defined thresholds."}
+              Certification at risk:{" "}
+              {auditSummary.certification_risk_reason ?? "Post-certification incidents crossed defined thresholds."}
             </div>
           ) : null}
           {recommendationPreview.length > 0 ? (
@@ -83,7 +96,11 @@ export default async function ProjectControlPanelPage({
                 <p className="text-xs text-secondary">Showing top {recommendationPreview.length} recommendations from latest validated findings.</p>
               ) : null}
             </div>
-          ) : null}
+          ) : (
+            <p className="mt-4 text-xs text-secondary">
+              Suggested monitoring will appear when validated findings include monitorable reliability risks.
+            </p>
+          )}
         </Card>
       ) : null}
       <ControlPanelView

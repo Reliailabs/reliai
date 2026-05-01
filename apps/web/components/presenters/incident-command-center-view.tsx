@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import type {
+  AiFixPrSummaryRequest,
+  AiFixPrSummaryResponse,
   AiIncidentSummaryRequest,
   AiIncidentSummaryResponse,
   AiRootCauseExplanationRequest,
@@ -31,12 +33,14 @@ interface IncidentCommandCenterViewProps {
   command: IncidentCommandCenterRead;
   suggestedFix?: SuggestedFix | null;
   screenshotMode?: boolean;
+  screenshotWidth?: number;
   activeTab?: string;
   aiSummaryAction?: (payload: AiIncidentSummaryRequest) => Promise<AiIncidentSummaryResponse>;
   aiRootCauseExplanationAction?: (
     payload: AiRootCauseExplanationRequest
   ) => Promise<AiRootCauseExplanationResponse>;
   aiTicketDraftAction?: (payload: AiTicketDraftRequest) => Promise<AiTicketDraftResponse>;
+  aiFixPrSummaryAction?: (payload: AiFixPrSummaryRequest) => Promise<AiFixPrSummaryResponse>;
 }
 
 const TABS = [
@@ -155,10 +159,12 @@ export function IncidentCommandCenterView({
   command,
   suggestedFix = null,
   screenshotMode = false,
+  screenshotWidth = 1600,
   activeTab = "overview",
   aiSummaryAction,
   aiRootCauseExplanationAction,
   aiTicketDraftAction,
+  aiFixPrSummaryAction: _aiFixPrSummaryAction,
 }: IncidentCommandCenterViewProps) {
   const incident = command.incident;
   const summary = incident.summary_json ?? {};
@@ -224,8 +230,9 @@ export function IncidentCommandCenterView({
       className={cn(
         "space-y-4",
         screenshotMode &&
-          "mx-auto w-[1600px] max-w-[1600px] space-y-4 overflow-hidden bg-white p-8"
+          "mx-auto space-y-4 overflow-hidden bg-white p-8"
       )}
+      style={screenshotMode ? { width: screenshotWidth, maxWidth: screenshotWidth } : undefined}
       data-incident-command-center
       data-incident-command-center-ready={screenshotMode ? "" : undefined}
     >
