@@ -104,13 +104,29 @@ export function PulseView({
           ) : null}
         </section>
 
-        {decision.at_risk ? (
-          <section className="rounded-lg border border-rose-700 bg-rose-950/40 px-4 py-3">
-            <p className="text-xs uppercase tracking-widest text-rose-300">At Risk</p>
-            <p className="mt-1 text-sm text-rose-100">{decision.at_risk_reason}</p>
-            <p className="mt-1 text-xs text-rose-200/80">{decision.why_it_matters}</p>
-          </section>
-        ) : null}
+        <section
+          className={`rounded-lg px-4 py-3 ${
+            decision.at_risk
+              ? "border border-rose-700 bg-rose-950/40"
+              : "border border-emerald-700/60 bg-emerald-950/20"
+          }`}
+        >
+          <p
+            className={`text-xs uppercase tracking-widest ${
+              decision.at_risk ? "text-rose-300" : "text-emerald-300"
+            }`}
+          >
+            {decision.at_risk ? "At Risk" : "Risk Posture Stable"}
+          </p>
+          <p className={`mt-1 text-sm ${decision.at_risk ? "text-rose-100" : "text-emerald-100"}`}>
+            {decision.at_risk
+              ? decision.at_risk_reason
+              : "No high-severity reliability exposure is currently active."}
+          </p>
+          <p className={`mt-1 text-xs ${decision.at_risk ? "text-rose-200/80" : "text-emerald-200/80"}`}>
+            {decision.why_it_matters}
+          </p>
+        </section>
 
         <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
@@ -185,7 +201,7 @@ export function PulseView({
           </div>
 
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-            <p className="text-[11px] uppercase tracking-widest text-zinc-500">Reliability timeline</p>
+            <p className="text-[11px] uppercase tracking-widest text-zinc-500">What changed recently</p>
             <div className="mt-3 space-y-2 max-h-[22rem] overflow-auto">
               {timeline.length === 0 ? (
                 <p className="text-sm text-zinc-500">No reliability events yet.</p>
