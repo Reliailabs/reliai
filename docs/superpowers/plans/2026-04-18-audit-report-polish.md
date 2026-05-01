@@ -13,6 +13,7 @@
 ## File map (units + responsibilities)
 
 **Backend**
+
 - Create: `apps/api/app/services/audit_thresholds.py`
   - Centralizes certification-at-risk threshold values + deterministic context resolution + explainable reasons.
 - Modify: `apps/api/app/services/audit_production_bridge.py`
@@ -27,10 +28,12 @@
   - Add coverage for recent runs + threshold reason behavior + artifact metadata structure (tight tests).
 
 **Shared types**
+
 - Modify: `packages/types/src/index.ts`
   - Add `recent_runs` to `AuditDetailResponse` type.
 
 **Frontend**
+
 - Modify: `apps/web/lib/api.ts`
   - Types already include `AuditDetailResponse`; ensure compile after `packages/types` update.
 - Modify: `apps/web/app/(app)/audits/[id]/page.tsx`
@@ -43,10 +46,10 @@
 ### Task 1: Branch + commit spec/plan docs
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-04-18-audit-report-polish-design.md`
 - Create: `docs/superpowers/plans/2026-04-18-audit-report-polish.md`
-
-- [ ] **Step 1: Create task branch**
+- **Step 1: Create task branch**
 
 Run:
 
@@ -56,7 +59,7 @@ git pull --ff-only
 git switch -c chore/audit-report-polish
 ```
 
-- [ ] **Step 2: Stage and commit the spec + plan**
+- **Step 2: Stage and commit the spec + plan**
 
 Run:
 
@@ -70,11 +73,11 @@ git commit -m "docs: plan audit report polish pass"
 ### Task 2: Threshold helper module (inspectable thresholds + explainable reasons)
 
 **Files:**
+
 - Create: `apps/api/app/services/audit_thresholds.py`
 - Modify: `apps/api/app/services/audit_production_bridge.py`
 - Test: `apps/api/tests/test_audits_closed_loop.py`
-
-- [ ] **Step 1: Add failing test for explainable threshold reasons**
+- **Step 1: Add failing test for explainable threshold reasons**
 
 Add a unit-style test that asserts the reason string changes when counts cross thresholds (keep deterministic).
 
@@ -131,7 +134,7 @@ def test_certification_at_risk_threshold_reasons_are_explainable(client, db_sess
     assert "incident" in payload["certification_risk_reason"].lower()
 ```
 
-- [ ] **Step 2: Run test to verify it fails (until helper is implemented)**
+- **Step 2: Run test to verify it fails (until helper is implemented)**
 
 Run:
 
@@ -141,7 +144,7 @@ pytest apps/api/tests/test_audits_closed_loop.py::test_certification_at_risk_thr
 
 Expected: FAIL (reason may still be None or logic not applied consistently).
 
-- [ ] **Step 3: Implement threshold helper module**
+- **Step 3: Implement threshold helper module**
 
 Create `apps/api/app/services/audit_thresholds.py`:
 
@@ -214,7 +217,7 @@ def evaluate_certification_at_risk(
     return CertificationAtRiskEvaluation(at_risk=True, reason=reasons[0], reasons=reasons)
 ```
 
-- [ ] **Step 4: Wire helper into `audit_production_bridge.py`**
+- **Step 4: Wire helper into `audit_production_bridge.py`**
 
 In `apps/api/app/services/audit_production_bridge.py`, replace `_compute_certification_at_risk(...)` internals with:
 
@@ -238,7 +241,7 @@ return evaluation.at_risk, evaluation.reason
 
 Keep the DB query logic the same; only move thresholds + reasoning into the helper.
 
-- [ ] **Step 5: Run test to verify it passes**
+- **Step 5: Run test to verify it passes**
 
 Run:
 
@@ -248,7 +251,7 @@ pytest apps/api/tests/test_audits_closed_loop.py::test_certification_at_risk_thr
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- **Step 6: Commit**
 
 ```bash
 git add apps/api/app/services/audit_thresholds.py apps/api/app/services/audit_production_bridge.py apps/api/tests/test_audits_closed_loop.py
@@ -260,12 +263,12 @@ git commit -m "chore(audits): centralize certification risk thresholds"
 ### Task 3: Recent runs in audit detail response (limit 6)
 
 **Files:**
+
 - Modify: `apps/api/app/services/audits.py`
 - Modify: `apps/api/app/schemas/audit.py`
 - Modify: `packages/types/src/index.ts`
 - Test: `apps/api/tests/test_audits_closed_loop.py`
-
-- [ ] **Step 1: Add failing backend test for recent runs**
+- **Step 1: Add failing backend test for recent runs**
 
 Append to `apps/api/tests/test_audits_closed_loop.py`:
 
@@ -295,7 +298,7 @@ def test_audit_detail_includes_recent_runs(client, db_session):
     assert payload["recent_runs"][0]["id"] == run_ids[-1]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- **Step 2: Run test to verify it fails**
 
 ```bash
 pytest apps/api/tests/test_audits_closed_loop.py::test_audit_detail_includes_recent_runs -q
@@ -303,7 +306,7 @@ pytest apps/api/tests/test_audits_closed_loop.py::test_audit_detail_includes_rec
 
 Expected: FAIL (`recent_runs` missing).
 
-- [ ] **Step 3: Extend backend schema**
+- **Step 3: Extend backend schema**
 
 In `apps/api/app/schemas/audit.py`, update `AuditDetailResponse`:
 
@@ -318,7 +321,7 @@ class AuditDetailResponse(APIModel):
     recent_runs: list[AuditRunRead] = []
 ```
 
-- [ ] **Step 4: Populate `recent_runs` in service**
+- **Step 4: Populate `recent_runs` in service**
 
 In `apps/api/app/services/audits.py` inside `get_audit_detail(...)`:
 
@@ -342,7 +345,7 @@ return AuditDetailResponse(
 )
 ```
 
-- [ ] **Step 5: Update shared TS types**
+- **Step 5: Update shared TS types**
 
 In `packages/types/src/index.ts`, extend `AuditDetailResponse`:
 
@@ -358,7 +361,7 @@ export interface AuditDetailResponse {
 }
 ```
 
-- [ ] **Step 6: Run backend test again**
+- **Step 6: Run backend test again**
 
 ```bash
 pytest apps/api/tests/test_audits_closed_loop.py::test_audit_detail_includes_recent_runs -q
@@ -366,7 +369,7 @@ pytest apps/api/tests/test_audits_closed_loop.py::test_audit_detail_includes_rec
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- **Step 7: Commit**
 
 ```bash
 git add apps/api/app/services/audits.py apps/api/app/schemas/audit.py packages/types/src/index.ts apps/api/tests/test_audits_closed_loop.py
@@ -378,10 +381,10 @@ git commit -m "feat(audits): include recent runs in audit detail"
 ### Task 4: Report narrative + artifact metadata polish (concise, shared)
 
 **Files:**
+
 - Modify: `apps/api/app/services/audits.py`
 - Test: `apps/api/tests/test_audits_closed_loop.py`
-
-- [ ] **Step 1: Add failing test asserting artifact metadata keys**
+- **Step 1: Add failing test asserting artifact metadata keys**
 
 Append:
 
@@ -410,13 +413,13 @@ def test_audit_completion_writes_structured_report_metadata(client, db_session):
     assert "next_action" in metadata
 ```
 
-- [ ] **Step 2: Run test and confirm it fails**
+- **Step 2: Run test and confirm it fails**
 
 ```bash
 pytest apps/api/tests/test_audits_closed_loop.py::test_audit_completion_writes_structured_report_metadata -q
 ```
 
-- [ ] **Step 3: Implement a small narrative builder inside `audits.py`**
+- **Step 3: Implement a small narrative builder inside `audits.py`**
 
 Add helper functions near `_build_results(...)`:
 
@@ -459,8 +462,7 @@ Then make `_build_results(...)` summary concise and decision-led:
 - first line: `Decision: <status>. Risk: <level> (<score>). Blockers: <n>.`
 - second line: `Required next action: ...`
 - short evidence impact line (included/not included, top surfaces)
-
-- [ ] **Step 4: Update artifact creation in `continue_audit_review(...)`**
+- **Step 4: Update artifact creation in `continue_audit_review(...)`**
 
 When creating `executive_report`, `certification_report`, and `evidence_bundle`, set `metadata_json` to include:
 
@@ -478,7 +480,7 @@ When creating `executive_report`, `certification_report`, and `evidence_bundle`,
 
 Keep the strings short and operational.
 
-- [ ] **Step 5: Re-run the test**
+- **Step 5: Re-run the test**
 
 ```bash
 pytest apps/api/tests/test_audits_closed_loop.py::test_audit_completion_writes_structured_report_metadata -q
@@ -486,7 +488,7 @@ pytest apps/api/tests/test_audits_closed_loop.py::test_audit_completion_writes_s
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- **Step 6: Commit**
 
 ```bash
 git add apps/api/app/services/audits.py apps/api/tests/test_audits_closed_loop.py
@@ -498,9 +500,9 @@ git commit -m "feat(audits): polish report narrative and artifact metadata"
 ### Task 5: Frontend — previous runs panel (compact list, badges)
 
 **Files:**
-- Modify: `apps/web/app/(app)/audits/[id]/page.tsx`
 
-- [ ] **Step 1: Implement small presentational helpers**
+- Modify: `apps/web/app/(app)/audits/[id]/page.tsx`
+- **Step 1: Implement small presentational helpers**
 
 Add local helpers in `apps/web/app/(app)/audits/[id]/page.tsx`:
 
@@ -514,7 +516,7 @@ function runBadge(status: string) {
 }
 ```
 
-- [ ] **Step 2: Render the “Previous runs” panel**
+- **Step 2: Render the “Previous runs” panel**
 
 Under the existing summary column, add a `Card` that maps `detail.recent_runs` (already newest-first) and displays:
 
@@ -530,7 +532,7 @@ Under the existing summary column, add a `Card` that maps `detail.recent_runs` (
 
 Keep it visually compact (list rows, not a full table).
 
-- [ ] **Step 3: Commit**
+- **Step 3: Commit**
 
 ```bash
 git add apps/web/app/(app)/audits/[id]/page.tsx
@@ -542,9 +544,9 @@ git commit -m "feat(web): add audit previous runs panel"
 ### Task 6: Frontend — results narrative + finding traceability (no raw IDs)
 
 **Files:**
-- Modify: `apps/web/app/(app)/audits/[id]/results/page.tsx`
 
-- [ ] **Step 1: Implement evidence label derivation (client-side)**
+- Modify: `apps/web/app/(app)/audits/[id]/results/page.tsx`
+- **Step 1: Implement evidence label derivation (client-side)**
 
 Add helpers:
 
@@ -563,9 +565,10 @@ function evidenceLabels(f: { evidence_ref: string | null; recommended_scope: str
 
 Ensure these are human-readable labels and do not output raw IDs.
 
-- [ ] **Step 2: Replace the findings table with compact cards**
+- **Step 2: Replace the findings table with compact cards**
 
 For each finding:
+
 - title + severity + blocker badge
 - 1-line “why it matters” = existing `finding.summary`
 - evidence chips = derived labels
@@ -573,7 +576,7 @@ For each finding:
 
 Keep page scannable; do not create large blocks of text.
 
-- [ ] **Step 3: Commit**
+- **Step 3: Commit**
 
 ```bash
 git add apps/web/app/(app)/audits/[id]/results/page.tsx
@@ -584,7 +587,7 @@ git commit -m "feat(web): improve audit results narrative and evidence traceabil
 
 ### Task 7: Validation
 
-- [ ] **Step 1: Run backend tests (focused)**
+- **Step 1: Run backend tests (focused)**
 
 ```bash
 pytest apps/api/tests/test_audits_closed_loop.py -q
@@ -592,7 +595,7 @@ pytest apps/api/tests/test_audits_closed_loop.py -q
 
 Expected: PASS.
 
-- [ ] **Step 2: Web lint**
+- **Step 2: Web lint**
 
 ```bash
 pnpm --filter web lint
@@ -600,7 +603,7 @@ pnpm --filter web lint
 
 Expected: PASS.
 
-- [ ] **Step 3: Web build**
+- **Step 3: Web build**
 
 ```bash
 pnpm --filter web build
@@ -609,3 +612,4 @@ pnpm --filter web build
 Expected: PASS.
 
 ---
+

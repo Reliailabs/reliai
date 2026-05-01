@@ -320,3 +320,111 @@ def test_audit_tenancy_forbidden_cross_org(client, db_session):
 
     forbidden = client.get(f"/api/v1/audits/{audit_id}", headers=headers_b)
     assert forbidden.status_code == 403
+
+
+def test_certification_at_risk_threshold_reasons_are_explainable(client, db_session):
+    # Reuse existing fixture helpers from this file.
+    operator = create_operator(db_session, email="threshold-owner@acme.test")
+    session = sign_in(client, email=operator.email)
+    headers = auth_headers(session)
+    organization = create_organization(client, session, name="Threshold Org", slug="threshold-org")
+    project = create_project(client, session, organization["id"], name="Threshold Project")
+
+    created = _create_audit(client, headers, _default_payload(project_id=project["id"]))
+    audit_id = created["audit"]["id"]
+    run_id = created["run"]["id"]
+    assert client.post(f"/api/v1/audits/{audit_id}/runs/{run_id}/start", headers=headers).status_code == 200
+    assert client.post(f"/api/v1/audits/{audit_id}/runs/{run_id}/continue-review", headers=headers).status_code == 200
+
+    # Inject incidents after certification effective time to trigger at-risk.
+    env = db_session.scalar(select(Environment).where(Environment.project_id == UUID(project["id"])))
+    assert env is not None
+    # Add two critical incidents to cross the default threshold (>=2).
+    for i in range(2):
+        db_session.add(
+            Incident(
+                organization_id=UUID(organization["id"]),
+                project_id=UUID(project["id"]),
+                environment_id=env.id,
+                deployment_id=None,
+                incident_type="reliability_drop",
+                severity="critical",
+                title=f"Critical post-cert incident {i}",
+                status="open",
+                fingerprint=f"threshold-critical-{i}-{run_id}",
+                summary_json={"detail": "post-cert threshold"},
+                started_at=datetime.now(timezone.utc) + timedelta(minutes=1 + i),
+                updated_at=datetime.now(timezone.utc) + timedelta(minutes=1 + i),
+                resolved_at=None,
+                acknowledged_at=None,
+                acknowledged_by_operator_user_id=None,
+                owner_operator_user_id=None,
+            )
+        )
+    db_session.commit()
+
+    at_risk = client.get(f"/api/v1/projects/{project['id']}/audit-summary", headers=headers)
+    assert at_risk.status_code == 200
+    payload = at_risk.json()
+    assert payload["certification_at_risk"] is True
+    assert payload["certification_risk_reason"] is not None
+    # Ensure the reason stays human-readable and not a raw ID dump.
+    assert "incident" in payload["certification_risk_reason"].lower()
+
+
+def test_audit_detail_includes_recent_runs(client, db_session):
+    operator = create_operator(db_session, email="runs-owner@acme.test")
+    session = sign_in(client, email=operator.email)
+    headers = auth_headers(session)
+    organization = create_organization(client, session, name="Runs Org", slug="runs-org")
+    project = create_project(client, session, organization["id"], name="Runs Project")
+
+    created = _create_audit(client, headers, _default_payload(project_id=project["id"]))
+    audit_id = created["audit"]["id"]
+
+    # Create a few additional runs.
+    run_ids = [created["run"]["id"]]
+    for _ in range(3):
+        resp = client.post(f"/api/v1/audits/{audit_id}/runs", headers=headers)
+        assert resp.status_code == 201
+        run_ids.append(resp.json()["run"]["id"])
+
+    detail = client.get(f"/api/v1/audits/{audit_id}", headers=headers)
+    assert detail.status_code == 200
+    payload = detail.json()
+    assert "recent_runs" in payload
+    assert len(payload["recent_runs"]) == 4
+    assert payload["recent_runs"][0]["id"] == run_ids[-1]
+
+
+def test_completed_run_artifacts_include_structured_report_narrative(client, db_session):
+    operator = create_operator(db_session, email="report-owner@acme.test")
+    session = sign_in(client, email=operator.email)
+    headers = auth_headers(session)
+    organization = create_organization(client, session, name="Report Org", slug="report-org")
+    project = create_project(client, session, organization["id"], name="Report Project")
+
+    created = _create_audit(client, headers, _default_payload(project_id=project["id"]))
+    audit_id = created["audit"]["id"]
+    run_id = created["run"]["id"]
+    assert client.post(f"/api/v1/audits/{audit_id}/runs/{run_id}/start", headers=headers).status_code == 200
+    assert client.post(f"/api/v1/audits/{audit_id}/runs/{run_id}/continue-review", headers=headers).status_code == 200
+
+    results = client.get(f"/api/v1/audits/{audit_id}/results", headers=headers)
+    assert results.status_code == 200
+    payload = results.json()
+    assert "report_narrative" in payload
+    assert payload["report_narrative"]["decision"]
+    assert payload["report_narrative"]["required_next_action"]
+
+    bundle = db_session.scalar(
+        select(AuditArtifact).where(
+            AuditArtifact.audit_run_id == UUID(run_id),
+            AuditArtifact.artifact_type == "evidence_bundle",
+            AuditArtifact.is_stale.is_(False),
+        )
+    )
+    assert bundle is not None
+    metadata = bundle.metadata_json or {}
+    assert "report_narrative" in metadata
+    assert "top_evidence_refs" in metadata

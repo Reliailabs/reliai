@@ -223,6 +223,19 @@ class FindingsSummaryRead(APIModel):
     severity_counts: dict[str, int]
 
 
+class ReportNarrativeRead(APIModel):
+    decision: str
+    risk_level: str
+    blocker_status: str
+    required_next_action: str
+    top_blockers: list[str]
+    required_remediation: list[str]
+    recommended_improvements: list[str]
+    evidence_impact_summary: str
+    next_step_guidance: str
+    summary: str
+
+
 class AuditResultsRead(APIModel):
     audit: AuditRead
     run: AuditRunRead
@@ -233,6 +246,7 @@ class AuditResultsRead(APIModel):
     top_risks: list[str]
     summary: str
     recommended_actions: list[str]
+    report_narrative: ReportNarrativeRead
     monitoring_recommendations: list[dict]
 
 
@@ -243,6 +257,7 @@ class AuditDetailResponse(APIModel):
     findings_summary: FindingsSummaryRead
     artifacts: list[AuditArtifactRead]
     linked_production_context: ProductionSnapshotMetadata | None
+    recent_runs: list[AuditRunRead] = []
 
 
 class AuditActionResponse(APIModel):

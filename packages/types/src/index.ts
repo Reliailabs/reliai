@@ -1972,6 +1972,19 @@ export interface MonitoringRecommendationRead {
   reason: string;
 }
 
+export interface AuditReportNarrativeRead {
+  decision: string;
+  risk_level: string;
+  blocker_status: string;
+  required_next_action: string;
+  top_blockers: string[];
+  required_remediation: string[];
+  recommended_improvements: string[];
+  evidence_impact_summary: string;
+  next_step_guidance: string;
+  summary: string;
+}
+
 export interface AuditResultsRead {
   audit: AuditRead;
   run: AuditRunRead;
@@ -1982,6 +1995,7 @@ export interface AuditResultsRead {
   top_risks: string[];
   summary: string;
   recommended_actions: string[];
+  report_narrative: AuditReportNarrativeRead;
   monitoring_recommendations: MonitoringRecommendationRead[];
 }
 
@@ -1992,6 +2006,7 @@ export interface AuditDetailResponse {
   findings_summary: AuditFindingsSummary;
   artifacts: AuditArtifactRead[];
   linked_production_context: ProductionSnapshotMetadata | null;
+  recent_runs: AuditRunRead[];
 }
 
 export interface ProjectAuditSummaryRead {

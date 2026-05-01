@@ -43,6 +43,8 @@ services:
     environment:
       # Use Railway auto-injected DATABASE_URL and REDIS_URL when available
       # For local development, set in .env file
+      DATABASE_URL: postgresql+psycopg://reliai:reliai@postgres:5432/reliai
+      REDIS_URL: redis://redis:6379/0
       RELIAI_SKIP_REDIS_WAIT: ${RELIAI_SKIP_REDIS_WAIT:-}
     ports:
       - "8000:8000"
@@ -63,8 +65,12 @@ services:
     environment:
       # Use Railway auto-injected DATABASE_URL and REDIS_URL when available
       # For local development, set in .env file
+      DATABASE_URL: postgresql+psycopg://reliai:reliai@postgres:5432/reliai
+      REDIS_URL: redis://redis:6379/0
       RELIAI_SKIP_REDIS_WAIT: ${RELIAI_SKIP_REDIS_WAIT:-}
     command: ["python", "-m", "app.scripts.rq_worker"]
+    healthcheck:
+      disable: true
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,6 +85,9 @@ services:
     container_name: reliai-web
     env_file:
       - .env
+    environment:
+      API_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
       - "3000:3000"
     depends_on:

@@ -35,6 +35,7 @@ from app.schemas.audit_enums import (
     CertificationStatus,
 )
 from app.services.audit_executor import AuditStageExecutor, DeterministicMockAuditStageExecutor
+from app.services.audit_report_formatter import build_report_narrative
 from app.services.audit_production_bridge import (
     capture_production_evidence_snapshot,
     derive_monitoring_recommendations,
@@ -287,6 +288,16 @@ def get_audit_detail(db: Session, *, organization_id: UUID, audit_id: UUID) -> A
         )
         linked_context = latest_run.production_snapshot_metadata
 
+    # Recent runs (newest first, max 6)
+    recent_runs = list(
+        db.scalars(
+            select(AuditRun)
+            .where(AuditRun.audit_id == audit.id)
+            .order_by(desc(AuditRun.created_at), desc(AuditRun.id))
+            .limit(6)
+        ).all()
+    )
+
     return AuditDetailResponse(
         audit=audit,
         latest_run=latest_run,
@@ -294,6 +305,7 @@ def get_audit_detail(db: Session, *, organization_id: UUID, audit_id: UUID) -> A
         findings_summary=findings_summary,
         artifacts=artifacts,
         linked_production_context=linked_context,
+        recent_runs=recent_runs,
     )
 
 
@@ -633,6 +645,49 @@ def continue_audit_review(
             for item in non_stale_findings
             if item.certification_blocking and item.status == AuditFindingStatus.OPEN.value
         ]
+        narrative = build_report_narrative(
+            certification_status=run.certification_status,
+            risk_score=run.risk_score,
+            blocker_titles=[item.title for item in blocking_findings],
+            production_evidence_included=run.production_snapshot_metadata is not None,
+        )
+        executive_report = db.scalar(
+            select(AuditArtifact).where(
+                AuditArtifact.audit_run_id == run.id,
+                AuditArtifact.artifact_type == "executive_report",
+                AuditArtifact.is_stale.is_(False),
+            )
+        )
+        if executive_report is not None:
+            metadata = executive_report.metadata_json or {}
+            executive_report.metadata_json = {
+                **metadata,
+                "decision": narrative.decision,
+                "risk_level": narrative.risk_level,
+                "blocker_status": narrative.blocker_status,
+                "required_next_action": narrative.required_next_action,
+                "top_blockers": narrative.top_blockers,
+                "required_remediation": narrative.required_remediation,
+                "recommended_improvements": narrative.recommended_improvements,
+                "evidence_impact_summary": narrative.evidence_impact_summary,
+                "next_step_guidance": narrative.next_step_guidance,
+            }
+        certification_report = db.scalar(
+            select(AuditArtifact).where(
+                AuditArtifact.audit_run_id == run.id,
+                AuditArtifact.artifact_type == "certification_report",
+                AuditArtifact.is_stale.is_(False),
+            )
+        )
+        if certification_report is not None:
+            metadata = certification_report.metadata_json or {}
+            certification_report.metadata_json = {
+                **metadata,
+                "decision": narrative.decision,
+                "risk_level": narrative.risk_level,
+                "blocker_status": narrative.blocker_status,
+                "required_next_action": narrative.required_next_action,
+            }
         report_recommendations = [_recommendation_from_finding(item) for item in blocking_findings[:3]]
         db.add(
             AuditArtifact(
@@ -647,6 +702,18 @@ def continue_audit_review(
                     "blocking_count": len(blocking_findings),
                     "top_evidence_refs": [item.evidence_ref for item in non_stale_findings if item.evidence_ref][:5],
                     "recommendations": report_recommendations,
+                    "report_narrative": {
+                        "decision": narrative.decision,
+                        "risk_level": narrative.risk_level,
+                        "blocker_status": narrative.blocker_status,
+                        "required_next_action": narrative.required_next_action,
+                        "top_blockers": narrative.top_blockers,
+                        "required_remediation": narrative.required_remediation,
+                        "recommended_improvements": narrative.recommended_improvements,
+                        "evidence_impact_summary": narrative.evidence_impact_summary,
+                        "next_step_guidance": narrative.next_step_guidance,
+                        "summary": narrative.summary,
+                    },
                 },
                 is_stale=False,
             )
@@ -696,16 +763,13 @@ def _build_results(db: Session, *, audit: Audit, run: AuditRun) -> AuditResultsR
             "Apply suggested monitoring recommendations to protect certification posture.",
             "Run a scheduled follow-up audit to confirm reliability trend stability.",
         ]
-    if run.status == AuditRunStatus.COMPLETED.value and run.certification_status != CertificationStatus.PENDING.value:
-        summary = (
-            "Audit run completed with reproducible findings and evidence-backed risk scoring. "
-            "Certification reflects current production-readiness posture and remediation priorities."
-        )
-    else:
-        summary = (
-            "Audit run is in progress or has been invalidated by a rerun. "
-            "Certification is pending until downstream stages complete."
-        )
+    report_narrative = build_report_narrative(
+        certification_status=run.certification_status,
+        risk_score=run.risk_score,
+        blocker_titles=[item.title for item in blocking_findings],
+        production_evidence_included=run.production_snapshot_metadata is not None,
+    )
+    summary = report_narrative.summary
 
     return AuditResultsRead(
         audit=audit,
@@ -717,6 +781,18 @@ def _build_results(db: Session, *, audit: Audit, run: AuditRun) -> AuditResultsR
         top_risks=top_risks,
         summary=summary,
         recommended_actions=recommended_actions,
+        report_narrative={
+            "decision": report_narrative.decision,
+            "risk_level": report_narrative.risk_level,
+            "blocker_status": report_narrative.blocker_status,
+            "required_next_action": report_narrative.required_next_action,
+            "top_blockers": report_narrative.top_blockers,
+            "required_remediation": report_narrative.required_remediation,
+            "recommended_improvements": report_narrative.recommended_improvements,
+            "evidence_impact_summary": report_narrative.evidence_impact_summary,
+            "next_step_guidance": report_narrative.next_step_guidance,
+            "summary": report_narrative.summary,
+        },
         monitoring_recommendations=derive_monitoring_recommendations(db, run_id=run.id),
     )
 
