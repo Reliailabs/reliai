@@ -2027,3 +2027,71 @@ export interface ProjectAuditSummaryRead {
 export interface ProjectMonitoringRecommendationListResponse {
   items: MonitoringRecommendationRead[];
 }
+
+export interface AreiSummary {
+  score: number;
+  delta?: number;
+  breakdown: Array<{
+    label: string;
+    value: number;
+  }>;
+}
+
+export interface AreiComputation {
+  score: number;
+  band: "low" | "moderate" | "elevated" | "critical";
+  trend?: number;
+  components: {
+    failureRisk: number;
+    incidentRisk: number;
+    driftRisk: number;
+    guardrailRisk: number;
+    auditReadinessGap: number;
+    productionCriticality: number;
+  };
+  topDrivers: string[];
+  recommendedActions: string[];
+}
+
+export interface PulseDecisionSummary {
+  risk_level: "low" | "moderate" | "high" | "critical";
+  at_risk: boolean;
+  at_risk_reason: string;
+  why_it_matters: string;
+  topDrivers: string[];
+  recommendedActions: string[];
+  top_issues: Array<{
+    id: string;
+    title: string;
+    severity: "critical" | "high" | "medium" | "low";
+    reason: string;
+    impact: string;
+    href: string;
+  }>;
+  recommended_action: {
+    title: string;
+    href: string;
+    cta: string;
+  };
+  arei: AreiSummary;
+}
+
+export interface ReliabilityTimelineEvent {
+  id: string;
+  type: "deployment" | "regression" | "incident" | "audit";
+  title: string;
+  occurred_at: string;
+  impact: string;
+  href?: string | null;
+}
+
+export interface FirstTimeSetupState {
+  has_data: boolean;
+  checklist: Array<{
+    key: string;
+    label: string;
+    complete: boolean;
+    href: string;
+  }>;
+  demo_mode: boolean;
+}
