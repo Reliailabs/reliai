@@ -318,7 +318,7 @@ export function ControlPanelView({
                 <p className={`mt-1 text-xs text-zinc-500 ${metricValueClass}`}>traces/sec · 1m avg</p>
               </div>
               <div className={metricCardClass}>
-                <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Active services</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Active AI workflows</p>
                 <p className={`mt-3 text-3xl font-semibold text-zinc-100 ${metricValueClass}`}>{panel.active_services ?? 0}</p>
               </div>
             </div>
@@ -332,7 +332,7 @@ export function ControlPanelView({
             <div className="flex items-center gap-3">
               <Activity className="h-5 w-5 text-zinc-500" />
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">System status</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Reliability status</p>
                 <h2 className={sectionTitleClass}>What needs attention next</h2>
               </div>
             </div>

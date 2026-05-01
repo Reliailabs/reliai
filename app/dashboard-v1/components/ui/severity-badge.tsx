@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
-import type { Severity } from "@/lib/mock-data"
+
+type Severity = "critical" | "high" | "medium" | "low"
 
 const configs: Record<Severity | "resolved", string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/30",

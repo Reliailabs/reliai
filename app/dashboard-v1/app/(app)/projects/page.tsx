@@ -60,7 +60,7 @@ export default async function ProjectsPage() {
           value: metrics?.traces_last_24h != null ? `${metrics.traces_last_24h.toLocaleString()}/d` : "—",
           tone: "stable",
         },
-        uptime: {
+        qualityPass: {
           value: qualityPassRate === null ? "—" : `${Math.round(qualityPassRate * 100)}%`,
           tone: qualityTone,
         },

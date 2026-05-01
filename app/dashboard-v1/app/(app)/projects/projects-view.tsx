@@ -20,7 +20,7 @@ export interface ProjectCardData {
     errorRate:  { value: string; tone: MetricTone }
     latency:    { value: string; tone: MetricTone }
     throughput: { value: string; tone: MetricTone }
-    uptime:     { value: string; tone: MetricTone }
+    qualityPass: { value: string; tone: MetricTone }
   }
   alerts: number
   incidents: number
@@ -63,7 +63,7 @@ function ProjectCard({ project }: { project: ProjectCardData }) {
               { label: "Error",      ...project.metrics.errorRate  },
               { label: "Latency",    ...project.metrics.latency    },
               { label: "Throughput", ...project.metrics.throughput },
-              { label: "Uptime",     ...project.metrics.uptime     },
+              { label: "Quality pass", ...project.metrics.qualityPass },
             ] as { label: string; value: string; tone: MetricTone }[]
           ).map((m) => (
             <div key={m.label} className={cn("rounded border px-2 py-1.5", metricTone[m.tone])}>
@@ -101,7 +101,7 @@ export function ProjectsView({ projects }: { projects: ProjectCardData[] }) {
     <div className="min-h-full">
       <PageHeader
         title="Projects"
-        description="Monitor and manage your AI projects and deployments"
+        description="Monitor AI reliability posture across your production projects"
         right={
           <>
             <span className="text-xs text-zinc-500 tabular-nums">
