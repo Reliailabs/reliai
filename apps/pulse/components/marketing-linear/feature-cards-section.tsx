@@ -119,7 +119,7 @@ export function FeatureCardsSection() {
               <p className="text-zinc-400 leading-relaxed">
                 Reliai Pulse is designed for teams that need clear reliability signals, incident context,
                 and fast operational decisions for production AI.{" "}
-                <a href="#" className="text-white inline-flex items-center gap-1 hover:underline">
+                <a href="/pulse" className="text-white inline-flex items-center gap-1 hover:underline">
                   View capability map <ChevronRight className="w-4 h-4" />
                 </a>
               </p>

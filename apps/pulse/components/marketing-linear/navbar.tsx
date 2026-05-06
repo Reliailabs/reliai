@@ -12,24 +12,24 @@ export function Navbar() {
             <span className="text-white font-semibold">Reliai</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Reliability
             </a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Audits
             </a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Incidents
             </a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Guardrails
             </a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Docs
             </a>
           </div>
           <div className="flex items-center gap-4">
-            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/sign-in?return_to=%2Fpulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Sign in
             </a>
             <a
