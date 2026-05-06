@@ -158,6 +158,23 @@ Examples disallowed:
 - `pnpm --filter pulse build`
 - Manual smoke:
   - signed-in `/services` loads successfully
-  - signed-out `/services` redirects to sign-in through existing `(app)` guard
-  - `/pulse` behavior remains unchanged
-  - no marketing style files changed
+- signed-out `/services` redirects to sign-in through existing `(app)` guard
+- `/pulse` behavior remains unchanged
+- no marketing style files changed
+
+## Slice 3 Mapping — `/incidents` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/incidents/page.tsx` | phase plan route order + existing `MainContent` section support | Add | No | No | Adds authenticated `/incidents` route that opens dashboard shell with `initialSection="incidents"` | `(app)` auth guard, `dashboard-shell`, `IncidentsContent` |
+
+### Slice 3 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/incidents` loads incident section
+  - signed-out `/incidents` redirects through existing `(app)` sign-in flow
+  - `/pulse` and `/services` remain unchanged
