@@ -293,6 +293,23 @@ Examples disallowed:
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
 - Manual smoke:
-  - signed-in `/traces` loads trace surface
-  - signed-out `/traces` redirects through existing `(app)` sign-in flow
-  - `/pulse`, `/services`, `/incidents`, and `/errors` remain unchanged
+- signed-in `/traces` loads trace surface
+- signed-out `/traces` redirects through existing `(app)` sign-in flow
+- `/pulse`, `/services`, `/incidents`, and `/errors` remain unchanged
+
+## Slice 6 Mapping — `/deployments` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/deployments/page.tsx` | phase plan route order + existing dashboard section model | Add | No | No | Adds authenticated `/deployments` route that opens dashboard shell with `initialSection="deployments"` | `(app)` auth guard, `dashboard-shell`, deployments section content |
+
+### Slice 6 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/deployments` loads deployment surface
+  - signed-out `/deployments` redirects through existing `(app)` sign-in flow
+  - `/pulse`, `/services`, `/incidents`, `/errors`, and `/traces` remain unchanged
