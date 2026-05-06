@@ -2,6 +2,7 @@ packages:
   - app/dashboard-v1
   - apps/web
   - apps/web-v2
+  - apps/web-marketing-v1
   - packages/config
   - packages/reliai-node
   - packages/runtime-guardrail
