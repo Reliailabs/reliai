@@ -141,3 +141,23 @@ Examples disallowed:
 - className/style/token/theme changes
 - layout structure changes
 - animation/motion redesign
+
+## Slice 2 Mapping — `/services` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing `apps/pulse/app/(app)/pulse/page.tsx` composition | Adapt (extract shared shell) | No | No | Shared app-shell composition for dashboard sections via `initialSection` | `AppSidebar`, `MainContent`, `RightPanel` |
+| `apps/pulse/app/(app)/pulse/page.tsx` | existing `apps/pulse` pulse route | Adapt (use shared shell) | No | No | Maintains pulse landing behavior by rendering shell with `initialSection="overview"` | `(app)` auth guard, `dashboard-shell` |
+| `apps/pulse/app/(app)/services/page.tsx` | phase plan route list + existing dashboard section model | Add | No | No | Adds authenticated `/services` route using shell with `initialSection="systems"` | `(app)` auth guard, `dashboard-shell` |
+
+### Slice 2 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/services` loads successfully
+  - signed-out `/services` redirects to sign-in through existing `(app)` guard
+  - `/pulse` behavior remains unchanged
+  - no marketing style files changed
