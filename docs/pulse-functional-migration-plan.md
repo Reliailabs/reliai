@@ -1,0 +1,122 @@
+# Pulse Functional Migration Plan (No Blind Overwrites)
+
+## Locked Constraints
+- No dashboard styling changes.
+- No marketing styling changes.
+- Keep `apps/pulse/app/(marketing)/**` intact.
+- Keep `apps/pulse/components/marketing-linear/**` intact.
+- Migrate functionality into `apps/pulse/app/(app)/**` only.
+- No template overwrite, no bulk copy, no visual redesign, no marketing edits.
+
+## Phase 0 — Safety Setup
+1. Create migration branch.
+2. Confirm current `apps/pulse` build baseline.
+3. Lock protected paths:
+   - `apps/pulse/app/(marketing)/**`
+   - `apps/pulse/components/marketing-linear/**`
+   - dashboard styling files
+   - marketing styling files
+4. Enforce forbidden actions listed above throughout migration.
+
+## Phase 1 — Inventory + Mapping
+1. Build functional mapping from:
+   - `app/dashboard-v1`
+   - `apps/web`
+   - `apps/web-v2`
+2. Create route/component matrix with:
+   - source file
+   - target file
+   - keep/adapt/replace
+   - dependencies
+   - risk notes
+
+## Phase 2 — Core Shell + Auth Wiring
+1. Wire `(app)` session guard and app shell behavior.
+2. Wire sign-in/sign-out/session fetch paths.
+3. Keep `/pulse` functional and protected.
+4. Validate with lint/build.
+
+## Phase 3 — Functional Route Migration (Service-Anchored Order)
+1. `/pulse`
+2. `/services`
+3. `/incidents`
+4. `/errors`
+5. `/traces`
+6. `/deployments`
+7. `/audits`
+8. `/guardrails`
+9. `/metrics`
+10. `/on-call`
+11. `/postmortems`
+12. `/settings`
+
+All route work is functional-only, no style edits.
+
+## Phase 4 — Operational Primitives Wiring
+1. Domain model alignment:
+   - Organization -> Project -> Service -> Environment -> Signal/Event -> Incident/Postmortem
+2. SLA model:
+   - API uptime
+   - trace ingestion uptime
+   - eval pass-rate uptime
+   - safe completion SLA
+   - agent task success SLA
+   - error budget
+   - reliability score history
+3. AI-native error model:
+   - prompt errors
+   - tool-call failures
+   - retrieval failures
+   - guardrail violations
+   - eval failures
+   - agent loop failures
+   - schema/output failures
+   - provider/model errors
+4. On-call primitives:
+   - escalation policy
+   - owner/team assignment
+   - severity routing
+   - acknowledge/resolve workflow
+   - incident timeline entries
+5. Postmortem structure:
+   - summary, impact, root cause, detection, timeline
+   - what went well / what failed
+   - corrective actions
+   - linked traces/deployments/evals
+   - owner + due date
+
+## Phase 5 — Validation + Gap Report
+1. Run:
+   - `pnpm --filter pulse lint`
+   - `pnpm --filter pulse build`
+2. Manual smoke pass over migrated routes.
+3. Deliver:
+   - migrated functionality list
+   - unresolved gaps
+   - next migration slice
+
+## Slice 1 Mapping — Core Shell/Auth + /pulse
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Auth/Session Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/layout.tsx` | `app/dashboard-v1/app/(app)/layout.tsx` + `apps/web` auth contract | Adapt | No | No | Requires valid operator session; redirects unauthenticated users to `/sign-in?return_to=<path>` | `/pulse` and future `(app)` routes |
+| `apps/pulse/app/sign-in/page.tsx` | `app/dashboard-v1/app/sign-in/page.tsx` + `apps/web` auth behavior | Adapt | No | No | If session exists, redirect to sanitized `return_to` (default `/pulse`); submit to local auth route | `/pulse`, `(app)` shell |
+| `apps/pulse/lib/auth.ts` | `app/dashboard-v1/lib/auth.ts` + `apps/web` contract alignment | Adapt | No | No | Session lookup, token/cookie resolution, require-session helper, safe redirect utilities | `(app)/layout`, `sign-in` |
+| `apps/pulse/lib/constants.ts` | `app/dashboard-v1/lib/constants.ts` + `apps/web` env contract | Adapt | No | No | Centralized API URL + session cookie key used by auth helpers/routes | `lib/auth.ts`, auth routes |
+| `apps/pulse/app/api/auth/dev-sign-in/route.ts` | `apps/web`/`dashboard-v1` existing contract | Adapt | No | No | Creates session cookie using existing API auth endpoint contract; preserves `return_to` redirect | `sign-in` |
+| `apps/pulse/app/api/auth/sign-out/route.ts` | `apps/web`/`dashboard-v1` | Adapt | No | No | Clears session cookie and redirects to sign-in | app shell/logout actions |
+| `apps/pulse/app/(app)/pulse/page.tsx` | current `apps/pulse` + `dashboard-v1` protection expectations | Keep (functional check) | No | No | No new auth logic; relies on `(app)` guard to guarantee authenticated context | `(app)/layout` |
+| `apps/pulse/app/(app)/loading.tsx` and `apps/pulse/app/(app)/error.tsx` | `dashboard-v1` | Adapt | No | No | Predictable loading/error fallback behavior for protected app shell | `(app)` routes |
+
+### Slice 1 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-out user visiting `/pulse` redirects to sign-in
+  - sign-in returns to `/pulse`
+  - signed-in user can load `/pulse`
+  - marketing routes remain unchanged (`/`, `/demo`)
+  - protected paths untouched

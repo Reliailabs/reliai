@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3005",
-    "lint": "next lint",
+    "lint": "eslint \"app/(app)/**/*.{ts,tsx}\" \"app/sign-in/**/*.{ts,tsx}\" \"app/api/auth/**/*.{ts,tsx}\" \"lib/auth.ts\" \"lib/constants.ts\"",
     "start": "next start -p 3005"
   },
   "dependencies": {
@@ -62,6 +62,9 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "eslint": "^9.20.1",
+    "eslint-config-next": "16.0.0",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
     "@types/react": "^19",
