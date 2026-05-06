@@ -1,0 +1,93 @@
+import { WorkflowSteps } from "@/components/docs/workflow-steps";
+import { IncidentProofCard } from "@/components/docs/incident-proof-card";
+import { AiTrustCard } from "@/components/docs/ai-trust-card";
+
+export const metadata = { title: "AI Support Copilot — Example" };
+
+# AI Support Copilot
+
+A support copilot generates responses to customer queries using a combination of retrieved knowledge, CRM context, and tool calls. It operates at high volume with low tolerance for error — a hallucination isn't a lab curiosity, it's a support ticket that escalates.
+
+<WorkflowSteps />
+
+---
+
+## System architecture
+
+- **LLM** — generates customer-facing responses
+- **Knowledge base** — product documentation, policy articles
+- **CRM integration** — account context, case history via tool call
+- **Guardrail layer** — checks response before delivery
+
+---
+
+## What can go wrong
+
+- Hallucinated product facts or pricing
+- Incorrect tool call parameters (wrong account, wrong API)
+- Refusal spikes due to overly conservative guardrails
+- Inconsistent responses to identical queries (non-determinism at scale)
+- Prompt drift after A/B test or version rollout
+
+---
+
+## Detect
+
+Reliai identifies:
+
+- failure rate spike correlated with a prompt or model version change
+- increase in negative feedback rate (if routed back)
+- divergence in trace structure across model versions
+- refusal rate change independent of query volume change
+
+---
+
+## Understand
+
+### Incident example (INC-1423)
+
+Production copilot begins generating hallucinated answers about refund eligibility.
+
+- Failure rate: **4% → 19%** over 20 minutes
+- Trigger: prompt v42 deployed to 100% of traffic
+- Impact: 340 incorrect responses delivered before detection
+
+### Root cause
+
+Prompt v42 increased response verbosity and reduced the explicit instruction to ground answers in retrieved policy text. The model began filling gaps with parametric knowledge — which was out of date.
+
+Reliai identified via:
+
+- prompt diff between v41 and v42
+- trace comparison across 80 failing vs 80 baseline requests
+- clustering of failures by query category (refund, cancellation)
+
+<AiTrustCard />
+
+---
+
+## Fix
+
+- Revert prompt to v41
+- Add explicit grounding instruction: "answer only from the provided context"
+- Reduce max response length to limit verbosity
+
+---
+
+## Prove
+
+<IncidentProofCard
+  title="INC-1423 — Copilot hallucination spike"
+  before="19%"
+  after="5%"
+  resolvedIn="6 minutes"
+  note="340 affected responses · Measured across production traffic"
+/>
+
+---
+
+## Key takeaway
+
+**Copilot failures are often prompt + retrieval interaction issues.**
+
+A prompt that worked at lower verbosity fails at higher verbosity because the model fills context gaps differently. The only way to catch this is trace comparison across prompt versions at scale.
