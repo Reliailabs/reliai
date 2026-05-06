@@ -6,15 +6,15 @@ import { ChevronLeft, ChevronRight, Plus, ArrowRight, MessageSquare, GitBranch, 
 const carouselCards = [
   {
     id: 1,
-    category: "Customer Requests",
-    title: "Build what customers actually want",
+    category: "Incident intake",
+    title: "Capture reliability risk as soon as it appears",
     icon: ArrowRight,
     mockup: "intercom",
   },
   {
     id: 2,
-    category: "Powerful git workflows",
-    title: "Automate pull requests and commit workflows",
+    category: "Release workflow",
+    title: "Correlate regressions with commits and deployments",
     icon: Plus,
     mockup: "github",
   },
@@ -41,14 +41,14 @@ const carouselCards = [
   },
   {
     id: 6,
-    category: "Figma Integration",
+    category: "Cross-team alignment",
     title: "Bridge AI behavior signals with delivery teams",
     icon: ArrowRight,
     mockup: "figma",
   },
   {
     id: 7,
-    category: "Built for developers",
+    category: "Developer platform",
     title: "Extend reliability workflows with the Reliai API",
     icon: ArrowRight,
     mockup: "api",
@@ -86,7 +86,7 @@ function IntercomMockup() {
 
       <div className="mt-1 flex items-center gap-2 px-3 py-2">
         <div className="w-4 h-4 rounded-full border border-zinc-600" />
-        <span className="text-sm text-zinc-500">Planning</span>
+        <span className="text-sm text-zinc-500">Review</span>
         <div className="ml-2 flex items-center gap-1 text-xs text-zinc-600">
           <span>📅</span>
           <span>Q4 2025</span>

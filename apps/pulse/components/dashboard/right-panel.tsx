@@ -75,23 +75,23 @@ const oncallTeam = [
 export function RightPanel() {
   return (
     <aside className="w-[280px] h-screen bg-card border-l border-border flex flex-col shrink-0 overflow-hidden">
-      {/* System Status */}
+      {/* Reliability Status */}
       <div className="p-5 border-b border-border">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-foreground">System Status</h3>
+          <h3 className="text-sm font-medium text-foreground">Reliability Status</h3>
           <span className="flex items-center gap-1.5 text-xs font-medium text-success">
             <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-            Operational
+            Stable
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-xl bg-muted/50">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Uptime</p>
-            <p className="text-lg font-semibold text-foreground">99.98%</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">AREI</p>
+            <p className="text-lg font-semibold text-foreground">62</p>
           </div>
           <div className="p-3 rounded-xl bg-muted/50">
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">P95 Latency</p>
-            <p className="text-lg font-semibold text-foreground">142ms</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Risk Delta</p>
+            <p className="text-lg font-semibold text-foreground">+4</p>
           </div>
         </div>
       </div>
@@ -100,7 +100,7 @@ export function RightPanel() {
       <div className="p-5 border-b border-border">
         <h3 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
           <Activity className="w-4 h-4 text-muted-foreground" />
-          Recent Activity
+          Reliability Timeline
         </h3>
         <div className="space-y-3">
           {recentActivity.map((item) => (
@@ -147,7 +147,7 @@ export function RightPanel() {
       <div className="p-5 flex-1 overflow-y-auto">
         <h3 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
-          On-Call Team
+          Response Team
         </h3>
         <div className="space-y-2">
           {oncallTeam.map((member) => (

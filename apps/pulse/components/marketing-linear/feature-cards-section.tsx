@@ -5,7 +5,7 @@ import { ChevronRight, Plus } from "lucide-react"
 
 const featureCards = [
   {
-    title: "Project planning for scrum",
+    title: "Reliability planning for AI workflows",
     illustration: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-lg">
         <svg
@@ -53,7 +53,7 @@ const featureCards = [
     ),
   },
   {
-    title: "Iteration management for scaling",
+    title: "Regression monitoring at production scale",
     illustration: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
         <img
@@ -66,7 +66,7 @@ const featureCards = [
     ),
   },
   {
-    title: "When precision matters",
+    title: "Evidence-backed reliability decisions",
     illustration: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
         <img
