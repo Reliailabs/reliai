@@ -9,6 +9,41 @@
 - No template overwrite, no bulk copy, no visual redesign.
 - Branch discipline: create a new branch for every new migration scope/slice; do not reuse completed slice branches.
 
+## Deferred Capabilities (Not Included in Functional Migration)
+The following capabilities are intentionally deferred to later architecture passes and are not part of the current functional migration effort.
+
+### Traces
+- trace replay redesign
+- compare-mode rewrites
+- graphing engine changes
+- provider abstraction layers
+- eval correlation logic
+- causality graphing
+
+### Incidents / Errors
+- incident automation workflows
+- remediation orchestration
+- advanced escalation logic
+- AI-generated RCA flows
+
+### Deployments
+- deployment causality analysis
+- rollback orchestration
+- deployment risk scoring
+
+### Audits / Governance
+- certification workflows
+- compliance exports
+- governance automation
+
+### Platform-wide
+- visual redesign
+- design-system rewrites
+- API contract redesign
+- backend schema rewrites
+- cross-service normalization
+- advanced realtime/event architecture
+
 ## Phase 0 — Safety Setup
 1. Create migration branch.
 2. Confirm current `apps/pulse` build baseline.
@@ -99,6 +134,55 @@ All route work is functional-only, no style edits.
    - migrated functionality list
    - unresolved gaps
    - next migration slice
+
+## Phase 6 — Functional Parity Pass (Post Route Spine)
+Goal: make `apps/pulse` behaviorally equivalent to the source app surfaces without visual redesign.
+
+### Scope
+- Route-level functional parity only (no style/layout/motion changes).
+- Reuse existing data contracts and auth behavior from `apps/web` as source of truth.
+- Preserve stable identifiers and route semantics already introduced in prior slices.
+
+### Order
+1. `/errors` parity:
+   - align AI-native error categories/signals
+   - ensure stable event/error IDs in list/detail
+   - wire route-local loading/empty/error states
+2. `/traces` parity:
+   - align trace list/detail primitives
+   - preserve stable trace IDs and deep-link behavior
+3. `/deployments` parity:
+   - align release/deployment event primitives
+   - support reliability-correlation labels where already available
+4. `/audits` parity:
+   - align audit status/run primitives used by Pulse summaries
+5. Cross-route linkage pass:
+   - errors -> incidents (reference-level only)
+   - traces -> incidents/deployments (reference-level only)
+   - audits -> reliability posture surfaces
+
+### Exclusions
+- No backend schema redesign.
+- No new provider adapters.
+- No remediation workflow expansion.
+- No postmortem authoring workflows.
+- No visual redesign of dashboard or marketing surfaces.
+
+### Functional Parity Checklist
+- Data contracts match existing `apps/web` behavior for each migrated route.
+- Route-local loading/empty/error states are explicit and non-generic.
+- Stable IDs are displayed/used for routing and references.
+- No protected styling boundaries are modified.
+- Route remains auth-protected and respects sign-in return flow.
+
+### Validation Gate
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Targeted manual smoke for each parity route:
+  - signed-out redirect behavior
+  - signed-in route load
+  - empty/loading/error state correctness
+  - expected reference/deep-link behavior
 
 ## Slice 1 Mapping — Core Shell/Auth + /pulse
 
