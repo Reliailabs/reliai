@@ -176,5 +176,22 @@ Examples disallowed:
 - `pnpm --filter pulse build`
 - Manual smoke:
   - signed-in `/incidents` loads incident section
-  - signed-out `/incidents` redirects through existing `(app)` sign-in flow
-  - `/pulse` and `/services` remain unchanged
+- signed-out `/incidents` redirects through existing `(app)` sign-in flow
+- `/pulse` and `/services` remain unchanged
+
+## Slice 4 Mapping — `/errors` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/errors/page.tsx` | phase plan route order + existing dashboard section model | Add | No | No | Adds authenticated `/errors` route that opens dashboard shell with `initialSection="errors"` | `(app)` auth guard, `dashboard-shell`, `ErrorsContent` |
+
+### Slice 4 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/errors` loads error-tracking section
+  - signed-out `/errors` redirects through existing `(app)` sign-in flow
+  - `/pulse`, `/services`, and `/incidents` remain unchanged
