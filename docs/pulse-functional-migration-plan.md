@@ -327,6 +327,23 @@ Examples disallowed:
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
 - Manual smoke:
-  - signed-in `/audits` loads audits surface
-  - signed-out `/audits` redirects through existing `(app)` sign-in flow
-  - `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, and `/deployments` remain unchanged
+- signed-in `/audits` loads audits surface
+- signed-out `/audits` redirects through existing `(app)` sign-in flow
+- `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, and `/deployments` remain unchanged
+
+## Slice 8 Mapping — `/guardrails` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/guardrails/page.tsx` | phase plan route order + existing dashboard section model | Add | No | No | Adds authenticated `/guardrails` route that opens dashboard shell with `initialSection="guardrails"` | `(app)` auth guard, `dashboard-shell`, guardrails section content |
+
+### Slice 8 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/guardrails` loads guardrails surface
+  - signed-out `/guardrails` redirects through existing `(app)` sign-in flow
+  - `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, and `/audits` remain unchanged
