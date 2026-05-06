@@ -3,20 +3,25 @@
 ## Locked Constraints
 - No dashboard styling changes.
 - No marketing styling changes.
-- Keep `apps/pulse/app/(marketing)/**` intact.
-- Keep `apps/pulse/components/marketing-linear/**` intact.
-- Migrate functionality into `apps/pulse/app/(app)/**` only.
-- No template overwrite, no bulk copy, no visual redesign, no marketing edits.
+- Keep `apps/pulse/components/marketing-linear/**` styling intact.
+- Functional edits in marketing are allowed for routing/content wiring only.
+- Migrate core app functionality into `apps/pulse/app/(app)/**`; marketing functional wiring is permitted where needed.
+- No template overwrite, no bulk copy, no visual redesign.
+- Branch discipline: create a new branch for every new migration scope/slice; do not reuse completed slice branches.
 
 ## Phase 0 — Safety Setup
 1. Create migration branch.
 2. Confirm current `apps/pulse` build baseline.
-3. Lock protected paths:
-   - `apps/pulse/app/(marketing)/**`
-   - `apps/pulse/components/marketing-linear/**`
+3. Lock protected styling paths:
+   - `apps/pulse/app/(marketing)/**` (style/layout/tokens/motion only)
+   - `apps/pulse/components/marketing-linear/**` (style/layout/tokens/motion only)
    - dashboard styling files
    - marketing styling files
 4. Enforce forbidden actions listed above throughout migration.
+5. Allow marketing functional wiring edits:
+   - nav/menu/login link targets
+   - CTA route destinations
+   - non-visual route plumbing
 
 ## Phase 1 — Inventory + Mapping
 1. Build functional mapping from:
@@ -120,3 +125,19 @@ All route work is functional-only, no style edits.
   - signed-in user can load `/pulse`
   - marketing routes remain unchanged (`/`, `/demo`)
   - protected paths untouched
+
+## Boundary Update (Marketing)
+
+Effective rule update:
+- Marketing boundary is **style-only**.
+- Marketing functional/routing updates are allowed, provided no styling/layout/motion changes are introduced.
+
+Examples allowed:
+- wiring `Sign in` nav link to `/sign-in`
+- wiring menu links to real routes
+- updating CTA destinations
+
+Examples disallowed:
+- className/style/token/theme changes
+- layout structure changes
+- animation/motion redesign
