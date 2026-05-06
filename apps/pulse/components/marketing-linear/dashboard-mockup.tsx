@@ -197,7 +197,7 @@ export function DashboardMockup() {
           <SignalFeedItem
             id="MKT-122"
             title="False refusal rate investigation"
-            subtitle="erin marked as Duplicate"
+            subtitle="erin marked as Similar signal"
             time="1w"
             avatar="https://i.pravatar.cc/32?img=7"
             status="done"
@@ -389,7 +389,7 @@ function SignalFeedItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             {id && <span className="text-zinc-500 text-[10px]">{id}</span>}
-            {isProject && <span className="text-violet-400 text-[10px]">Project</span>}
+            {isProject && <span className="text-violet-400 text-[10px]">Workflow</span>}
             <div className={`w-2 h-2 rounded-full ${statusColors[status] || "bg-zinc-500"}`} />
           </div>
           <p className="text-white text-xs truncate leading-tight">{title}</p>

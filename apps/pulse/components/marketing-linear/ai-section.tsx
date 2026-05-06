@@ -239,9 +239,9 @@ export function AISection() {
                     </div>
                   </div>
 
-                  {/* Duplicate Row */}
+                  {/* Similar signals */}
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-zinc-600 text-sm w-20">Duplicate of</span>
+                    <span className="text-zinc-600 text-sm w-20">Similar</span>
                   </div>
 
                   {/* Related Row */}
@@ -256,10 +256,10 @@ export function AISection() {
                       <span className="text-zinc-300 text-sm font-medium">nan</span>
                     </div>
 
-                    <p className="text-zinc-500 text-xs mb-2">Why this assignee was suggested</p>
+                    <p className="text-zinc-500 text-xs mb-2">Why this owner was suggested</p>
                     <p className="text-zinc-500 text-sm mb-4">
-                      This person was the assignee on previous findings related to performance problems in the mobile app
-                      launch flow
+                      This person handled previous findings linked to similar reliability regressions in the checkout
+                      assistant flow
                     </p>
 
                     <p className="text-zinc-500 text-xs mb-2">Alternatives</p>

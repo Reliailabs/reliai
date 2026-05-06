@@ -113,7 +113,7 @@ export function ProductDirectionSection() {
                 SEP
               </div>
 
-              {/* Project bars */}
+              {/* Workflow bars */}
               {/* Realtime inference bar */}
               <div
                 className="absolute rounded-lg bg-zinc-800/90 border border-zinc-700/50 px-4 py-3 flex items-center gap-3"
@@ -194,7 +194,7 @@ export function ProductDirectionSection() {
             </p>
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-              <h4 className="text-lg font-medium text-zinc-200 mb-5">Project Overview</h4>
+              <h4 className="text-lg font-medium text-zinc-200 mb-5">Reliability Overview</h4>
 
               {/* Properties row */}
               <div className="flex items-center gap-4 mb-4">
@@ -254,9 +254,9 @@ export function ProductDirectionSection() {
             </div>
           </div>
 
-          {/* Right column - Project updates */}
+          {/* Right column - Reliability updates */}
           <div className="border-t border-b border-zinc-800 pt-10 pl-10 pb-16">
-            <h3 className="text-xl font-medium text-zinc-200 mb-3">Project updates</h3>
+            <h3 className="text-xl font-medium text-zinc-200 mb-3">Reliability updates</h3>
             <p className="text-zinc-500 text-base leading-relaxed mb-8">
               Communicate reliability posture and remediation progress with structured updates.
             </p>
@@ -338,7 +338,7 @@ export function ProductDirectionSection() {
                 </svg>
                 <span>Payment assistant</span>
                 <span className="text-zinc-600">›</span>
-                <span>Project specs</span>
+                <span>Reliability specs</span>
                 <span className="ml-auto text-zinc-600">•••</span>
               </div>
 
@@ -371,7 +371,7 @@ export function ProductDirectionSection() {
                       quinn
                     </span>
                   </span>
-                  ture specs in realtime reliability documents with clear structure and shared evidence context.
+                  ture docs in realtime reliability workspaces with clear structure and shared evidence context.
                 </p>
 
                 {/* Placeholder text lines */}
