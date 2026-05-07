@@ -3,8 +3,9 @@
 import { Server, CheckCircle, AlertTriangle, XCircle, ExternalLink, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import type { ServicesSurfaceData } from "@/components/dashboard/pulse-types";
 
-const services = [
+const defaultServices = [
   {
     name: "api-gateway",
     description: "Main API entry point and rate limiting",
@@ -120,13 +121,23 @@ const statusConfig = {
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function ServicesContent() {
+export function ServicesContent({ servicesData }: { servicesData?: ServicesSurfaceData }) {
+  const services = servicesData?.services?.length ? servicesData.services : defaultServices;
   const healthyCount = services.filter(s => s.status === "healthy").length;
   const degradedCount = services.filter(s => s.status === "degraded").length;
   const downCount = services.filter(s => s.status === "down").length;
+  const sourceErrorText =
+    servicesData && servicesData.sourceErrors.length > 0
+      ? `Data source unavailable: ${servicesData.sourceErrors.join(", ")}.`
+      : null;
 
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
       {/* Summary */}
       <div className="grid grid-cols-4 gap-4">
         <div

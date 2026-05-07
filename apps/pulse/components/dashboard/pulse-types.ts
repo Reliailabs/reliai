@@ -37,3 +37,25 @@ export type PulseOverviewData = {
   dataMode: "live" | "demo";
   sourceErrors: string[];
 };
+
+export type ServiceStatus = "healthy" | "degraded" | "down" | "maintenance";
+
+export type ServiceCard = {
+  name: string;
+  description: string;
+  status: ServiceStatus;
+  version: string;
+  uptime: string;
+  requests: string;
+  errorRate: string;
+  latency: string;
+  team: string;
+  repo: string;
+  lastDeploy: string;
+};
+
+export type ServicesSurfaceData = {
+  services: ServiceCard[];
+  sourceErrors: string[];
+  dataMode: "live" | "demo";
+};

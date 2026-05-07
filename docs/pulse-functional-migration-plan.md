@@ -470,3 +470,25 @@ Examples disallowed:
   - `/pulse?demo=1` uses demo-only snapshot
   - `/pulse` uses live API-backed data
   - source failures show compact unavailable notice in existing panel slots
+
+## Parity Slice 2 — `/services` Functional Wiring (Template-Preserving)
+
+### Scope
+- Keep existing `apps/pulse` services visual surface intact.
+- Add services data helper and inject computed values into existing cards/summary.
+- No presenter swap, no style/layout changes.
+
+### File Mapping Matrix
+| Target File | Source of Truth | Action | Notes |
+|---|---|---|---|
+| `apps/pulse/app/(app)/services/page.tsx` | existing route + parity pattern from pulse slice | Adapt | Server-side services data fetch and shell data injection |
+| `apps/pulse/lib/services-data.ts` | existing `apps/web` project/reliability endpoints | Add | API-backed services model, derived status/uptime/latency, safe source error reporting |
+| `apps/pulse/components/dashboard/pulse-types.ts` | local pulse types | Adapt | Add `ServicesSurfaceData` and service card model |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing shell | Adapt | Pass optional services data to main content |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section switch | Adapt | Inject services data into existing services content component |
+| `apps/pulse/components/dashboard/content/services-content.tsx` | existing template component | Adapt | Replace static data with injected values; add compact source-error notice |
+
+### Intentional Gaps
+- No incident coupling or remediation flows in services cards.
+- No deployment causality or deep-link graphing yet.
+- No provider-specific adapter or schema changes.
