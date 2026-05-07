@@ -55,7 +55,7 @@ const mainMenu: NavItem[] = [
   { id: "guardrails", label: "Guardrails", icon: ShieldAlert },
   { id: "audits", label: "Audits", icon: ClipboardCheck },
   { id: "risk_reviews", label: "Risk Reviews", icon: FileSearch },
-  { id: "systems", label: "Systems", icon: Boxes },
+  { id: "services", label: "Services", icon: Boxes },
 ];
 
 const advancedOpsMenu: NavItem[] = [
@@ -63,7 +63,6 @@ const advancedOpsMenu: NavItem[] = [
   { id: "errors", label: "Error Tracking", icon: Bug },
   { id: "sla", label: "SLA & Uptime", icon: Shield },
   { id: "oncall", label: "On-Call", icon: Phone },
-  { id: "services", label: "Services", icon: Server },
   { id: "postmortems", label: "Postmortems", icon: FileText },
 ];
 
