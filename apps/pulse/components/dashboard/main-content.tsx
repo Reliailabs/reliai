@@ -8,6 +8,7 @@ import { PerformanceContent } from "./content/performance-content";
 import { ErrorsContent } from "./content/errors-content";
 import { SlaContent } from "./content/sla-content";
 import { OncallContent } from "./content/oncall-content";
+import { AuditsContent } from "./content/audits-content";
 import { ServicesContent } from "./content/services-content";
 import { PostmortemsContent } from "./content/postmortems-content";
 import { RiskReviewsContent } from "./content/risk-reviews-content";
@@ -83,8 +84,8 @@ const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
     subtitle: "Unsafe output and policy violation monitoring",
   },
   oncall: {
-    title: "Audits",
-    subtitle: "Audit status and certification posture",
+    title: "On-Call",
+    subtitle: "Escalation and response coverage",
   },
   services: {
     title: "Systems",
@@ -130,8 +131,9 @@ export function MainContent({
       case "sla":
         return <SlaContent />;
       case "audits":
+        return <AuditsContent auditsData={auditsData} />;
       case "oncall":
-        return <OncallContent auditsData={auditsData} />;
+        return <OncallContent />;
       case "systems":
       case "services":
         return <ServicesContent servicesData={servicesData} />;

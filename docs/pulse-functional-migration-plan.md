@@ -629,6 +629,11 @@ Examples disallowed:
 - No compliance export work.
 - No audit result page restructuring.
 
+### Template-Slot Exception Rule
+- Preserve template slot mappings by default.
+- If preserving a slot creates semantic mismatch, adding a dedicated section is allowed without changing shell layout/styling.
+- Applied case: `/audits` now renders through `content/audits-content.tsx` instead of `content/oncall-content.tsx`.
+
 ## Settings Mapping Matrix
 
 | Setting | State | Current route | Dependency | Target phase | Role gating |
