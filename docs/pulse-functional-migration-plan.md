@@ -470,6 +470,34 @@ Settings entries should not be removed simply because they are not wired yet. No
   - admin user can access `/system` and all `/system/*` stubs
   - `System` nav item appears only for admins
   - no styling redesign or settings deletion
+
+## Slice 14 Mapping — `/system/platform` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/system-platform-data.ts` | `apps/web-v2` system platform API behavior | Add | No | No | Fetches admin platform metrics from `/api/v1/system/platform` with source error handling | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/system/platform/page.tsx` | `apps/web-v2/app/(app)/system/platform/page.tsx` | Adapt | No | No | Renders platform reliability metrics on system shell with compact unavailable notice and interpretation panel | `SystemLayoutShell`, `system-platform-data` |
+| `apps/pulse/app/(app)/system/_components/system-layout-shell.tsx` | Slice 13 primitives | Reuse | No | No | Keeps admin/system page consistency while wiring first parity page | system route spine |
+
+### Deferred Data Wiring (Still Pending)
+- `/system/pipeline`
+- `/system/extensions`
+- `/system/customers`
+- `/system/growth`
+- `/system/expansion`
+- `/system/reliability-patterns`
+- `/system/intelligence`
+
+### Slice 14 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - admin user sees live platform metrics on `/system/platform`
+  - failed source renders compact unavailable notice
+  - non-admin cannot access `/system/platform`
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
