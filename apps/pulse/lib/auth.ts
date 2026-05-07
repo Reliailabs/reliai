@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { API_URL, SESSION_COOKIE_NAME } from "@/lib/constants";
@@ -24,6 +25,33 @@ export function sanitizeReturnTo(value?: string) {
   if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//")) {
     return value;
   }
+  return "/pulse";
+}
+
+async function getRequestReturnTo(): Promise<string> {
+  const requestHeaders = await headers();
+  const candidates = [
+    requestHeaders.get("next-url"),
+    requestHeaders.get("x-pathname"),
+    requestHeaders.get("x-invoke-path"),
+    requestHeaders.get("x-matched-path"),
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+    try {
+      if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
+        const parsed = new URL(candidate);
+        return sanitizeReturnTo(`${parsed.pathname}${parsed.search}`);
+      }
+      return sanitizeReturnTo(candidate);
+    } catch {
+      continue;
+    }
+  }
+
   return "/pulse";
 }
 
@@ -77,12 +105,11 @@ export async function getOperatorSession(): Promise<OperatorSession | null> {
   }
 }
 
-export async function requireOperatorSession(returnTo = "/pulse"): Promise<OperatorSession> {
+export async function requireOperatorSession(returnTo?: string): Promise<OperatorSession> {
   const session = await getOperatorSession();
   if (!session) {
-    const safeReturnTo = sanitizeReturnTo(returnTo);
+    const safeReturnTo = returnTo ? sanitizeReturnTo(returnTo) : await getRequestReturnTo();
     redirect(`/sign-in?return_to=${encodeURIComponent(safeReturnTo)}`);
   }
   return session;
 }
-

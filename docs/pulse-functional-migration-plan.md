@@ -413,7 +413,25 @@ Examples disallowed:
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
 - Manual smoke:
-  - signed-in `/settings` loads settings surface
-  - signed-out `/settings` redirects through existing `(app)` sign-in flow
-  - quick settings order prioritizes Appearance -> Integrations -> Security
-  - all prior migrated routes remain unchanged
+- signed-in `/settings` loads settings surface
+- signed-out `/settings` redirects through existing `(app)` sign-in flow
+- quick settings order prioritizes Appearance -> Integrations -> Security
+- all prior migrated routes remain unchanged
+
+## Auth Hardening — Return-To Preservation
+
+### Objective
+- Preserve the exact requested protected route in sign-in redirect flow instead of defaulting all unauthenticated traffic to `/pulse`.
+
+### Implementation
+- Add `apps/pulse/middleware.ts` to enforce auth for protected app routes.
+- Redirect unauthenticated or invalid-session requests to:
+  - `/sign-in?return_to=<requested_path_and_query>`
+- Keep server-side layout guard in place as defense-in-depth.
+- Update `requireOperatorSession` to derive return target from request headers when explicit route is not provided.
+
+### Validation Checklist
+- signed-out request to `/traces` redirects to `/sign-in?return_to=%2Ftraces`
+- signed-out request to `/settings` redirects to `/sign-in?return_to=%2Fsettings`
+- successful sign-in returns user to original requested route
+- authenticated access to protected routes remains unchanged
