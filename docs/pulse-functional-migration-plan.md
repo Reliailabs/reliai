@@ -341,6 +341,28 @@ Examples disallowed:
   - source failure shows compact unavailable notice
   - no-data state is explicit and reliability-specific
   - no styling/marketing boundary edits
+
+## Slice 11 Mapping — `/postmortems` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/postmortems-data.ts` | `apps/web` incident signal behavior + parity helper pattern | Add | No | No | Builds postmortem surface payload from live incident records with source error tracking | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/postmortems/page.tsx` | existing authenticated route pattern | Adapt | No | No | Injects live `postmortemsData` into existing postmortem surface via dashboard shell | `(app)` auth guard, `dashboard-shell` |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | prior parity prop pass-through model | Adapt | No | No | Accepts optional `postmortemsData` and forwards to main content | `main-content.tsx` |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section router | Adapt | No | No | Routes `postmortems` section to existing `PostmortemsContent` with injected data | `PostmortemsContent` |
+| `apps/pulse/components/dashboard/content/postmortems-content.tsx` | existing Pulse template surface | Adapt | No | No | Existing postmortems UI consumes injected parity data and shows compact source-unavailable + explicit empty state | `pulse-types.ts` |
+
+### Slice 11 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/postmortems` loads injected live data where available
+  - source failure shows compact unavailable notice
+  - no-data state is explicit and reliability-specific
+  - no styling/marketing boundary edits
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 

@@ -323,3 +323,34 @@ export type OncallSurfaceData = {
   hasOncallData: boolean;
   dataMode: "live" | "demo";
 };
+
+export type PostmortemItem = {
+  id: string;
+  title: string;
+  incident: string;
+  severity: "critical" | "high" | "medium" | "low";
+  duration: string;
+  date: string;
+  author: string;
+  authorInitials: string;
+  status: "published" | "draft";
+  impact: string;
+  rootCause: string;
+  actionItems: number;
+  completedItems: number;
+  tags: string[];
+};
+
+export type PostmortemMetricItem = {
+  label: string;
+  value: string;
+  period: string;
+};
+
+export type PostmortemsSurfaceData = {
+  postmortems: PostmortemItem[];
+  metrics: PostmortemMetricItem[];
+  sourceErrors: string[];
+  hasPostmortemData: boolean;
+  dataMode: "live" | "demo";
+};

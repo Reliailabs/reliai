@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText, Clock, User, Tag, ChevronRight, Plus } from "lucide-react";
+import { FileText, Clock, User, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import type { PostmortemsSurfaceData } from "@/components/dashboard/pulse-types";
 
-const postmortems = [
+const defaultPostmortems = [
   {
     id: "PM-2024-012",
     title: "Payment Gateway Outage",
@@ -87,7 +88,7 @@ const postmortems = [
   },
 ];
 
-const metrics = [
+const defaultMetrics = [
   { label: "Total Postmortems", value: "24", period: "Last 90 days" },
   { label: "Avg MTTR", value: "47m", period: "Improving" },
   { label: "Action Items Open", value: "8", period: "Across all PMs" },
@@ -96,9 +97,27 @@ const metrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function PostmortemsContent() {
+export function PostmortemsContent({ postmortemsData }: { postmortemsData?: PostmortemsSurfaceData }) {
+  const postmortems = postmortemsData?.postmortems?.length ? postmortemsData.postmortems : defaultPostmortems;
+  const metrics = postmortemsData?.metrics?.length ? postmortemsData.metrics : defaultMetrics;
+  const sourceErrorText =
+    postmortemsData && postmortemsData.sourceErrors.length > 0
+      ? `Data source unavailable: ${postmortemsData.sourceErrors.join(", ")}.`
+      : null;
+  const hasPostmortemData = postmortemsData?.hasPostmortemData ?? true;
+
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
+      {!hasPostmortemData ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
+          No postmortem records yet. Completed reliability incidents will generate review artifacts here.
+        </div>
+      ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((metric) => (
