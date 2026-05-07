@@ -1,10 +1,5 @@
-import { SystemStub } from "../_components/system-stub";
+import { redirect } from "next/navigation";
 
-export default function SystemGrowthPage() {
-  return (
-    <SystemStub
-      title="Growth"
-      description="Tenant growth surface for system-admin trend and capacity review."
-    />
-  );
+export default function LegacySystemgrowthPage() {
+  redirect("/pulse/system/growth");
 }

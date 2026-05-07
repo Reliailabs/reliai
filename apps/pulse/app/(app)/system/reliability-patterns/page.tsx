@@ -1,10 +1,5 @@
-import { SystemStub } from "../_components/system-stub";
+import { redirect } from "next/navigation";
 
-export default function SystemReliabilityPatternsPage() {
-  return (
-    <SystemStub
-      title="Reliability"
-      description="System-level reliability pattern surface for platform-wide risk review."
-    />
-  );
+export default function LegacySystemreliabilitypatternsPage() {
+  redirect("/pulse/system/reliability-patterns");
 }

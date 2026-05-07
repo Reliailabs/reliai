@@ -181,10 +181,10 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
       <div className="px-4 py-4 border-t border-border space-y-2">
         {isSystemAdmin ? (
           <Link
-            href="/system"
+            href="/pulse/system"
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
-              pathname?.startsWith("/system")
+              pathname?.startsWith("/pulse/system")
                 ? "bg-primary text-primary-foreground font-medium shadow-sm"
                 : "text-foreground/80 hover:bg-muted/80 hover:text-foreground",
             )}

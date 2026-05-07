@@ -1,10 +1,5 @@
-import { SystemStub } from "../_components/system-stub";
+import { redirect } from "next/navigation";
 
-export default function SystemIntelligencePage() {
-  return (
-    <SystemStub
-      title="Reliability Intelligence"
-      description="Reliability intelligence surface for aggregated platform insights."
-    />
-  );
+export default function LegacySystemintelligencePage() {
+  redirect("/pulse/system/intelligence");
 }

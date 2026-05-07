@@ -1,10 +1,5 @@
-import { SystemStub } from "../_components/system-stub";
+import { redirect } from "next/navigation";
 
-export default function SystemCustomersPage() {
-  return (
-    <SystemStub
-      title="Customers"
-      description="Customer expansion and tenant-level reliability exposure surface."
-    />
-  );
+export default function LegacySystemcustomersPage() {
+  redirect("/pulse/system/customers");
 }

@@ -1,10 +1,5 @@
-import { SystemStub } from "../_components/system-stub";
+import { redirect } from "next/navigation";
 
-export default function SystemExpansionPage() {
-  return (
-    <SystemStub
-      title="Expansion"
-      description="Expansion metrics surface for cross-tenant growth analysis."
-    />
-  );
+export default function LegacySystemexpansionPage() {
+  redirect("/pulse/system/expansion");
 }
