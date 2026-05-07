@@ -163,3 +163,39 @@ export type TracesSurfaceData = {
   hasTraceData: boolean;
   dataMode: "live" | "demo";
 };
+
+export type DeploymentFrequencyPoint = {
+  day: string;
+  deploys: number;
+};
+
+export type DeploymentMetricItem = {
+  label: string;
+  value: string;
+  change: string;
+};
+
+export type DeploymentStatus = "success" | "failed" | "rollback";
+
+export type DeploymentSurfaceItem = {
+  id: string;
+  service: string;
+  version: string;
+  status: DeploymentStatus;
+  environment: string;
+  duration: string;
+  timestamp: string;
+  author: string;
+  authorInitials: string;
+  commit: string;
+  commitHash: string;
+};
+
+export type DeploymentsSurfaceData = {
+  deploymentFrequency: DeploymentFrequencyPoint[];
+  deployments: DeploymentSurfaceItem[];
+  metrics: DeploymentMetricItem[];
+  sourceErrors: string[];
+  hasDeploymentData: boolean;
+  dataMode: "live" | "demo";
+};

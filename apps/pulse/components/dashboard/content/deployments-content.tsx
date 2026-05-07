@@ -11,8 +11,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { DeploymentsSurfaceData } from "@/components/dashboard/pulse-types";
 
-const deploymentFrequency = [
+const defaultDeploymentFrequency = [
   { day: "Mon", deploys: 12 },
   { day: "Tue", deploys: 18 },
   { day: "Wed", deploys: 15 },
@@ -22,7 +23,7 @@ const deploymentFrequency = [
   { day: "Sun", deploys: 3 },
 ];
 
-const deployments = [
+const defaultDeployments = [
   {
     id: "DEP-1234",
     service: "api-gateway",
@@ -103,7 +104,7 @@ const deployments = [
   },
 ];
 
-const metrics = [
+const defaultMetrics = [
   { label: "Deploys Today", value: "8", change: "+3" },
   { label: "Success Rate", value: "94%", change: "+2%" },
   { label: "Avg Duration", value: "2m 45s", change: "-15s" },
@@ -112,9 +113,38 @@ const metrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function DeploymentsContent() {
+export function DeploymentsContent({ deploymentsData }: { deploymentsData?: DeploymentsSurfaceData }) {
+  const deploymentFrequency =
+    deploymentsData?.deploymentFrequency?.length ? deploymentsData.deploymentFrequency : defaultDeploymentFrequency;
+  const deployments = deploymentsData?.deployments?.length ? deploymentsData.deployments : defaultDeployments;
+  const metrics = deploymentsData?.metrics?.length ? deploymentsData.metrics : defaultMetrics;
+  const sourceErrorText =
+    deploymentsData && deploymentsData.sourceErrors.length > 0
+      ? `Data source unavailable: ${deploymentsData.sourceErrors.join(", ")}.`
+      : null;
+
+  if (deploymentsData && !deploymentsData.hasDeploymentData) {
+    return (
+      <div className="space-y-4">
+        {sourceErrorText ? (
+          <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            {sourceErrorText}
+          </div>
+        ) : null}
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
+          No deployments found. Add deployment metadata to correlate regressions with releases.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((metric) => (

@@ -562,6 +562,31 @@ Examples disallowed:
 - No graph engine or causality graphing changes.
 - No eval-correlation or provider abstraction redesign.
 
+## Parity Slice 6 — `/deployments` Functional Wiring (Template-Preserving)
+
+### Scope
+- Keep existing deployments visual surface and operational layout.
+- Inject API-backed deployment visibility data through route-level server wiring.
+- Add compact source-unavailable notice and empty-state handling in existing slot.
+
+### File Mapping Matrix
+| Target File | Source of Truth | Action | Notes |
+|---|---|---|---|
+| `apps/pulse/app/(app)/deployments/page.tsx` | existing route + parity pattern | Adapt | Server-side fetch/injection for deployments data |
+| `apps/pulse/lib/deployments-data.ts` | existing projects/deployments endpoints | Add | Fetch/normalize deployment frequency/list/metrics models with safe defaults |
+| `apps/pulse/components/dashboard/pulse-types.ts` | local view-model layer | Adapt | Add `DeploymentsSurfaceData` contracts |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing shell | Adapt | Pass optional deployments data through shell |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section switch | Adapt | Inject deployments data into existing deployments content |
+| `apps/pulse/components/dashboard/content/deployments-content.tsx` | existing template component | Adapt | Bind frequency/list/metrics to injected data; add compact unavailable + empty state |
+
+### Intentional Gaps
+- No rollback orchestration.
+- No deployment causality engine.
+- No automated regression attribution.
+- No deployment blame analysis.
+- No trace/deployment graphing.
+- No release intelligence redesign.
+
 ## Settings Mapping Matrix
 
 | Setting | State | Current route | Dependency | Target phase | Role gating |
