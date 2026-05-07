@@ -193,11 +193,18 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
             <span className="flex-1 text-left">System</span>
           </Link>
         ) : null}
-        <NavButton
-          item={{ id: "settings", label: "Settings", icon: Settings }}
-          isActive={activeSection === "settings"}
-          onClick={() => onSectionChange("settings")}
-        />
+        <Link
+          href="/settings"
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+            pathname === "/settings"
+              ? "bg-primary text-primary-foreground font-medium shadow-sm"
+              : "text-foreground/80 hover:bg-muted/80 hover:text-foreground",
+          )}
+        >
+          <Settings className="w-[18px] h-[18px] shrink-0" />
+          <span className="flex-1 text-left">Settings</span>
+        </Link>
         
         {/* User Profile */}
         <div className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer">
