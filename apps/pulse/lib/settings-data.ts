@@ -12,6 +12,7 @@ type SessionRead = {
     last_name?: string | null;
     email?: string | null;
     role?: string | null;
+    is_system_admin?: boolean;
   };
 };
 
@@ -61,6 +62,7 @@ export async function getSettingsSurfaceData(organizationId: string | null): Pro
   const email = sessionResult.data?.operator.email ?? "operator@reliai.dev";
   const role = sessionResult.data?.operator.role ?? "operator";
   const alertEnabled = Boolean(alertResult.data?.enabled);
+  const isSystemAdmin = Boolean(sessionResult.data?.operator.is_system_admin);
 
   return {
     profile: {
@@ -71,16 +73,29 @@ export async function getSettingsSurfaceData(organizationId: string | null): Pro
       role,
     },
     quickItems: [
-      { id: "appearance", label: "Appearance", description: "Customize dashboard layout and theme behavior", status: "mapped" },
-      { id: "integrations", label: "Integrations", description: "Connect incident, alerting, and workflow tools", status: "mapped" },
-      { id: "security", label: "Security", description: "Control authentication and access settings", status: "mapped" },
-      { id: "organization", label: "Organization", description: "Manage tenant profile and environment defaults", status: "partial" },
-      { id: "members", label: "Members", description: "Manage members and role assignments", status: "partial" },
-      { id: "services", label: "Services", description: "Define service ownership and environment policies", status: "stub" },
-      { id: "alerts", label: "Alerts", description: "Configure alert rules and escalation policies", status: "stub" },
-      { id: "notifications", label: "Notifications", description: "Configure personal delivery preferences", status: "stub" },
-      { id: "system", label: "System Admin", description: "Elevated admin controls and operator policies", status: "stub" },
-    ],
+      { id: "appearance", label: "Appearance", description: "Customize dashboard layout and theme behavior", status: "mapped", href: "/settings#appearance", visibility: "all" },
+      { id: "integrations", label: "Integrations", description: "Connect incident, alerting, and workflow tools", status: "mapped", href: "/settings#integrations", visibility: "admin" },
+      { id: "security", label: "Security", description: "Control authentication and access settings", status: "mapped", href: "/settings#security", visibility: "admin" },
+      { id: "project", label: "Project Settings", description: "Project profile, slug, and configuration", status: "partial", href: "/settings#project", visibility: "admin" },
+      { id: "organization", label: "Organization Settings", description: "Manage tenant profile and environment defaults", status: "partial", href: "/settings#organization", visibility: "admin" },
+      { id: "members", label: "Members", description: "Manage members and role assignments", status: "partial", href: "/settings#members", visibility: "admin" },
+      { id: "alerts", label: "Alert Settings", description: "Configure alert targets and escalation policies", status: "mapped", href: "/settings#alerts", visibility: "admin" },
+      { id: "notifications", label: "Notifications", description: "Configure personal delivery preferences", status: "stub", href: "/settings#notifications", visibility: "all" },
+      { id: "services", label: "Services / Systems", description: "Service ownership and environment policy controls", status: "stub", href: "/settings#services", visibility: "admin" },
+      { id: "pipeline", label: "Pipeline", description: "Ingestion pipeline health", status: "mapped", href: "/pulse/system/pipeline", visibility: "system_admin" },
+      { id: "extensions", label: "Extensions", description: "Processor extensions", status: "mapped", href: "/pulse/system/extensions", visibility: "system_admin" },
+      { id: "customers", label: "Customers", description: "Customer expansion", status: "partial", href: "/pulse/system/customers", visibility: "system_admin" },
+      { id: "growth", label: "Growth", description: "Tenant growth", status: "partial", href: "/pulse/system/growth", visibility: "system_admin" },
+      { id: "expansion", label: "Expansion", description: "Expansion metrics", status: "partial", href: "/pulse/system/expansion", visibility: "system_admin" },
+      { id: "platform", label: "Platform", description: "Platform reliability", status: "mapped", href: "/pulse/system/platform", visibility: "system_admin" },
+      { id: "reliability", label: "Reliability", description: "System-level patterns", status: "stub", href: "/pulse/system/reliability-patterns", visibility: "system_admin" },
+      { id: "intelligence", label: "Intelligence", description: "Reliability intelligence", status: "stub", href: "/pulse/system/intelligence", visibility: "system_admin" },
+    ].filter((item) => {
+      if (item.visibility === "all") return true;
+      if (item.visibility === "admin") return true;
+      if (item.visibility === "system_admin") return isSystemAdmin;
+      return true;
+    }),
     integrations: [
       { name: "Alert Target", connected: alertEnabled, icon: "AT", statusLabel: alertEnabled ? "Connected" : "Not configured" },
       { name: "Slack", connected: false, icon: "S", statusLabel: "Planned" },

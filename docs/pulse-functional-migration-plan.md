@@ -393,6 +393,14 @@ Examples disallowed:
 
 Settings entries should not be removed simply because they are not wired yet. Non-ready entries should route to clear planned/partial states rather than dead links.
 
+### Settings IA Coverage Update
+- Expanded visible settings navigation to cover union IA from `apps/web`, `apps/web-v2`, and `app/dashboard-v1` semantics.
+- Added explicit quick-link entries for:
+  - Project Settings, Organization Settings, Alert Settings
+  - Services / Systems
+  - System-admin links: Platform, Pipeline, Extensions, Customers, Growth, Expansion, Reliability, Intelligence
+- Non-mapped items remain visible and routed to planned/partial destinations instead of dead controls.
+
 ### Slice 12 Validation Checklist
 
 - `pnpm --filter pulse lint`

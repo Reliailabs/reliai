@@ -360,6 +360,8 @@ export type SettingsQuickItem = {
   label: string;
   description: string;
   status: "mapped" | "partial" | "stub";
+  href: string;
+  visibility?: "all" | "admin" | "system_admin";
 };
 
 export type SettingsIntegrationItem = {

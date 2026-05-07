@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { User, Bell, Lock, Palette, Users, Zap, ChevronRight } from "lucide-react";
+import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 
@@ -11,38 +12,66 @@ const defaultSettingsSections = [
     label: "Appearance",
     description: "Customize dashboard layout and theme behavior",
     icon: Palette,
+    href: "/settings#appearance",
   },
   {
     id: "integrations",
     label: "Integrations",
     description: "Connect incident, alerting, and workflow tools",
     icon: Zap,
+    href: "/settings#integrations",
   },
   {
     id: "security",
     label: "Security",
     description: "Control authentication and access settings",
     icon: Lock,
+    href: "/settings#security",
   },
   {
     id: "profile",
     label: "Profile",
     description: "Manage your personal information",
     icon: User,
+    href: "/settings#profile",
   },
   {
     id: "notifications",
     label: "Notifications",
     description: "Configure how you receive updates",
     icon: Bell,
+    href: "/settings#notifications",
   },
   {
     id: "team",
     label: "Team",
     description: "Manage team members and roles",
     icon: Users,
+    href: "/settings#team",
   },
 ];
+
+const iconById = {
+  appearance: Palette,
+  integrations: Zap,
+  security: Lock,
+  profile: User,
+  notifications: Bell,
+  team: Users,
+  project: Building2,
+  organization: Building2,
+  members: Users,
+  alerts: Bell,
+  services: Boxes,
+  pipeline: Server,
+  extensions: Server,
+  customers: Users,
+  growth: BarChart3,
+  expansion: BarChart3,
+  platform: Server,
+  reliability: Building2,
+  intelligence: Building2,
+} as const;
 
 const defaultIntegrations = [
   { name: "PagerDuty", connected: true, icon: "PD", statusLabel: "Connected" },
@@ -139,13 +168,17 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       {/* Quick Settings */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         <h3 className="font-semibold text-foreground p-6 pb-4">Quick Settings</h3>
+        <p className="px-6 pb-4 text-xs text-muted-foreground">
+          Some controls are staged for upcoming parity slices and are marked as Planned or Partial.
+        </p>
         <div className="divide-y divide-border">
           {settingsSections.map((section) => {
-            const Icon = section.icon;
+            const Icon = ("icon" in section && section.icon ? section.icon : iconById[section.id as keyof typeof iconById]) ?? Settings;
+            const href = "href" in section && section.href ? section.href : "/settings";
             return (
-              <button
+              <Link
                 key={section.id}
-                type="button"
+                href={href}
                 className="w-full flex items-center gap-4 p-6 hover:bg-muted/30 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
@@ -170,7 +203,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                   <p className="text-xs text-muted-foreground">{section.description}</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </button>
+              </Link>
             );
           })}
         </div>
