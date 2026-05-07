@@ -402,6 +402,74 @@ Settings entries should not be removed simply because they are not wired yet. No
   - source failure shows compact unavailable notice
   - mapped/partial/stub states are visible and explicit
   - no styling/marketing boundary edits
+
+## Reference — System Route Spine (Planned)
+
+### Inspection Findings
+- `apps/pulse` currently has no dedicated `/system` route family; navigation is section-based within `DashboardShell`.
+- `apps/web-v2` already defines the required system route model and should be used as functional source of truth:
+  - `/system/platform`
+  - `/system/pipeline`
+  - `/system/extensions`
+  - `/system/customers`
+  - `/system/growth`
+  - `/system/expansion`
+  - `/system/reliability-patterns`
+  - `/system/intelligence`
+- `apps/web-v2` protects system routes via system-admin session checks; `apps/pulse` should mirror this role gating.
+
+### Planned IA Mapping (Admin Scope)
+- `System` (top-level, admin-only)
+- `Platform Health`
+  - `Platform` — platform reliability
+  - `Pipeline` — ingestion pipeline health
+  - `Extensions` — processor extensions
+- `Customers & Growth`
+  - `Customers` — customer expansion
+  - `Growth` — tenant growth
+  - `Expansion` — expansion metrics
+- `Intelligence`
+  - `Reliability` — system-level patterns
+  - `Reliability Intelligence` — reliability intelligence views
+
+### Planned Route Shape
+- `/system`
+- `/system/platform`
+- `/system/pipeline`
+- `/system/extensions`
+- `/system/customers`
+- `/system/growth`
+- `/system/expansion`
+- `/system/reliability-patterns`
+- `/system/intelligence`
+
+### Implementation Guardrails
+- Add route spine + auth gating first (no visual redesign).
+- Preserve existing Pulse styling and dashboard composition patterns.
+- Wire data parity page-by-page after route spine is in place.
+
+## Slice 13 Mapping — `/system` Admin Route Spine (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/system/layout.tsx` | `apps/web-v2/app/(app)/system/layout.tsx` | Add | No | No | Admin-only route guard for all `/system/*` pages | `lib/auth.ts` |
+| `apps/pulse/lib/auth.ts` | existing pulse auth contract | Adapt | No | No | Adds `requireSystemAdminSession` helper to mirror web-v2 admin gating behavior | existing session lookup |
+| `apps/pulse/components/dashboard/app-sidebar.tsx` | existing pulse sidebar composition | Adapt | No | No | Adds `System` nav entry visible only when `is_system_admin` is true | `GET /api/auth/session` |
+| `apps/pulse/app/api/auth/session/route.ts` | existing auth session contract | Add | No | No | Exposes minimal session payload for client-side nav gating | `getOperatorSession` |
+| `apps/pulse/app/(app)/system/page.tsx` + `/system/*` pages | planned route spine from system mapping | Add | No | No | Adds route stubs for system admin surfaces without data parity wiring | system layout + stub component |
+| `apps/pulse/app/(app)/system/_components/system-stub.tsx` | pulse route-stub pattern | Add | No | No | Shared placeholder surface for system route navigation and deferred parity note | route stubs |
+
+### Slice 13 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - non-admin user cannot access `/system` routes
+  - admin user can access `/system` and all `/system/*` stubs
+  - `System` nav item appears only for admins
+  - no styling redesign or settings deletion
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 

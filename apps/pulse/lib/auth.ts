@@ -113,3 +113,11 @@ export async function requireOperatorSession(returnTo?: string): Promise<Operato
   }
   return session;
 }
+
+export async function requireSystemAdminSession(returnTo?: string): Promise<OperatorSession> {
+  const session = await requireOperatorSession(returnTo);
+  if (!session.operator.is_system_admin) {
+    redirect("/pulse");
+  }
+  return session;
+}

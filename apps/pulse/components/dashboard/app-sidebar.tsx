@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { Section } from "@/components/dashboard/sections";
 import {
@@ -68,6 +70,22 @@ const advancedOpsMenu: NavItem[] = [
 
 export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
   const [advancedOpsOpen, setAdvancedOpsOpen] = useState(false);
+  const [isSystemAdmin, setIsSystemAdmin] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    void fetch("/api/auth/session", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ session?: { operator?: { is_system_admin?: boolean } } }>;
+      })
+      .then((payload) => {
+        if (payload?.session?.operator?.is_system_admin) {
+          setIsSystemAdmin(true);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   return (
     <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col shrink-0 overflow-hidden">
@@ -161,6 +179,20 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
 
       {/* Settings & User */}
       <div className="px-4 py-4 border-t border-border space-y-2">
+        {isSystemAdmin ? (
+          <Link
+            href="/system"
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+              pathname?.startsWith("/system")
+                ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                : "text-foreground/80 hover:bg-muted/80 hover:text-foreground",
+            )}
+          >
+            <Server className="w-[18px] h-[18px] shrink-0" />
+            <span className="flex-1 text-left">System</span>
+          </Link>
+        ) : null}
         <NavButton
           item={{ id: "settings", label: "Settings", icon: Settings }}
           isActive={activeSection === "settings"}
