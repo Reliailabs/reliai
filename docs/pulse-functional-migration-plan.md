@@ -395,6 +395,25 @@ Examples disallowed:
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
 - Manual smoke:
-  - signed-in `/postmortems` loads postmortems surface
-  - signed-out `/postmortems` redirects through existing `(app)` sign-in flow
-  - `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, `/guardrails`, `/metrics`, and `/on-call` remain unchanged
+- signed-in `/postmortems` loads postmortems surface
+- signed-out `/postmortems` redirects through existing `(app)` sign-in flow
+- `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, `/guardrails`, `/metrics`, and `/on-call` remain unchanged
+
+## Slice 12 Mapping — `/settings` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/settings/page.tsx` | phase plan route order + existing dashboard section model | Add | No | No | Adds authenticated `/settings` route that opens dashboard shell with `initialSection="settings"` | `(app)` auth guard, `dashboard-shell`, settings section content |
+| `apps/pulse/components/dashboard/content/settings-content.tsx` | current pulse settings content + migration IA guardrails | Adapt (minimal) | No | No | Prioritizes `Appearance`, `Integrations`, and `Security` in quick settings list | `/settings` section rendering |
+
+### Slice 12 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/settings` loads settings surface
+  - signed-out `/settings` redirects through existing `(app)` sign-in flow
+  - quick settings order prioritizes Appearance -> Integrations -> Security
+  - all prior migrated routes remain unchanged

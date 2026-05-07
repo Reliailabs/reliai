@@ -6,6 +6,24 @@ import { Button } from "@/components/ui/button";
 
 const settingsSections = [
   {
+    id: "appearance",
+    label: "Appearance",
+    description: "Customize dashboard layout and theme behavior",
+    icon: Palette,
+  },
+  {
+    id: "integrations",
+    label: "Integrations",
+    description: "Connect incident, alerting, and workflow tools",
+    icon: Zap,
+  },
+  {
+    id: "security",
+    label: "Security",
+    description: "Control authentication and access settings",
+    icon: Lock,
+  },
+  {
     id: "profile",
     label: "Profile",
     description: "Manage your personal information",
@@ -18,28 +36,10 @@ const settingsSections = [
     icon: Bell,
   },
   {
-    id: "security",
-    label: "Security",
-    description: "Password and authentication settings",
-    icon: Lock,
-  },
-  {
-    id: "appearance",
-    label: "Appearance",
-    description: "Customize the look and feel",
-    icon: Palette,
-  },
-  {
     id: "team",
     label: "Team",
     description: "Manage team members and roles",
     icon: Users,
-  },
-  {
-    id: "integrations",
-    label: "Integrations",
-    description: "Connect with other tools",
-    icon: Zap,
   },
 ];
 
