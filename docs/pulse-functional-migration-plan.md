@@ -300,6 +300,25 @@ Examples disallowed:
   - source failure shows compact unavailable notice
   - no-data case shows explicit guardrail empty state
   - no styling/marketing boundary edits
+
+## Slice 9 Mapping — `/metrics` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/metrics-data.ts` | `apps/web` metrics/error signal behavior + existing parity helper pattern | Add | No | No | Provides route-level metrics parity helper with normalized reliability signal payload | `lib/errors-data.ts` |
+| `apps/pulse/app/(app)/metrics/page.tsx` | existing route auth pattern + current metrics section behavior | Adapt | No | No | Injects live metrics/error signal data into existing metrics surface via dashboard shell | `(app)` auth guard, `dashboard-shell`, `ErrorsContent` |
+
+### Slice 9 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/metrics` loads injected live data where available
+  - source failure shows compact unavailable notice in existing slot
+  - no-data state remains explicit and reliability-specific
+  - no styling/marketing boundary edits
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
