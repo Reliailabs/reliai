@@ -20,8 +20,9 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 
-const requestsData = [
+const defaultRequestsData = [
   { time: "00:00", requests: 12400, errors: 45 },
   { time: "04:00", requests: 8200, errors: 23 },
   { time: "08:00", requests: 24500, errors: 89 },
@@ -39,7 +40,7 @@ const latencyData = [
   { service: "Checkout Assistant", p50: 18, p95: 45, p99: 92 },
 ];
 
-const metrics = [
+const defaultMetrics = [
   {
     label: "Active Incidents",
     value: "3",
@@ -78,7 +79,7 @@ const metrics = [
   },
 ];
 
-const activeIncidents = [
+const defaultActiveIncidents = [
   {
     id: "INC-2847",
     title: "Database latency spike in us-east-1",
@@ -104,9 +105,33 @@ const activeIncidents = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function OverviewContent() {
+export function OverviewContent({ pulseOverviewData }: { pulseOverviewData?: PulseOverviewData }) {
+  const metricDecor: Record<string, { icon: typeof AlertTriangle; color: string; bgColor: string }> = {
+    "Active Incidents": { icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10" },
+    "Regression Detections": { icon: Zap, color: "text-chart-1", bgColor: "bg-chart-1/10" },
+    "Failed Evals": { icon: Activity, color: "text-success", bgColor: "bg-success/10" },
+    "High-Risk Outputs": { icon: CheckCircle, color: "text-success", bgColor: "bg-success/10" },
+  };
+  const metrics = pulseOverviewData?.metrics
+    ? pulseOverviewData.metrics.map((metric) => ({
+        ...metric,
+        ...(metricDecor[metric.label] ?? metricDecor["High-Risk Outputs"]),
+      }))
+    : defaultMetrics;
+  const activeIncidents = pulseOverviewData?.activeIncidents ?? defaultActiveIncidents;
+  const requestsData = pulseOverviewData?.timelinePoints ?? defaultRequestsData;
+  const sourceErrorText =
+    pulseOverviewData && pulseOverviewData.sourceErrors.length > 0
+      ? `Data source unavailable: ${pulseOverviewData.sourceErrors.join(", ")}.`
+      : null;
+
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
       {/* Metrics Grid */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((metric) => {

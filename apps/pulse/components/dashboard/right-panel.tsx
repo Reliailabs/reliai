@@ -2,6 +2,7 @@
 
 import { Activity, Clock, Users, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 
 const recentActivity = [
   {
@@ -72,26 +73,32 @@ const oncallTeam = [
   },
 ];
 
-export function RightPanel() {
+export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOverviewData }) {
+  const recentActivityItems = pulseOverviewData?.recentActivity ?? recentActivity;
+  const areiScore = pulseOverviewData?.areiScore ?? 62;
+  const deltaValue = pulseOverviewData?.areiDelta;
+  const deltaLabel = deltaValue == null ? "n/a" : `${deltaValue >= 0 ? "+" : ""}${deltaValue}`;
+  const stable = areiScore < 50;
+
   return (
     <aside className="w-[280px] h-screen bg-card border-l border-border flex flex-col shrink-0 overflow-hidden">
       {/* Reliability Status */}
       <div className="p-5 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-foreground">Reliability Status</h3>
-          <span className="flex items-center gap-1.5 text-xs font-medium text-success">
-            <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-            Stable
+          <span className={`flex items-center gap-1.5 text-xs font-medium ${stable ? "text-success" : "text-warning"}`}>
+            <span className={`w-2 h-2 rounded-full animate-pulse ${stable ? "bg-success" : "bg-warning"}`} />
+            {stable ? "Stable" : "Elevated"}
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-xl bg-muted/50">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">AREI</p>
-            <p className="text-lg font-semibold text-foreground">62</p>
+            <p className="text-lg font-semibold text-foreground">{areiScore}</p>
           </div>
           <div className="p-3 rounded-xl bg-muted/50">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Risk Delta</p>
-            <p className="text-lg font-semibold text-foreground">+4</p>
+            <p className="text-lg font-semibold text-foreground">{deltaLabel}</p>
           </div>
         </div>
       </div>
@@ -103,7 +110,7 @@ export function RightPanel() {
           Reliability Timeline
         </h3>
         <div className="space-y-3">
-          {recentActivity.map((item) => (
+          {recentActivityItems.map((item) => (
             <button
               key={item.id}
               type="button"

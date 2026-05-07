@@ -424,7 +424,7 @@ Examples disallowed:
 - Preserve the exact requested protected route in sign-in redirect flow instead of defaulting all unauthenticated traffic to `/pulse`.
 
 ### Implementation
-- Add `apps/pulse/middleware.ts` to enforce auth for protected app routes.
+- Add `apps/pulse/proxy.ts` to enforce auth for protected app routes.
 - Redirect unauthenticated or invalid-session requests to:
   - `/sign-in?return_to=<requested_path_and_query>`
 - Keep server-side layout guard in place as defense-in-depth.
@@ -444,3 +444,29 @@ Examples disallowed:
 | `/settings` (no session) | 307 -> `/sign-in?return_to=%2Fsettings` | matched |
 | `/on-call` (no session) | 307 -> `/sign-in?return_to=%2Fon-call` | matched |
 | `/traces` with invalid `reliai_session` | 307 -> `/sign-in?return_to=%2Ftraces` | matched |
+
+## Parity Slice 1 — `/pulse` Functional Wiring (Template-Preserving)
+
+### Scope
+- Keep existing `apps/pulse` dashboard visual shell and template components.
+- Add logic/data helpers for `/pulse` and inject computed values into existing cards/panels.
+- No full presenter/page replacement from `dashboard-v1`.
+
+### File Mapping Matrix
+| Target File | Source of Truth | Action | Notes |
+|---|---|---|---|
+| `apps/pulse/app/(app)/pulse/page.tsx` | current pulse route + dashboard-v1 data behavior | Adapt | Server-side live/demo selection and data fetch wiring |
+| `apps/pulse/lib/pulse-data.ts` | dashboard-v1 fetch and decision patterns | Add | Safe source fetches, demo isolation, compact AREI scoring, overview model |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing pulse shell | Adapt | Pass optional overview data to existing content/panel components |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing pulse shell | Adapt | Inject overview data only when `activeSection` is `overview` |
+| `apps/pulse/components/dashboard/content/overview-content.tsx` | existing pulse template overview | Adapt | Replace static counters/lists with computed values; add compact source-error notice |
+| `apps/pulse/components/dashboard/right-panel.tsx` | existing pulse template right panel | Adapt | Map AREI and recent activity to computed data without layout changes |
+| `apps/pulse/components/dashboard/pulse-types.ts` | local pulse route needs | Add | Local typed view model for overview wiring |
+
+### Validation
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - `/pulse?demo=1` uses demo-only snapshot
+  - `/pulse` uses live API-backed data
+  - source failures show compact unavailable notice in existing panel slots
