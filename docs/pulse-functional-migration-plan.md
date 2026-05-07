@@ -636,6 +636,33 @@ Settings entries should not be removed simply because they are not wired yet. No
   - failed source renders compact unavailable notice
   - no-data case renders explicit empty state
   - non-admin cannot access `/pulse/system/expansion`
+
+## Slice 20 Mapping — `/pulse/system/reliability-patterns` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/system-reliability-patterns-data.ts` | `apps/web-v2` reliability patterns API behavior | Add | No | No | Fetches reliability pattern board data from `/api/v1/intelligence/patterns` with source error handling | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/pulse/system/reliability-patterns/page.tsx` | `apps/web-v2/app/(app)/system/reliability-patterns/page.tsx` | Adapt | No | No | Renders reliability pattern board on shared system shell with compact unavailable and explicit empty states | `SystemLayoutShell`, `system-reliability-patterns-data` |
+
+### Explicit Avoids (This Slice)
+- no causality engine
+- no benchmark scoring redesign
+- no global intelligence redesign
+- no automated recommendations
+- no graph/network visualizations
+- no new model ranking logic
+
+### Slice 20 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - admin user sees reliability pattern board on `/pulse/system/reliability-patterns`
+  - failed source renders compact unavailable notice
+  - no-data case renders explicit empty state
+  - non-admin cannot access `/pulse/system/reliability-patterns`
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
