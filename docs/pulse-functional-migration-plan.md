@@ -492,3 +492,26 @@ Examples disallowed:
 - No incident coupling or remediation flows in services cards.
 - No deployment causality or deep-link graphing yet.
 - No provider-specific adapter or schema changes.
+
+## Parity Slice 3 — `/incidents` Functional Wiring (Template-Preserving)
+
+### Scope
+- Keep existing incidents layout and interaction model.
+- Inject API-backed incidents data and normalized status/timeline values.
+- Add route-local source error and empty-state handling in existing section slots.
+
+### File Mapping Matrix
+| Target File | Source of Truth | Action | Notes |
+|---|---|---|---|
+| `apps/pulse/app/(app)/incidents/page.tsx` | existing route + parity pattern | Adapt | Server fetch/injection for incidents surface |
+| `apps/pulse/lib/incidents-data.ts` | existing incidents endpoints | Add | Fetch/normalize incidents + events into surface model |
+| `apps/pulse/components/dashboard/pulse-types.ts` | local view-model layer | Adapt | Add `IncidentsSurfaceData` model |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing shell | Adapt | Pass incidents data through shell |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section switch | Adapt | Inject incidents data into existing content component |
+| `apps/pulse/components/dashboard/content/incidents-content.tsx` | existing template component | Adapt | Use injected data, preserve UI hierarchy, add compact unavailable + empty states |
+
+### Intentional Gaps
+- No RCA workflow implementation.
+- No escalation orchestration or on-call policy logic.
+- No postmortem coupling or deployment-causality overlay.
+- No trace replay embedding inside incidents surface.

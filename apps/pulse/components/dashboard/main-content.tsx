@@ -16,11 +16,13 @@ import { Bell, Calendar, RefreshCw, Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { ServicesSurfaceData } from "@/components/dashboard/pulse-types";
+import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
   pulseOverviewData?: PulseOverviewData;
   servicesData?: ServicesSurfaceData;
+  incidentsData?: IncidentsSurfaceData;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -90,7 +92,12 @@ const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
   },
 };
 
-export function MainContent({ activeSection, pulseOverviewData, servicesData }: MainContentProps) {
+export function MainContent({
+  activeSection,
+  pulseOverviewData,
+  servicesData,
+  incidentsData,
+}: MainContentProps) {
   const config = sectionConfig[activeSection];
 
   const renderContent = () => {
@@ -98,7 +105,7 @@ export function MainContent({ activeSection, pulseOverviewData, servicesData }: 
       case "overview":
         return <OverviewContent pulseOverviewData={pulseOverviewData} />;
       case "incidents":
-        return <IncidentsContent />;
+        return <IncidentsContent incidentsData={incidentsData} />;
       case "deployments":
         return <DeploymentsContent />;
       case "traces":

@@ -5,8 +5,9 @@ import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, XCircle, Search,
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 
-const incidents = [
+const defaultIncidents = [
   {
     id: "INC-2847",
     title: "Database latency spike in us-east-1",
@@ -89,15 +90,41 @@ const severityConfig = {
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function IncidentsContent() {
+export function IncidentsContent({ incidentsData }: { incidentsData?: IncidentsSurfaceData }) {
+  const incidents = incidentsData?.incidents?.length ? incidentsData.incidents : defaultIncidents;
   const [selectedIncident, setSelectedIncident] = useState(incidents[0]);
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const filteredIncidents = filterStatus === "all" 
     ? incidents 
     : incidents.filter(i => i.status === filterStatus);
+  const sourceErrorText =
+    incidentsData && incidentsData.sourceErrors.length > 0
+      ? `Data source unavailable: ${incidentsData.sourceErrors.join(", ")}.`
+      : null;
+
+  if (incidents.length === 0) {
+    return (
+      <div className="space-y-4">
+        {sourceErrorText ? (
+          <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            {sourceErrorText}
+          </div>
+        ) : null}
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
+          No incidents detected yet. Reliai will surface grouped reliability failures here when action is needed.
+        </div>
+      </div>
+    );
+  }
 
   return (
+    <div className="space-y-4">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
     <div className="flex gap-6 h-[calc(100vh-180px)]">
       {/* Incidents List */}
       <div className="w-[400px] flex flex-col shrink-0">
@@ -282,6 +309,7 @@ export function IncidentsContent() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

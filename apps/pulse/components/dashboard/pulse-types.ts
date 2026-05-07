@@ -59,3 +59,30 @@ export type ServicesSurfaceData = {
   sourceErrors: string[];
   dataMode: "live" | "demo";
 };
+
+export type IncidentSurfaceStatus = "investigating" | "mitigating" | "monitoring" | "resolved";
+
+export type IncidentTimelineEntry = {
+  time: string;
+  event: string;
+  type: "alert" | "notification" | "action";
+};
+
+export type IncidentSurfaceItem = {
+  id: string;
+  title: string;
+  description: string;
+  severity: "critical" | "high" | "medium" | "low";
+  status: IncidentSurfaceStatus;
+  duration: string;
+  assignee: string;
+  assigneeInitials: string;
+  impactedServices: string[];
+  timeline: IncidentTimelineEntry[];
+};
+
+export type IncidentsSurfaceData = {
+  incidents: IncidentSurfaceItem[];
+  sourceErrors: string[];
+  dataMode: "live" | "demo";
+};
