@@ -561,3 +561,22 @@ Examples disallowed:
 - No compare-mode rewrite.
 - No graph engine or causality graphing changes.
 - No eval-correlation or provider abstraction redesign.
+
+## Settings Mapping Matrix
+
+| Setting | State | Current route | Dependency | Target phase | Role gating |
+|---|---|---|---|---|---|
+| Appearance | Mapped | `/settings#appearance` | Existing UI preference model | Now | User |
+| Integrations | Mapped | `/settings#integrations` | Existing integration config | Now | Admin/Owner |
+| Security | Mapped | `/settings#security` | Existing auth/session policy | Now | Admin/Owner |
+| Organization | Partial | `/settings#organization` | Tenant/org profile model | Next | Admin/Owner |
+| Members | Partial | `/settings#members` | Membership + role model | Next | Admin/Owner |
+| Projects | Stub | `/settings#projects` | Project config model | Later | Admin/Owner |
+| Services / Systems | Stub | `/settings#services` | Service ownership + environment model | Later | Admin/Owner |
+| Alerts | Stub | `/settings#alerts` | Alert rule model + escalation policy | Later | Admin/Owner |
+| Notifications | Stub | `/settings#notifications` | User delivery preference model | Later | User |
+| System Admin | Stub | `/settings/system` | Elevated operator role + admin APIs | Last | System admin only |
+
+### Settings Stub Rule
+- Settings entries should not be removed simply because they are not wired yet.
+- Non-ready entries must route to a clear planned/partial state rather than becoming dead links.
