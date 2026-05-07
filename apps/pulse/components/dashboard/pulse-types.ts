@@ -86,3 +86,42 @@ export type IncidentsSurfaceData = {
   sourceErrors: string[];
   dataMode: "live" | "demo";
 };
+
+export type ErrorTrendPoint = {
+  time: string;
+  errors: number;
+  rate: number;
+};
+
+export type ErrorFunnelStage = {
+  stage: string;
+  count: number;
+  percentage: number;
+};
+
+export type ErrorTopItem = {
+  id: string;
+  type: string;
+  message: string;
+  count: number;
+  change: string;
+  trend: "up" | "down";
+  service: string;
+  lastSeen: string;
+};
+
+export type ErrorMetricItem = {
+  label: string;
+  value: string;
+  change: string;
+  good: boolean;
+};
+
+export type ErrorsSurfaceData = {
+  errorTrend: ErrorTrendPoint[];
+  funnelData: ErrorFunnelStage[];
+  topErrors: ErrorTopItem[];
+  metrics: ErrorMetricItem[];
+  sourceErrors: string[];
+  dataMode: "live" | "demo";
+};

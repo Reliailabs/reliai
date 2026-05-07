@@ -17,12 +17,14 @@ import { Button } from "@/components/ui/button";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { ServicesSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
   pulseOverviewData?: PulseOverviewData;
   servicesData?: ServicesSurfaceData;
   incidentsData?: IncidentsSurfaceData;
+  errorsData?: ErrorsSurfaceData;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -97,6 +99,7 @@ export function MainContent({
   pulseOverviewData,
   servicesData,
   incidentsData,
+  errorsData,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -113,7 +116,7 @@ export function MainContent({
         return <PerformanceContent />;
       case "metrics":
       case "errors":
-        return <ErrorsContent />;
+        return <ErrorsContent errorsData={errorsData} />;
       case "guardrails":
       case "sla":
         return <SlaContent />;

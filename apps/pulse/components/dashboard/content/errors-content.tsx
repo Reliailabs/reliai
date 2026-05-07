@@ -11,8 +11,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
 
-const errorTrend = [
+const defaultErrorTrend = [
   { time: "00:00", errors: 45, rate: 0.36 },
   { time: "04:00", errors: 23, rate: 0.28 },
   { time: "08:00", errors: 89, rate: 0.36 },
@@ -22,7 +23,7 @@ const errorTrend = [
   { time: "Now", errors: 72, rate: 0.33 },
 ];
 
-const funnelData = [
+const defaultFunnelData = [
   { stage: "Total Requests", count: 22100, percentage: 100 },
   { stage: "Processed", count: 21950, percentage: 99.32 },
   { stage: "Validated", count: 21820, percentage: 98.73 },
@@ -30,7 +31,7 @@ const funnelData = [
   { stage: "Successful", count: 21008, percentage: 95.06 },
 ];
 
-const topErrors = [
+const defaultTopErrors = [
   {
     id: 1,
     type: "TimeoutException",
@@ -83,7 +84,7 @@ const topErrors = [
   },
 ];
 
-const metrics = [
+const defaultMetrics = [
   { label: "Total Errors (24h)", value: "1,842", change: "-12%", good: true },
   { label: "Error Rate", value: "0.42%", change: "-0.08%", good: true },
   { label: "Unique Errors", value: "24", change: "+3", good: false },
@@ -92,11 +93,39 @@ const metrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function ErrorsContent() {
-  const maxCount = funnelData[0].count;
+export function ErrorsContent({ errorsData }: { errorsData?: ErrorsSurfaceData }) {
+  const errorTrend = errorsData?.errorTrend?.length ? errorsData.errorTrend : defaultErrorTrend;
+  const funnelData = errorsData?.funnelData?.length ? errorsData.funnelData : defaultFunnelData;
+  const topErrors = errorsData?.topErrors?.length ? errorsData.topErrors : defaultTopErrors;
+  const metrics = errorsData?.metrics?.length ? errorsData.metrics : defaultMetrics;
+  const sourceErrorText =
+    errorsData && errorsData.sourceErrors.length > 0
+      ? `Data source unavailable: ${errorsData.sourceErrors.join(", ")}.`
+      : null;
+  const maxCount = funnelData[0]?.count ?? 0;
+
+  if (topErrors.length === 0) {
+    return (
+      <div className="space-y-4">
+        {sourceErrorText ? (
+          <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            {sourceErrorText}
+          </div>
+        ) : null}
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
+          No error signals detected yet. Reliai will surface raw reliability failures here as they occur.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((metric) => (

@@ -515,3 +515,26 @@ Examples disallowed:
 - No escalation orchestration or on-call policy logic.
 - No postmortem coupling or deployment-causality overlay.
 - No trace replay embedding inside incidents surface.
+
+## Parity Slice 4 — `/errors` Functional Wiring (Template-Preserving)
+
+### Scope
+- Keep existing errors visual hierarchy and charts layout.
+- Inject API-backed error signal data via route-level server wiring.
+- Add compact source-unavailable notice and existing-slot empty state.
+
+### File Mapping Matrix
+| Target File | Source of Truth | Action | Notes |
+|---|---|---|---|
+| `apps/pulse/app/(app)/errors/page.tsx` | existing route + parity pattern | Adapt | Server-side fetch/injection for errors surface data |
+| `apps/pulse/lib/errors-data.ts` | existing traces/incidents/projects/regressions endpoints | Add | Fetch/normalize errors signal model, safe defaults, source-error reporting |
+| `apps/pulse/components/dashboard/pulse-types.ts` | local view-model layer | Adapt | Add `ErrorsSurfaceData` contracts |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing shell | Adapt | Pass optional errors data through shell |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section switch | Adapt | Inject errors data into existing errors content |
+| `apps/pulse/components/dashboard/content/errors-content.tsx` | existing template component | Adapt | Bind metrics/trend/funnel/top-errors to injected data; add compact unavailable + empty state |
+
+### Intentional Gaps
+- No incident creation workflows from errors.
+- No trace replay/deep-link expansion beyond current slots.
+- No remediation orchestration.
+- No provider adapter redesign or severity model redesign.
