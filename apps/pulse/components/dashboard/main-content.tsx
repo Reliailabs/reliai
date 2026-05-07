@@ -22,6 +22,7 @@ import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
 import type { DeploymentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { AuditsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { GuardrailsSurfaceData } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
@@ -32,6 +33,7 @@ interface MainContentProps {
   tracesData?: TracesSurfaceData;
   deploymentsData?: DeploymentsSurfaceData;
   auditsData?: AuditsSurfaceData;
+  guardrailsData?: GuardrailsSurfaceData;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -110,6 +112,7 @@ export function MainContent({
   tracesData,
   deploymentsData,
   auditsData,
+  guardrailsData,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -129,7 +132,7 @@ export function MainContent({
         return <ErrorsContent errorsData={errorsData} />;
       case "guardrails":
       case "sla":
-        return <SlaContent />;
+        return <SlaContent guardrailsData={guardrailsData} />;
       case "audits":
         return <AuditsContent auditsData={auditsData} />;
       case "oncall":

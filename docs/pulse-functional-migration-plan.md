@@ -278,6 +278,28 @@ Examples disallowed:
 - `pnpm --filter pulse build`
 - Manual smoke:
   - signed-in `/incidents` loads incident section
+
+## Slice 8 Mapping — `/guardrails` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/guardrails-data.ts` | `apps/web` project/incidents/policy/reliability API behavior | Add | No | No | Fetches/normalizes guardrail-facing reliability data into existing Pulse SLA surface model with source error tracking | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/guardrails/page.tsx` | existing authenticated route pattern in prior parity slices | Adapt | No | No | Adds route-level server injection for `guardrailsData` while preserving shell semantics | `(app)` auth guard, `dashboard-shell` |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing shell prop pattern from earlier slices | Adapt | No | No | Accepts optional `guardrailsData` and forwards to main content | `main-content.tsx` |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section router | Adapt | No | No | Maps `guardrails`/`sla` sections to existing `SlaContent` with injected guardrails parity data | `SlaContent` |
+| `apps/pulse/components/dashboard/content/sla-content.tsx` | existing Pulse template surface | Adapt | No | No | Existing guardrails surface consumes injected live data, shows compact source-unavailable notice, and renders clear empty state in existing slot | `pulse-types.ts` |
+
+### Slice 8 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/guardrails` loads live/injected data where available
+  - source failure shows compact unavailable notice
+  - no-data case shows explicit guardrail empty state
+  - no styling/marketing boundary edits
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 

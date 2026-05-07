@@ -2,6 +2,7 @@
 
 import { Shield, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { GuardrailsSurfaceData } from "@/components/dashboard/pulse-types";
 import {
   AreaChart,
   Area,
@@ -12,7 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const uptimeHistory = [
+const defaultUptimeHistory = [
   { day: "Jan 1", uptime: 99.99 },
   { day: "Jan 5", uptime: 99.95 },
   { day: "Jan 10", uptime: 100 },
@@ -22,14 +23,14 @@ const uptimeHistory = [
   { day: "Jan 30", uptime: 99.98 },
 ];
 
-const slaMetrics = [
+const defaultSlaMetrics = [
   { label: "Current Uptime", value: "99.98%", target: "99.9%", status: "met" },
   { label: "Avg Response Time", value: "142ms", target: "<200ms", status: "met" },
   { label: "Error Rate", value: "0.42%", target: "<1%", status: "met" },
   { label: "Apdex Score", value: "0.94", target: ">0.9", status: "met" },
 ];
 
-const services = [
+const defaultServices = [
   {
     name: "API Gateway",
     uptime: 99.99,
@@ -80,7 +81,7 @@ const services = [
   },
 ];
 
-const recentOutages = [
+const defaultRecentOutages = [
   {
     id: 1,
     service: "Payment Service",
@@ -117,9 +118,42 @@ const recentOutages = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function SlaContent() {
+type SlaContentProps = {
+  guardrailsData?: GuardrailsSurfaceData;
+};
+
+function formatAverageUptime(uptimeHistory: { uptime: number }[]): string {
+  if (uptimeHistory.length === 0) return "0.00%";
+  const avg = uptimeHistory.reduce((sum, row) => sum + row.uptime, 0) / uptimeHistory.length;
+  return `${avg.toFixed(2)}%`;
+}
+
+export function SlaContent({ guardrailsData }: SlaContentProps) {
+  const uptimeHistory = guardrailsData?.uptimeHistory ?? defaultUptimeHistory;
+  const slaMetrics = guardrailsData?.slaMetrics ?? defaultSlaMetrics;
+  const services = guardrailsData?.services ?? defaultServices;
+  const recentOutages = guardrailsData?.recentOutages ?? defaultRecentOutages;
+  const sourceErrors = guardrailsData?.sourceErrors ?? [];
+  const hasGuardrailData = guardrailsData?.hasGuardrailData ?? true;
+  const averageUptime = formatAverageUptime(uptimeHistory);
+
   return (
     <div className="space-y-6">
+      {sourceErrors.length > 0 ? (
+        <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+          Unable to load live data for: {sourceErrors.join(", ")}.
+        </div>
+      ) : null}
+
+      {!hasGuardrailData ? (
+        <div
+          className="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground"
+          style={{ boxShadow: cardShadow }}
+        >
+          No guardrail evidence is available yet. Connect a production project and run traces or audits to populate this panel.
+        </div>
+      ) : null}
+
       {/* SLA Status Cards */}
       <div className="grid grid-cols-4 gap-4">
         {slaMetrics.map((metric) => (
@@ -159,7 +193,7 @@ export function SlaContent() {
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-success/10 rounded-full">
             <div className="w-2 h-2 bg-success rounded-full" />
-            <span className="text-sm font-medium text-success">99.98% average</span>
+            <span className="text-sm font-medium text-success">{averageUptime} average</span>
           </div>
         </div>
         <div className="h-[200px]">

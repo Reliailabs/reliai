@@ -241,3 +241,43 @@ export type AuditsSurfaceData = {
   hasAuditData: boolean;
   dataMode: "live" | "demo";
 };
+
+export type GuardrailUptimePoint = {
+  day: string;
+  uptime: number;
+};
+
+export type GuardrailMetricItem = {
+  label: string;
+  value: string;
+  target: string;
+  status: "met" | "at_risk";
+};
+
+export type GuardrailServiceStatus = {
+  name: string;
+  uptime: number;
+  target: number;
+  incidents: number;
+  downtime: string;
+  status: "operational" | "degraded";
+};
+
+export type GuardrailOutageItem = {
+  id: string;
+  service: string;
+  duration: string;
+  impact: string;
+  date: string;
+  resolved: boolean;
+};
+
+export type GuardrailsSurfaceData = {
+  uptimeHistory: GuardrailUptimePoint[];
+  slaMetrics: GuardrailMetricItem[];
+  services: GuardrailServiceStatus[];
+  recentOutages: GuardrailOutageItem[];
+  sourceErrors: string[];
+  hasGuardrailData: boolean;
+  dataMode: "live" | "demo";
+};
