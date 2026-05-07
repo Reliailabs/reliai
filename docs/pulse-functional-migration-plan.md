@@ -378,6 +378,23 @@ Examples disallowed:
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
 - Manual smoke:
-  - signed-in `/on-call` loads on-call surface
-  - signed-out `/on-call` redirects through existing `(app)` sign-in flow
-  - `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, `/guardrails`, and `/metrics` remain unchanged
+- signed-in `/on-call` loads on-call surface
+- signed-out `/on-call` redirects through existing `(app)` sign-in flow
+- `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, `/guardrails`, and `/metrics` remain unchanged
+
+## Slice 11 Mapping — `/postmortems` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/postmortems/page.tsx` | phase plan route order + existing dashboard section model | Add | No | No | Adds authenticated `/postmortems` route that opens dashboard shell with `initialSection="postmortems"` | `(app)` auth guard, `dashboard-shell`, postmortems section content |
+
+### Slice 11 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/postmortems` loads postmortems surface
+  - signed-out `/postmortems` redirects through existing `(app)` sign-in flow
+  - `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, `/guardrails`, `/metrics`, and `/on-call` remain unchanged
