@@ -584,6 +584,32 @@ Settings entries should not be removed simply because they are not wired yet. No
   - failed source renders compact unavailable notice
   - no-data case renders explicit empty state
   - non-admin cannot access `/pulse/system/customers`
+
+## Slice 18 Mapping — `/pulse/system/growth` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/system-growth-data.ts` | `apps/web-v2` system growth + expansion API behavior | Add | No | No | Fetches growth telemetry from `/api/v1/system/growth` and expansion summary from `/api/v1/system/customer-expansion` with source error handling | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/pulse/system/growth/page.tsx` | `apps/web-v2/app/(app)/system/growth/page.tsx` | Adapt | No | No | Renders growth overview on shared system shell with compact unavailable and explicit empty states | `SystemLayoutShell`, `system-growth-data` |
+
+### Explicit Avoids (This Slice)
+- no growth forecasting
+- no revenue attribution redesign
+- no expansion automation
+- no CRM workflow coupling
+- no predictive analytics
+
+### Slice 18 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - admin user sees growth readout on `/pulse/system/growth`
+  - failed source renders compact unavailable notice
+  - missing data renders explicit empty state
+  - non-admin cannot access `/pulse/system/growth`
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
