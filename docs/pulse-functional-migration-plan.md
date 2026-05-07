@@ -524,6 +524,32 @@ Settings entries should not be removed simply because they are not wired yet. No
   - failed source renders compact unavailable notice
   - no-consumer case renders explicit empty state
   - non-admin cannot access `/system/pipeline`
+
+## Slice 16 Mapping — `/system/extensions` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/system-extensions-data.ts` | `apps/web-v2` system extensions API behavior | Add | No | No | Fetches extension runtime telemetry from `/api/v1/system/extensions` with source error handling | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/system/extensions/page.tsx` | `apps/web-v2/app/(app)/system/extensions/page.tsx` | Adapt | No | No | Renders extensions runtime health and registry table on shared system shell with compact unavailable and explicit empty states | `SystemLayoutShell`, `system-extensions-data` |
+
+### Explicit Avoids (This Slice)
+- no extension lifecycle management
+- no install/uninstall workflows
+- no runtime mutation controls
+- no plugin marketplace concepts
+- no extension execution orchestration
+
+### Slice 16 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - admin user sees extension runtime health on `/system/extensions`
+  - failed source renders compact unavailable notice
+  - no-extension case renders explicit empty state
+  - non-admin cannot access `/system/extensions`
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
