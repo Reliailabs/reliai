@@ -10,6 +10,7 @@ import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { ServicesSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
 
 interface DashboardShellProps {
   initialSection: Section;
@@ -17,6 +18,7 @@ interface DashboardShellProps {
   servicesData?: ServicesSurfaceData;
   incidentsData?: IncidentsSurfaceData;
   errorsData?: ErrorsSurfaceData;
+  tracesData?: TracesSurfaceData;
 }
 
 export function DashboardShell({
@@ -25,6 +27,7 @@ export function DashboardShell({
   servicesData,
   incidentsData,
   errorsData,
+  tracesData,
 }: DashboardShellProps) {
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
 
@@ -37,6 +40,7 @@ export function DashboardShell({
         servicesData={servicesData}
         incidentsData={incidentsData}
         errorsData={errorsData}
+        tracesData={tracesData}
       />
       <RightPanel pulseOverviewData={pulseOverviewData} />
     </div>

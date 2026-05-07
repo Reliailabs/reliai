@@ -1,5 +1,7 @@
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { getTracesSurfaceData } from "@/lib/traces-data";
 
-export default function TracesPage() {
-  return <DashboardShell initialSection="traces" />;
+export default async function TracesPage() {
+  const tracesData = await getTracesSurfaceData();
+  return <DashboardShell initialSection="traces" tracesData={tracesData} />;
 }

@@ -125,3 +125,41 @@ export type ErrorsSurfaceData = {
   sourceErrors: string[];
   dataMode: "live" | "demo";
 };
+
+export type TraceTrendPoint = {
+  time: string;
+  p50: number;
+  p95: number;
+  p99: number;
+};
+
+export type TraceThroughputPoint = {
+  time: string;
+  rps: number;
+};
+
+export type TraceMetricItem = {
+  label: string;
+  value: string;
+  change: string;
+  trend: "up" | "down";
+  good: boolean;
+};
+
+export type TraceServiceLatency = {
+  name: string;
+  p50: number;
+  p95: number;
+  p99: number;
+  status: "healthy" | "degraded";
+};
+
+export type TracesSurfaceData = {
+  latencyData: TraceTrendPoint[];
+  throughputData: TraceThroughputPoint[];
+  metrics: TraceMetricItem[];
+  serviceLatencies: TraceServiceLatency[];
+  sourceErrors: string[];
+  hasTraceData: boolean;
+  dataMode: "live" | "demo";
+};

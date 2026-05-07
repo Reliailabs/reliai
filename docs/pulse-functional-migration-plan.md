@@ -538,3 +538,26 @@ Examples disallowed:
 - No trace replay/deep-link expansion beyond current slots.
 - No remediation orchestration.
 - No provider adapter redesign or severity model redesign.
+
+## Parity Slice 5 — `/traces` Functional Wiring (Template-Preserving)
+
+### Scope
+- Keep existing traces/performance surface and chart/table layout.
+- Inject API-backed traces evidence data via route-level server wiring.
+- Add compact source-unavailable notice and trace empty-state message in existing content slot.
+
+### File Mapping Matrix
+| Target File | Source of Truth | Action | Notes |
+|---|---|---|---|
+| `apps/pulse/app/(app)/traces/page.tsx` | existing route + parity pattern | Adapt | Server-side fetch/injection for traces surface data |
+| `apps/pulse/lib/traces-data.ts` | existing traces/projects endpoints | Add | Fetch/normalize trace latency/throughput/service-latency models with safe defaults |
+| `apps/pulse/components/dashboard/pulse-types.ts` | local view-model layer | Adapt | Add `TracesSurfaceData` contracts |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing shell | Adapt | Pass optional traces data through shell |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section switch | Adapt | Inject traces data into existing traces/performance content |
+| `apps/pulse/components/dashboard/content/performance-content.tsx` | existing template component | Adapt | Bind charts/metrics/table to injected data; add compact unavailable + empty state |
+
+### Intentional Gaps
+- No trace replay redesign.
+- No compare-mode rewrite.
+- No graph engine or causality graphing changes.
+- No eval-correlation or provider abstraction redesign.

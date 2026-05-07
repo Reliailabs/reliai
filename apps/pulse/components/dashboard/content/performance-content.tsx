@@ -12,8 +12,9 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
 
-const latencyData = [
+const defaultLatencyData = [
   { time: "00:00", p50: 45, p95: 120, p99: 250 },
   { time: "04:00", p50: 42, p95: 115, p99: 235 },
   { time: "08:00", p50: 58, p95: 145, p99: 298 },
@@ -23,7 +24,7 @@ const latencyData = [
   { time: "Now", p50: 52, p95: 132, p99: 275 },
 ];
 
-const throughputData = [
+const defaultThroughputData = [
   { time: "00:00", rps: 12400 },
   { time: "04:00", rps: 8200 },
   { time: "08:00", rps: 24500 },
@@ -33,14 +34,14 @@ const throughputData = [
   { time: "Now", rps: 22100 },
 ];
 
-const metrics = [
+const defaultMetrics = [
   { label: "P50 Latency", value: "52ms", change: "-8ms", trend: "down", good: true },
   { label: "P95 Latency", value: "132ms", change: "+12ms", trend: "up", good: false },
   { label: "Throughput", value: "22.1k", change: "+2.3k", trend: "up", good: true },
   { label: "Error Rate", value: "0.42%", change: "-0.08%", trend: "down", good: true },
 ];
 
-const serviceLatencies = [
+const defaultServiceLatencies = [
   { name: "API Gateway", p50: 45, p95: 142, p99: 289, status: "healthy" },
   { name: "Auth Service", p50: 23, p95: 67, p99: 134, status: "healthy" },
   { name: "User Service", p50: 34, p95: 89, p99: 178, status: "healthy" },
@@ -51,9 +52,40 @@ const serviceLatencies = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function PerformanceContent() {
+export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceData }) {
+  const latencyData = tracesData?.latencyData?.length ? tracesData.latencyData : defaultLatencyData;
+  const throughputData = tracesData?.throughputData?.length ? tracesData.throughputData : defaultThroughputData;
+  const metrics = tracesData?.metrics?.length ? tracesData.metrics : defaultMetrics;
+  const serviceLatencies = tracesData?.serviceLatencies?.length
+    ? tracesData.serviceLatencies
+    : defaultServiceLatencies;
+  const sourceErrorText =
+    tracesData && tracesData.sourceErrors.length > 0
+      ? `Data source unavailable: ${tracesData.sourceErrors.join(", ")}.`
+      : null;
+
+  if (tracesData && !tracesData.hasTraceData) {
+    return (
+      <div className="space-y-4">
+        {sourceErrorText ? (
+          <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            {sourceErrorText}
+          </div>
+        ) : null}
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
+          No traces yet. Connect your AI system or run your first audit to start monitoring reliability.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((metric) => (
