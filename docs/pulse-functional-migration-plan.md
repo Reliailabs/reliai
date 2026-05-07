@@ -435,3 +435,12 @@ Examples disallowed:
 - signed-out request to `/settings` redirects to `/sign-in?return_to=%2Fsettings`
 - successful sign-in returns user to original requested route
 - authenticated access to protected routes remains unchanged
+
+### Redirect Matrix (Verified)
+| Request | Expected | Observed |
+|---|---|---|
+| `/incidents?x=1` (no session) | 307 -> `/sign-in?return_to=%2Fincidents%3Fx%3D1` | matched |
+| `/traces` (no session) | 307 -> `/sign-in?return_to=%2Ftraces` | matched |
+| `/settings` (no session) | 307 -> `/sign-in?return_to=%2Fsettings` | matched |
+| `/on-call` (no session) | 307 -> `/sign-in?return_to=%2Fon-call` | matched |
+| `/traces` with invalid `reliai_session` | 307 -> `/sign-in?return_to=%2Ftraces` | matched |
