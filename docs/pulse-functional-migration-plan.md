@@ -663,6 +663,33 @@ Settings entries should not be removed simply because they are not wired yet. No
   - failed source renders compact unavailable notice
   - no-data case renders explicit empty state
   - non-admin cannot access `/pulse/system/reliability-patterns`
+
+## Slice 21 Mapping — `/pulse/system/intelligence` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/system-intelligence-data.ts` | `apps/web-v2` intelligence API behavior | Add | No | No | Fetches high-risk patterns, guardrail recommendations, and global patterns with source error handling | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/pulse/system/intelligence/page.tsx` | `apps/web-v2/app/(app)/system/intelligence/page.tsx` | Adapt | No | No | Renders intelligence board on shared system shell with compact unavailable and explicit empty states | `SystemLayoutShell`, `system-intelligence-data` |
+
+### Explicit Avoids (This Slice)
+- no causality engine
+- no benchmark scoring redesign
+- no global intelligence redesign
+- no automated recommendations
+- no graph/network visualizations
+- no new model ranking logic
+
+### Slice 21 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - admin user sees intelligence board on `/pulse/system/intelligence`
+  - failed source renders compact unavailable notice
+  - no-data case renders explicit empty state
+  - non-admin cannot access `/pulse/system/intelligence`
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
