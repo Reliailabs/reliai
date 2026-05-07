@@ -558,6 +558,32 @@ Settings entries should not be removed simply because they are not wired yet. No
   - failed source renders compact unavailable notice
   - no-extension case renders explicit empty state
   - non-admin cannot access `/system/extensions`
+
+## Slice 17 Mapping — `/pulse/system/customers` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/system-customers-data.ts` | `apps/web-v2` system customers API behavior | Add | No | No | Fetches customer reliability board data from `/api/v1/system/customers` with source error handling | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/pulse/system/customers/page.tsx` | `apps/web-v2/app/(app)/system/customers/page.tsx` | Adapt | No | No | Renders customer reliability board on shared system shell with compact unavailable and explicit empty states | `SystemLayoutShell`, `system-customers-data` |
+
+### Explicit Avoids (This Slice)
+- no CRM workflow expansion
+- no account health redesign
+- no customer lifecycle automation
+- no billing/contract logic
+- no growth attribution changes
+
+### Slice 17 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - admin user sees customer reliability board on `/pulse/system/customers`
+  - failed source renders compact unavailable notice
+  - no-data case renders explicit empty state
+  - non-admin cannot access `/pulse/system/customers`
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
