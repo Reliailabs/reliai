@@ -3,8 +3,9 @@
 import { cn } from "@/lib/utils";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 
-const settingsSections = [
+const defaultSettingsSections = [
   {
     id: "appearance",
     label: "Appearance",
@@ -43,24 +44,51 @@ const settingsSections = [
   },
 ];
 
-const integrations = [
-  { name: "PagerDuty", connected: true, icon: "PD" },
-  { name: "Slack", connected: true, icon: "S" },
-  { name: "Datadog", connected: true, icon: "DD" },
-  { name: "GitHub", connected: true, icon: "GH" },
-  { name: "Jira", connected: false, icon: "J" },
+const defaultIntegrations = [
+  { name: "PagerDuty", connected: true, icon: "PD", statusLabel: "Connected" },
+  { name: "Slack", connected: true, icon: "S", statusLabel: "Connected" },
+  { name: "Datadog", connected: true, icon: "DD", statusLabel: "Connected" },
+  { name: "GitHub", connected: true, icon: "GH", statusLabel: "Connected" },
+  { name: "Jira", connected: false, icon: "J", statusLabel: "Planned" },
 ];
 
-export function SettingsContent() {
+const statusCopy = {
+  mapped: "Mapped",
+  partial: "Partial",
+  stub: "Planned",
+} as const;
+
+export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfaceData }) {
+  const settingsSections = settingsData?.quickItems?.length
+    ? settingsData.quickItems
+    : defaultSettingsSections.map((section) => ({ ...section, status: "mapped" as const }));
+  const integrations = settingsData?.integrations?.length ? settingsData.integrations : defaultIntegrations;
+  const profile = settingsData?.profile ?? {
+    initials: "JD",
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@company.com",
+    role: "SRE Lead",
+  };
+  const sourceErrorText =
+    settingsData && settingsData.sourceErrors.length > 0
+      ? `Data source unavailable: ${settingsData.sourceErrors.join(", ")}.`
+      : null;
+
   return (
     <div className="max-w-4xl space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
       {/* Profile Section */}
       <div className="bg-card rounded-2xl border border-border p-6">
         <h3 className="font-semibold text-foreground mb-6">Profile Settings</h3>
         
         <div className="flex items-start gap-6">
           <div className="w-20 h-20 rounded-2xl bg-chart-1/10 text-chart-1 flex items-center justify-center text-2xl font-semibold">
-            JD
+            {profile.initials}
           </div>
           <div className="flex-1">
             <div className="grid grid-cols-2 gap-4">
@@ -69,7 +97,7 @@ export function SettingsContent() {
                 <input
                   type="text"
                   id="firstName"
-                  defaultValue="John"
+                  defaultValue={profile.firstName}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -78,7 +106,7 @@ export function SettingsContent() {
                 <input
                   type="text"
                   id="lastName"
-                  defaultValue="Doe"
+                  defaultValue={profile.lastName}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -87,7 +115,7 @@ export function SettingsContent() {
                 <input
                   type="email"
                   id="email"
-                  defaultValue="john.doe@company.com"
+                  defaultValue={profile.email}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -96,7 +124,7 @@ export function SettingsContent() {
                 <input
                   type="text"
                   id="role"
-                  defaultValue="SRE Lead"
+                  defaultValue={profile.role}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -124,7 +152,21 @@ export function SettingsContent() {
                   <Icon className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-foreground text-sm">{section.label}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground text-sm">{section.label}</p>
+                    {"status" in section ? (
+                      <span className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                        section.status === "mapped"
+                          ? "bg-success/10 text-success"
+                          : section.status === "partial"
+                            ? "bg-warning/10 text-warning"
+                            : "bg-muted text-muted-foreground"
+                      )}>
+                        {statusCopy[section.status]}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="text-xs text-muted-foreground">{section.description}</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -148,16 +190,14 @@ export function SettingsContent() {
               </div>
               <div className="flex-1">
                 <p className="font-medium text-foreground text-sm">{integration.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {integration.connected ? "Connected" : "Not connected"}
-                </p>
+                <p className="text-xs text-muted-foreground">{integration.statusLabel ?? (integration.connected ? "Connected" : "Not connected")}</p>
               </div>
               <Button
                 variant={integration.connected ? "outline" : "default"}
                 size="sm"
                 className={cn(integration.connected && "bg-transparent")}
               >
-                {integration.connected ? "Disconnect" : "Connect"}
+                {integration.connected ? "Connected" : "Planned"}
               </Button>
             </div>
           ))}

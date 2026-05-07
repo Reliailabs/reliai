@@ -354,3 +354,34 @@ export type PostmortemsSurfaceData = {
   hasPostmortemData: boolean;
   dataMode: "live" | "demo";
 };
+
+export type SettingsQuickItem = {
+  id: string;
+  label: string;
+  description: string;
+  status: "mapped" | "partial" | "stub";
+};
+
+export type SettingsIntegrationItem = {
+  name: string;
+  connected: boolean;
+  icon: string;
+  statusLabel: string;
+};
+
+export type SettingsProfile = {
+  initials: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+};
+
+export type SettingsSurfaceData = {
+  profile: SettingsProfile;
+  quickItems: SettingsQuickItem[];
+  integrations: SettingsIntegrationItem[];
+  sourceErrors: string[];
+  hasSettingsData: boolean;
+  dataMode: "live" | "demo";
+};

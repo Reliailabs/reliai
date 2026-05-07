@@ -363,6 +363,45 @@ Examples disallowed:
   - source failure shows compact unavailable notice
   - no-data state is explicit and reliability-specific
   - no styling/marketing boundary edits
+
+## Slice 12 Mapping — `/settings` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/settings-data.ts` | `apps/web` auth/session + org alert-target behavior | Add | No | No | Builds settings surface data (profile, quick settings state, integration state) with source error tracking | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/settings/page.tsx` | existing authenticated route pattern | Adapt | No | No | Injects live `settingsData` into existing settings surface via dashboard shell | `(app)` auth guard, `dashboard-shell` |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | prior parity prop pass-through model | Adapt | No | No | Accepts optional `settingsData` and forwards to main content | `main-content.tsx` |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section router | Adapt | No | No | Routes `settings` section to existing `SettingsContent` with injected data | `SettingsContent` |
+| `apps/pulse/components/dashboard/content/settings-content.tsx` | existing Pulse template surface | Adapt | No | No | Existing settings UI consumes injected parity data and shows compact source-unavailable notice with explicit mapped/partial/stub states | `pulse-types.ts` |
+
+### Settings Mapping State Matrix
+
+| Setting | State | Current route | Dependency | Target phase | Role gating |
+|---|---|---|---|---|---|
+| Appearance | Mapped | `/settings#appearance` | Existing UI preference model | Now | User |
+| Integrations | Mapped | `/settings#integrations` | Existing integration config | Now | Admin/Owner |
+| Security | Mapped | `/settings#security` | Existing auth/session policy | Now | Admin/Owner |
+| Organization | Partial | `/settings#organization` | Tenant/org profile model | Next | Admin/Owner |
+| Members | Partial | `/settings#members` | Membership + role model | Next | Admin/Owner |
+| Projects | Stub | `/settings#projects` | Project config model | Later | Admin/Owner |
+| Services / Systems | Stub | `/settings#services` | Service ownership + environment model | Later | Admin/Owner |
+| Alerts | Stub | `/settings#alerts` | Alert rule model + escalation policy | Later | Admin/Owner |
+| Notifications | Stub | `/settings#notifications` | User delivery preference model | Later | User |
+| System Admin | Stub | `/settings/system` | Elevated operator role + admin APIs | Last | System admin only |
+
+Settings entries should not be removed simply because they are not wired yet. Non-ready entries should route to clear planned/partial states rather than dead links.
+
+### Slice 12 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/settings` loads injected profile/integration settings data
+  - source failure shows compact unavailable notice
+  - mapped/partial/stub states are visible and explicit
+  - no styling/marketing boundary edits
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
