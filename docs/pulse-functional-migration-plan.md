@@ -135,7 +135,7 @@ All route work is functional-only, no style edits.
    - unresolved gaps
    - next migration slice
 
-## Phase 6 — Functional Parity Pass (Post Route Spine)
+## Phase 6A — Functional Parity Pass (Post Route Spine)
 Goal: make `apps/pulse` behaviorally equivalent to the source app surfaces without visual redesign.
 
 ### Scope
@@ -183,6 +183,24 @@ Goal: make `apps/pulse` behaviorally equivalent to the source app surfaces witho
   - signed-in route load
   - empty/loading/error state correctness
   - expected reference/deep-link behavior
+
+## Phase 6 — Operational Intelligence / Deployment Intelligence
+Deferred until after functional parity migration is complete.
+
+Includes:
+- rollback orchestration
+- deployment causality engine
+- automated regression attribution
+- deployment blame analysis
+- trace/deployment graphing
+- release intelligence redesign
+
+Entry criteria:
+- all protected app routes migrated
+- parity gap report completed
+- no styling regressions
+- route-level data wiring stable
+- deployment, traces, incidents, and metrics surfaces wired
 
 ## Slice 1 Mapping — Core Shell/Auth + /pulse
 
