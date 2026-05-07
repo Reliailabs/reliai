@@ -605,6 +605,30 @@ Examples disallowed:
 - No trace/deployment graphing.
 - No release intelligence redesign.
 
+## Parity Slice 7 — `/audits` Functional Wiring (Template-Preserving)
+
+### Scope
+- Keep existing audits surface layout intact (current shell section).
+- Inject run-first audit summaries from `apps/web` API behavior as functional source of truth.
+- Add compact source-unavailable notice and empty-state handling in existing slot.
+
+### File Mapping Matrix
+| Target File | Source of Truth | Action | Notes |
+|---|---|---|---|
+| `apps/pulse/app/(app)/audits/page.tsx` | existing route + parity pattern | Adapt | Server-side fetch/injection for audits surface data |
+| `apps/pulse/lib/audits-data.ts` | existing `/api/v1/audits` run-first response behavior | Add | Normalize audits + latest run posture for existing audits surface |
+| `apps/pulse/components/dashboard/pulse-types.ts` | local view-model layer | Adapt | Add `AuditsSurfaceData` contracts |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | existing shell | Adapt | Pass optional audits data through shell |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section switch | Adapt | Inject audits data into existing audits section content |
+| `apps/pulse/components/dashboard/content/oncall-content.tsx` | existing audits section presenter | Adapt | Bind metrics/schedule/recent audits to injected data; add compact unavailable + empty state |
+
+### Intentional Gaps
+- No certification workflow expansion.
+- No audit report redesign.
+- No governance automation.
+- No compliance export work.
+- No audit result page restructuring.
+
 ## Settings Mapping Matrix
 
 | Setting | State | Current route | Dependency | Target phase | Role gating |

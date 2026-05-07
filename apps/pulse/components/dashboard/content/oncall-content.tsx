@@ -11,15 +11,16 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { AuditsSurfaceData } from "@/components/dashboard/pulse-types";
 
-const responseTimeData = [
+const defaultResponseTimeData = [
   { week: "W1", ack: 2.3, resolve: 45 },
   { week: "W2", ack: 1.8, resolve: 38 },
   { week: "W3", ack: 3.1, resolve: 52 },
   { week: "W4", ack: 2.1, resolve: 41 },
 ];
 
-const currentSchedule = [
+const defaultCurrentSchedule = [
   {
     name: "Sarah Miller",
     initials: "SM",
@@ -50,7 +51,7 @@ const currentSchedule = [
   },
 ];
 
-const recentPages = [
+const defaultRecentPages = [
   {
     id: 1,
     title: "High CPU usage on api-gateway-prod-3",
@@ -93,7 +94,7 @@ const recentPages = [
   },
 ];
 
-const metrics = [
+const defaultMetrics = [
   { label: "Avg Ack Time", value: "2.1m", change: "-23%", good: true },
   { label: "Avg Resolve Time", value: "41m", change: "-15%", good: true },
   { label: "Pages This Week", value: "12", change: "-4", good: true },
@@ -102,9 +103,44 @@ const metrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function OncallContent() {
+export function OncallContent({ auditsData }: { auditsData?: AuditsSurfaceData }) {
+  const responseTimeData = auditsData?.responseTimeData?.length
+    ? auditsData.responseTimeData
+    : defaultResponseTimeData;
+  const currentSchedule = auditsData?.currentSchedule?.length
+    ? auditsData.currentSchedule
+    : defaultCurrentSchedule;
+  const recentPages = auditsData?.recentPages?.length
+    ? auditsData.recentPages
+    : defaultRecentPages;
+  const metrics = auditsData?.metrics?.length ? auditsData.metrics : defaultMetrics;
+  const sourceErrorText =
+    auditsData && auditsData.sourceErrors.length > 0
+      ? `Data source unavailable: ${auditsData.sourceErrors.join(", ")}.`
+      : null;
+
+  if (auditsData && !auditsData.hasAuditData) {
+    return (
+      <div className="space-y-4">
+        {sourceErrorText ? (
+          <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            {sourceErrorText}
+          </div>
+        ) : null}
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
+          No audits found yet. Start an audit run to populate certification posture and review metrics.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((metric) => (

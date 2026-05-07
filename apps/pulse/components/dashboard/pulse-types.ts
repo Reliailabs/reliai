@@ -199,3 +199,45 @@ export type DeploymentsSurfaceData = {
   hasDeploymentData: boolean;
   dataMode: "live" | "demo";
 };
+
+export type AuditResponseTrendPoint = {
+  week: string;
+  ack: number;
+  resolve: number;
+};
+
+export type AuditScheduleItem = {
+  name: string;
+  initials: string;
+  role: string;
+  shift: string;
+  status: "active" | "standby" | "upcoming";
+};
+
+export type AuditRecentItem = {
+  id: string;
+  title: string;
+  severity: "critical" | "high" | "medium" | "low";
+  acknowledged: boolean;
+  ackTime: string;
+  assignee: string;
+  timestamp: string;
+  resolved: boolean;
+};
+
+export type AuditMetricItem = {
+  label: string;
+  value: string;
+  change: string;
+  good: boolean;
+};
+
+export type AuditsSurfaceData = {
+  responseTimeData: AuditResponseTrendPoint[];
+  currentSchedule: AuditScheduleItem[];
+  recentPages: AuditRecentItem[];
+  metrics: AuditMetricItem[];
+  sourceErrors: string[];
+  hasAuditData: boolean;
+  dataMode: "live" | "demo";
+};
