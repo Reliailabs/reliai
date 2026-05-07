@@ -281,3 +281,45 @@ export type GuardrailsSurfaceData = {
   hasGuardrailData: boolean;
   dataMode: "live" | "demo";
 };
+
+export type OncallResponseTrendPoint = {
+  week: string;
+  ack: number;
+  resolve: number;
+};
+
+export type OncallScheduleItem = {
+  name: string;
+  initials: string;
+  role: string;
+  shift: string;
+  status: "active" | "standby" | "upcoming";
+};
+
+export type OncallPageItem = {
+  id: string;
+  title: string;
+  severity: "critical" | "high" | "medium" | "low";
+  acknowledged: boolean;
+  ackTime: string;
+  assignee: string;
+  timestamp: string;
+  resolved: boolean;
+};
+
+export type OncallMetricItem = {
+  label: string;
+  value: string;
+  change: string;
+  good: boolean;
+};
+
+export type OncallSurfaceData = {
+  responseTimeData: OncallResponseTrendPoint[];
+  currentSchedule: OncallScheduleItem[];
+  recentPages: OncallPageItem[];
+  metrics: OncallMetricItem[];
+  sourceErrors: string[];
+  hasOncallData: boolean;
+  dataMode: "live" | "demo";
+};

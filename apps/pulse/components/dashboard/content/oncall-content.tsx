@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import type { OncallSurfaceData } from "@/components/dashboard/pulse-types";
 
 const defaultResponseTimeData = [
   { week: "W1", ack: 2.3, resolve: 45 },
@@ -102,14 +103,29 @@ const defaultMetrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function OncallContent() {
-  const responseTimeData = defaultResponseTimeData;
-  const currentSchedule = defaultCurrentSchedule;
-  const recentPages = defaultRecentPages;
-  const metrics = defaultMetrics;
+export function OncallContent({ oncallData }: { oncallData?: OncallSurfaceData }) {
+  const responseTimeData = oncallData?.responseTimeData?.length ? oncallData.responseTimeData : defaultResponseTimeData;
+  const currentSchedule = oncallData?.currentSchedule?.length ? oncallData.currentSchedule : defaultCurrentSchedule;
+  const recentPages = oncallData?.recentPages?.length ? oncallData.recentPages : defaultRecentPages;
+  const metrics = oncallData?.metrics?.length ? oncallData.metrics : defaultMetrics;
+  const sourceErrorText =
+    oncallData && oncallData.sourceErrors.length > 0
+      ? `Data source unavailable: ${oncallData.sourceErrors.join(", ")}.`
+      : null;
+  const hasOncallData = oncallData?.hasOncallData ?? true;
 
   return (
     <div className="space-y-6">
+      {sourceErrorText ? (
+        <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          {sourceErrorText}
+        </div>
+      ) : null}
+      {!hasOncallData ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
+          No on-call alerts yet. Reliai will list incident escalations here when reliability events require response.
+        </div>
+      ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
         {metrics.map((metric) => (

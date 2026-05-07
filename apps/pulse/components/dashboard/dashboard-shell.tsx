@@ -14,6 +14,7 @@ import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
 import type { DeploymentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { AuditsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { GuardrailsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { OncallSurfaceData } from "@/components/dashboard/pulse-types";
 
 interface DashboardShellProps {
   initialSection: Section;
@@ -25,6 +26,7 @@ interface DashboardShellProps {
   deploymentsData?: DeploymentsSurfaceData;
   auditsData?: AuditsSurfaceData;
   guardrailsData?: GuardrailsSurfaceData;
+  oncallData?: OncallSurfaceData;
 }
 
 export function DashboardShell({
@@ -37,6 +39,7 @@ export function DashboardShell({
   deploymentsData,
   auditsData,
   guardrailsData,
+  oncallData,
 }: DashboardShellProps) {
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
 
@@ -53,6 +56,7 @@ export function DashboardShell({
         deploymentsData={deploymentsData}
         auditsData={auditsData}
         guardrailsData={guardrailsData}
+        oncallData={oncallData}
       />
       <RightPanel pulseOverviewData={pulseOverviewData} />
     </div>

@@ -319,6 +319,28 @@ Examples disallowed:
   - source failure shows compact unavailable notice in existing slot
   - no-data state remains explicit and reliability-specific
   - no styling/marketing boundary edits
+
+## Slice 10 Mapping — `/on-call` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/oncall-data.ts` | `apps/web` incidents/session signals + parity helper pattern | Add | No | No | Builds on-call operational summary (metrics/schedule/pages) from live incident/session inputs with source error tracking | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/on-call/page.tsx` | existing authenticated route pattern | Adapt | No | No | Injects live `oncallData` into existing on-call surface via dashboard shell | `(app)` auth guard, `dashboard-shell` |
+| `apps/pulse/components/dashboard/dashboard-shell.tsx` | prior parity prop pass-through model | Adapt | No | No | Accepts optional `oncallData` and forwards to main content | `main-content.tsx` |
+| `apps/pulse/components/dashboard/main-content.tsx` | existing section router | Adapt | No | No | Routes `oncall` section to existing `OncallContent` with injected data | `OncallContent` |
+| `apps/pulse/components/dashboard/content/oncall-content.tsx` | existing Pulse template surface | Adapt | No | No | Existing on-call UI consumes injected parity data and shows compact source-unavailable + explicit empty state | `pulse-types.ts` |
+
+### Slice 10 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/on-call` loads injected live data where available
+  - source failure shows compact unavailable notice
+  - no-data state is explicit and reliability-specific
+  - no styling/marketing boundary edits
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
