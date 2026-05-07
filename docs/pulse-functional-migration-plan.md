@@ -498,6 +498,32 @@ Settings entries should not be removed simply because they are not wired yet. No
   - admin user sees live platform metrics on `/system/platform`
   - failed source renders compact unavailable notice
   - non-admin cannot access `/system/platform`
+
+## Slice 15 Mapping — `/system/pipeline` Parity (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/lib/system-pipeline-data.ts` | `apps/web-v2` system pipeline API behavior | Add | No | No | Fetches admin pipeline telemetry from `/api/v1/system/event-pipeline` with source error handling | `lib/auth.ts`, `lib/constants.ts` |
+| `apps/pulse/app/(app)/system/pipeline/page.tsx` | `apps/web-v2/app/(app)/system/pipeline/page.tsx` | Adapt | No | No | Renders pipeline telemetry on shared system shell with compact unavailable and explicit empty states | `SystemLayoutShell`, `system-pipeline-data` |
+
+### Explicit Avoids (This Slice)
+- no pipeline orchestration controls
+- no queue mutation actions
+- no adapter management
+- no realtime event streams
+- no processor lifecycle redesign
+
+### Slice 15 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - admin user sees live pipeline telemetry on `/system/pipeline`
+  - failed source renders compact unavailable notice
+  - no-consumer case renders explicit empty state
+  - non-admin cannot access `/system/pipeline`
 - signed-out `/incidents` redirects through existing `(app)` sign-in flow
 - `/pulse` and `/services` remain unchanged
 
