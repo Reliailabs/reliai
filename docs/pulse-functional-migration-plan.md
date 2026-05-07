@@ -361,6 +361,23 @@ Examples disallowed:
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
 - Manual smoke:
-  - signed-in `/metrics` loads metrics surface
-  - signed-out `/metrics` redirects through existing `(app)` sign-in flow
-  - `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, and `/guardrails` remain unchanged
+- signed-in `/metrics` loads metrics surface
+- signed-out `/metrics` redirects through existing `(app)` sign-in flow
+- `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, and `/guardrails` remain unchanged
+
+## Slice 10 Mapping — `/on-call` Route (Functional-Only)
+
+### File Mapping Matrix
+
+| Target File | Source of Truth | Action | Styling Impact | Protected Boundary Touch | Behavior Introduced | Depends On |
+|---|---|---|---|---|---|---|
+| `apps/pulse/app/(app)/on-call/page.tsx` | phase plan route order + existing dashboard section model | Add | No | No | Adds authenticated `/on-call` route that opens dashboard shell with `initialSection="oncall"` | `(app)` auth guard, `dashboard-shell`, on-call section content |
+
+### Slice 10 Validation Checklist
+
+- `pnpm --filter pulse lint`
+- `pnpm --filter pulse build`
+- Manual smoke:
+  - signed-in `/on-call` loads on-call surface
+  - signed-out `/on-call` redirects through existing `(app)` sign-in flow
+  - `/pulse`, `/services`, `/incidents`, `/errors`, `/traces`, `/deployments`, `/audits`, `/guardrails`, and `/metrics` remain unchanged
