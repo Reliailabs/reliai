@@ -184,33 +184,6 @@ Goal: make `apps/pulse` behaviorally equivalent to the source app surfaces witho
   - empty/loading/error state correctness
   - expected reference/deep-link behavior
 
-## Parity Slice 1 — `/pulse` Functional Wiring
-
-### Scope
-- Replace template-only `/pulse` behavior with dashboard-v1 functional parity implementation.
-- Preserve existing auth/session and protected route behavior.
-- Keep this slice focused on data/loading/error/decision wiring for `/pulse` only.
-
-### Implemented Mapping
-| Target File | Source of Truth | Action | Notes |
-|---|---|---|---|
-| `apps/pulse/app/(app)/pulse/page.tsx` | `app/dashboard-v1/app/(app)/pulse/page.tsx` | Adapt | Live+demo mode branching, safe per-source fetch, decision summary and timeline composition |
-| `apps/pulse/app/(app)/pulse/pulse-view.tsx` | `app/dashboard-v1/app/(app)/pulse/pulse-view.tsx` | Adapt | Data mode labeling, panel error visibility, setup checklist, action links |
-| `apps/pulse/lib/arei.ts` | `app/dashboard-v1/lib/arei.ts` | Add | Deterministic AREI computation for `/pulse` summary |
-| `apps/pulse/lib/time.ts` | `app/dashboard-v1/lib/time.ts` | Add | Relative time formatting helpers used by pulse view |
-| `apps/pulse/lib/api.ts` | `app/dashboard-v1/lib/api.ts` | Add | Reused API contracts for pulse data sources |
-| `apps/pulse/components/ui/page-header.tsx` | `app/dashboard-v1/components/ui/page-header.tsx` | Add | Shared pulse presenter primitive |
-| `apps/pulse/components/ui/panel-error.tsx` | `app/dashboard-v1/components/ui/panel-error.tsx` | Add | Inline source failure visibility primitive |
-
-### Validation Checklist
-- `pnpm --filter pulse lint`
-- `pnpm --filter pulse build`
-- Manual smoke:
-  - `/pulse` signed-out redirect stays correct
-  - `/pulse` signed-in loads decision surface
-  - `?demo=1` renders demo mode with explicit labeling
-  - source fetch failures surface panel-level unavailable notice
-
 ## Slice 1 Mapping — Core Shell/Auth + /pulse
 
 ### File Mapping Matrix
