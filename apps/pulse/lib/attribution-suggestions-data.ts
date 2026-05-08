@@ -22,6 +22,7 @@ function toDate(value?: string | null): Date | null {
 }
 
 function confidence(input: { regressions: number; failedTraces: number; incidents: number }): CausalityConfidence {
+  if (input.regressions === 0 && input.failedTraces === 0 && input.incidents === 0) return "insufficient";
   if (input.regressions >= 2 && input.failedTraces >= 3 && input.incidents >= 1) return "high";
   if (input.regressions >= 1 || input.failedTraces >= 2 || input.incidents >= 1) return "medium";
   return "low";
@@ -93,7 +94,27 @@ export async function getAttributionSuggestionsData({ demoMode, organizationId }
     .filter((item) => item.at)
     .sort((a, b) => b.at!.getTime() - a.at!.getTime())[0];
 
-  if (!latestDeployment?.at) return { items: [], sourceErrors: Array.from(new Set(sourceErrors)), dataMode: "live" };
+  if (!latestDeployment?.at) {
+    return {
+      items: [
+        {
+          id: "advisory-insufficient-deployments",
+          title: "Advisory: insufficient evidence for attribution",
+          suggestion: "Add deployment metadata and continue collecting incident and trace signals.",
+          reason: "A recent deployment reference is required before advisory attribution can be scored. Requires operator review.",
+          confidence: "insufficient",
+          requiresOperatorReview: true,
+          links: [
+            { label: "Deployments", href: "/deployments" },
+            { label: "Incidents", href: "/incidents" },
+            { label: "Traces", href: "/traces" },
+          ],
+        },
+      ],
+      sourceErrors: Array.from(new Set(sourceErrors)),
+      dataMode: "live",
+    };
+  }
 
   const depTime = latestDeployment.at.getTime();
   const openIncidents = (incidentsResult.data?.items ?? []).filter((i) => i.status !== "resolved");
@@ -101,29 +122,36 @@ export async function getAttributionSuggestionsData({ demoMode, organizationId }
   const failedTraces = (tracesResult.data?.items ?? []).filter((t) => !t.success && (toDate(t.created_at)?.getTime() ?? 0) >= depTime);
   const regressions = (regressionsResult.data?.items ?? []).filter((r) => (toDate(r.detected_at ?? r.created_at)?.getTime() ?? 0) >= depTime);
 
-  const suggestionItems = [];
+  const suggestionConfidence = confidence({
+    incidents: postIncidents.length,
+    failedTraces: failedTraces.length,
+    regressions: regressions.length,
+  });
 
-  if (postIncidents.length || failedTraces.length || regressions.length) {
-    suggestionItems.push({
+  const suggestionItems = [
+    {
       id: `advisory-${latestDeployment.id}`,
-      title: "Advisory: investigate latest deployment as likely related change",
+      title:
+        suggestionConfidence === "insufficient"
+          ? "Advisory: insufficient evidence for attribution"
+          : "Advisory: investigate latest deployment as likely related change",
       suggestion:
-        "Review model/prompt and retrieval deltas in the latest deployment window before applying mitigation.",
+        suggestionConfidence === "insufficient"
+          ? "Continue collecting deployment, incident, and trace evidence before deciding likely source."
+          : "Review model/prompt and retrieval deltas in the latest deployment window before applying mitigation.",
       reason:
-        "Observed before degradation: incident/regression/failure signals rose after deployment. Requires operator review.",
-      confidence: confidence({
-        incidents: postIncidents.length,
-        failedTraces: failedTraces.length,
-        regressions: regressions.length,
-      }),
+        suggestionConfidence === "insufficient"
+          ? "Observed before degradation: no strong post-deployment signal cluster yet. Requires operator review."
+          : "Observed before degradation: incident/regression/failure signals rose after deployment. Requires operator review.",
+      confidence: suggestionConfidence,
       requiresOperatorReview: true as const,
       links: [
         { label: "Deployments", href: "/deployments" },
         { label: "Incidents", href: "/incidents" },
         { label: "Traces", href: "/traces" },
       ],
-    });
-  }
+    },
+  ];
 
   return {
     items: suggestionItems,

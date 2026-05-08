@@ -63,6 +63,7 @@ function formatWindow(start: Date | null, end: Date | null): string {
 }
 
 function confidenceForSignals(input: { regressions: number; failedTraces: number; incidents: number }): CausalityConfidence {
+  if (input.regressions === 0 && input.failedTraces === 0 && input.incidents === 0) return "insufficient";
   if (input.regressions >= 2 && input.failedTraces >= 3 && input.incidents >= 1) return "high";
   if (input.regressions >= 1 || input.failedTraces >= 2) return "medium";
   return "low";
@@ -145,7 +146,27 @@ export async function getCausalityEvidenceData({ demoMode, organizationId }: Inp
 
   const latestDeployment = deployments[0];
   if (!latestDeployment) {
-    return { items: [], sourceErrors, dataMode: "live" };
+    return {
+      items: [
+        {
+          id: "causality-insufficient-deployments",
+          title: "Likely related change: insufficient evidence",
+          summary:
+            "Evidence window unavailable. A recent deployment record is required before causality evidence can be scored. Requires operator review.",
+          confidence: "insufficient",
+          evidenceWindow: "Evidence window unavailable",
+          observedBeforeDegradation: "insufficient data",
+          requiresOperatorReview: true,
+          links: [
+            { label: "Deployments", href: "/deployments" },
+            { label: "Incidents", href: "/incidents" },
+            { label: "Traces", href: "/traces" },
+          ],
+        },
+      ],
+      sourceErrors,
+      dataMode: "live",
+    };
   }
 
   const deploymentTime = latestDeployment.deployedAtDate!;
@@ -171,16 +192,23 @@ export async function getCausalityEvidenceData({ demoMode, organizationId }: Inp
     .filter((value): value is Date => Boolean(value))
     .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
 
+  const signalConfidence = confidenceForSignals({
+    regressions: postDeploymentRegressions.length,
+    failedTraces: postDeploymentFailedTraces.length,
+    incidents: postDeploymentIncidents.length,
+  });
+
   const evidenceItem: CausalityEvidenceItem = {
     id: `causality-${latestDeployment.id}`,
-    title: "Likely related change: latest deployment window",
+    title:
+      signalConfidence === "insufficient"
+        ? "Likely related change: insufficient evidence"
+        : "Likely related change: latest deployment window",
     summary:
-      "Observed before degradation: incident and regression signals increased after deployment. Requires operator review before action.",
-    confidence: confidenceForSignals({
-      regressions: postDeploymentRegressions.length,
-      failedTraces: postDeploymentFailedTraces.length,
-      incidents: postDeploymentIncidents.length,
-    }),
+      signalConfidence === "insufficient"
+        ? "Observed before degradation: not enough incident, regression, or trace-failure signal in the current evidence window. Requires operator review."
+        : "Observed before degradation: incident and regression signals increased after deployment. Requires operator review before action.",
+    confidence: signalConfidence,
     evidenceWindow: formatWindow(deploymentTime, mostRecentIncidentStart ?? new Date()),
     observedBeforeDegradation: relTime(mostRecentIncidentStart),
     requiresOperatorReview: true,
@@ -191,11 +219,8 @@ export async function getCausalityEvidenceData({ demoMode, organizationId }: Inp
     ],
   };
 
-  const hasSignals =
-    postDeploymentIncidents.length > 0 || postDeploymentRegressions.length > 0 || postDeploymentFailedTraces.length > 0;
-
   return {
-    items: hasSignals ? [evidenceItem] : [],
+    items: [evidenceItem],
     sourceErrors: Array.from(new Set(sourceErrors)),
     dataMode: "live",
   };

@@ -117,6 +117,7 @@ export function OverviewContent({
   causalityEvidenceData?: CausalityEvidenceData;
   attributionSuggestionsData?: AttributionSuggestionData;
 }) {
+  const formatConfidence = (value: string) => (value === "insufficient" ? "insufficient data" : value);
   const metricDecor: Record<string, { icon: typeof AlertTriangle; color: string; bgColor: string }> = {
     "Active Incidents": { icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10" },
     "Regression Detections": { icon: Zap, color: "text-chart-1", bgColor: "bg-chart-1/10" },
@@ -143,9 +144,17 @@ export function OverviewContent({
     attributionSuggestionsData && attributionSuggestionsData.sourceErrors.length > 0
       ? `Data source unavailable: ${attributionSuggestionsData.sourceErrors.join(", ")}.`
       : null;
+  const dataMode = pulseOverviewData?.dataMode ?? "live";
+  const dataModeLabel = dataMode === "demo" ? "Demo data" : "Live data";
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Pulse signal state</p>
+        <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+          Data mode: {dataModeLabel}
+        </span>
+      </div>
       {sourceErrorText ? (
         <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {sourceErrorText}
@@ -381,7 +390,7 @@ export function OverviewContent({
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-foreground">{item.title}</p>
                   <span className="rounded-full border border-border px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Confidence: {item.confidence}
+                    Confidence: {formatConfidence(item.confidence)}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{item.summary}</p>
@@ -441,7 +450,7 @@ export function OverviewContent({
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-foreground">{item.title}</p>
                   <span className="rounded-full border border-border px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Confidence: {item.confidence}
+                    Confidence: {formatConfidence(item.confidence)}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-foreground/90">{item.suggestion}</p>
