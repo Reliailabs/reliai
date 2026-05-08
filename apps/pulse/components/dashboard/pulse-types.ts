@@ -119,6 +119,12 @@ export type IncidentSurfaceItem = {
   assigneeInitials: string;
   impactedServices: string[];
   timeline: IncidentTimelineEntry[];
+  intelligence: {
+    contributingFactors: string[];
+    confidence: "insufficient" | "low" | "medium" | "high";
+    evidenceLinks: Array<{ label: string; href: string }>;
+    requiresOperatorReview: true;
+  };
 };
 
 export type IncidentsSurfaceData = {

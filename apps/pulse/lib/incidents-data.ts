@@ -27,6 +27,13 @@ type IncidentEventRead = {
   summary: string;
 };
 
+type IncidentDetailRead = {
+  id: string;
+  traces: Array<{ id: string }>;
+  deployment_context: { deployment: { id: string } } | null;
+  compare: { trace_compare_path: string };
+};
+
 function toStatus(status: string): IncidentSurfaceStatus {
   if (status === "resolved") return "resolved";
   if (status === "acknowledged") return "mitigating";
@@ -109,6 +116,57 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
           }))
         : buildFallbackTimeline(item);
 
+    const detailResult = await safeFetch(
+      apiRequest<IncidentDetailRead>(`/api/v1/incidents/${item.id}`),
+    );
+    if (detailResult.error) sourceErrors.push(`incident-detail:${item.id}`);
+
+    const detail = detailResult.data;
+    const summary = item.summary_json ?? {};
+    const sampleTraceIds = Array.isArray(summary.sample_trace_ids)
+      ? (summary.sample_trace_ids as string[]).filter(Boolean)
+      : [];
+    const regressionCount = typeof summary.regression_count === "number" ? summary.regression_count : 0;
+    const failureRateDelta =
+      typeof summary.failure_rate_delta_pct === "number" ? summary.failure_rate_delta_pct : null;
+    const contributingFactors: string[] = [];
+    if (regressionCount > 0) {
+      contributingFactors.push(`${regressionCount} regression signal${regressionCount === 1 ? "" : "s"} observed.`);
+    }
+    if (failureRateDelta !== null) {
+      contributingFactors.push(`Failure rate changed by ${failureRateDelta.toFixed(1)}%.`);
+    }
+    if (detail?.deployment_context?.deployment.id) {
+      contributingFactors.push("Incident overlaps a recent deployment window.");
+    }
+    if (contributingFactors.length === 0) {
+      contributingFactors.push("Insufficient linked evidence in current incident snapshot.");
+    }
+
+    const evidenceLinks: Array<{ label: string; href: string }> = [];
+    if (detail?.compare?.trace_compare_path) {
+      evidenceLinks.push({ label: "Trace compare", href: detail.compare.trace_compare_path });
+    }
+    if (detail?.deployment_context?.deployment.id) {
+      evidenceLinks.push({
+        label: "Linked deployment",
+        href: `/deployments#${detail.deployment_context.deployment.id}`,
+      });
+    }
+    if (sampleTraceIds.length > 0 || (detail?.traces.length ?? 0) > 0) {
+      evidenceLinks.push({ label: "Trace samples", href: "/traces" });
+    }
+    evidenceLinks.push({ label: "Related errors", href: "/errors" });
+
+    let confidence: IncidentSurfaceItem["intelligence"]["confidence"] = "insufficient";
+    if (contributingFactors.length >= 3 || (detail?.deployment_context?.deployment.id && sampleTraceIds.length > 0)) {
+      confidence = "high";
+    } else if (contributingFactors.length >= 2 || sampleTraceIds.length > 0) {
+      confidence = "medium";
+    } else if (contributingFactors[0] !== "Insufficient linked evidence in current incident snapshot.") {
+      confidence = "low";
+    }
+
     const assignee = item.acknowledged_by_operator_email ?? "Unassigned";
     mapped.push({
       id: item.id,
@@ -123,6 +181,12 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
       assigneeInitials: initials(assignee === "Unassigned" ? "UA" : assignee),
       impactedServices: [item.project_name ?? "Unknown service"],
       timeline,
+      intelligence: {
+        contributingFactors,
+        confidence,
+        evidenceLinks,
+        requiresOperatorReview: true,
+      },
     });
   }
 
