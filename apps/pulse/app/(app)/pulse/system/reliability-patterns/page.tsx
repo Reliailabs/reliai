@@ -22,6 +22,13 @@ export default async function ReliabilityPatternsPage() {
   const { items, sourceErrors } = await getSystemReliabilityPatternsSurfaceData();
   const highProbabilityCount = items.filter((item) => item.failure_probability >= 0.25).length;
   const totalSamples = items.reduce((sum, item) => sum + item.sample_count, 0);
+  const mediumProbabilityCount = items.filter(
+    (item) => item.failure_probability >= 0.1 && item.failure_probability < 0.25,
+  ).length;
+  const topRiskPattern =
+    items.length > 0
+      ? [...items].sort((a, b) => b.failure_probability - a.failure_probability || b.sample_count - a.sample_count)[0]
+      : null;
 
   return (
     <SystemLayoutShell
@@ -60,6 +67,49 @@ export default async function ReliabilityPatternsPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Coverage</p>
               <p className="mt-2 text-2xl font-semibold text-foreground">{new Set(items.map((item) => item.pattern_type)).size}</p>
               <p className="mt-2 text-xs text-muted-foreground">Pattern families across model and prompt surfaces.</p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Reliability trend summary</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Read-only intelligence summary. Requires operator review before mitigation changes.
+                </p>
+              </div>
+              <span className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground">
+                Requires operator review
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Elevated patterns</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{highProbabilityCount + mediumProbabilityCount}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {highProbabilityCount} high-risk and {mediumProbabilityCount} medium-risk patterns detected.
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Primary risk driver</p>
+                <p className="mt-2 text-sm font-semibold capitalize text-foreground">
+                  {topRiskPattern ? topRiskPattern.pattern_type.replaceAll("_", " ") : "Insufficient data"}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {topRiskPattern
+                    ? `${percent(topRiskPattern.failure_probability)} failure probability across ${compactNumber(topRiskPattern.sample_count)} samples.`
+                    : "Collect more traces to establish top driver confidence."}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Data posture</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{items.length > 0 ? "Sufficient coverage" : "Insufficient data"}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {items.length > 0
+                    ? "Pattern confidence should be validated against recent deployment and incident windows."
+                    : "No patterns available yet for cross-project trend interpretation."}
+                </p>
+              </div>
             </div>
           </section>
 
