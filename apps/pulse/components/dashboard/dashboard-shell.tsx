@@ -8,6 +8,7 @@ import { RightPanel } from "@/components/dashboard/right-panel";
 import type { Section } from "@/components/dashboard/sections";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { CausalityEvidenceData } from "@/components/dashboard/pulse-types";
+import type { AttributionSuggestionData } from "@/components/dashboard/pulse-types";
 import type { ServicesSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
@@ -23,6 +24,7 @@ interface DashboardShellProps {
   initialSection: Section;
   pulseOverviewData?: PulseOverviewData;
   causalityEvidenceData?: CausalityEvidenceData;
+  attributionSuggestionsData?: AttributionSuggestionData;
   servicesData?: ServicesSurfaceData;
   incidentsData?: IncidentsSurfaceData;
   errorsData?: ErrorsSurfaceData;
@@ -39,6 +41,7 @@ export function DashboardShell({
   initialSection,
   pulseOverviewData,
   causalityEvidenceData,
+  attributionSuggestionsData,
   servicesData,
   incidentsData,
   errorsData,
@@ -59,6 +62,7 @@ export function DashboardShell({
         activeSection={activeSection}
         pulseOverviewData={pulseOverviewData}
         causalityEvidenceData={causalityEvidenceData}
+        attributionSuggestionsData={attributionSuggestionsData}
         servicesData={servicesData}
         incidentsData={incidentsData}
         errorsData={errorsData}
