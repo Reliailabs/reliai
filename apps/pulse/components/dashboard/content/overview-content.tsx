@@ -22,6 +22,7 @@ import {
   Bar,
 } from "recharts";
 import type { CausalityEvidenceData, PulseOverviewData } from "@/components/dashboard/pulse-types";
+import type { AttributionSuggestionData } from "@/components/dashboard/pulse-types";
 import Link from "next/link";
 
 const defaultRequestsData = [
@@ -110,9 +111,11 @@ const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.
 export function OverviewContent({
   pulseOverviewData,
   causalityEvidenceData,
+  attributionSuggestionsData,
 }: {
   pulseOverviewData?: PulseOverviewData;
   causalityEvidenceData?: CausalityEvidenceData;
+  attributionSuggestionsData?: AttributionSuggestionData;
 }) {
   const metricDecor: Record<string, { icon: typeof AlertTriangle; color: string; bgColor: string }> = {
     "Active Incidents": { icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10" },
@@ -135,6 +138,10 @@ export function OverviewContent({
   const causalitySourceErrorText =
     causalityEvidenceData && causalityEvidenceData.sourceErrors.length > 0
       ? `Data source unavailable: ${causalityEvidenceData.sourceErrors.join(", ")}.`
+      : null;
+  const attributionSourceErrorText =
+    attributionSuggestionsData && attributionSuggestionsData.sourceErrors.length > 0
+      ? `Data source unavailable: ${attributionSuggestionsData.sourceErrors.join(", ")}.`
       : null;
 
   return (
@@ -400,6 +407,63 @@ export function OverviewContent({
         ) : (
           <div className="mt-4 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             No likely related change identified in the current evidence window.
+          </div>
+        )}
+      </div>
+
+      {/* Advisory attribution suggestions */}
+      <div
+        className="bg-card rounded-2xl p-6 border border-border"
+        style={{ boxShadow: cardShadow }}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Attribution Suggestions (Advisory)</h3>
+            <p className="text-sm text-muted-foreground">
+              Likely related surfaces based on observed evidence. Requires operator review.
+            </p>
+          </div>
+          <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+            Requires operator review
+          </span>
+        </div>
+
+        {attributionSourceErrorText ? (
+          <div className="mt-4 rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            {attributionSourceErrorText}
+          </div>
+        ) : null}
+
+        {attributionSuggestionsData?.items?.length ? (
+          <div className="mt-4 space-y-3">
+            {attributionSuggestionsData.items.map((item) => (
+              <div key={item.id} className="rounded-xl border border-border bg-muted/30 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                  <span className="rounded-full border border-border px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Confidence: {item.confidence}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-foreground/90">{item.suggestion}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{item.reason}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {item.links.map((link) => (
+                    <Link
+                      key={`${item.id}-${link.href}`}
+                      href={link.href}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground hover:bg-muted"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            No advisory attribution suggestions for the current evidence window.
           </div>
         )}
       </div>

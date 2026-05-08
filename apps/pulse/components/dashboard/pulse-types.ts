@@ -62,6 +62,22 @@ export type CausalityEvidenceData = {
   dataMode: "live" | "demo";
 };
 
+export type AttributionSuggestion = {
+  id: string;
+  title: string;
+  suggestion: string;
+  reason: string;
+  confidence: CausalityConfidence;
+  requiresOperatorReview: true;
+  links: CausalityEvidenceLink[];
+};
+
+export type AttributionSuggestionData = {
+  items: AttributionSuggestion[];
+  sourceErrors: string[];
+  dataMode: "live" | "demo";
+};
+
 export type ServiceStatus = "healthy" | "degraded" | "down" | "maintenance";
 
 export type ServiceCard = {
