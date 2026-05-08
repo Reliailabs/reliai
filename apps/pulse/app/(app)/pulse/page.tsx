@@ -1,5 +1,6 @@
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { requireOperatorSession } from "@/lib/auth";
+import { getCausalityEvidenceData } from "@/lib/causality-evidence-data";
 import { getPulseOverviewData } from "@/lib/pulse-data";
 
 export default async function PulseDashboardPage({
@@ -12,7 +13,16 @@ export default async function PulseDashboardPage({
   const demoMode = demoParam === "1" || demoParam === "true";
   const session = await requireOperatorSession();
   const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
-  const pulseOverviewData = await getPulseOverviewData({ demoMode, organizationId });
+  const [pulseOverviewData, causalityEvidenceData] = await Promise.all([
+    getPulseOverviewData({ demoMode, organizationId }),
+    getCausalityEvidenceData({ demoMode, organizationId }),
+  ]);
 
-  return <DashboardShell initialSection="overview" pulseOverviewData={pulseOverviewData} />;
+  return (
+    <DashboardShell
+      initialSection="overview"
+      pulseOverviewData={pulseOverviewData}
+      causalityEvidenceData={causalityEvidenceData}
+    />
+  );
 }
