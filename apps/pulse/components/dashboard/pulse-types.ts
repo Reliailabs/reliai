@@ -38,6 +38,30 @@ export type PulseOverviewData = {
   sourceErrors: string[];
 };
 
+export type CausalityConfidence = "low" | "medium" | "high";
+
+export type CausalityEvidenceLink = {
+  label: string;
+  href: string;
+};
+
+export type CausalityEvidenceItem = {
+  id: string;
+  title: string;
+  summary: string;
+  confidence: CausalityConfidence;
+  evidenceWindow: string;
+  observedBeforeDegradation: string;
+  requiresOperatorReview: true;
+  links: CausalityEvidenceLink[];
+};
+
+export type CausalityEvidenceData = {
+  items: CausalityEvidenceItem[];
+  sourceErrors: string[];
+  dataMode: "live" | "demo";
+};
+
 export type ServiceStatus = "healthy" | "degraded" | "down" | "maintenance";
 
 export type ServiceCard = {

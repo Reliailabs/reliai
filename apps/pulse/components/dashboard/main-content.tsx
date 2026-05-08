@@ -16,6 +16,7 @@ import { SettingsContent } from "./content/settings-content";
 import { Bell, Calendar, RefreshCw, Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
+import type { CausalityEvidenceData } from "@/components/dashboard/pulse-types";
 import type { ServicesSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
@@ -30,6 +31,7 @@ import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 interface MainContentProps {
   activeSection: Section;
   pulseOverviewData?: PulseOverviewData;
+  causalityEvidenceData?: CausalityEvidenceData;
   servicesData?: ServicesSurfaceData;
   incidentsData?: IncidentsSurfaceData;
   errorsData?: ErrorsSurfaceData;
@@ -112,6 +114,7 @@ const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
 export function MainContent({
   activeSection,
   pulseOverviewData,
+  causalityEvidenceData,
   servicesData,
   incidentsData,
   errorsData,
@@ -128,7 +131,7 @@ export function MainContent({
   const renderContent = () => {
     switch (activeSection) {
       case "overview":
-        return <OverviewContent pulseOverviewData={pulseOverviewData} />;
+        return <OverviewContent pulseOverviewData={pulseOverviewData} causalityEvidenceData={causalityEvidenceData} />;
       case "incidents":
         return <IncidentsContent incidentsData={incidentsData} />;
       case "deployments":
@@ -156,7 +159,7 @@ export function MainContent({
       case "settings":
         return <SettingsContent settingsData={settingsData} />;
       default:
-        return <OverviewContent />;
+        return <OverviewContent causalityEvidenceData={causalityEvidenceData} />;
     }
   };
 
