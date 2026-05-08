@@ -8,7 +8,8 @@ export default async function PulseDashboardPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = (await searchParams) ?? {};
-  const demoMode = params.demo === "1";
+  const demoParam = Array.isArray(params.demo) ? params.demo[0] : params.demo;
+  const demoMode = demoParam === "1" || demoParam === "true";
   const session = await requireOperatorSession();
   const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
   const pulseOverviewData = await getPulseOverviewData({ demoMode, organizationId });
