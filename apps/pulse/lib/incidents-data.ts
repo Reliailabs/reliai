@@ -29,7 +29,7 @@ type IncidentEventRead = {
 
 type IncidentDetailRead = {
   id: string;
-  traces: Array<{ id: string }>;
+  traces: Array<{ id: string; processor_result_id?: string | null }>;
   deployment_context: { deployment: { id: string } } | null;
   compare: { trace_compare_path: string };
 };
@@ -129,6 +129,10 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
     const regressionCount = typeof summary.regression_count === "number" ? summary.regression_count : 0;
     const failureRateDelta =
       typeof summary.failure_rate_delta_pct === "number" ? summary.failure_rate_delta_pct : null;
+    const detailTraceCount = detail?.traces.length ?? 0;
+    const deploymentId = detail?.deployment_context?.deployment.id ?? null;
+    const comparePath = detail?.compare?.trace_compare_path ?? null;
+    const traceErrorSignals = (detail?.traces ?? []).filter((trace) => trace.processor_result_id).length;
     const contributingFactors: string[] = [];
     if (regressionCount > 0) {
       contributingFactors.push(`${regressionCount} regression signal${regressionCount === 1 ? "" : "s"} observed.`);
@@ -136,34 +140,45 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
     if (failureRateDelta !== null) {
       contributingFactors.push(`Failure rate changed by ${failureRateDelta.toFixed(1)}%.`);
     }
-    if (detail?.deployment_context?.deployment.id) {
+    if (deploymentId) {
       contributingFactors.push("Incident overlaps a recent deployment window.");
     }
-    if (contributingFactors.length === 0) {
-      contributingFactors.push("Insufficient linked evidence in current incident snapshot.");
+    if (detailTraceCount > 0) {
+      contributingFactors.push(`Linked trace sample set contains ${detailTraceCount} trace${detailTraceCount === 1 ? "" : "s"}.`);
+    }
+    if (traceErrorSignals > 0) {
+      contributingFactors.push(`${traceErrorSignals} linked trace${traceErrorSignals === 1 ? "" : "s"} include processor error signals.`);
     }
 
     const evidenceLinks: Array<{ label: string; href: string }> = [];
-    if (detail?.compare?.trace_compare_path) {
-      evidenceLinks.push({ label: "Trace compare", href: detail.compare.trace_compare_path });
+    if (comparePath) {
+      evidenceLinks.push({ label: "Trace compare", href: comparePath });
     }
-    if (detail?.deployment_context?.deployment.id) {
+    if (deploymentId) {
       evidenceLinks.push({
         label: "Linked deployment",
-        href: `/deployments#${detail.deployment_context.deployment.id}`,
+        href: `/deployments#${deploymentId}`,
       });
     }
-    if (sampleTraceIds.length > 0 || (detail?.traces.length ?? 0) > 0) {
+    if (sampleTraceIds.length > 0 || detailTraceCount > 0) {
       evidenceLinks.push({ label: "Trace samples", href: "/traces" });
     }
-    evidenceLinks.push({ label: "Related errors", href: "/errors" });
+    if (traceErrorSignals > 0) {
+      evidenceLinks.push({ label: "Related errors", href: "/errors" });
+    }
+
+    const concreteEvidenceCount = evidenceLinks.length;
+    if (contributingFactors.length === 0 || concreteEvidenceCount === 0) {
+      contributingFactors.length = 0;
+      contributingFactors.push("Insufficient linked evidence in current incident snapshot.");
+    }
 
     let confidence: IncidentSurfaceItem["intelligence"]["confidence"] = "insufficient";
-    if (contributingFactors.length >= 3 || (detail?.deployment_context?.deployment.id && sampleTraceIds.length > 0)) {
+    if (concreteEvidenceCount >= 3 && contributingFactors.length >= 3) {
       confidence = "high";
-    } else if (contributingFactors.length >= 2 || sampleTraceIds.length > 0) {
+    } else if (concreteEvidenceCount >= 2 && contributingFactors.length >= 2) {
       confidence = "medium";
-    } else if (contributingFactors[0] !== "Insufficient linked evidence in current incident snapshot.") {
+    } else if (concreteEvidenceCount >= 1 && contributingFactors[0] !== "Insufficient linked evidence in current incident snapshot.") {
       confidence = "low";
     }
 
