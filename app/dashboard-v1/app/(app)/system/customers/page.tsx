@@ -1,0 +1,148 @@
+import Link from "next/link";
+import { AlertTriangle, ChevronRight, FolderKanban, ShieldAlert, Workflow } from "lucide-react";
+
+import { Card } from "@/components/ui/card";
+import { SubPageHeader } from "@/components/ui/sub-page-header";
+import { getSystemCustomers } from "@/lib/api";
+
+function compactNumber(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    notation: value >= 1000 ? "compact" : "standard",
+    maximumFractionDigits: value >= 1_000_000 ? 1 : 0,
+  }).format(value);
+}
+
+function percent(value: number) {
+  return `${(value * 100).toFixed(value > 0 && value < 0.01 ? 2 : 1)}%`;
+}
+
+function riskTone(riskLevel: string) {
+  if (riskLevel === "high") return "bg-red-500/10 text-red-400 border-red-500/30";
+  if (riskLevel === "medium") return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+  return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+}
+
+export default async function SystemCustomersPage() {
+  const { projects } = await getSystemCustomers().catch(() => ({ projects: [] }));
+  const highRiskCount = projects.filter((project) => project.risk_level === "high").length;
+  const totalTraceVolume = projects.reduce((sum, project) => sum + project.trace_volume_24h, 0);
+  const totalFailures = projects.reduce((sum, project) => sum + project.processor_failures, 0);
+
+  return (
+    <div className="min-h-full p-6 space-y-6">
+      <SubPageHeader
+        label="Customer reliability"
+        title="Project health by customer surface"
+        description="Internal operator view of warehouse throughput, guardrail pressure, incident density, processor instability, and derived platform risk across active projects."
+        backHref="/pulse"
+        backLabel="Back to dashboard"
+        right={
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-400">
+            Operator-only customer health board
+          </div>
+        }
+      />
+
+      <div className="grid gap-4 lg:grid-cols-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <FolderKanban className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Projects</p>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{projects.length}</p>
+          <p className="mt-2 text-sm text-zinc-400">Customer projects visible to the current operator scope.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Workflow className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Trace volume</p>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{compactNumber(totalTraceVolume)}</p>
+          <p className="mt-2 text-sm text-zinc-400">Warehouse traces recorded over the last 24 hours.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <AlertTriangle className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">High risk</p>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{highRiskCount}</p>
+          <p className="mt-2 text-sm text-zinc-400">Projects currently crossing the highest composite risk thresholds.</p>
+        </div>
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <ShieldAlert className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-[0.18em]">Processor failures</p>
+          </div>
+          <p className="mt-3 text-2xl font-semibold text-zinc-100">{totalFailures}</p>
+          <p className="mt-2 text-sm text-zinc-400">External processor failures recorded across the same summary window.</p>
+        </div>
+      </div>
+
+      <Card className="overflow-hidden">
+        {projects.length === 0 ? (
+          <div className="px-6 py-12">
+            <div className="rounded-lg border border-dashed border-zinc-700 bg-zinc-900 px-6 py-10 text-center">
+              <h2 className="text-xl font-semibold text-zinc-100">No customer health data yet</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400 mx-auto">
+                This view populates once traces land in the warehouse and project-level incidents, guardrails, or
+                processor telemetry exist.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-left">
+              <thead className="bg-zinc-950 text-xs uppercase tracking-[0.16em] text-zinc-500">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Project</th>
+                  <th className="px-5 py-3 font-medium">Trace volume</th>
+                  <th className="px-5 py-3 font-medium">Guardrails</th>
+                  <th className="px-5 py-3 font-medium">Incidents</th>
+                  <th className="px-5 py-3 font-medium">Processor failures</th>
+                  <th className="px-5 py-3 font-medium">Pipeline lag</th>
+                  <th className="px-5 py-3 font-medium">Risk</th>
+                  <th className="px-5 py-3 font-medium" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {projects.map((project) => (
+                  <tr key={project.project_id} className="align-top">
+                    <td className="px-5 py-4">
+                      <p className="text-sm font-medium text-zinc-100">{project.project_name}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.14em] text-zinc-600">{project.project_id}</p>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">
+                      <p className="font-medium text-zinc-100">{compactNumber(project.trace_volume_24h)}</p>
+                      <p className="mt-1 text-xs text-zinc-600">{compactNumber(project.traces_per_day)} traces/day</p>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">{percent(project.guardrail_rate)}</td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">{percent(project.incident_rate)}</td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">
+                      <p className="font-medium text-zinc-100">{project.processor_failures}</p>
+                      <p className="mt-1 text-xs text-zinc-600">{percent(project.processor_failure_rate)} failure rate</p>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-medium text-zinc-100">{compactNumber(project.pipeline_lag)}</td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-lg border px-2.5 py-1 text-[11px] font-medium ${riskTone(project.risk_level)}`}>
+                        {project.risk_level}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Link
+                        href={`/system/customers/${project.project_id}`}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+                      >
+                        Open
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}

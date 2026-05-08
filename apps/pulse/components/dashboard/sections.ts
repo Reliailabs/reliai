@@ -1,0 +1,17 @@
+export type Section =
+  | "overview"
+  | "incidents"
+  | "deployments"
+  | "traces"
+  | "metrics"
+  | "guardrails"
+  | "audits"
+  | "systems"
+  | "performance"
+  | "errors"
+  | "sla"
+  | "oncall"
+  | "services"
+  | "risk_reviews"
+  | "postmortems"
+  | "settings";

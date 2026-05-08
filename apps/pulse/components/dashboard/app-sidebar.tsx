@@ -1,0 +1,284 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import type { Section } from "@/components/dashboard/sections";
+import {
+  LayoutDashboard,
+  AlertTriangle,
+  Rocket,
+  Gauge,
+  Bug,
+  Shield,
+  Phone,
+  Server,
+  FileText,
+  Settings,
+  Search,
+  Moon,
+  ShieldCheck,
+  ChevronDown,
+  ChevronRight,
+  Waypoints,
+  BarChart3,
+  ShieldAlert,
+  ClipboardCheck,
+  Boxes,
+  FileSearch,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+interface AppSidebarProps {
+  activeSection: Section;
+  onSectionChange: (section: Section) => void;
+}
+
+interface NavItem {
+  id: Section;
+  label: string;
+  icon: LucideIcon;
+  badge?: number;
+  badgeColor?: "red" | "yellow" | "green";
+}
+
+const favorites: NavItem[] = [
+  { id: "incidents", label: "Open Incidents", icon: AlertTriangle },
+  { id: "deployments", label: "Recent Model Releases", icon: Rocket },
+];
+
+const mainMenu: NavItem[] = [
+  { id: "overview", label: "Pulse", icon: LayoutDashboard },
+  { id: "incidents", label: "Incidents", icon: AlertTriangle, badge: 3, badgeColor: "red" },
+  { id: "deployments", label: "Deployments", icon: Rocket, badge: 8 },
+  { id: "traces", label: "Traces", icon: Waypoints },
+  { id: "metrics", label: "Metrics", icon: BarChart3, badge: 24, badgeColor: "yellow" },
+  { id: "guardrails", label: "Guardrails", icon: ShieldAlert },
+  { id: "audits", label: "Audits", icon: ClipboardCheck },
+  { id: "risk_reviews", label: "Risk Reviews", icon: FileSearch },
+  { id: "services", label: "Services", icon: Boxes },
+];
+
+const advancedOpsMenu: NavItem[] = [
+  { id: "performance", label: "Performance", icon: Gauge },
+  { id: "errors", label: "Error Tracking", icon: Bug },
+  { id: "sla", label: "SLA & Uptime", icon: Shield },
+  { id: "oncall", label: "On-Call", icon: Phone },
+  { id: "postmortems", label: "Postmortems", icon: FileText },
+];
+
+export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
+  const [advancedOpsOpen, setAdvancedOpsOpen] = useState(false);
+  const [isSystemAdmin, setIsSystemAdmin] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    void fetch("/api/auth/session", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ session?: { operator?: { is_system_admin?: boolean } } }>;
+      })
+      .then((payload) => {
+        if (payload?.session?.operator?.is_system_admin) {
+          setIsSystemAdmin(true);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
+  return (
+    <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col shrink-0 overflow-hidden">
+      {/* Logo */}
+      <div className="h-16 px-5 flex items-center gap-3 border-b border-border">
+        <div className="w-9 h-9 rounded-xl bg-chart-1 flex items-center justify-center">
+          <ShieldCheck className="w-5 h-5 text-primary-foreground" />
+        </div>
+        <span className="font-semibold text-foreground text-[15px] tracking-tight">Reliai</span>
+        <span className="ml-auto px-2 py-0.5 text-[10px] font-medium bg-success/10 text-success rounded-full">
+          Live
+        </span>
+      </div>
+
+      {/* Search */}
+      <div className="px-4 py-4">
+        <button
+          type="button"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-muted/60 hover:bg-muted transition-colors"
+        >
+          <Search className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground flex-1 text-left">Search incidents and traces...</span>
+          <kbd className="text-[11px] text-muted-foreground bg-background px-1.5 py-0.5 rounded-md border border-border font-mono">
+            /
+          </kbd>
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        {/* Favorites */}
+        <div className="mb-2">
+          <p className="px-2 mb-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            Quick Access
+          </p>
+          <nav className="space-y-0.5">
+            {favorites.map((item) => (
+              <NavButton
+                key={`fav-${item.id}`}
+                item={item}
+                isActive={false}
+                onClick={() => onSectionChange(item.id)}
+              />
+            ))}
+          </nav>
+        </div>
+
+        {/* Main Menu */}
+        <div>
+          <p className="px-2 mb-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            Core Reliability
+          </p>
+          <nav className="space-y-0.5">
+            {mainMenu.map((item) => (
+              <NavButton
+                key={item.id}
+                item={item}
+                isActive={activeSection === item.id}
+                onClick={() => onSectionChange(item.id)}
+              />
+            ))}
+          </nav>
+
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setAdvancedOpsOpen((prev) => !prev)}
+              className="w-full px-2 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-between hover:text-foreground transition-colors"
+            >
+              <span>Advanced Ops</span>
+              {advancedOpsOpen ? (
+                <ChevronDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
+              )}
+            </button>
+            {advancedOpsOpen ? (
+              <nav className="space-y-0.5 mt-1">
+                {advancedOpsMenu.map((item) => (
+                  <NavButton
+                    key={item.id}
+                    item={item}
+                    isActive={activeSection === item.id}
+                    onClick={() => onSectionChange(item.id)}
+                  />
+                ))}
+              </nav>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      {/* Settings & User */}
+      <div className="px-4 py-4 border-t border-border space-y-2">
+        {isSystemAdmin ? (
+          <Link
+            href="/pulse/system"
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+              pathname?.startsWith("/pulse/system")
+                ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                : "text-foreground/80 hover:bg-muted/80 hover:text-foreground",
+            )}
+          >
+            <Server className="w-[18px] h-[18px] shrink-0" />
+            <span className="flex-1 text-left">System</span>
+          </Link>
+        ) : null}
+        <Link
+          href="/settings"
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+            pathname === "/settings"
+              ? "bg-primary text-primary-foreground font-medium shadow-sm"
+              : "text-foreground/80 hover:bg-muted/80 hover:text-foreground",
+          )}
+        >
+          <Settings className="w-[18px] h-[18px] shrink-0" />
+          <span className="flex-1 text-left">Settings</span>
+        </Link>
+        
+        {/* User Profile */}
+        <div className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer">
+          <div className="w-9 h-9 rounded-full bg-chart-1/20 flex items-center justify-center">
+            <span className="text-chart-1 text-sm font-medium">JD</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">John Doe</p>
+          <p className="text-xs text-muted-foreground truncate">Reliability Lead</p>
+          </div>
+          <button 
+            type="button"
+            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+            aria-label="Toggle theme"
+          >
+            <Moon className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+        <form method="post" action="/api/auth/sign-out">
+          <button
+            type="submit"
+            className="w-full rounded-xl border border-border px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground"
+          >
+            Sign out
+          </button>
+        </form>
+      </div>
+    </aside>
+  );
+}
+
+interface NavButtonProps {
+  item: NavItem;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+function NavButton({ item, isActive, onClick }: NavButtonProps) {
+  const Icon = item.icon;
+  
+  const badgeColorClass = {
+    red: "bg-destructive/15 text-destructive",
+    yellow: "bg-warning/20 text-warning",
+    green: "bg-success/15 text-success",
+  };
+  
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        isActive
+          ? "bg-primary text-primary-foreground font-medium shadow-sm"
+          : "text-foreground/80 hover:bg-muted/80 hover:text-foreground"
+      )}
+    >
+      <Icon className="w-[18px] h-[18px] shrink-0" />
+      <span className="flex-1 text-left">{item.label}</span>
+      {item.badge && (
+        <span
+          className={cn(
+            "text-xs font-medium px-2 py-0.5 rounded-full",
+            isActive
+              ? "bg-primary-foreground/20 text-primary-foreground"
+              : item.badgeColor 
+                ? badgeColorClass[item.badgeColor]
+                : "bg-muted text-muted-foreground"
+          )}
+        >
+          {item.badge}
+        </span>
+      )}
+    </button>
+  );
+}
