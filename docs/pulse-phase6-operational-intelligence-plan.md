@@ -40,14 +40,22 @@ Scope:
 - correlate deployments, incidents, regressions, and trace windows
 - expose evidence-linked timeline in `/pulse` and `/pulse/system/platform`
 - annotate confidence level (`high`, `medium`, `low`) for inferred causality
+- require operator review on all inferred relationships (no automated conclusions)
 
 Out of scope:
 - rollback execution controls
 - auto-remediation actions
+- “AI says this caused it” claims
 
 Acceptance:
 - each causal statement links to at least one concrete source (deployment ID, incident ID, trace cohort, or metric spike window)
 - no claim shown without source attribution
+- phrasing is evidence-first and non-absolute:
+  - “Likely related change”
+  - “Evidence window”
+  - “Observed before degradation”
+  - “Confidence: low/medium/high”
+  - “Requires operator review”
 
 ## 2) Attribution Suggestions (Operator-Advisory)
 
@@ -104,6 +112,13 @@ Acceptance:
 ## Delivery Sequence (Recommended)
 
 1. Slice 6.1 — Causality read-only evidence stitching
+   - first buildable unit:
+     - correlate deployment windows with incidents/regressions/traces
+     - show evidence links only
+     - no rollback button
+     - no auto-RCA
+     - no severity changes
+     - no certification impact
 2. Slice 6.2 — Attribution suggestions (advisory)
 3. Slice 6.3 — Reliability patterns/system intelligence summaries
 4. Slice 6.4 — Governance boundary hardening and decision-signal audit
@@ -112,6 +127,16 @@ Each slice should ship independently with:
 - narrow branch scope
 - route-limited blast radius
 - lint/build + focused manual validation
+
+## Phase Progression
+
+| Phase | Capability | Why |
+|---|---|---|
+| 6.1 | Read-only causality evidence | Establish trust and explainability first |
+| 6.2 | Advisory attribution suggestions | Add operator guidance without automation |
+| 6.3 | Reliability intelligence summaries | Aggregate patterns and risk trends |
+| 6.4 | Governance boundary hardening | Keep certification logic trustworthy |
+| 7.x | Controlled operational actions | Only after evidence + attribution stabilize |
 
 ## Validation Framework (Phase 6)
 
@@ -141,6 +166,26 @@ Quality gates:
 
 4. **Scope creep**
 - Mitigation: slice-level non-goals and PR gate checklist
+
+## Deferred Beyond Phase 6
+
+The following capabilities are intentionally excluded from initial operational intelligence rollout:
+- rollback execution controls
+- automatic RCA conclusions
+- autonomous severity changes
+- automatic certification state mutation
+
+Reason:
+Operational intelligence must first prove:
+- evidence integrity
+- attribution quality
+- operator trustworthiness
+- governance auditability
+
+before any system is allowed to:
+- mutate production state
+- alter incident severity
+- affect certification decisions automatically
 
 ## PR/Review Template for Phase 6 Slices
 
