@@ -20,6 +20,10 @@ export default async function SystemIntelligencePage() {
   const topConfidence = highRiskPatterns.length
     ? Math.max(...highRiskPatterns.map((item) => item.confidence))
     : 0;
+  const highRiskCount = highRiskPatterns.filter((item) => item.risk_level === "high").length;
+  const mediumRiskCount = highRiskPatterns.filter((item) => item.risk_level === "medium").length;
+  const totalPatternTraces = highRiskPatterns.reduce((sum, item) => sum + item.traces, 0);
+  const dominantPattern = highRiskPatterns[0] ?? null;
 
   return (
     <SystemLayoutShell
@@ -60,6 +64,51 @@ export default async function SystemIntelligencePage() {
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Top confidence</p>
               <p className="mt-2 text-2xl font-semibold text-foreground">{pct(topConfidence)}</p>
               <p className="mt-2 text-xs text-muted-foreground">Highest observed confidence in current graph edges.</p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Operational intelligence summary</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Advisory-only synthesis of cross-project reliability trends. Requires operator review.
+                </p>
+              </div>
+              <span className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground">
+                Requires operator review
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Risk mix</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{highRiskCount + mediumRiskCount}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {highRiskCount} high-risk and {mediumRiskCount} medium-risk relationships in active graph edges.
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Primary pattern</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  {dominantPattern ? dominantPattern.pattern.replaceAll("_", " ") : "Insufficient data"}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {dominantPattern
+                    ? `${pct(dominantPattern.confidence)} confidence, ${dominantPattern.traces.toLocaleString()} supporting traces.`
+                    : "No dominant relationship identified in the current evidence set."}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Evidence coverage</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  {totalPatternTraces > 0 ? `${totalPatternTraces.toLocaleString()} traces` : "Insufficient data"}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {totalPatternTraces > 0
+                    ? "Validate recommendations against deployment and incident timelines before action."
+                    : "Collect additional traces and incidents to improve pattern confidence."}
+                </p>
+              </div>
             </div>
           </section>
 
