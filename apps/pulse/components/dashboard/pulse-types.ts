@@ -38,7 +38,7 @@ export type PulseOverviewData = {
   sourceErrors: string[];
 };
 
-export type CausalityConfidence = "low" | "medium" | "high";
+export type CausalityConfidence = "insufficient" | "low" | "medium" | "high";
 
 export type CausalityEvidenceLink = {
   label: string;
