@@ -223,6 +223,14 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
             <Moon className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
+        <form method="post" action="/api/auth/sign-out">
+          <button
+            type="submit"
+            className="w-full rounded-xl border border-border px-3 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
     </aside>
   );
