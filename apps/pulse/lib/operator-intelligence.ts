@@ -6,6 +6,8 @@ export const OPERATOR_INTELLIGENCE_COPY = {
   evidenceReferences: "Evidence references",
   requiresOperatorReview: "Requires operator review",
   insufficientEvidence: "Insufficient linked evidence in current snapshot.",
+  governanceBoundaryNote:
+    "Advisory intelligence only. Requires operator review. No automatic severity, certification, deployment, or rollback actions are performed.",
 } as const;
 
 export function formatConfidenceLabel(confidence: OperatorConfidence): string {
