@@ -24,6 +24,7 @@ import {
 import type { CausalityEvidenceData, PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { AttributionSuggestionData } from "@/components/dashboard/pulse-types";
 import Link from "next/link";
+import { OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultRequestsData = [
   { time: "00:00", requests: 12400, errors: 45 },
@@ -373,7 +374,7 @@ export function OverviewContent({
             </p>
           </div>
           <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-            Requires operator review
+            {OPERATOR_INTELLIGENCE_COPY.requiresOperatorReview}
           </span>
         </div>
 
@@ -418,6 +419,7 @@ export function OverviewContent({
             No likely related change identified in the current evidence window.
           </div>
         )}
+        <p className="mt-3 text-xs text-muted-foreground">{OPERATOR_INTELLIGENCE_COPY.governanceBoundaryNote}</p>
       </div>
 
       {/* Advisory attribution suggestions */}
@@ -433,7 +435,7 @@ export function OverviewContent({
             </p>
           </div>
           <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-            Requires operator review
+            {OPERATOR_INTELLIGENCE_COPY.requiresOperatorReview}
           </span>
         </div>
 
@@ -475,6 +477,7 @@ export function OverviewContent({
             No advisory attribution suggestions for the current evidence window.
           </div>
         )}
+        <p className="mt-3 text-xs text-muted-foreground">{OPERATOR_INTELLIGENCE_COPY.governanceBoundaryNote}</p>
       </div>
     </div>
   );

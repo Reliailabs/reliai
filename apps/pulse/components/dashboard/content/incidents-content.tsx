@@ -322,6 +322,7 @@ export function IncidentsContent({ incidentsData }: { incidentsData?: IncidentsS
               </a>
             ))}
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">{OPERATOR_INTELLIGENCE_COPY.governanceBoundaryNote}</p>
         </div>
 
         <div className="mb-6">
