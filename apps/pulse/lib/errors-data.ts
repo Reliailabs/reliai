@@ -4,7 +4,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
-import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { ErrorIntelligenceSnippet, ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 
@@ -113,10 +113,54 @@ export async function getErrorsSurfaceData(): Promise<ErrorsSurfaceData> {
     lastSeen: relTime(incident.updated_at),
   }));
 
+  const intelligenceSnippets: ErrorIntelligenceSnippet[] = topErrors.slice(0, 3).map((error, index) => {
+    const linkedIncident = incidents.find((incident) => incident.id === error.id);
+    const hasIncidentEvidence = Boolean(linkedIncident);
+    const hasTraceEvidence = failedCount > 0;
+    const hasRegressionEvidence = regressions.length > 0;
+    const contributingFactors: string[] = [];
+    if (hasIncidentEvidence) {
+      contributingFactors.push(`Linked incident ${error.id} remains active in ${error.service}.`);
+    }
+    if (hasTraceEvidence) {
+      contributingFactors.push(`${failedCount} failed traces observed in the current evidence window.`);
+    }
+    if (hasRegressionEvidence) {
+      contributingFactors.push(`${regressions.length} regression signal${regressions.length === 1 ? "" : "s"} associated with current project context.`);
+    }
+    const evidenceLinks: Array<{ label: string; href: string }> = [];
+    if (hasIncidentEvidence) evidenceLinks.push({ label: "Related incidents", href: "/incidents" });
+    if (hasTraceEvidence) evidenceLinks.push({ label: "Trace samples", href: "/traces" });
+    if (hasRegressionEvidence) evidenceLinks.push({ label: "Deployments", href: "/deployments" });
+    if (evidenceLinks.length === 0) {
+      contributingFactors.length = 0;
+      contributingFactors.push("Insufficient linked evidence in current error snapshot.");
+      return {
+        id: `err-intel-${index}`,
+        title: error.type,
+        confidence: "insufficient",
+        contributingFactors,
+        evidenceLinks: [{ label: "Error feed", href: "/errors" }],
+        requiresOperatorReview: true,
+      };
+    }
+    const confidence: ErrorIntelligenceSnippet["confidence"] =
+      evidenceLinks.length >= 3 ? "high" : evidenceLinks.length === 2 ? "medium" : "low";
+    return {
+      id: `err-intel-${index}`,
+      title: error.type,
+      confidence,
+      contributingFactors,
+      evidenceLinks,
+      requiresOperatorReview: true,
+    };
+  });
+
   return {
     errorTrend,
     funnelData,
     topErrors,
+    intelligenceSnippets,
     metrics: [
       { label: "Total Errors (24h)", value: failedCount.toLocaleString(), change: failedCount > 0 ? `+${failedCount}` : "0", good: failedCount === 0 },
       { label: "Error Rate", value: fmtPct(errorRate), change: failedCount > 0 ? "+0.04%" : "-0.02%", good: errorRate < 1.0 },

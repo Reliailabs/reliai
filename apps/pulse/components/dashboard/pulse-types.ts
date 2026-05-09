@@ -167,9 +167,19 @@ export type ErrorsSurfaceData = {
   errorTrend: ErrorTrendPoint[];
   funnelData: ErrorFunnelStage[];
   topErrors: ErrorTopItem[];
+  intelligenceSnippets: ErrorIntelligenceSnippet[];
   metrics: ErrorMetricItem[];
   sourceErrors: string[];
   dataMode: "live" | "demo";
+};
+
+export type ErrorIntelligenceSnippet = {
+  id: string;
+  title: string;
+  confidence: "insufficient" | "low" | "medium" | "high";
+  contributingFactors: string[];
+  evidenceLinks: Array<{ label: string; href: string }>;
+  requiresOperatorReview: true;
 };
 
 export type TraceTrendPoint = {
