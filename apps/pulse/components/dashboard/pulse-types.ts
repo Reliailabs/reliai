@@ -119,6 +119,12 @@ export type IncidentSurfaceItem = {
   assigneeInitials: string;
   impactedServices: string[];
   timeline: IncidentTimelineEntry[];
+  intelligence: {
+    contributingFactors: string[];
+    confidence: "insufficient" | "low" | "medium" | "high";
+    evidenceLinks: Array<{ label: string; href: string }>;
+    requiresOperatorReview: true;
+  };
 };
 
 export type IncidentsSurfaceData = {
@@ -161,9 +167,19 @@ export type ErrorsSurfaceData = {
   errorTrend: ErrorTrendPoint[];
   funnelData: ErrorFunnelStage[];
   topErrors: ErrorTopItem[];
+  intelligenceSnippets: ErrorIntelligenceSnippet[];
   metrics: ErrorMetricItem[];
   sourceErrors: string[];
   dataMode: "live" | "demo";
+};
+
+export type ErrorIntelligenceSnippet = {
+  id: string;
+  title: string;
+  confidence: "insufficient" | "low" | "medium" | "high";
+  contributingFactors: string[];
+  evidenceLinks: Array<{ label: string; href: string }>;
+  requiresOperatorReview: true;
 };
 
 export type TraceTrendPoint = {
@@ -199,9 +215,20 @@ export type TracesSurfaceData = {
   throughputData: TraceThroughputPoint[];
   metrics: TraceMetricItem[];
   serviceLatencies: TraceServiceLatency[];
+  intelligenceSnippets: TraceIntelligenceSnippet[];
   sourceErrors: string[];
   hasTraceData: boolean;
   dataMode: "live" | "demo";
+};
+
+export type TraceIntelligenceSnippet = {
+  id: string;
+  title: string;
+  confidence: "insufficient" | "low" | "medium" | "high";
+  observedContributingFactors: string[];
+  relatedOperationalSignals: string[];
+  evidenceReferences: Array<{ label: string; href: string }>;
+  requiresOperatorReview: true;
 };
 
 export type DeploymentFrequencyPoint = {

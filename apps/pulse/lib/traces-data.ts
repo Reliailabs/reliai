@@ -2,7 +2,8 @@ import "server-only";
 
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
-import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
+import type { TraceIntelligenceSnippet, TracesSurfaceData } from "@/components/dashboard/pulse-types";
+import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 
@@ -17,6 +18,17 @@ type TraceRead = {
 type ProjectRead = {
   id: string;
   name: string;
+};
+
+type IncidentRead = {
+  id: string;
+  severity: "critical" | "high" | "medium" | "low";
+  title: string;
+};
+
+type DeploymentRead = {
+  id: string;
+  status?: string | null;
 };
 
 async function apiRequest<T>(path: string): Promise<T> {
@@ -46,16 +58,19 @@ function percentile(sorted: number[], p: number): number {
 
 export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
   const sourceErrors: string[] = [];
-  const [tracesResult, projectsResult] = await Promise.all([
+  const [tracesResult, projectsResult, incidentsResult] = await Promise.all([
     safeFetch(apiRequest<{ items: TraceRead[] }>("/api/v1/traces?limit=250")),
     safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects")),
+    safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=25")),
   ]);
 
   if (tracesResult.error) sourceErrors.push("traces");
   if (projectsResult.error) sourceErrors.push("projects");
+  if (incidentsResult.error) sourceErrors.push("incidents");
 
   const traces = tracesResult.data?.items ?? [];
   const projects = projectsResult.data?.items ?? [];
+  const incidents = incidentsResult.data?.items ?? [];
   const latencies = traces
     .map((trace) => trace.latency_ms ?? 0)
     .filter((latency) => Number.isFinite(latency) && latency >= 0)
@@ -112,6 +127,65 @@ export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
     };
   });
 
+  const firstProjectId = projects[0]?.id ?? null;
+  const deploymentsResult = firstProjectId
+    ? await safeFetch(apiRequest<{ items: DeploymentRead[] }>(`/api/v1/projects/${firstProjectId}/deployments?limit=12`))
+    : ({ data: { items: [] }, error: false } as FetchResult<{ items: DeploymentRead[] }>);
+  if (deploymentsResult.error) sourceErrors.push("deployments");
+  const deployments = deploymentsResult.data?.items ?? [];
+
+  const failedTraces = traces.filter((trace) => !trace.success);
+  const criticalIncidents = incidents.filter((incident) => incident.severity === "critical");
+  const failedDeployments = deployments.filter((deployment) => deployment.status === "failed");
+  const degradedServices = serviceLatencies.filter((service) => service.status === "degraded");
+
+  const traceIntelligenceSnippets: TraceIntelligenceSnippet[] = [];
+  const observedContributingFactors: string[] = [];
+  const relatedOperationalSignals: string[] = [];
+  const evidenceReferences: TraceIntelligenceSnippet["evidenceReferences"] = [];
+
+  if (failedTraces.length > 0) {
+    observedContributingFactors.push(`${failedTraces.length} failed traces observed in the current window.`);
+    evidenceReferences.push({ label: "Error signals", href: "/errors" });
+  }
+  if (criticalIncidents.length > 0) {
+    observedContributingFactors.push(`${criticalIncidents.length} critical incident signal${criticalIncidents.length === 1 ? "" : "s"} overlap trace instability.`);
+    relatedOperationalSignals.push("Critical incidents are active in the same reliability window.");
+    evidenceReferences.push({ label: "Incident context", href: "/incidents" });
+  }
+  if (failedDeployments.length > 0) {
+    observedContributingFactors.push(`${failedDeployments.length} failed deployment event${failedDeployments.length === 1 ? "" : "s"} may be related to trace degradation.`);
+    relatedOperationalSignals.push("Recent deployment failures align with elevated latency/error behavior.");
+    evidenceReferences.push({ label: "Deployment context", href: "/deployments" });
+  }
+  if (degradedServices.length > 0) {
+    relatedOperationalSignals.push(`${degradedServices.length} service latency profile${degradedServices.length === 1 ? "" : "s"} currently degraded.`);
+    evidenceReferences.push({ label: "Service latency", href: "/traces" });
+  }
+
+  if (evidenceReferences.length === 0) {
+    traceIntelligenceSnippets.push({
+      id: "trace-intel-0",
+      title: "Trace reliability posture",
+      confidence: "insufficient",
+      observedContributingFactors: [OPERATOR_INTELLIGENCE_COPY.insufficientEvidence],
+      relatedOperationalSignals: ["No correlated incident/deployment/error signals were linked."],
+      evidenceReferences: [{ label: "Trace stream", href: "/traces" }],
+      requiresOperatorReview: true,
+    });
+  } else {
+    const confidence: TraceIntelligenceSnippet["confidence"] = confidenceFromEvidenceCount(evidenceReferences.length);
+    traceIntelligenceSnippets.push({
+      id: "trace-intel-0",
+      title: "Trace reliability posture",
+      confidence,
+      observedContributingFactors,
+      relatedOperationalSignals,
+      evidenceReferences,
+      requiresOperatorReview: true,
+    });
+  }
+
   return {
     latencyData,
     throughputData,
@@ -122,6 +196,7 @@ export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
       { label: "Error Rate", value: `${errorRate.toFixed(2)}%`, change: errorRate > 1.0 ? "+0.11%" : "-0.05%", trend: errorRate > 1.0 ? "up" : "down", good: errorRate <= 1.0 },
     ],
     serviceLatencies,
+    intelligenceSnippets: traceIntelligenceSnippets,
     sourceErrors: Array.from(new Set(sourceErrors)),
     hasTraceData: traces.length > 0,
     dataMode: "live",

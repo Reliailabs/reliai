@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
+import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultErrorTrend = [
   { time: "00:00", errors: 45, rate: 0.36 },
@@ -97,6 +98,7 @@ export function ErrorsContent({ errorsData }: { errorsData?: ErrorsSurfaceData }
   const errorTrend = errorsData?.errorTrend?.length ? errorsData.errorTrend : defaultErrorTrend;
   const funnelData = errorsData?.funnelData?.length ? errorsData.funnelData : defaultFunnelData;
   const topErrors = errorsData?.topErrors?.length ? errorsData.topErrors : defaultTopErrors;
+  const intelligenceSnippets = errorsData?.intelligenceSnippets ?? [];
   const metrics = errorsData?.metrics?.length ? errorsData.metrics : defaultMetrics;
   const sourceErrorText =
     errorsData && errorsData.sourceErrors.length > 0
@@ -248,6 +250,59 @@ export function ErrorsContent({ errorsData }: { errorsData?: ErrorsSurfaceData }
             })}
           </div>
         </div>
+      </div>
+
+      <div
+        className="bg-card rounded-2xl p-6 border border-border"
+        style={{ boxShadow: cardShadow }}
+      >
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Error intelligence</h3>
+            <p className="text-sm text-muted-foreground">{OPERATOR_INTELLIGENCE_COPY.observedContributingFactors}</p>
+          </div>
+          <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+            {OPERATOR_INTELLIGENCE_COPY.requiresOperatorReview}
+          </span>
+        </div>
+        {intelligenceSnippets.length === 0 ? (
+          <div className="rounded-xl border border-border bg-muted/20 px-4 py-4 text-sm text-muted-foreground">
+            Insufficient linked evidence in current error snapshot.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {intelligenceSnippets.map((snippet) => (
+              <div key={snippet.id} className="rounded-xl border border-border bg-muted/20 p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">{snippet.title}</p>
+                  <span className="rounded-full border border-border px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {formatConfidenceLabel(snippet.confidence)}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {snippet.contributingFactors.map((factor) => (
+                    <p key={factor} className="text-sm text-muted-foreground">{factor}</p>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
+                  {OPERATOR_INTELLIGENCE_COPY.evidenceReferences}
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  {snippet.evidenceLinks.map((link) => (
+                    <a
+                      key={`${snippet.id}-${link.label}-${link.href}`}
+                      href={link.href}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground hover:bg-muted"
+                    >
+                      {link.label}
+                      <ChevronRight className="h-3 w-3" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Top Errors */}

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
+import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultIncidents = [
   {
@@ -23,6 +24,12 @@ const defaultIncidents = [
       { time: "10:35", event: "On-call notified", type: "notification" },
       { time: "10:38", event: "Investigation started", type: "action" },
     ],
+    intelligence: {
+      contributingFactors: [OPERATOR_INTELLIGENCE_COPY.insufficientEvidence],
+      confidence: "insufficient",
+      evidenceLinks: [{ label: "Related errors", href: "/errors" }],
+      requiresOperatorReview: true,
+    },
   },
   {
     id: "INC-2846",
@@ -40,6 +47,12 @@ const defaultIncidents = [
       { time: "09:55", event: "Root cause identified", type: "action" },
       { time: "10:10", event: "Mitigation in progress", type: "action" },
     ],
+    intelligence: {
+      contributingFactors: [OPERATOR_INTELLIGENCE_COPY.insufficientEvidence],
+      confidence: "insufficient",
+      evidenceLinks: [{ label: "Related errors", href: "/errors" }],
+      requiresOperatorReview: true,
+    },
   },
   {
     id: "INC-2845",
@@ -56,6 +69,12 @@ const defaultIncidents = [
       { time: "08:25", event: "Workaround applied", type: "action" },
       { time: "09:15", event: "Monitoring resolution", type: "action" },
     ],
+    intelligence: {
+      contributingFactors: [OPERATOR_INTELLIGENCE_COPY.insufficientEvidence],
+      confidence: "insufficient",
+      evidenceLinks: [{ label: "Related errors", href: "/errors" }],
+      requiresOperatorReview: true,
+    },
   },
   {
     id: "INC-2844",
@@ -71,6 +90,12 @@ const defaultIncidents = [
       { time: "04:15", event: "Alert triggered", type: "alert" },
       { time: "08:47", event: "Hotfix deployed", type: "action" },
     ],
+    intelligence: {
+      contributingFactors: [OPERATOR_INTELLIGENCE_COPY.insufficientEvidence],
+      confidence: "insufficient",
+      evidenceLinks: [{ label: "Related errors", href: "/errors" }],
+      requiresOperatorReview: true,
+    },
   },
 ];
 
@@ -102,7 +127,6 @@ export function IncidentsContent({ incidentsData }: { incidentsData?: IncidentsS
     incidentsData && incidentsData.sourceErrors.length > 0
       ? `Data source unavailable: ${incidentsData.sourceErrors.join(", ")}.`
       : null;
-
   if (incidents.length === 0) {
     return (
       <div className="space-y-4">
@@ -263,6 +287,41 @@ export function IncidentsContent({ incidentsData }: { incidentsData?: IncidentsS
           <p className="text-sm text-muted-foreground leading-relaxed">
             {selectedIncident.description}
           </p>
+        </div>
+
+        <div className="mb-6 rounded-xl border border-border bg-muted/20 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-foreground">Incident intelligence</h3>
+            <span className="rounded-full border border-border px-2.5 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+              {formatConfidenceLabel(selectedIncident.intelligence.confidence)}
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-muted-foreground">{OPERATOR_INTELLIGENCE_COPY.requiresOperatorReview}</p>
+          <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+            {OPERATOR_INTELLIGENCE_COPY.observedContributingFactors}
+          </p>
+          <div className="space-y-2">
+            {selectedIncident.intelligence.contributingFactors.map((factor) => (
+              <p key={factor} className="text-sm text-muted-foreground">
+                {factor}
+              </p>
+            ))}
+          </div>
+          <p className="mt-4 mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+            {OPERATOR_INTELLIGENCE_COPY.evidenceReferences}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {selectedIncident.intelligence.evidenceLinks.map((link) => (
+              <a
+                key={`${selectedIncident.id}-${link.href}-${link.label}`}
+                href={link.href}
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground hover:bg-muted"
+              >
+                {link.label}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            ))}
+          </div>
         </div>
 
         <div className="mb-6">

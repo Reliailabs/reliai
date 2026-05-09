@@ -5,6 +5,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
 import type { IncidentSurfaceItem, IncidentSurfaceStatus, IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
+import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 
@@ -25,6 +26,13 @@ type IncidentEventRead = {
   event_type: string;
   happened_at: string;
   summary: string;
+};
+
+type IncidentDetailRead = {
+  id: string;
+  traces: Array<{ id: string; processor_result_id?: string | null }>;
+  deployment_context: { deployment: { id: string } } | null;
+  compare: { trace_compare_path: string };
 };
 
 function toStatus(status: string): IncidentSurfaceStatus {
@@ -109,6 +117,67 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
           }))
         : buildFallbackTimeline(item);
 
+    const detailResult = await safeFetch(
+      apiRequest<IncidentDetailRead>(`/api/v1/incidents/${item.id}`),
+    );
+    if (detailResult.error) sourceErrors.push(`incident-detail:${item.id}`);
+
+    const detail = detailResult.data;
+    const summary = item.summary_json ?? {};
+    const sampleTraceIds = Array.isArray(summary.sample_trace_ids)
+      ? (summary.sample_trace_ids as string[]).filter(Boolean)
+      : [];
+    const regressionCount = typeof summary.regression_count === "number" ? summary.regression_count : 0;
+    const failureRateDelta =
+      typeof summary.failure_rate_delta_pct === "number" ? summary.failure_rate_delta_pct : null;
+    const detailTraceCount = detail?.traces.length ?? 0;
+    const deploymentId = detail?.deployment_context?.deployment.id ?? null;
+    const comparePath = detail?.compare?.trace_compare_path ?? null;
+    const traceErrorSignals = (detail?.traces ?? []).filter((trace) => trace.processor_result_id).length;
+    const contributingFactors: string[] = [];
+    if (regressionCount > 0) {
+      contributingFactors.push(`${regressionCount} regression signal${regressionCount === 1 ? "" : "s"} observed.`);
+    }
+    if (failureRateDelta !== null) {
+      contributingFactors.push(`Failure rate changed by ${failureRateDelta.toFixed(1)}%.`);
+    }
+    if (deploymentId) {
+      contributingFactors.push("Incident overlaps a recent deployment window.");
+    }
+    if (detailTraceCount > 0) {
+      contributingFactors.push(`Linked trace sample set contains ${detailTraceCount} trace${detailTraceCount === 1 ? "" : "s"}.`);
+    }
+    if (traceErrorSignals > 0) {
+      contributingFactors.push(`${traceErrorSignals} linked trace${traceErrorSignals === 1 ? "" : "s"} include processor error signals.`);
+    }
+
+    const evidenceLinks: Array<{ label: string; href: string }> = [];
+    if (comparePath) {
+      evidenceLinks.push({ label: "Trace compare", href: comparePath });
+    }
+    if (deploymentId) {
+      evidenceLinks.push({
+        label: "Linked deployment",
+        href: `/deployments#${deploymentId}`,
+      });
+    }
+    if (sampleTraceIds.length > 0 || detailTraceCount > 0) {
+      evidenceLinks.push({ label: "Trace samples", href: "/traces" });
+    }
+    if (traceErrorSignals > 0) {
+      evidenceLinks.push({ label: "Related errors", href: "/errors" });
+    }
+
+    const concreteEvidenceCount = evidenceLinks.length;
+    if (contributingFactors.length === 0 || concreteEvidenceCount === 0) {
+      contributingFactors.length = 0;
+      contributingFactors.push(OPERATOR_INTELLIGENCE_COPY.insufficientEvidence);
+    }
+    const confidence: IncidentSurfaceItem["intelligence"]["confidence"] =
+      contributingFactors[0] === OPERATOR_INTELLIGENCE_COPY.insufficientEvidence
+        ? "insufficient"
+        : confidenceFromEvidenceCount(concreteEvidenceCount);
+
     const assignee = item.acknowledged_by_operator_email ?? "Unassigned";
     mapped.push({
       id: item.id,
@@ -123,6 +192,12 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
       assigneeInitials: initials(assignee === "Unassigned" ? "UA" : assignee),
       impactedServices: [item.project_name ?? "Unknown service"],
       timeline,
+      intelligence: {
+        contributingFactors,
+        confidence,
+        evidenceLinks,
+        requiresOperatorReview: true,
+      },
     });
   }
 
