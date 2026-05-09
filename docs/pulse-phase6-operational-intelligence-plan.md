@@ -138,6 +138,21 @@ Each slice should ship independently with:
 | 6.4 | Governance boundary hardening | Keep certification logic trustworthy |
 | 7.x | Controlled operational actions | Only after evidence + attribution stabilize |
 
+## Phase 6 Exit / Phase 7 Handoff
+Phase 6 completion gates into a **planning-only** Phase 7:
+- Phase 7 label: **Controlled Actions Readiness**
+- Phase 7 is contract/spec/approval design work only
+- No execution wiring, no orchestration, no automated state mutation
+
+Phase 7 planning slices:
+1. Controlled Action Model Spec
+2. Action Approval UX Contract
+3. Auditability/Event Log Contract
+4. Permission/RBAC Guardrails
+5. Safety/Policy Constraints
+6. Dry-Run Action Mode (design only)
+7. Phase 7 Entry Gate before any Phase 8 execution work
+
 ## Validation Framework (Phase 6)
 
 For every slice:
