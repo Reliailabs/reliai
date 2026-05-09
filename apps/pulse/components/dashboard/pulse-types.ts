@@ -215,9 +215,20 @@ export type TracesSurfaceData = {
   throughputData: TraceThroughputPoint[];
   metrics: TraceMetricItem[];
   serviceLatencies: TraceServiceLatency[];
+  intelligenceSnippets: TraceIntelligenceSnippet[];
   sourceErrors: string[];
   hasTraceData: boolean;
   dataMode: "live" | "demo";
+};
+
+export type TraceIntelligenceSnippet = {
+  id: string;
+  title: string;
+  confidence: "insufficient" | "low" | "medium" | "high";
+  observedContributingFactors: string[];
+  relatedOperationalSignals: string[];
+  evidenceReferences: Array<{ label: string; href: string }>;
+  requiresOperatorReview: true;
 };
 
 export type DeploymentFrequencyPoint = {
