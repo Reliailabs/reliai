@@ -1,0 +1,131 @@
+import { z } from "zod";
+
+export const CONTROLLED_ACTION_TYPES = [
+  "ack",
+  "assign",
+  "open_remediation_task",
+  "propose_guardrail",
+  "rollback",
+] as const;
+
+export const CONTROLLED_TARGET_TYPES = [
+  "incident",
+  "deployment",
+  "trace_group",
+  "guardrail_policy",
+] as const;
+
+export type ControlledActionType = (typeof CONTROLLED_ACTION_TYPES)[number];
+export type ControlledTargetType = (typeof CONTROLLED_TARGET_TYPES)[number];
+
+const executionActionTargetMatrix: Record<ControlledActionType, ControlledTargetType[]> = {
+  ack: ["incident"],
+  assign: ["incident"],
+  open_remediation_task: ["incident", "deployment", "trace_group"],
+  propose_guardrail: ["incident", "deployment", "trace_group", "guardrail_policy"],
+  rollback: ["deployment"],
+};
+
+const evidenceRefSchema = z.object({
+  label: z.string().min(1),
+  href: z.string().min(1),
+});
+
+const controlledExecutionRequestSchema = z.object({
+  execution_id: z.string().min(1),
+  proposal_id: z.string().min(1),
+  action_type: z.enum(CONTROLLED_ACTION_TYPES),
+  target_type: z.enum(CONTROLLED_TARGET_TYPES),
+  target_id: z.string().min(1),
+  approved_by_user_id: z.string().min(1),
+  approved_at: z.string().datetime(),
+  evidence_refs: z.array(evidenceRefSchema).min(1),
+  dry_run_result_id: z.string().min(1).nullable(),
+  request_context: z.object({
+    organization_id: z.string().min(1),
+    project_id: z.string().min(1).nullable(),
+    environment_id: z.string().min(1).nullable(),
+  }),
+});
+
+export type ControlledExecutionRequest = z.infer<typeof controlledExecutionRequestSchema>;
+
+export type ControlledExecutionGuardResult =
+  | { ok: true; request: ControlledExecutionRequest; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+const isSafeInternalHref = (href: string): boolean => {
+  if (!href.startsWith("/")) {
+    return false;
+  }
+  if (href.startsWith("//")) {
+    return false;
+  }
+  return true;
+};
+
+export function validateControlledExecutionRequest(
+  payload: unknown,
+  now: Date = new Date(),
+): ControlledExecutionGuardResult {
+  const parsed = controlledExecutionRequestSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`),
+      warnings: [],
+    };
+  }
+
+  const request = parsed.data;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const allowedTargets = executionActionTargetMatrix[request.action_type];
+  if (!allowedTargets.includes(request.target_type)) {
+    errors.push(`action_type '${request.action_type}' is not allowed for target_type '${request.target_type}'.`);
+  }
+
+  for (const ref of request.evidence_refs) {
+    if (!isSafeInternalHref(ref.href)) {
+      errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+      continue;
+    }
+    if (ref.href.startsWith("/pulse/system") || ref.href.startsWith("/system")) {
+      warnings.push(`evidence ref '${ref.href}' points to admin intelligence surface.`);
+    }
+  }
+
+  const approvalTime = new Date(request.approved_at);
+  if (Number.isNaN(approvalTime.getTime())) {
+    errors.push("approved_at is invalid.");
+  } else {
+    const maxFutureSkewMs = 5 * 60 * 1000;
+    if (approvalTime.getTime() - now.getTime() > maxFutureSkewMs) {
+      errors.push("approved_at is too far in the future.");
+    }
+    const maxApprovalAgeMs = 24 * 60 * 60 * 1000;
+    if (now.getTime() - approvalTime.getTime() > maxApprovalAgeMs) {
+      warnings.push("approval is older than 24h; re-approval recommended.");
+    }
+  }
+
+  if (request.action_type === "rollback") {
+    if (!request.dry_run_result_id) {
+      errors.push("rollback requires dry_run_result_id.");
+    }
+    if (!request.request_context.environment_id) {
+      errors.push("rollback requires request_context.environment_id.");
+    }
+  }
+
+  if (request.evidence_refs.length < 2) {
+    warnings.push("single evidence reference provided; confidence may be insufficient.");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors, warnings };
+  }
+
+  return { ok: true, request, warnings };
+}
