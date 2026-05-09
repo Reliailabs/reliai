@@ -54,6 +54,22 @@ export type ControlledExecutionGuardResult =
   | { ok: true; request: ControlledExecutionRequest; warnings: string[] }
   | { ok: false; errors: string[]; warnings: string[] };
 
+const executionConfirmationSchema = z.object({
+  proposal_id: z.string().min(1),
+  approval_state: z.literal("approved"),
+  approved_by_user_id: z.string().min(1),
+  approved_at: z.string().datetime(),
+  confirmation_text: z.literal("CONFIRM"),
+  target_summary: z.string().min(1),
+  reversibility: z.enum(["reversible", "non_reversible"]),
+});
+
+export type ControlledExecutionConfirmationRequest = z.infer<typeof executionConfirmationSchema>;
+
+export type ControlledExecutionConfirmationGuardResult =
+  | { ok: true; request: ControlledExecutionConfirmationRequest; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
 const isSafeInternalHref = (href: string): boolean => {
   if (!href.startsWith("/")) {
     return false;
@@ -121,6 +137,48 @@ export function validateControlledExecutionRequest(
 
   if (request.evidence_refs.length < 2) {
     warnings.push("single evidence reference provided; confidence may be insufficient.");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors, warnings };
+  }
+
+  return { ok: true, request, warnings };
+}
+
+export function validateControlledExecutionConfirmation(
+  payload: unknown,
+  now: Date = new Date(),
+): ControlledExecutionConfirmationGuardResult {
+  const parsed = executionConfirmationSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`),
+      warnings: [],
+    };
+  }
+
+  const request = parsed.data;
+  const warnings: string[] = [];
+  const approvedAt = new Date(request.approved_at);
+  const errors: string[] = [];
+
+  if (Number.isNaN(approvedAt.getTime())) {
+    errors.push("approved_at is invalid.");
+  } else {
+    const maxFutureSkewMs = 5 * 60 * 1000;
+    if (approvedAt.getTime() - now.getTime() > maxFutureSkewMs) {
+      errors.push("approved_at is too far in the future.");
+    }
+    const maxApprovalAgeMs = 24 * 60 * 60 * 1000;
+    if (now.getTime() - approvedAt.getTime() > maxApprovalAgeMs) {
+      warnings.push("approval is older than 24h; re-approval recommended.");
+    }
+  }
+
+  if (request.reversibility === "non_reversible") {
+    warnings.push("non-reversible action requires explicit operator caution.");
   }
 
   if (errors.length > 0) {
