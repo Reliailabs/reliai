@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { validateControlledExecutionRequest } from "../lib/controlled-execution";
+import {
+  validateControlledExecutionConfirmation,
+  validateControlledExecutionRequest,
+} from "../lib/controlled-execution";
 
 const baseRequest = {
   execution_id: "exec_1",
@@ -69,4 +72,36 @@ test("rejects external evidence href", () => {
   if (!result.ok) {
     assert.match(result.errors.join(" "), /non-internal href/);
   }
+});
+
+test("accepts valid execution confirmation payload", () => {
+  const result = validateControlledExecutionConfirmation(
+    {
+      proposal_id: "proposal_1",
+      approval_state: "approved",
+      approved_by_user_id: "op_1",
+      approved_at: "2026-05-09T10:00:00.000Z",
+      confirmation_text: "CONFIRM",
+      target_summary: "Rollback deployment dep_1 in production",
+      reversibility: "reversible",
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, true);
+});
+
+test("rejects confirmation payload without explicit confirm token", () => {
+  const result = validateControlledExecutionConfirmation(
+    {
+      proposal_id: "proposal_1",
+      approval_state: "approved",
+      approved_by_user_id: "op_1",
+      approved_at: "2026-05-09T10:00:00.000Z",
+      confirmation_text: "YES",
+      target_summary: "Rollback deployment dep_1 in production",
+      reversibility: "reversible",
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, false);
 });
