@@ -5,6 +5,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
 import type { ErrorIntelligenceSnippet, ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
+import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 
@@ -134,7 +135,7 @@ export async function getErrorsSurfaceData(): Promise<ErrorsSurfaceData> {
     if (hasRegressionEvidence) evidenceLinks.push({ label: "Deployments", href: "/deployments" });
     if (evidenceLinks.length === 0) {
       contributingFactors.length = 0;
-      contributingFactors.push("Insufficient linked evidence in current error snapshot.");
+      contributingFactors.push(OPERATOR_INTELLIGENCE_COPY.insufficientEvidence);
       return {
         id: `err-intel-${index}`,
         title: error.type,
@@ -144,8 +145,7 @@ export async function getErrorsSurfaceData(): Promise<ErrorsSurfaceData> {
         requiresOperatorReview: true,
       };
     }
-    const confidence: ErrorIntelligenceSnippet["confidence"] =
-      evidenceLinks.length >= 3 ? "high" : evidenceLinks.length === 2 ? "medium" : "low";
+    const confidence: ErrorIntelligenceSnippet["confidence"] = confidenceFromEvidenceCount(evidenceLinks.length);
     return {
       id: `err-intel-${index}`,
       title: error.type,

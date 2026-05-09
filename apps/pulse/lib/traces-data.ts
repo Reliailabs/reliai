@@ -3,6 +3,7 @@ import "server-only";
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
 import type { TraceIntelligenceSnippet, TracesSurfaceData } from "@/components/dashboard/pulse-types";
+import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 
@@ -167,14 +168,13 @@ export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
       id: "trace-intel-0",
       title: "Trace reliability posture",
       confidence: "insufficient",
-      observedContributingFactors: ["Insufficient linked evidence in current trace snapshot."],
+      observedContributingFactors: [OPERATOR_INTELLIGENCE_COPY.insufficientEvidence],
       relatedOperationalSignals: ["No correlated incident/deployment/error signals were linked."],
       evidenceReferences: [{ label: "Trace stream", href: "/traces" }],
       requiresOperatorReview: true,
     });
   } else {
-    const confidence: TraceIntelligenceSnippet["confidence"] =
-      evidenceReferences.length >= 4 ? "high" : evidenceReferences.length >= 3 ? "medium" : "low";
+    const confidence: TraceIntelligenceSnippet["confidence"] = confidenceFromEvidenceCount(evidenceReferences.length);
     traceIntelligenceSnippets.push({
       id: "trace-intel-0",
       title: "Trace reliability posture",

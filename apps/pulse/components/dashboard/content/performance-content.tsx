@@ -13,6 +13,7 @@ import {
   Area,
 } from "recharts";
 import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
+import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultLatencyData = [
   { time: "00:00", p50: 45, p95: 120, p99: 250 },
@@ -228,10 +229,10 @@ export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceD
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-base font-semibold text-foreground">Trace intelligence</h3>
-            <p className="text-sm text-muted-foreground">Observed contributing factors with related operational signals</p>
+            <p className="text-sm text-muted-foreground">{OPERATOR_INTELLIGENCE_COPY.observedContributingFactors}</p>
           </div>
           <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-            Requires operator review
+            {OPERATOR_INTELLIGENCE_COPY.requiresOperatorReview}
           </span>
         </div>
         {intelligenceSnippets.length === 0 ? (
@@ -245,7 +246,7 @@ export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceD
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-foreground">{snippet.title}</p>
                   <span className="rounded-full border border-border px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {snippet.confidence === "insufficient" ? "insufficient data" : `${snippet.confidence} confidence`}
+                    {formatConfidenceLabel(snippet.confidence)}
                   </span>
                 </div>
                 <div className="space-y-1.5">
@@ -255,7 +256,9 @@ export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceD
                 </div>
                 {snippet.relatedOperationalSignals.length > 0 ? (
                   <div className="mt-3 rounded-lg border border-border bg-card p-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Related operational signals</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {OPERATOR_INTELLIGENCE_COPY.relatedOperationalSignals}
+                    </p>
                     <div className="mt-1.5 space-y-1">
                       {snippet.relatedOperationalSignals.map((signal) => (
                         <p key={signal} className="text-sm text-muted-foreground">{signal}</p>
@@ -263,7 +266,10 @@ export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceD
                     </div>
                   </div>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
+                  {OPERATOR_INTELLIGENCE_COPY.evidenceReferences}
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-2">
                   {snippet.evidenceReferences.map((ref) => (
                     <a
                       key={`${snippet.id}-${ref.label}-${ref.href}`}

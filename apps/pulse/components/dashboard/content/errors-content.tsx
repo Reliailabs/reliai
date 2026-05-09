@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
+import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultErrorTrend = [
   { time: "00:00", errors: 45, rate: 0.36 },
@@ -258,10 +259,10 @@ export function ErrorsContent({ errorsData }: { errorsData?: ErrorsSurfaceData }
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-base font-semibold text-foreground">Error intelligence</h3>
-            <p className="text-sm text-muted-foreground">Advisory contributing factors from linked signals</p>
+            <p className="text-sm text-muted-foreground">{OPERATOR_INTELLIGENCE_COPY.observedContributingFactors}</p>
           </div>
           <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-            Requires operator review
+            {OPERATOR_INTELLIGENCE_COPY.requiresOperatorReview}
           </span>
         </div>
         {intelligenceSnippets.length === 0 ? (
@@ -275,7 +276,7 @@ export function ErrorsContent({ errorsData }: { errorsData?: ErrorsSurfaceData }
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-foreground">{snippet.title}</p>
                   <span className="rounded-full border border-border px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {snippet.confidence === "insufficient" ? "insufficient data" : `${snippet.confidence} confidence`}
+                    {formatConfidenceLabel(snippet.confidence)}
                   </span>
                 </div>
                 <div className="space-y-1.5">
@@ -283,7 +284,10 @@ export function ErrorsContent({ errorsData }: { errorsData?: ErrorsSurfaceData }
                     <p key={factor} className="text-sm text-muted-foreground">{factor}</p>
                   ))}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
+                  {OPERATOR_INTELLIGENCE_COPY.evidenceReferences}
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-2">
                   {snippet.evidenceLinks.map((link) => (
                     <a
                       key={`${snippet.id}-${link.label}-${link.href}`}

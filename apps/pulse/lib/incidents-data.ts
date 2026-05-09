@@ -5,6 +5,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
 import type { IncidentSurfaceItem, IncidentSurfaceStatus, IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
+import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 
@@ -170,17 +171,12 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
     const concreteEvidenceCount = evidenceLinks.length;
     if (contributingFactors.length === 0 || concreteEvidenceCount === 0) {
       contributingFactors.length = 0;
-      contributingFactors.push("Insufficient linked evidence in current incident snapshot.");
+      contributingFactors.push(OPERATOR_INTELLIGENCE_COPY.insufficientEvidence);
     }
-
-    let confidence: IncidentSurfaceItem["intelligence"]["confidence"] = "insufficient";
-    if (concreteEvidenceCount >= 3 && contributingFactors.length >= 3) {
-      confidence = "high";
-    } else if (concreteEvidenceCount >= 2 && contributingFactors.length >= 2) {
-      confidence = "medium";
-    } else if (concreteEvidenceCount >= 1 && contributingFactors[0] !== "Insufficient linked evidence in current incident snapshot.") {
-      confidence = "low";
-    }
+    const confidence: IncidentSurfaceItem["intelligence"]["confidence"] =
+      contributingFactors[0] === OPERATOR_INTELLIGENCE_COPY.insufficientEvidence
+        ? "insufficient"
+        : confidenceFromEvidenceCount(concreteEvidenceCount);
 
     const assignee = item.acknowledged_by_operator_email ?? "Unassigned";
     mapped.push({
