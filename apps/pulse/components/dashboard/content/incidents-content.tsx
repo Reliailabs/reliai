@@ -267,12 +267,12 @@ export function IncidentsContent({ incidentsData }: { incidentsData?: IncidentsS
           </div>
           <div className="p-4 rounded-xl bg-muted/50">
             <p className="text-xs text-muted-foreground mb-1">Assignee</p>
-            <p className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <div className="text-lg font-semibold text-foreground flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-chart-1/20 flex items-center justify-center text-xs font-medium text-chart-1">
                 {selectedIncident.assigneeInitials}
               </div>
               {selectedIncident.assignee}
-            </p>
+            </div>
           </div>
           <div className="p-4 rounded-xl bg-muted/50">
             <p className="text-xs text-muted-foreground mb-1">Impacted Services</p>
