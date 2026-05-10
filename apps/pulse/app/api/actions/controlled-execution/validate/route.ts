@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { getOperatorSession } from "@/lib/auth";
 import { validateControlledExecutionRequest } from "@/lib/controlled-execution";
 
+const RESPONSE_CONTRACT = {
+  contract_version: "phase8-v1",
+  mode: "validation_only",
+  execution_granted: false,
+} as const;
+
 export async function POST(request: Request) {
   const session = await getOperatorSession();
   if (!session) {
@@ -18,8 +24,8 @@ export async function POST(request: Request) {
 
   const result = validateControlledExecutionRequest(payload);
   if (!result.ok) {
-    return NextResponse.json(result, { status: 422 });
+    return NextResponse.json({ ...RESPONSE_CONTRACT, ...result }, { status: 422 });
   }
 
-  return NextResponse.json(result, { status: 200 });
+  return NextResponse.json({ ...RESPONSE_CONTRACT, ...result }, { status: 200 });
 }
