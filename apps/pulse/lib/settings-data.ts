@@ -97,7 +97,8 @@ export async function getSettingsSurfaceData(organizationId: string | null): Pro
       return true;
     }),
     integrations: [
-      { id: "alert-target", name: "Alert Target", connected: alertEnabled, icon: "AT", statusLabel: alertEnabled ? "Connected" : "Not configured", href: "/settings#alerts" },
+      { id: "grafana", name: "Grafana", connected: alertEnabled, icon: "G", statusLabel: alertEnabled ? "Connected" : "Not configured", href: "/settings#alerts" },
+      { id: "phone", name: "Phone", connected: false, icon: "P", statusLabel: "Planned", href: "/settings#alerts" },
       { id: "datadog", name: "Datadog", connected: false, icon: "DD", statusLabel: "Planned", href: "/settings#integrations" },
       { id: "email", name: "Email", connected: false, icon: "E", statusLabel: "Planned", href: "/settings#notifications" },
       { id: "jira", name: "Jira", connected: false, icon: "J", statusLabel: "Planned", href: "/settings#integrations" },

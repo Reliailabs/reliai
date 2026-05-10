@@ -232,7 +232,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                   size="sm"
                   className={cn(integration.connected && "bg-transparent")}
                 >
-                  <Link href={integration.href}>{integration.connected ? "Connected" : "Planned"}</Link>
+                  <Link href={integration.href}>{integration.connected ? "Manage" : "View"}</Link>
                 </Button>
               ) : (
                 <Button
