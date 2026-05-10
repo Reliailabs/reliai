@@ -120,6 +120,36 @@ export type RollbackPreconditionGuardResult =
   | { ok: true; request: RollbackPreconditionRequest; warnings: string[] }
   | { ok: false; errors: string[]; warnings: string[] };
 
+const orchestrationStepSchema = z.object({
+  step_id: z.string().min(1),
+  action_type: z.enum(CONTROLLED_ACTION_TYPES),
+  target_type: z.enum(CONTROLLED_TARGET_TYPES),
+  target_id: z.string().min(1),
+  requires_confirmation: z.boolean(),
+  evidence_refs: z.array(evidenceRefSchema).min(1),
+});
+
+const orchestrationBoundarySchema = z.object({
+  plan_id: z.string().min(1),
+  approved_by_user_id: z.string().min(1),
+  approved_at: z.string().datetime(),
+  request_context: z.object({
+    organization_id: z.string().min(1),
+    project_id: z.string().min(1).nullable(),
+    environment_id: z.string().min(1).nullable(),
+  }),
+  steps: z.array(orchestrationStepSchema).min(1),
+  policy: z.object({
+    allow_mutating_steps: z.boolean(),
+    blocked_by_policy: z.boolean(),
+  }),
+});
+
+export type OrchestrationBoundaryRequest = z.infer<typeof orchestrationBoundarySchema>;
+export type OrchestrationBoundaryGuardResult =
+  | { ok: true; request: OrchestrationBoundaryRequest; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
 const isSafeInternalHref = (href: string): boolean => {
   if (!href.startsWith("/")) {
     return false;
@@ -330,6 +360,71 @@ export function validateRollbackPreconditions(
     if (!(ref.href.startsWith("/deployments") || ref.href.startsWith("/incidents") || ref.href.startsWith("/traces"))) {
       warnings.push(`evidence ref '${ref.href}' is outside rollback evidence surfaces.`);
     }
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors, warnings };
+  }
+
+  return { ok: true, request, warnings };
+}
+
+export function validateOrchestrationBoundary(
+  payload: unknown,
+  now: Date = new Date(),
+): OrchestrationBoundaryGuardResult {
+  const parsed = orchestrationBoundarySchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`),
+      warnings: [],
+    };
+  }
+
+  const request = parsed.data;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const approvedAt = new Date(request.approved_at);
+  if (Number.isNaN(approvedAt.getTime())) {
+    errors.push("approved_at is invalid.");
+  } else {
+    const maxFutureSkewMs = 5 * 60 * 1000;
+    if (approvedAt.getTime() - now.getTime() > maxFutureSkewMs) {
+      errors.push("approved_at is too far in the future.");
+    }
+  }
+
+  if (request.policy.blocked_by_policy) {
+    errors.push("orchestration plan blocked by policy.");
+  }
+
+  for (const step of request.steps) {
+    const allowedTargets = executionActionTargetMatrix[step.action_type];
+    if (!allowedTargets.includes(step.target_type)) {
+      errors.push(
+        `step '${step.step_id}' action_type '${step.action_type}' is not allowed for target_type '${step.target_type}'.`,
+      );
+    }
+
+    if (!step.requires_confirmation) {
+      errors.push(`step '${step.step_id}' must require operator confirmation.`);
+    }
+
+    if (!request.policy.allow_mutating_steps && step.action_type === "rollback") {
+      errors.push(`step '${step.step_id}' contains rollback but policy disallows mutating steps.`);
+    }
+
+    for (const ref of step.evidence_refs) {
+      if (!isSafeInternalHref(ref.href)) {
+        errors.push(`step '${step.step_id}' has non-internal evidence href '${ref.href}'.`);
+      }
+    }
+  }
+
+  if (request.steps.length > 3) {
+    warnings.push("large orchestration plan detected; prefer smaller operator-confirmed batches.");
   }
 
   if (errors.length > 0) {
