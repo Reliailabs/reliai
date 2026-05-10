@@ -94,6 +94,32 @@ export type ExecutionAuditEventGuardResult =
   | { ok: true; request: ExecutionAuditEvent; warnings: string[] }
   | { ok: false; errors: string[]; warnings: string[] };
 
+const rollbackPreconditionSchema = z.object({
+  proposal_id: z.string().min(1),
+  target_deployment_id: z.string().min(1),
+  rollback_version: z.string().min(1),
+  approved_by_user_id: z.string().min(1),
+  approved_at: z.string().datetime(),
+  request_context: z.object({
+    organization_id: z.string().min(1),
+    project_id: z.string().min(1).nullable(),
+    environment_id: z.string().min(1),
+  }),
+  evidence_refs: z.array(evidenceRefSchema).min(2),
+  policy_checks: z.object({
+    deployment_evidence_present: z.boolean(),
+    incident_or_regression_signal_present: z.boolean(),
+    rollback_target_valid: z.boolean(),
+    policy_blocked: z.boolean(),
+  }),
+});
+
+export type RollbackPreconditionRequest = z.infer<typeof rollbackPreconditionSchema>;
+
+export type RollbackPreconditionGuardResult =
+  | { ok: true; request: RollbackPreconditionRequest; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
 const isSafeInternalHref = (href: string): boolean => {
   if (!href.startsWith("/")) {
     return false;
@@ -246,6 +272,63 @@ export function validateExecutionAuditEvent(payload: unknown, now: Date = new Da
   for (const ref of request.evidence_refs) {
     if (!isSafeInternalHref(ref.href)) {
       errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+    }
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors, warnings };
+  }
+
+  return { ok: true, request, warnings };
+}
+
+export function validateRollbackPreconditions(
+  payload: unknown,
+  now: Date = new Date(),
+): RollbackPreconditionGuardResult {
+  const parsed = rollbackPreconditionSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`),
+      warnings: [],
+    };
+  }
+
+  const request = parsed.data;
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  const approvedAt = new Date(request.approved_at);
+  if (Number.isNaN(approvedAt.getTime())) {
+    errors.push("approved_at is invalid.");
+  } else {
+    const maxFutureSkewMs = 5 * 60 * 1000;
+    if (approvedAt.getTime() - now.getTime() > maxFutureSkewMs) {
+      errors.push("approved_at is too far in the future.");
+    }
+  }
+
+  if (!request.policy_checks.deployment_evidence_present) {
+    errors.push("deployment evidence is required before rollback.");
+  }
+  if (!request.policy_checks.incident_or_regression_signal_present) {
+    errors.push("incident/regression evidence is required before rollback.");
+  }
+  if (!request.policy_checks.rollback_target_valid) {
+    errors.push("rollback target version is invalid.");
+  }
+  if (request.policy_checks.policy_blocked) {
+    errors.push("rollback blocked by policy.");
+  }
+
+  for (const ref of request.evidence_refs) {
+    if (!isSafeInternalHref(ref.href)) {
+      errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+      continue;
+    }
+    if (!(ref.href.startsWith("/deployments") || ref.href.startsWith("/incidents") || ref.href.startsWith("/traces"))) {
+      warnings.push(`evidence ref '${ref.href}' is outside rollback evidence surfaces.`);
     }
   }
 
