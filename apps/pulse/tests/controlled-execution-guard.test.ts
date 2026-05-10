@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   validateControlledExecutionConfirmation,
   validateControlledExecutionRequest,
+  validateExecutionAuditEvent,
 } from "../lib/controlled-execution";
 
 const baseRequest = {
@@ -100,6 +101,54 @@ test("rejects confirmation payload without explicit confirm token", () => {
       confirmation_text: "YES",
       target_summary: "Rollback deployment dep_1 in production",
       reversibility: "reversible",
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, false);
+});
+
+test("accepts valid execution audit event payload", () => {
+  const result = validateExecutionAuditEvent(
+    {
+      event_id: "evt_1",
+      execution_id: "exec_1",
+      proposal_id: "proposal_1",
+      action_type: "ack",
+      actor_user_id: "op_1",
+      actor_role: "operator",
+      target_type: "incident",
+      target_id: "inc_1",
+      reason: "Operator acknowledged incident from advisory panel",
+      evidence_refs: [{ label: "Incident", href: "/incidents/INC-1" }],
+      before_state: { status: "open" },
+      after_state: { status: "acknowledged" },
+      result: "succeeded",
+      error_code: null,
+      created_at: "2026-05-09T10:00:00.000Z",
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, true);
+});
+
+test("rejects execution audit event with external evidence ref", () => {
+  const result = validateExecutionAuditEvent(
+    {
+      event_id: "evt_1",
+      execution_id: "exec_1",
+      proposal_id: "proposal_1",
+      action_type: "ack",
+      actor_user_id: "op_1",
+      actor_role: "operator",
+      target_type: "incident",
+      target_id: "inc_1",
+      reason: "Operator acknowledged incident from advisory panel",
+      evidence_refs: [{ label: "Incident", href: "https://example.com/incidents/INC-1" }],
+      before_state: { status: "open" },
+      after_state: { status: "acknowledged" },
+      result: "succeeded",
+      error_code: null,
+      created_at: "2026-05-09T10:00:00.000Z",
     },
     new Date("2026-05-09T10:01:00.000Z"),
   );
