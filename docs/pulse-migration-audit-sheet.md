@@ -1,0 +1,41 @@
+# Pulse Migration Audit Sheet
+
+## Gate Rule (Locked)
+No net-new capability implementation may begin until source migration parity is classified for the affected feature.
+
+Phase 9 implementation may proceed only when an item is either:
+- `Migration` with `Parity reached`, or
+- `Net-new` with explicit approval.
+
+## Status Vocabulary
+- `Not started`
+- `Partial`
+- `Parity reached`
+- `Blocked`
+- `Net-new candidate`
+
+## Classification Vocabulary
+- `Migration`
+- `Net-new`
+- `UI-only reference`
+- `Deprecated / do not migrate`
+
+## Priority Migration Matrix
+
+| feature | source_app | source_logic_files | source_route | source_api_contracts | source_auth_or_role_guards | source_data_shape | pulse_target_route | pulse_target_files | pulse_parity_status | classification | approval_required | notes |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Incidents deep links + detail flow | `apps/web` | `/Users/robert/Documents/Reliai/apps/web/components/presenters/incident-detail-view.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/incidents/[incidentId]/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/incidents/[incidentId]/investigate/page.tsx` | `/incidents`, `/incidents/[incidentId]`, `/incidents/[incidentId]/investigate`, `/incidents/[incidentId]/compare`, `/incidents/[incidentId]/command` | `/Users/robert/Documents/Reliai/apps/web/lib/api.ts` (`getIncident`, incident timeline/actions) | app session + org/project scoping in app routes | incident summary/detail, severity, status, linked traces/deployments/evidence | `/incidents` + future `/incidents/[incidentId]` | `/Users/robert/Documents/Reliai/apps/pulse/app/(app)/incidents/page.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/components/dashboard/content/incidents-content.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/lib/incidents-data.ts` | Partial | Migration | No | list surface migrated; detail/deep-link parity still pending |
+| Audits detail/results/new | `apps/web` | `/Users/robert/Documents/Reliai/apps/web/app/(app)/audits/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/audits/[id]/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/audits/[id]/results/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/audits/new/page.tsx` | `/audits`, `/audits/[id]`, `/audits/[id]/results`, `/audits/new` | `/Users/robert/Documents/Reliai/apps/web/lib/api.ts` (audit list/detail/run artifacts) | app session + org/project guard | audit entity, recent runs, stage status, findings, artifacts | `/audits` + future detail/new routes | `/Users/robert/Documents/Reliai/apps/pulse/app/(app)/audits/page.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/components/dashboard/content/audits-content.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/lib/audits-data.ts` | Partial | Migration | No | run-first summary exists; detail/results/new flow not yet migrated |
+| Traces detail routes | `apps/web` | `/Users/robert/Documents/Reliai/apps/web/app/(app)/traces/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/traces/[traceId]/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/traces/[traceId]/compare/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/traces/[traceId]/graph/page.tsx` | `/traces`, `/traces/[traceId]`, `/traces/[traceId]/compare`, `/traces/[traceId]/graph` | `/Users/robert/Documents/Reliai/apps/web/lib/api.ts` (trace list/detail/graph, risk patterns) | app session + org scope | trace overview, span/event graph, comparisons, linked incidents/deployments | `/traces` + future `/traces/[traceId]` | `/Users/robert/Documents/Reliai/apps/pulse/app/(app)/traces/page.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/components/dashboard/content/performance-content.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/lib/traces-data.ts` | Partial | Migration | No | operator intelligence snippets added; deep forensic routes pending |
+| Deployments detail | `apps/web` | `/Users/robert/Documents/Reliai/apps/web/app/(app)/deployments/[deploymentId]/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/components/presenters/deployment-detail-view.tsx` | `/deployments/[deploymentId]` | `/Users/robert/Documents/Reliai/apps/web/lib/api.ts` (deployment detail/intelligence signals) | app session + org/project scope | deployment metadata, correlated incidents/regressions, risk explanations | `/deployments` + future `/deployments/[deploymentId]` | `/Users/robert/Documents/Reliai/apps/pulse/app/(app)/deployments/page.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/components/dashboard/content/deployments-content.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/lib/deployments-data.ts` | Partial | Migration | No | list/summary migrated; detail page parity pending |
+| Project-scoped routes family | `apps/web` | `/Users/robert/Documents/Reliai/apps/web/app/(app)/projects/[projectId]/*` pages | `/projects/[projectId]/control`, `/projects/[projectId]/deployments`, `/projects/[projectId]/guardrails`, `/projects/[projectId]/ingestion`, `/projects/[projectId]/metrics`, `/projects/[projectId]/processors`, `/projects/[projectId]/regressions`, `/projects/[projectId]/reliability`, `/projects/[projectId]/settings`, `/projects/[projectId]/timeline` | `/Users/robert/Documents/Reliai/apps/web/lib/api.ts` (project scoped endpoints) | app session + org membership + project access guard | project-centric operational and governance views | (not yet mapped) likely `/pulse/projects/[projectId]/*` or embedded section strategy | (not yet created) | Not started | Migration | No | requires IA decision: route parity vs section embedding |
+| Settings/onboarding/billing/docs/playground portability | `apps/web` | `/Users/robert/Documents/Reliai/apps/web/app/(app)/settings/*`, `/Users/robert/Documents/Reliai/apps/web/app/(auth)/onboarding/page.tsx`, `/Users/robert/Documents/Reliai/apps/web/app/(marketing)/docs*`, `/Users/robert/Documents/Reliai/apps/web/app/(app)/playground/page.tsx`, billing pages | `/settings`, `/settings/billing`, `/onboarding`, `/docs`, `/docs-marketing`, `/playground`, `/billing/success` | `/Users/robert/Documents/Reliai/apps/web/lib/api.ts` + auth/session helpers | mixed: app auth + some public marketing/docs | mixed data: settings profiles/integrations/security, onboarding state, docs content, billing callbacks | `/settings` (partial already), other routes TBD | `/Users/robert/Documents/Reliai/apps/pulse/app/(app)/settings/page.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/components/dashboard/content/settings-content.tsx`, `/Users/robert/Documents/Reliai/apps/pulse/lib/settings-data.ts` | Partial | Migration | No | keep public marketing in `apps/web`; migrate only pulse-app relevant surfaces |
+| Phase 8 validator guard runtime | `apps/pulse` docs/contracts | `/Users/robert/Documents/Reliai/apps/pulse/app/api/controlled-execution/*` (validation-only guards) | API-only (no source route in `apps/web`) | phase8 validator envelope + guard contracts in pulse | strict validation-only + auth guard | controlled execution request envelope metadata | API under pulse only | `apps/pulse/app/api/controlled-execution/*`, `apps/pulse/tests/*` | Parity reached (for pulse plan) | Net-new | Yes | not a migration item; already approved/implemented as new foundation |
+| Phase 9 assisted automation proposals | n/a (new plan track) | planned docs in `/Users/robert/Documents/Reliai/docs/pulse-phase9-*` | planned pilot in incident workflows | planned policy gate + evidence receipt contracts | must be operator-confirmed + policy bounded | proposal/staging/evidence receipt models | TBD (after parity gate) | TBD | Net-new candidate | Net-new | Yes | blocked until migration parity classification complete per gate rule |
+
+## Enforcement Checklist (before any new feature PR)
+1. Identify touched feature row in this sheet.
+2. Confirm `classification`.
+3. If `Migration`: target `Parity reached` or document `Partial` gap being closed.
+4. If `Net-new`: obtain explicit approval and reference it in PR body.
+5. Confirm no source-of-truth contradiction in `source_logic_files` and `source_api_contracts`.
