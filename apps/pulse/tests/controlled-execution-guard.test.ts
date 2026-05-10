@@ -5,6 +5,7 @@ import {
   validateControlledExecutionConfirmation,
   validateControlledExecutionRequest,
   validateExecutionAuditEvent,
+  validateOrchestrationBoundary,
   validateRollbackPreconditions,
 } from "../lib/controlled-execution";
 
@@ -207,6 +208,68 @@ test("rejects rollback preconditions payload when policy gate fails", () => {
         incident_or_regression_signal_present: true,
         rollback_target_valid: true,
         policy_blocked: false,
+      },
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, false);
+});
+
+test("accepts orchestration boundary payload when all steps require confirmation", () => {
+  const result = validateOrchestrationBoundary(
+    {
+      plan_id: "plan_1",
+      approved_by_user_id: "op_1",
+      approved_at: "2026-05-09T10:00:00.000Z",
+      request_context: {
+        organization_id: "org_1",
+        project_id: "proj_1",
+        environment_id: "production",
+      },
+      steps: [
+        {
+          step_id: "step_1",
+          action_type: "ack",
+          target_type: "incident",
+          target_id: "inc_1",
+          requires_confirmation: true,
+          evidence_refs: [{ label: "Incident", href: "/incidents/INC-1" }],
+        },
+      ],
+      policy: {
+        allow_mutating_steps: true,
+        blocked_by_policy: false,
+      },
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, true);
+});
+
+test("rejects orchestration boundary payload when confirmation is missing", () => {
+  const result = validateOrchestrationBoundary(
+    {
+      plan_id: "plan_1",
+      approved_by_user_id: "op_1",
+      approved_at: "2026-05-09T10:00:00.000Z",
+      request_context: {
+        organization_id: "org_1",
+        project_id: "proj_1",
+        environment_id: "production",
+      },
+      steps: [
+        {
+          step_id: "step_1",
+          action_type: "ack",
+          target_type: "incident",
+          target_id: "inc_1",
+          requires_confirmation: false,
+          evidence_refs: [{ label: "Incident", href: "/incidents/INC-1" }],
+        },
+      ],
+      policy: {
+        allow_mutating_steps: true,
+        blocked_by_policy: false,
       },
     },
     new Date("2026-05-09T10:01:00.000Z"),
