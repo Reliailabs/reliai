@@ -133,6 +133,10 @@ export type IncidentsSurfaceData = {
   dataMode: "live" | "demo";
 };
 
+export type IncidentRouteContext = {
+  selectedIncidentId: string | null;
+};
+
 export type ErrorTrendPoint = {
   time: string;
   errors: number;

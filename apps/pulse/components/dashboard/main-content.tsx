@@ -28,6 +28,7 @@ import type { GuardrailsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { OncallSurfaceData } from "@/components/dashboard/pulse-types";
 import type { PostmortemsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
@@ -44,6 +45,7 @@ interface MainContentProps {
   oncallData?: OncallSurfaceData;
   postmortemsData?: PostmortemsSurfaceData;
   settingsData?: SettingsSurfaceData;
+  incidentContext?: IncidentRouteContext;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -128,6 +130,7 @@ export function MainContent({
   oncallData,
   postmortemsData,
   settingsData,
+  incidentContext,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -142,7 +145,7 @@ export function MainContent({
           />
         );
       case "incidents":
-        return <IncidentsContent incidentsData={incidentsData} />;
+        return <IncidentsContent incidentsData={incidentsData} incidentContext={incidentContext} />;
       case "deployments":
         return <DeploymentsContent deploymentsData={deploymentsData} />;
       case "traces":
