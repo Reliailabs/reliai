@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getOperatorSession } from "@/lib/auth";
 import { validateControlledExecutionConfirmation } from "@/lib/controlled-execution";
-
-const RESPONSE_CONTRACT = {
-  contract_version: "phase8-v1",
-  mode: "validation_only",
-  execution_granted: false,
-} as const;
+import { withPhase8ValidatorEnvelope } from "../_response";
 
 export async function POST(request: Request) {
   const session = await getOperatorSession();
@@ -24,8 +19,8 @@ export async function POST(request: Request) {
 
   const result = validateControlledExecutionConfirmation(payload);
   if (!result.ok) {
-    return NextResponse.json({ ...RESPONSE_CONTRACT, ...result }, { status: 422 });
+    return NextResponse.json(withPhase8ValidatorEnvelope(result), { status: 422 });
   }
 
-  return NextResponse.json({ ...RESPONSE_CONTRACT, ...result }, { status: 200 });
+  return NextResponse.json(withPhase8ValidatorEnvelope(result), { status: 200 });
 }
