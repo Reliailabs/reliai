@@ -7,7 +7,7 @@ type ProjectDeploymentsPageProps = {
 
 export default async function ProjectDeploymentsPage({ params }: ProjectDeploymentsPageProps) {
   const { projectId } = await params;
-  const deploymentsData = await getDeploymentsSurfaceData();
+  const deploymentsData = await getDeploymentsSurfaceData(projectId);
 
   return (
     <DashboardShell

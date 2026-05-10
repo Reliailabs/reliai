@@ -22,6 +22,8 @@ type TraceRead = {
   success: boolean;
   model_name?: string | null;
   created_at: string;
+  project_id?: string | null;
+  project_name?: string | null;
 };
 
 async function apiRequest<T>(path: string): Promise<T> {
@@ -55,11 +57,12 @@ function fmtPct(value: number) {
   return `${value.toFixed(2)}%`;
 }
 
-export async function getErrorsSurfaceData(): Promise<ErrorsSurfaceData> {
+export async function getErrorsSurfaceData(projectId?: string): Promise<ErrorsSurfaceData> {
   const sourceErrors: string[] = [];
+  const projectFilterQuery = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
   const [incidentsResult, tracesResult, projectsResult] = await Promise.all([
-    safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=50")),
-    safeFetch(apiRequest<{ items: TraceRead[] }>("/api/v1/traces?limit=100")),
+    safeFetch(apiRequest<{ items: IncidentRead[] }>(`/api/v1/incidents?limit=50${projectFilterQuery}`)),
+    safeFetch(apiRequest<{ items: TraceRead[] }>(`/api/v1/traces?limit=100${projectFilterQuery}`)),
     safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects")),
   ]);
 
@@ -67,11 +70,18 @@ export async function getErrorsSurfaceData(): Promise<ErrorsSurfaceData> {
   if (tracesResult.error) sourceErrors.push("traces");
   if (projectsResult.error) sourceErrors.push("projects");
 
-  const traces = tracesResult.data?.items ?? [];
-  const incidents = incidentsResult.data?.items ?? [];
+  const tracesRaw = tracesResult.data?.items ?? [];
+  const incidentsRaw = incidentsResult.data?.items ?? [];
   const projects = projectsResult.data?.items ?? [];
+  const scopedProjectName = projectId ? projects.find((project) => project.id === projectId)?.name ?? null : null;
+  const traces = projectId
+    ? tracesRaw.filter((trace) => trace.project_id === projectId || (scopedProjectName ? trace.project_name === scopedProjectName : false))
+    : tracesRaw;
+  const incidents = projectId
+    ? incidentsRaw.filter((incident) => (scopedProjectName ? incident.project_name === scopedProjectName : true))
+    : incidentsRaw;
 
-  const firstProjectId = projects[0]?.id;
+  const firstProjectId = projectId ?? projects[0]?.id;
   const regressionsResult = firstProjectId
     ? await safeFetch(apiRequest<{ items: Array<{ id: string }> }>(`/api/v1/projects/${firstProjectId}/regressions?limit=25`))
     : ({ data: { items: [] }, error: false } as FetchResult<{ items: Array<{ id: string }> }>);
