@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CheckCircle, XCircle, Clock, GitBranch, User, MoreHorizontal, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -12,6 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { DeploymentsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
 
 const defaultDeploymentFrequency = [
   { day: "Mon", deploys: 12 },
@@ -113,11 +115,18 @@ const defaultMetrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function DeploymentsContent({ deploymentsData }: { deploymentsData?: DeploymentsSurfaceData }) {
+export function DeploymentsContent({
+  deploymentsData,
+  deploymentContext,
+}: {
+  deploymentsData?: DeploymentsSurfaceData;
+  deploymentContext?: DeploymentRouteContext;
+}) {
   const deploymentFrequency =
     deploymentsData?.deploymentFrequency?.length ? deploymentsData.deploymentFrequency : defaultDeploymentFrequency;
   const deployments = deploymentsData?.deployments?.length ? deploymentsData.deployments : defaultDeployments;
   const metrics = deploymentsData?.metrics?.length ? deploymentsData.metrics : defaultMetrics;
+  const selectedDeploymentId = deploymentContext?.selectedDeploymentId;
   const sourceErrorText =
     deploymentsData && deploymentsData.sourceErrors.length > 0
       ? `Data source unavailable: ${deploymentsData.sourceErrors.join(", ")}.`
@@ -140,6 +149,11 @@ export function DeploymentsContent({ deploymentsData }: { deploymentsData?: Depl
 
   return (
     <div className="space-y-6">
+      {deploymentContext?.mode === "detail" ? (
+        <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+          Deployment detail route selected{selectedDeploymentId ? ` (${selectedDeploymentId})` : ""}. Full deployment presenter parity is pending.
+        </div>
+      ) : null}
       {sourceErrorText ? (
         <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {sourceErrorText}
@@ -224,7 +238,10 @@ export function DeploymentsContent({ deploymentsData }: { deploymentsData?: Depl
           {deployments.map((deploy) => (
             <div
               key={deploy.id}
-              className="p-4 hover:bg-muted/30 transition-colors cursor-pointer"
+              className={cn(
+                "p-4 hover:bg-muted/30 transition-colors",
+                selectedDeploymentId === deploy.id ? "bg-primary/5" : "",
+              )}
             >
               <div className="flex items-center gap-4">
                 {/* Status Icon */}
@@ -279,9 +296,14 @@ export function DeploymentsContent({ deploymentsData }: { deploymentsData?: Depl
                     <span className="text-muted-foreground">{deploy.author}</span>
                   </div>
                   <span className="text-muted-foreground w-24 text-right">{deploy.timestamp}</span>
-                  <button type="button" className="p-1 hover:bg-muted rounded-lg">
-                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/deployments/${deploy.id}`} className="text-xs text-primary hover:underline">
+                      Detail
+                    </Link>
+                    <button type="button" className="p-1 hover:bg-muted rounded-lg">
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

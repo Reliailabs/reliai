@@ -278,10 +278,21 @@ export type DeploymentSurfaceItem = {
 export type DeploymentsSurfaceData = {
   deploymentFrequency: DeploymentFrequencyPoint[];
   deployments: DeploymentSurfaceItem[];
+  deploymentRefs?: Array<{
+    id: string;
+    detailPath: string;
+  }>;
   metrics: DeploymentMetricItem[];
   sourceErrors: string[];
   hasDeploymentData: boolean;
   dataMode: "live" | "demo";
+};
+
+export type DeploymentRouteContextMode = "list" | "detail";
+
+export type DeploymentRouteContext = {
+  selectedDeploymentId: string | null;
+  mode: DeploymentRouteContextMode;
 };
 
 export type AuditResponseTrendPoint = {

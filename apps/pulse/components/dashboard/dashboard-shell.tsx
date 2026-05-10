@@ -22,6 +22,7 @@ import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
 import type { TraceRouteContext } from "@/components/dashboard/pulse-types";
+import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
 
 interface DashboardShellProps {
   initialSection: Section;
@@ -41,6 +42,7 @@ interface DashboardShellProps {
   incidentContext?: IncidentRouteContext;
   auditContext?: AuditRouteContext;
   traceContext?: TraceRouteContext;
+  deploymentContext?: DeploymentRouteContext;
 }
 
 export function DashboardShell({
@@ -61,6 +63,7 @@ export function DashboardShell({
   incidentContext,
   auditContext,
   traceContext,
+  deploymentContext,
 }: DashboardShellProps) {
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
 
@@ -85,6 +88,7 @@ export function DashboardShell({
         incidentContext={incidentContext}
         auditContext={auditContext}
         traceContext={traceContext}
+        deploymentContext={deploymentContext}
       />
       <RightPanel pulseOverviewData={pulseOverviewData} />
     </div>
