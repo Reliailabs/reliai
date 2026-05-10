@@ -37,6 +37,7 @@ Phase 8 planning does **not** permit:
 - 8.5 Supervised Orchestration Boundaries
 
 ## Operational Review Docs
+- `docs/pulse-phase8-freeze-status.md`
 - `docs/pulse-phase8-runtime-consistency-audit.md`
 - `docs/pulse-phase8-readiness-review.md`
 - `docs/pulse-phase8-readiness-signoff-record.md`
