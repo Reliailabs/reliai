@@ -6,6 +6,21 @@ Index and sequencing for Phase 8 planning-only controlled execution work.
 ## Phase Intent
 Phase 8 introduces supervised execution design contracts only, grounded in human approval and auditability.
 
+## Runtime Status (Implemented Guard Layer)
+Phase 8 currently implements **validation-only** runtime guards. No execution authority is granted.
+
+Implemented validator routes:
+- `/api/actions/controlled-execution/validate`
+- `/api/actions/controlled-execution/confirm-eligibility`
+- `/api/actions/controlled-execution/audit-event/validate`
+- `/api/actions/controlled-execution/rollback-preconditions/validate`
+- `/api/actions/controlled-execution/orchestration-boundary/validate`
+
+All validator responses (success + failure) are envelope-locked to:
+- `contract_version: "phase8-v1"`
+- `mode: "validation_only"`
+- `execution_granted: false`
+
 ## Explicit Non-Goals
 Phase 8 planning does **not** permit:
 - autonomous execution
