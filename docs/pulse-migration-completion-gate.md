@@ -18,3 +18,7 @@ Define the hard gate to mark source migration complete before net-new capability
 ## Unlock condition for net-new
 - Either full `Parity reached` for active target group, or
 - explicit approval for `Net-new` with migration impact note.
+
+
+## Sign-Off Artifact
+- Sign-off template: `docs/pulse-migration-gate-signoff-template.md`
