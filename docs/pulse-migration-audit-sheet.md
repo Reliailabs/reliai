@@ -39,3 +39,7 @@ Phase 9 implementation may proceed only when an item is either:
 3. If `Migration`: target `Parity reached` or document `Partial` gap being closed.
 4. If `Net-new`: obtain explicit approval and reference it in PR body.
 5. Confirm no source-of-truth contradiction in `source_logic_files` and `source_api_contracts`.
+
+## Linked Migration Plans
+- `docs/pulse-project-scoped-parity-plan.md`
+- `docs/pulse-remaining-migration-docs-plan.md`
