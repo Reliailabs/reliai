@@ -36,6 +36,12 @@ Phase 8 planning does **not** permit:
 - 8.4 Rollback and Reversibility Contract
 - 8.5 Supervised Orchestration Boundaries
 
+## Operational Review Docs
+- `docs/pulse-phase8-runtime-consistency-audit.md`
+- `docs/pulse-phase8-readiness-review.md`
+- `docs/pulse-phase8-readiness-signoff-record.md`
+- `docs/pulse-phase8-signoff-handoff.md`
+
 ## Required Gate Before Implementation
 1. Phase 7 readiness complete.
 2. Governance boundary audit accepted.
