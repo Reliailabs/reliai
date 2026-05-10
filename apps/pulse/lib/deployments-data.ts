@@ -80,11 +80,24 @@ function weekBuckets(items: DeploymentRead[]) {
   return labels.map((day, index) => ({ day, deploys: counts[index] }));
 }
 
-export async function getDeploymentsSurfaceData(): Promise<DeploymentsSurfaceData> {
+export async function getDeploymentsSurfaceData(projectId?: string): Promise<DeploymentsSurfaceData> {
   const sourceErrors: string[] = [];
-  const projectsResult = await safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects"));
-  if (projectsResult.error) sourceErrors.push("projects");
-  const projects = projectsResult.data?.items ?? [];
+  const projects: ProjectRead[] = [];
+  if (projectId) {
+    const projectResult = await safeFetch(apiRequest<ProjectRead>(`/api/v1/projects/${projectId}`));
+    if (projectResult.error) {
+      sourceErrors.push("projects");
+    } else if (projectResult.data) {
+      projects.push(projectResult.data);
+    }
+  } else {
+    const projectsResult = await safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects"));
+    if (projectsResult.error) {
+      sourceErrors.push("projects");
+    } else {
+      projects.push(...(projectsResult.data?.items ?? []));
+    }
+  }
 
   const perProject = await Promise.all(
     projects.slice(0, 8).map(async (project) => {

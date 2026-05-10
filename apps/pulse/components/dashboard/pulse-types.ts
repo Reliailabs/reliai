@@ -295,7 +295,14 @@ export type DeploymentRouteContext = {
   mode: DeploymentRouteContextMode;
 };
 
-export type ProjectRouteContextMode = "overview" | "incidents" | "audits" | "traces" | "deployments";
+export type ProjectRouteContextMode =
+  | "overview"
+  | "incidents"
+  | "audits"
+  | "traces"
+  | "deployments"
+  | "guardrails"
+  | "metrics";
 
 export type ProjectRouteContext = {
   projectId: string;

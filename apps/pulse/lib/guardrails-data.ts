@@ -35,6 +35,16 @@ type ProjectReliabilityRead = {
   incidents?: { open?: number | null; critical_open?: number | null } | null;
 };
 
+type GuardrailMetricsRead = {
+  policies: Array<{
+    policy_id: string;
+    policy_type: string;
+    action: string;
+    trigger_count: number;
+    last_triggered_at: string | null;
+  }>;
+};
+
 async function apiRequest<T>(path: string): Promise<T> {
   const token = await getApiAccessToken();
   if (!token) throw new Error("missing session token");
@@ -62,13 +72,28 @@ function relDuration(value: string): string {
   }
 }
 
-export async function getGuardrailsSurfaceData(organizationId: string | null): Promise<GuardrailsSurfaceData> {
+export async function getGuardrailsSurfaceData(
+  organizationId: string | null,
+  projectId?: string,
+): Promise<GuardrailsSurfaceData> {
   const sourceErrors: string[] = [];
-  const [projectsResult, incidentsResult] = await Promise.all([
-    safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects")),
-    safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=25")),
-  ]);
-  if (projectsResult.error) sourceErrors.push("projects");
+  const incidentsResult = await safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=25"));
+  const projects: ProjectRead[] = [];
+  if (projectId) {
+    const projectResult = await safeFetch(apiRequest<ProjectRead>(`/api/v1/projects/${projectId}`));
+    if (projectResult.error) {
+      sourceErrors.push("projects");
+    } else if (projectResult.data) {
+      projects.push(projectResult.data);
+    }
+  } else {
+    const projectsResult = await safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects"));
+    if (projectsResult.error) {
+      sourceErrors.push("projects");
+    } else {
+      projects.push(...(projectsResult.data?.items ?? []));
+    }
+  }
   if (incidentsResult.error) sourceErrors.push("incidents");
 
   const policiesResult =
@@ -81,7 +106,6 @@ export async function getGuardrailsSurfaceData(organizationId: string | null): P
       : ({ data: { items: [] }, error: false } as FetchResult<{ items: GuardrailPolicyRead[] }>);
   if (policiesResult.error) sourceErrors.push("guardrail-policies");
 
-  const projects = projectsResult.data?.items ?? [];
   const incidents = incidentsResult.data?.items ?? [];
   const policies = policiesResult.data?.items ?? [];
   const enabledPolicies = policies.filter((policy) => policy.enabled).length;
@@ -95,6 +119,29 @@ export async function getGuardrailsSurfaceData(organizationId: string | null): P
       return { project, reliability: result.data };
     }),
   );
+
+  if (projectId) {
+    const guardrailMetricsResult = await safeFetch(
+      apiRequest<GuardrailMetricsRead>(`/api/v1/projects/${projectId}/guardrail-metrics`),
+    );
+    if (guardrailMetricsResult.error) {
+      sourceErrors.push("project-guardrail-metrics");
+    } else {
+      const perProjectPolicies = guardrailMetricsResult.data?.policies ?? [];
+      if (perProjectPolicies.length > 0) {
+        policies.length = 0;
+        policies.push(
+          ...perProjectPolicies.map((policy) => ({
+            id: policy.policy_id,
+            policy_type: policy.policy_type,
+            enabled: true,
+            enforcement_mode: policy.action,
+            updated_at: policy.last_triggered_at,
+          })),
+        );
+      }
+    }
+  }
 
   const services = reliabilityRows.map(({ project, reliability }) => {
     const safeCompletion = reliability?.slos?.safe_completion_rate ?? 0.99;
