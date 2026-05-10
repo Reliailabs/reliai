@@ -1,7 +1,7 @@
 # Pulse Phase 9.1 — Automation Eligibility and Policy Gate
 
 ## Status
-Planning-only policy contract.
+Implemented as a validation-only runtime guard.
 
 ## Objective
 Define strict criteria for when assisted automation can be proposed or staged.
@@ -32,3 +32,11 @@ type AutomationEligibility = {
 ## Non-Goals
 - No execution implementation.
 - No policy engine redesign.
+
+## Runtime Guard Mapping
+- Endpoint: `/api/actions/assisted-automation/eligibility/validate`
+- Validator: `/apps/pulse/lib/assisted-automation.ts`
+- Envelope contract:
+  - `contract_version: "phase9-v1"`
+  - `mode: "validation_only"`
+  - `execution_granted: false`
