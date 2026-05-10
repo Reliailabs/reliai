@@ -313,6 +313,13 @@ export type AuditsSurfaceData = {
   dataMode: "live" | "demo";
 };
 
+export type AuditRouteContextMode = "list" | "detail" | "results" | "new";
+
+export type AuditRouteContext = {
+  selectedAuditId: string | null;
+  mode: AuditRouteContextMode;
+};
+
 export type GuardrailUptimePoint = {
   day: string;
   uptime: number;
