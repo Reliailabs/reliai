@@ -13,7 +13,8 @@ Close Phase 8 with explicit governance sign-off and a clear transition decision.
 ## Governance Completion
 - [ ] `docs/pulse-phase8-readiness-signoff-record.md` completed by all required owners
 - [ ] Final outcome set to `approved` or `blocked`
-- [ ] If blocked, remediation items documented with owners/dates
+- [ ] If blocked, remediation items documented with owners/dates:
+  - `docs/pulse-phase8-blocked-remediation-template.md`
 
 ## Release Discipline
 - [x] Baseline tag created (`phase8-guards-baseline`)
