@@ -25,3 +25,4 @@ Phase 8 documentation set is complete for freeze-gate governance and runtime con
 ## Next Required Human Action
 Complete owner approvals and final decision in:
 - `docs/pulse-phase8-readiness-signoff-record.md`
+- `docs/pulse-phase8-next-action.md`
