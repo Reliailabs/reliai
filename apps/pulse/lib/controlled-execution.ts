@@ -70,6 +70,30 @@ export type ControlledExecutionConfirmationGuardResult =
   | { ok: true; request: ControlledExecutionConfirmationRequest; warnings: string[] }
   | { ok: false; errors: string[]; warnings: string[] };
 
+const executionAuditEventSchema = z.object({
+  event_id: z.string().min(1),
+  execution_id: z.string().min(1),
+  proposal_id: z.string().min(1),
+  action_type: z.enum(CONTROLLED_ACTION_TYPES),
+  actor_user_id: z.string().min(1),
+  actor_role: z.string().min(1),
+  target_type: z.enum(CONTROLLED_TARGET_TYPES),
+  target_id: z.string().min(1),
+  reason: z.string().min(1),
+  evidence_refs: z.array(evidenceRefSchema).min(1),
+  before_state: z.record(z.string(), z.unknown()).nullable(),
+  after_state: z.record(z.string(), z.unknown()).nullable(),
+  result: z.enum(["succeeded", "failed", "blocked"]),
+  error_code: z.string().min(1).nullable(),
+  created_at: z.string().datetime(),
+});
+
+export type ExecutionAuditEvent = z.infer<typeof executionAuditEventSchema>;
+
+export type ExecutionAuditEventGuardResult =
+  | { ok: true; request: ExecutionAuditEvent; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
 const isSafeInternalHref = (href: string): boolean => {
   if (!href.startsWith("/")) {
     return false;
@@ -179,6 +203,50 @@ export function validateControlledExecutionConfirmation(
 
   if (request.reversibility === "non_reversible") {
     warnings.push("non-reversible action requires explicit operator caution.");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors, warnings };
+  }
+
+  return { ok: true, request, warnings };
+}
+
+export function validateExecutionAuditEvent(payload: unknown, now: Date = new Date()): ExecutionAuditEventGuardResult {
+  const parsed = executionAuditEventSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`),
+      warnings: [],
+    };
+  }
+
+  const request = parsed.data;
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  const createdAt = new Date(request.created_at);
+  if (Number.isNaN(createdAt.getTime())) {
+    errors.push("created_at is invalid.");
+  } else {
+    const maxFutureSkewMs = 5 * 60 * 1000;
+    if (createdAt.getTime() - now.getTime() > maxFutureSkewMs) {
+      errors.push("created_at is too far in the future.");
+    }
+  }
+
+  if (request.result === "blocked" && !request.error_code) {
+    warnings.push("blocked audit event should include error_code.");
+  }
+  if (request.result === "failed" && !request.error_code) {
+    warnings.push("failed audit event should include error_code.");
+  }
+
+  for (const ref of request.evidence_refs) {
+    if (!isSafeInternalHref(ref.href)) {
+      errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+    }
   }
 
   if (errors.length > 0) {
