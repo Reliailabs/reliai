@@ -74,11 +74,11 @@ const iconById = {
 } as const;
 
 const defaultIntegrations = [
-  { name: "PagerDuty", connected: true, icon: "PD", statusLabel: "Connected" },
-  { name: "Slack", connected: true, icon: "S", statusLabel: "Connected" },
-  { name: "Datadog", connected: true, icon: "DD", statusLabel: "Connected" },
-  { name: "GitHub", connected: true, icon: "GH", statusLabel: "Connected" },
-  { name: "Jira", connected: false, icon: "J", statusLabel: "Planned" },
+  { id: "pagerduty", name: "PagerDuty", connected: true, icon: "PD", statusLabel: "Connected", href: "/settings#alerts" },
+  { id: "slack", name: "Slack", connected: true, icon: "S", statusLabel: "Connected", href: "/settings#integrations" },
+  { id: "datadog", name: "Datadog", connected: true, icon: "DD", statusLabel: "Connected", href: "/settings#integrations" },
+  { id: "github", name: "GitHub", connected: true, icon: "GH", statusLabel: "Connected", href: "/settings#integrations" },
+  { id: "jira", name: "Jira", connected: false, icon: "J", statusLabel: "Planned", href: "/settings#integrations" },
 ];
 
 const statusCopy = {
@@ -215,7 +215,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
         <div className="space-y-3">
           {integrations.map((integration) => (
             <div
-              key={integration.name}
+              key={integration.id ?? integration.name}
               className="flex items-center gap-4 p-4 rounded-xl bg-muted/30"
             >
               <div className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center text-sm font-semibold text-foreground">
@@ -225,13 +225,24 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 <p className="font-medium text-foreground text-sm">{integration.name}</p>
                 <p className="text-xs text-muted-foreground">{integration.statusLabel ?? (integration.connected ? "Connected" : "Not connected")}</p>
               </div>
-              <Button
-                variant={integration.connected ? "outline" : "default"}
-                size="sm"
-                className={cn(integration.connected && "bg-transparent")}
-              >
-                {integration.connected ? "Connected" : "Planned"}
-              </Button>
+              {integration.href ? (
+                <Button
+                  asChild
+                  variant={integration.connected ? "outline" : "default"}
+                  size="sm"
+                  className={cn(integration.connected && "bg-transparent")}
+                >
+                  <Link href={integration.href}>{integration.connected ? "Connected" : "Planned"}</Link>
+                </Button>
+              ) : (
+                <Button
+                  variant={integration.connected ? "outline" : "default"}
+                  size="sm"
+                  className={cn(integration.connected && "bg-transparent")}
+                >
+                  {integration.connected ? "Connected" : "Planned"}
+                </Button>
+              )}
             </div>
           ))}
         </div>

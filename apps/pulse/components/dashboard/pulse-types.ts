@@ -432,10 +432,12 @@ export type SettingsQuickItem = {
 };
 
 export type SettingsIntegrationItem = {
+  id: string;
   name: string;
   connected: boolean;
   icon: string;
   statusLabel: string;
+  href?: string;
 };
 
 export type SettingsProfile = {
