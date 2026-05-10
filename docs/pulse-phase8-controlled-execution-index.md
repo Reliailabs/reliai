@@ -39,6 +39,7 @@ Phase 8 planning does **not** permit:
 ## Operational Review Docs
 - `docs/pulse-phase8-freeze-status.md`
 - `docs/pulse-phase8-closeout-checklist.md`
+- `docs/pulse-phase8-decision-flow.md`
 - `docs/pulse-phase8-runtime-consistency-audit.md`
 - `docs/pulse-phase8-readiness-review.md`
 - `docs/pulse-phase8-readiness-signoff-record.md`
