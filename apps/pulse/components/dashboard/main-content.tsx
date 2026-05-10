@@ -32,6 +32,7 @@ import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
 import type { TraceRouteContext } from "@/components/dashboard/pulse-types";
 import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
+import type { ProjectRouteContext } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
@@ -52,6 +53,7 @@ interface MainContentProps {
   auditContext?: AuditRouteContext;
   traceContext?: TraceRouteContext;
   deploymentContext?: DeploymentRouteContext;
+  projectContext?: ProjectRouteContext;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -140,6 +142,7 @@ export function MainContent({
   auditContext,
   traceContext,
   deploymentContext,
+  projectContext,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -198,6 +201,11 @@ export function MainContent({
             {config.title}
           </h1>
           <p className="text-sm text-muted-foreground">{config.subtitle}</p>
+          {projectContext ? (
+            <p className="text-xs text-muted-foreground">
+              Project route context: {projectContext.projectId} · {projectContext.mode}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-3">
