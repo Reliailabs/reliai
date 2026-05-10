@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   PHASE8_VALIDATOR_RESPONSE_CONTRACT,
+  phase8ValidatorError,
   withPhase8ValidatorEnvelope,
 } from "../app/api/actions/controlled-execution/_response";
 
@@ -25,4 +26,14 @@ test("response helper preserves payload fields while injecting contract envelope
   assert.equal(response.ok, true);
   assert.deepEqual(response.warnings, ["w1"]);
   assert.deepEqual(response.request, { execution_id: "exec_1" });
+});
+
+test("error helper emits normalized validation-only envelope", () => {
+  const response = phase8ValidatorError("unauthorized");
+  assert.equal(response.contract_version, "phase8-v1");
+  assert.equal(response.mode, "validation_only");
+  assert.equal(response.execution_granted, false);
+  assert.equal(response.ok, false);
+  assert.deepEqual(response.errors, ["unauthorized"]);
+  assert.deepEqual(response.warnings, []);
 });

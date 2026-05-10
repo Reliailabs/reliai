@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 
 import { getOperatorSession } from "@/lib/auth";
 import { validateOrchestrationBoundary } from "@/lib/controlled-execution";
-import { withPhase8ValidatorEnvelope } from "../../_response";
+import { phase8ValidatorError, withPhase8ValidatorEnvelope } from "../../_response";
 
 export async function POST(request: Request) {
   const session = await getOperatorSession();
   if (!session) {
     return NextResponse.json(
-      withPhase8ValidatorEnvelope({ ok: false, errors: ["unauthorized"], warnings: [] }),
+      phase8ValidatorError("unauthorized"),
       { status: 401 },
     );
   }
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     payload = await request.json();
   } catch {
     return NextResponse.json(
-      withPhase8ValidatorEnvelope({ ok: false, errors: ["invalid JSON body"], warnings: [] }),
+      phase8ValidatorError("invalid JSON body"),
       { status: 400 },
     );
   }

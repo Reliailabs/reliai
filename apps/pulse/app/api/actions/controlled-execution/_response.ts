@@ -10,3 +10,11 @@ export function withPhase8ValidatorEnvelope<T extends object>(payload: T) {
     ...payload,
   };
 }
+
+export function phase8ValidatorError(message: string) {
+  return withPhase8ValidatorEnvelope({
+    ok: false as const,
+    errors: [message],
+    warnings: [],
+  });
+}
