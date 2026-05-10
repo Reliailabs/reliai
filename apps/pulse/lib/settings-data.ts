@@ -98,6 +98,9 @@ export async function getSettingsSurfaceData(organizationId: string | null): Pro
     }),
     integrations: [
       { name: "Alert Target", connected: alertEnabled, icon: "AT", statusLabel: alertEnabled ? "Connected" : "Not configured" },
+      { name: "Datadog", connected: false, icon: "DD", statusLabel: "Planned" },
+      { name: "Email", connected: false, icon: "E", statusLabel: "Planned" },
+      { name: "Jira", connected: false, icon: "J", statusLabel: "Planned" },
       { name: "Slack", connected: false, icon: "S", statusLabel: "Planned" },
       { name: "PagerDuty", connected: false, icon: "PD", statusLabel: "Planned" },
       { name: "GitHub", connected: false, icon: "GH", statusLabel: "Planned" },
