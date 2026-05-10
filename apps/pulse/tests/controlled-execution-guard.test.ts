@@ -5,6 +5,7 @@ import {
   validateControlledExecutionConfirmation,
   validateControlledExecutionRequest,
   validateExecutionAuditEvent,
+  validateRollbackPreconditions,
 } from "../lib/controlled-execution";
 
 const baseRequest = {
@@ -149,6 +150,64 @@ test("rejects execution audit event with external evidence ref", () => {
       result: "succeeded",
       error_code: null,
       created_at: "2026-05-09T10:00:00.000Z",
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, false);
+});
+
+test("accepts rollback preconditions payload when all gates pass", () => {
+  const result = validateRollbackPreconditions(
+    {
+      proposal_id: "proposal_rollback_1",
+      target_deployment_id: "dep_1",
+      rollback_version: "v1.2.3",
+      approved_by_user_id: "op_1",
+      approved_at: "2026-05-09T10:00:00.000Z",
+      request_context: {
+        organization_id: "org_1",
+        project_id: "proj_1",
+        environment_id: "production",
+      },
+      evidence_refs: [
+        { label: "Deployment", href: "/deployments/DEP-1" },
+        { label: "Incident", href: "/incidents/INC-1" },
+      ],
+      policy_checks: {
+        deployment_evidence_present: true,
+        incident_or_regression_signal_present: true,
+        rollback_target_valid: true,
+        policy_blocked: false,
+      },
+    },
+    new Date("2026-05-09T10:01:00.000Z"),
+  );
+  assert.equal(result.ok, true);
+});
+
+test("rejects rollback preconditions payload when policy gate fails", () => {
+  const result = validateRollbackPreconditions(
+    {
+      proposal_id: "proposal_rollback_1",
+      target_deployment_id: "dep_1",
+      rollback_version: "v1.2.3",
+      approved_by_user_id: "op_1",
+      approved_at: "2026-05-09T10:00:00.000Z",
+      request_context: {
+        organization_id: "org_1",
+        project_id: "proj_1",
+        environment_id: "production",
+      },
+      evidence_refs: [
+        { label: "Deployment", href: "/deployments/DEP-1" },
+        { label: "Incident", href: "/incidents/INC-1" },
+      ],
+      policy_checks: {
+        deployment_evidence_present: false,
+        incident_or_regression_signal_present: true,
+        rollback_target_valid: true,
+        policy_blocked: false,
+      },
     },
     new Date("2026-05-09T10:01:00.000Z"),
   );
