@@ -19,6 +19,7 @@ import type { GuardrailsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { OncallSurfaceData } from "@/components/dashboard/pulse-types";
 import type { PostmortemsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 
 interface DashboardShellProps {
   initialSection: Section;
@@ -35,6 +36,7 @@ interface DashboardShellProps {
   oncallData?: OncallSurfaceData;
   postmortemsData?: PostmortemsSurfaceData;
   settingsData?: SettingsSurfaceData;
+  incidentContext?: IncidentRouteContext;
 }
 
 export function DashboardShell({
@@ -52,6 +54,7 @@ export function DashboardShell({
   oncallData,
   postmortemsData,
   settingsData,
+  incidentContext,
 }: DashboardShellProps) {
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
 
@@ -73,6 +76,7 @@ export function DashboardShell({
         oncallData={oncallData}
         postmortemsData={postmortemsData}
         settingsData={settingsData}
+        incidentContext={incidentContext}
       />
       <RightPanel pulseOverviewData={pulseOverviewData} />
     </div>

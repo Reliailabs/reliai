@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, XCircle, Search, Filter } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultIncidents = [
@@ -115,10 +118,26 @@ const severityConfig = {
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function IncidentsContent({ incidentsData }: { incidentsData?: IncidentsSurfaceData }) {
+export function IncidentsContent({
+  incidentsData,
+  incidentContext,
+}: {
+  incidentsData?: IncidentsSurfaceData;
+  incidentContext?: IncidentRouteContext;
+}) {
   const incidents = incidentsData?.incidents?.length ? incidentsData.incidents : defaultIncidents;
-  const [selectedIncident, setSelectedIncident] = useState(incidents[0]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialSelectedIncident =
+    incidents.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidents[0];
+  const [selectedIncident, setSelectedIncident] = useState(initialSelectedIncident);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  useEffect(() => {
+    const contextIncident =
+      incidents.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidents[0];
+    setSelectedIncident(contextIncident);
+  }, [incidentContext?.selectedIncidentId, incidents]);
 
   const filteredIncidents = filterStatus === "all" 
     ? incidents 
@@ -185,7 +204,12 @@ export function IncidentsContent({ incidentsData }: { incidentsData?: IncidentsS
             <button
               key={incident.id}
               type="button"
-              onClick={() => setSelectedIncident(incident)}
+              onClick={() => {
+                setSelectedIncident(incident);
+                if (pathname?.startsWith("/incidents")) {
+                  router.push(`/incidents/${incident.id}`);
+                }
+              }}
               className={cn(
                 "w-full text-left p-4 rounded-2xl border transition-all",
                 selectedIncident.id === incident.id
