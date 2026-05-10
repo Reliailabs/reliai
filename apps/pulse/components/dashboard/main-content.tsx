@@ -33,6 +33,7 @@ import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
 import type { TraceRouteContext } from "@/components/dashboard/pulse-types";
 import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
 import type { ProjectRouteContext } from "@/components/dashboard/pulse-types";
+import type { ProjectControlParityData } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
@@ -54,6 +55,7 @@ interface MainContentProps {
   traceContext?: TraceRouteContext;
   deploymentContext?: DeploymentRouteContext;
   projectContext?: ProjectRouteContext;
+  projectControlData?: ProjectControlParityData;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -143,6 +145,7 @@ export function MainContent({
   traceContext,
   deploymentContext,
   projectContext,
+  projectControlData,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -154,6 +157,7 @@ export function MainContent({
             pulseOverviewData={pulseOverviewData}
             causalityEvidenceData={causalityEvidenceData}
             attributionSuggestionsData={attributionSuggestionsData}
+            projectControlData={projectControlData}
           />
         );
       case "incidents":
@@ -187,6 +191,7 @@ export function MainContent({
           <OverviewContent
             causalityEvidenceData={causalityEvidenceData}
             attributionSuggestionsData={attributionSuggestionsData}
+            projectControlData={projectControlData}
           />
         );
     }

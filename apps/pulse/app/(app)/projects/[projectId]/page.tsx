@@ -3,6 +3,7 @@ import { getAttributionSuggestionsData } from "@/lib/attribution-suggestions-dat
 import { requireOperatorSession } from "@/lib/auth";
 import { getCausalityEvidenceData } from "@/lib/causality-evidence-data";
 import { getPulseOverviewData } from "@/lib/pulse-data";
+import { getProjectControlParityData } from "@/lib/project-control-data";
 
 type ProjectOverviewPageProps = {
   params: Promise<{ projectId: string }>;
@@ -13,10 +14,11 @@ export default async function ProjectOverviewPage({ params }: ProjectOverviewPag
   const session = await requireOperatorSession();
   const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
 
-  const [pulseOverviewData, causalityEvidenceData, attributionSuggestionsData] = await Promise.all([
+  const [pulseOverviewData, causalityEvidenceData, attributionSuggestionsData, projectControlData] = await Promise.all([
     getPulseOverviewData({ demoMode: false, organizationId }),
     getCausalityEvidenceData({ demoMode: false, organizationId }),
     getAttributionSuggestionsData({ demoMode: false, organizationId }),
+    getProjectControlParityData(projectId),
   ]);
 
   return (
@@ -26,6 +28,7 @@ export default async function ProjectOverviewPage({ params }: ProjectOverviewPag
       causalityEvidenceData={causalityEvidenceData}
       attributionSuggestionsData={attributionSuggestionsData}
       projectContext={{ projectId, mode: "overview" }}
+      projectControlData={projectControlData}
     />
   );
 }

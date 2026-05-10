@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import type { CausalityEvidenceData, PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { AttributionSuggestionData } from "@/components/dashboard/pulse-types";
+import type { ProjectControlParityData } from "@/components/dashboard/pulse-types";
 import Link from "next/link";
 import { OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
@@ -113,10 +114,12 @@ export function OverviewContent({
   pulseOverviewData,
   causalityEvidenceData,
   attributionSuggestionsData,
+  projectControlData,
 }: {
   pulseOverviewData?: PulseOverviewData;
   causalityEvidenceData?: CausalityEvidenceData;
   attributionSuggestionsData?: AttributionSuggestionData;
+  projectControlData?: ProjectControlParityData;
 }) {
   const formatConfidence = (value: string) => (value === "insufficient" ? "insufficient data" : value);
   const metricDecor: Record<string, { icon: typeof AlertTriangle; color: string; bgColor: string }> = {
@@ -150,6 +153,38 @@ export function OverviewContent({
 
   return (
     <div className="space-y-6">
+      {projectControlData ? (
+        <div className="rounded-2xl border border-border bg-card p-4" style={{ boxShadow: cardShadow }}>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Project Control Snapshot</p>
+          <div className="mt-2 grid gap-2 text-sm text-muted-foreground md:grid-cols-3">
+            <p>Project: <span className="font-medium text-foreground">{projectControlData.projectName}</span></p>
+            <p>Certification: <span className="font-medium text-foreground">{projectControlData.auditCertificationStatus ?? "pending"}</span></p>
+            <p>Risk score: <span className="font-medium text-foreground">{projectControlData.auditRiskScore ?? "—"}</span></p>
+            <p>Critical / blocking: <span className="font-medium text-foreground">{projectControlData.openCriticalFindings ?? 0} / {projectControlData.openBlockingFindings ?? 0}</span></p>
+            {projectControlData.latestAuditId ? (
+              <p>
+                Latest audit:{" "}
+                <Link href={`/audits/${projectControlData.latestAuditId}`} className="text-primary hover:underline">
+                  {projectControlData.latestAuditId}
+                </Link>
+              </p>
+            ) : (
+              <p>Latest audit: —</p>
+            )}
+            <p>Last completed: <span className="font-medium text-foreground">{projectControlData.latestAuditCompletedAt ?? "—"}</span></p>
+          </div>
+          {projectControlData.certificationAtRisk ? (
+            <div className="mt-3 rounded-lg border border-amber-600/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+              Certification at risk: {projectControlData.certificationRiskReason ?? "Risk condition detected from project audit summary."}
+            </div>
+          ) : null}
+          {projectControlData.sourceErrors.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-amber-600/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+              Data source unavailable: {projectControlData.sourceErrors.join(", ")}.
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="flex items-center justify-between">
         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Pulse signal state</p>
         <span className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
