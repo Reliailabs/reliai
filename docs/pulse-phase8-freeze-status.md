@@ -3,7 +3,7 @@
 ## Current State
 - Phase 8 validator/trust infrastructure: **implemented**
 - Execution capability: **not implemented**
-- Freeze gate: **active until sign-off record is approved**
+- Freeze gate: **closed (sign-off approved on 2026-05-10)**
 
 ## Evidence
 - Baseline tag: `phase8-guards-baseline`
@@ -13,4 +13,5 @@
 - Handoff checklist: `docs/pulse-phase8-signoff-handoff.md`
 
 ## Policy
-No execution-capability code may begin until `docs/pulse-phase8-readiness-signoff-record.md` is marked `approved`.
+Phase 8 readiness sign-off is approved. Follow approved transition guardrails in:
+- `docs/pulse-phase8-approved-transition-template.md`

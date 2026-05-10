@@ -1,14 +1,13 @@
 # Pulse Phase 8 Next Action
 
 ## Immediate Required Action
-Complete and approve:
-- `docs/pulse-phase8-readiness-signoff-record.md`
-- Use request template:
+Completed:
+- `docs/pulse-phase8-readiness-signoff-record.md` approved on 2026-05-10
+- Request template used:
   - `docs/pulse-phase8-signoff-request-template.md`
 
 ## Until Approved
-- Keep execution freeze active.
-- Do not implement execution-capability code.
+- n/a (sign-off approved)
 
 ## After Approved
 - Start the first post-approval slice using:
