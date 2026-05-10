@@ -3,6 +3,8 @@
 ## Immediate Required Action
 Complete and approve:
 - `docs/pulse-phase8-readiness-signoff-record.md`
+- Use request template:
+  - `docs/pulse-phase8-signoff-request-template.md`
 
 ## Until Approved
 - Keep execution freeze active.
