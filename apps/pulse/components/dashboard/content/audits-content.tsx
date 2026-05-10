@@ -1,6 +1,8 @@
 "use client";
 
 import { Phone, Clock, User, TrendingDown, AlertTriangle, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   BarChart,
@@ -12,6 +14,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { AuditsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
 
 const defaultResponseTimeData = [
   { week: "W1", ack: 2.3, resolve: 45 },
@@ -66,7 +69,13 @@ const defaultMetrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function AuditsContent({ auditsData }: { auditsData?: AuditsSurfaceData }) {
+export function AuditsContent({
+  auditsData,
+  auditContext,
+}: {
+  auditsData?: AuditsSurfaceData;
+  auditContext?: AuditRouteContext;
+}) {
   const responseTimeData = auditsData?.responseTimeData?.length
     ? auditsData.responseTimeData
     : defaultResponseTimeData;
@@ -81,6 +90,35 @@ export function AuditsContent({ auditsData }: { auditsData?: AuditsSurfaceData }
     auditsData && auditsData.sourceErrors.length > 0
       ? `Data source unavailable: ${auditsData.sourceErrors.join(", ")}.`
       : null;
+  const selectedAudit = useMemo(
+    () => recentPages.find((page) => page.id === auditContext?.selectedAuditId) ?? null,
+    [recentPages, auditContext?.selectedAuditId],
+  );
+  const [contextLabel, setContextLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (auditContext?.mode === "new") {
+      setContextLabel("Create audit flow is not yet migrated into Pulse. Using summary view for parity.");
+      return;
+    }
+    if (auditContext?.mode === "results") {
+      setContextLabel(
+        selectedAudit
+          ? `Results route selected for ${selectedAudit.title}. Full results presenter parity is pending.`
+          : "Results route selected. Full results presenter parity is pending.",
+      );
+      return;
+    }
+    if (auditContext?.mode === "detail") {
+      setContextLabel(
+        selectedAudit
+          ? `Detail route selected for ${selectedAudit.title}. Stage-level actions remain pending parity.`
+          : "Detail route selected. Stage-level actions remain pending parity.",
+      );
+      return;
+    }
+    setContextLabel(null);
+  }, [auditContext?.mode, selectedAudit]);
 
   if (auditsData && !auditsData.hasAuditData) {
     return (
@@ -99,6 +137,11 @@ export function AuditsContent({ auditsData }: { auditsData?: AuditsSurfaceData }
 
   return (
     <div className="space-y-6">
+      {contextLabel ? (
+        <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+          {contextLabel}
+        </div>
+      ) : null}
       {sourceErrorText ? (
         <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {sourceErrorText}
@@ -179,7 +222,13 @@ export function AuditsContent({ auditsData }: { auditsData?: AuditsSurfaceData }
         </div>
         <div className="divide-y divide-border">
           {recentPages.map((page) => (
-            <div key={page.id} className="p-4 flex items-center gap-4">
+            <div
+              key={page.id}
+              className={cn(
+                "p-4 flex items-center gap-4",
+                auditContext?.selectedAuditId === page.id ? "bg-primary/5" : "",
+              )}
+            >
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", page.resolved ? "bg-success/10" : "bg-warning/10")}>
                 {page.resolved ? <CheckCircle className="w-5 h-5 text-success" /> : <AlertTriangle className="w-5 h-5 text-warning" />}
               </div>
@@ -200,6 +249,14 @@ export function AuditsContent({ auditsData }: { auditsData?: AuditsSurfaceData }
                 <p className={cn("text-xs font-medium", page.resolved ? "text-success" : "text-warning")}>
                   {page.resolved ? "Resolved" : "In Progress"}
                 </p>
+                <div className="mt-1 flex justify-end gap-2 text-xs">
+                  <Link href={`/audits/${page.id}`} className="text-primary hover:underline">
+                    Detail
+                  </Link>
+                  <Link href={`/audits/${page.id}/results`} className="text-primary hover:underline">
+                    Results
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

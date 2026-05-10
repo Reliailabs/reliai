@@ -29,6 +29,7 @@ import type { OncallSurfaceData } from "@/components/dashboard/pulse-types";
 import type { PostmortemsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
+import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
@@ -46,6 +47,7 @@ interface MainContentProps {
   postmortemsData?: PostmortemsSurfaceData;
   settingsData?: SettingsSurfaceData;
   incidentContext?: IncidentRouteContext;
+  auditContext?: AuditRouteContext;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -131,6 +133,7 @@ export function MainContent({
   postmortemsData,
   settingsData,
   incidentContext,
+  auditContext,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -158,7 +161,7 @@ export function MainContent({
       case "sla":
         return <SlaContent guardrailsData={guardrailsData} />;
       case "audits":
-        return <AuditsContent auditsData={auditsData} />;
+        return <AuditsContent auditsData={auditsData} auditContext={auditContext} />;
       case "oncall":
         return <OncallContent oncallData={oncallData} />;
       case "systems":
