@@ -223,6 +223,19 @@ export type TracesSurfaceData = {
   sourceErrors: string[];
   hasTraceData: boolean;
   dataMode: "live" | "demo";
+  traceRefs?: Array<{
+    id: string;
+    requestId: string;
+    comparePath?: string | null;
+    graphPath?: string | null;
+  }>;
+};
+
+export type TraceRouteContextMode = "list" | "detail" | "compare" | "graph";
+
+export type TraceRouteContext = {
+  selectedTraceId: string | null;
+  mode: TraceRouteContextMode;
 };
 
 export type TraceIntelligenceSnippet = {

@@ -197,6 +197,12 @@ export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
     ],
     serviceLatencies,
     intelligenceSnippets: traceIntelligenceSnippets,
+    traceRefs: traces.slice(0, 8).map((trace) => ({
+      id: trace.id,
+      requestId: trace.id,
+      comparePath: `/traces/${trace.id}/compare`,
+      graphPath: `/traces/${trace.id}/graph`,
+    })),
     sourceErrors: Array.from(new Set(sourceErrors)),
     hasTraceData: traces.length > 0,
     dataMode: "live",

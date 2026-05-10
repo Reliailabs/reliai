@@ -1,6 +1,7 @@
 "use client";
 
 import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import {
   LineChart,
   Line,
@@ -13,6 +14,7 @@ import {
   Area,
 } from "recharts";
 import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
+import type { TraceRouteContext } from "@/components/dashboard/pulse-types";
 import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultLatencyData = [
@@ -53,7 +55,13 @@ const defaultServiceLatencies = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
-export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceData }) {
+export function PerformanceContent({
+  tracesData,
+  traceContext,
+}: {
+  tracesData?: TracesSurfaceData;
+  traceContext?: TraceRouteContext;
+}) {
   const latencyData = tracesData?.latencyData?.length ? tracesData.latencyData : defaultLatencyData;
   const throughputData = tracesData?.throughputData?.length ? tracesData.throughputData : defaultThroughputData;
   const metrics = tracesData?.metrics?.length ? tracesData.metrics : defaultMetrics;
@@ -61,6 +69,8 @@ export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceD
     ? tracesData.serviceLatencies
     : defaultServiceLatencies;
   const intelligenceSnippets = tracesData?.intelligenceSnippets ?? [];
+  const traceRefs = tracesData?.traceRefs ?? [];
+  const selectedTraceRef = traceRefs.find((trace) => trace.id === traceContext?.selectedTraceId) ?? null;
   const sourceErrorText =
     tracesData && tracesData.sourceErrors.length > 0
       ? `Data source unavailable: ${tracesData.sourceErrors.join(", ")}.`
@@ -83,6 +93,15 @@ export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceD
 
   return (
     <div className="space-y-6">
+      {traceContext?.mode && traceContext.mode !== "list" ? (
+        <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+          {traceContext.mode === "detail"
+            ? `Trace detail route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}. Full presenter parity is pending.`
+            : traceContext.mode === "compare"
+              ? `Trace compare route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}. Full compare presenter parity is pending.`
+              : `Trace graph route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}. Full graph presenter parity is pending.`}
+        </div>
+      ) : null}
       {sourceErrorText ? (
         <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {sourceErrorText}
@@ -226,6 +245,41 @@ export function PerformanceContent({ tracesData }: { tracesData?: TracesSurfaceD
         className="bg-card rounded-2xl p-6 border border-border"
         style={{ boxShadow: cardShadow }}
       >
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-foreground">Recent traces</h3>
+          <p className="text-sm text-muted-foreground">Deep-link parity routes for trace detail, compare, and graph.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {traceRefs.length === 0 ? (
+              <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
+                No trace links available
+              </span>
+            ) : (
+              traceRefs.map((trace) => (
+                <Link
+                  key={trace.id}
+                  href={`/traces/${trace.id}`}
+                  className={`rounded-full border px-2.5 py-1 text-xs ${
+                    traceContext?.selectedTraceId === trace.id
+                      ? "border-primary/40 bg-primary/10 text-foreground"
+                      : "border-border bg-card text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {trace.requestId}
+                </Link>
+              ))
+            )}
+          </div>
+          {selectedTraceRef ? (
+            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+              <Link href={`/traces/${selectedTraceRef.id}/compare`} className="text-primary hover:underline">
+                Open compare
+              </Link>
+              <Link href={`/traces/${selectedTraceRef.id}/graph`} className="text-primary hover:underline">
+                Open graph
+              </Link>
+            </div>
+          ) : null}
+        </div>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-base font-semibold text-foreground">Trace intelligence</h3>
