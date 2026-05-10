@@ -41,6 +41,9 @@ Phase 8 planning does **not** permit:
 2. Governance boundary audit accepted.
 3. Operator-intelligence false-positive review complete.
 4. Approval/RBAC/safety policies finalized.
+5. Phase 8 readiness review + sign-off record approved:
+   - `docs/pulse-phase8-readiness-review.md`
+   - `docs/pulse-phase8-readiness-signoff-record.md`
 
 ## Transition to Phase 9
 Only after Phase 8 controls are proven in supervised operation should assisted automation be considered.

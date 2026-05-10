@@ -6,6 +6,9 @@ Freeze Phase 8 at a validation-only baseline and require explicit sign-off befor
 Baseline tag:
 - `phase8-guards-baseline`
 
+Sign-off record:
+- `docs/pulse-phase8-readiness-signoff-record.md`
+
 ## Hard Gate (Mandatory)
 **No execution-capability code may begin until Phase 8 readiness review is signed off.**
 
@@ -46,3 +49,6 @@ This includes (non-exhaustive):
   - [ ] Approved to begin execution-capability planning
   - [ ] Blocked pending remediation
 - Notes:
+
+## Completion Requirement
+This readiness review is complete only when `docs/pulse-phase8-readiness-signoff-record.md` is filled and approved by all required owners.
