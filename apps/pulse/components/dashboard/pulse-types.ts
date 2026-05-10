@@ -295,6 +295,13 @@ export type DeploymentRouteContext = {
   mode: DeploymentRouteContextMode;
 };
 
+export type ProjectRouteContextMode = "overview" | "incidents" | "audits" | "traces" | "deployments";
+
+export type ProjectRouteContext = {
+  projectId: string;
+  mode: ProjectRouteContextMode;
+};
+
 export type AuditResponseTrendPoint = {
   week: string;
   ack: number;
