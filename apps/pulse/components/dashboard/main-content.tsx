@@ -31,6 +31,7 @@ import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
 import type { TraceRouteContext } from "@/components/dashboard/pulse-types";
+import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
 
 interface MainContentProps {
   activeSection: Section;
@@ -50,6 +51,7 @@ interface MainContentProps {
   incidentContext?: IncidentRouteContext;
   auditContext?: AuditRouteContext;
   traceContext?: TraceRouteContext;
+  deploymentContext?: DeploymentRouteContext;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -137,6 +139,7 @@ export function MainContent({
   incidentContext,
   auditContext,
   traceContext,
+  deploymentContext,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -153,7 +156,7 @@ export function MainContent({
       case "incidents":
         return <IncidentsContent incidentsData={incidentsData} incidentContext={incidentContext} />;
       case "deployments":
-        return <DeploymentsContent deploymentsData={deploymentsData} />;
+        return <DeploymentsContent deploymentsData={deploymentsData} deploymentContext={deploymentContext} />;
       case "traces":
       case "performance":
         return <PerformanceContent tracesData={tracesData} traceContext={traceContext} />;

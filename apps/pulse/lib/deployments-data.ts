@@ -136,6 +136,10 @@ export async function getDeploymentsSurfaceData(): Promise<DeploymentsSurfaceDat
   return {
     deploymentFrequency: weekBuckets(deploymentsRaw),
     deployments,
+    deploymentRefs: deployments.map((deployment) => ({
+      id: deployment.id,
+      detailPath: `/deployments/${deployment.id}`,
+    })),
     metrics: [
       { label: "Deploys Today", value: String(total), change: total > 0 ? `+${Math.min(3, total)}` : "0" },
       { label: "Success Rate", value: `${successRate}%`, change: successRate >= 95 ? "+1%" : "-2%" },
