@@ -1,3 +1,5 @@
+import { NextResponse } from "next/server";
+
 export const PHASE8_VALIDATOR_RESPONSE_CONTRACT = {
   contract_version: "phase8-v1",
   mode: "validation_only",
@@ -27,4 +29,8 @@ export function phase8ValidatorError(message: string): Phase8ValidatorResult<Pha
     errors: [message],
     warnings: [],
   });
+}
+
+export function phase8ValidatorErrorResponse(status: 400 | 401, message: string) {
+  return NextResponse.json(phase8ValidatorError(message), { status });
 }
