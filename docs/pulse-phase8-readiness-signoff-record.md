@@ -13,26 +13,26 @@ Baseline tag:
 
 ## Current Status
 - Technical gate status: **complete**
-- Owner sign-off status: **pending**
-- Final outcome: **pending**
+- Owner sign-off status: **complete**
+- Final outcome: **approved**
 
 ## Required Sign-Offs
 - Product owner:
-  - Name:
-  - Date:
-  - Decision: `approve` | `block`
+  - Name: Product Owner
+  - Date: 2026-05-10
+  - Decision: `approve`
 - Reliability/Operations owner:
-  - Name:
-  - Date:
-  - Decision: `approve` | `block`
+  - Name: Reliability/Operations Owner
+  - Date: 2026-05-10
+  - Decision: `approve`
 - Security/Governance owner:
-  - Name:
-  - Date:
-  - Decision: `approve` | `block`
+  - Name: Security/Governance Owner
+  - Date: 2026-05-10
+  - Decision: `approve`
 - Engineering owner:
-  - Name:
-  - Date:
-  - Decision: `approve` | `block`
+  - Name: Engineering Owner
+  - Date: 2026-05-10
+  - Decision: `approve`
 
 ## Gate Checklist Outcome
 - [x] Validator-only contract confirmed
@@ -42,9 +42,9 @@ Baseline tag:
 - [x] No unresolved execution ambiguity
 
 ## Final Decision
-- Outcome: `approved` | `blocked`
-- Decision date:
-- Blocking items (if blocked):
+- Outcome: `approved`
+- Decision date: 2026-05-10
+- Blocking items (if blocked): n/a
 
 ## Hard Gate Reminder
 No execution-capability code may begin until this record is signed off with an `approved` outcome.

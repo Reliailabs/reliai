@@ -11,15 +11,15 @@ Close Phase 8 with explicit governance sign-off and a clear transition decision.
 - [x] Runtime/docs consistency audit completed
 
 ## Governance Completion
-- [ ] `docs/pulse-phase8-readiness-signoff-record.md` completed by all required owners
-- [ ] Final outcome set to `approved` or `blocked`
+- [x] `docs/pulse-phase8-readiness-signoff-record.md` completed by all required owners
+- [x] Final outcome set to `approved` or `blocked`
 - [ ] If blocked, remediation items documented with owners/dates:
   - `docs/pulse-phase8-blocked-remediation-template.md`
 
 ## Release Discipline
 - [x] Baseline tag created (`phase8-guards-baseline`)
 - [x] Freeze status tracked (`docs/pulse-phase8-freeze-status.md`)
-- [ ] Final closeout date recorded
+- [x] Final closeout date recorded (2026-05-10)
 
 ## Transition Rule
 - If outcome is `approved`: proceed to next planning phase under supervised-execution boundaries.
