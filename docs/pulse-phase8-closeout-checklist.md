@@ -23,4 +23,5 @@ Close Phase 8 with explicit governance sign-off and a clear transition decision.
 
 ## Transition Rule
 - If outcome is `approved`: proceed to next planning phase under supervised-execution boundaries.
+  - Use `docs/pulse-phase8-approved-transition-template.md`
 - If outcome is `blocked`: keep execution freeze active and do not start execution-capability work.
