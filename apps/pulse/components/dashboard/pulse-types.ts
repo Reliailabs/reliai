@@ -302,6 +302,20 @@ export type ProjectRouteContext = {
   mode: ProjectRouteContextMode;
 };
 
+export type ProjectControlParityData = {
+  projectId: string;
+  projectName: string;
+  auditCertificationStatus: string | null;
+  auditRiskScore: number | null;
+  openCriticalFindings: number | null;
+  openBlockingFindings: number | null;
+  certificationAtRisk: boolean;
+  certificationRiskReason: string | null;
+  latestAuditId: string | null;
+  latestAuditCompletedAt: string | null;
+  sourceErrors: string[];
+};
+
 export type AuditResponseTrendPoint = {
   week: string;
   ack: number;
