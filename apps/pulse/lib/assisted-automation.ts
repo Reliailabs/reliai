@@ -437,3 +437,214 @@ export function stageRemediationStep(
     warnings,
   };
 }
+
+// ── Phase 9.4: Auditability and Kill-Switch ───────────────────────────────────
+// Validation-only. No persistence, no kill-switch execution, no dashboard wiring.
+
+const AUTOMATION_SURFACES = ["incidents", "deployments", "guardrails"] as const;
+export type AutomationSurface = (typeof AUTOMATION_SURFACES)[number];
+
+// ── Audit event validation ────────────────────────────────────────────────────
+
+const auditEventSchema = z.object({
+  event_id: z.string().min(1),
+  actor: z.object({
+    type: z.enum(["human", "system"]),
+    id: z.string().min(1),
+  }),
+  suggestion_generated: z.object({
+    proposal_id: z.string().min(1),
+    step_type: z.string().min(1),
+    surface: z.enum(AUTOMATION_SURFACES),
+  }),
+  evidence_basis: z.array(evidenceRefSchema).min(1),
+  operator_decision: z.object({
+    decision: z.enum(["accepted", "rejected", "deferred", "disabled_by_policy"]),
+    reason: z.string().optional(),
+  }),
+  outcome_status: z.enum(["completed", "failed", "cancelled", "disabled_by_policy"]),
+  timestamps: z.object({
+    proposed_at: z.string().datetime(),
+    decided_at: z.string().datetime(),
+    completed_at: z.string().datetime().optional(),
+  }),
+});
+
+export type AutomationAuditEvent = z.infer<typeof auditEventSchema>;
+
+export type AutomationAuditEventResult =
+  | { ok: true; event: AutomationAuditEvent; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+export function validateAutomationAuditEvent(payload: unknown): AutomationAuditEventResult {
+  const parsed = auditEventSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((i) => `${i.path.join(".") || "request"}: ${i.message}`),
+      warnings: [],
+    };
+  }
+
+  const event = parsed.data;
+  const warnings: string[] = [];
+
+  for (const ref of event.evidence_basis) {
+    if (!isSafeInternalHref(ref.href)) {
+      return {
+        ok: false,
+        errors: [`evidence_basis contains non-internal href '${ref.href}'.`],
+        warnings: [],
+      };
+    }
+  }
+
+  const proposedMs = new Date(event.timestamps.proposed_at).getTime();
+  const decidedMs = new Date(event.timestamps.decided_at).getTime();
+  if (decidedMs < proposedMs) {
+    return {
+      ok: false,
+      errors: ["timestamps.decided_at must not precede timestamps.proposed_at."],
+      warnings: [],
+    };
+  }
+
+  if (event.operator_decision.decision === "rejected" && !event.operator_decision.reason) {
+    warnings.push("Operator rejection reason not provided — audit record completeness is reduced.");
+  }
+
+  return { ok: true, event, warnings };
+}
+
+// ── Kill-switch policy validation ─────────────────────────────────────────────
+
+const killSwitchPolicySchema = z.object({
+  organization_id: z.string().min(1),
+  global_kill_switch_active: z.boolean(),
+  surface_kill_switches: z.object({
+    incidents: z.boolean(),
+    deployments: z.boolean(),
+    guardrails: z.boolean(),
+  }),
+  target_surface: z.enum(AUTOMATION_SURFACES),
+  staged_proposal_ids: z.array(z.string()).default([]),
+});
+
+export type KillSwitchPolicy = z.infer<typeof killSwitchPolicySchema>;
+
+export type KillSwitchPolicyResult =
+  | {
+      ok: true;
+      allowed: boolean;
+      block_reason: string | null;
+      disabled_proposal_ids: string[];
+      warnings: string[];
+    }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+export function validateKillSwitchPolicy(payload: unknown): KillSwitchPolicyResult {
+  const parsed = killSwitchPolicySchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((i) => `${i.path.join(".") || "request"}: ${i.message}`),
+      warnings: [],
+    };
+  }
+
+  const policy = parsed.data;
+  const warnings: string[] = [];
+  let blockReason: string | null = null;
+
+  if (policy.global_kill_switch_active) {
+    blockReason = "global kill-switch is active — all automation proposals are blocked.";
+  } else if (policy.surface_kill_switches[policy.target_surface]) {
+    blockReason = `surface kill-switch is active for '${policy.target_surface}' — automation proposals on this surface are blocked.`;
+  }
+
+  const disabledProposalIds =
+    blockReason !== null && policy.staged_proposal_ids.length > 0
+      ? [...policy.staged_proposal_ids]
+      : [];
+
+  if (disabledProposalIds.length > 0) {
+    warnings.push(
+      `${disabledProposalIds.length} staged proposal(s) marked disabled_by_policy: ${disabledProposalIds.join(", ")}.`,
+    );
+  }
+
+  return {
+    ok: true,
+    allowed: blockReason === null,
+    block_reason: blockReason,
+    disabled_proposal_ids: disabledProposalIds,
+    warnings,
+  };
+}
+
+// ── Observability payload validation ─────────────────────────────────────────
+
+const observabilityPayloadSchema = z.object({
+  organization_id: z.string().min(1),
+  window_start: z.string().datetime(),
+  window_end: z.string().datetime(),
+  decision_outcomes: z.object({
+    accepted: z.number().int().min(0),
+    rejected: z.number().int().min(0),
+    deferred: z.number().int().min(0),
+    disabled_by_policy: z.number().int().min(0),
+  }),
+  block_reason_distribution: z.array(
+    z.object({
+      reason: z.string().min(1),
+      count: z.number().int().min(0),
+    }),
+  ),
+  operator_override_frequency: z.number().min(0).max(1),
+});
+
+export type ObservabilityPayload = z.infer<typeof observabilityPayloadSchema>;
+
+export type ObservabilityPayloadResult =
+  | { ok: true; payload: ObservabilityPayload; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+export function validateObservabilityPayload(payload: unknown): ObservabilityPayloadResult {
+  const parsed = observabilityPayloadSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((i) => `${i.path.join(".") || "request"}: ${i.message}`),
+      warnings: [],
+    };
+  }
+
+  const data = parsed.data;
+  const warnings: string[] = [];
+
+  if (new Date(data.window_end).getTime() <= new Date(data.window_start).getTime()) {
+    return {
+      ok: false,
+      errors: ["window_end must be after window_start."],
+      warnings: [],
+    };
+  }
+
+  const total =
+    data.decision_outcomes.accepted +
+    data.decision_outcomes.rejected +
+    data.decision_outcomes.deferred +
+    data.decision_outcomes.disabled_by_policy;
+
+  if (total === 0) {
+    warnings.push("No automation decisions recorded in this window.");
+  }
+
+  if (data.operator_override_frequency > 0.5) {
+    warnings.push(
+      `High operator override frequency (${(data.operator_override_frequency * 100).toFixed(1)}%) — review automation policy tuning.`,
+    );
+  }
+
+  return { ok: true, payload: data, warnings };
+}
