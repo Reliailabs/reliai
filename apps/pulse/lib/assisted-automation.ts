@@ -648,3 +648,315 @@ export function validateObservabilityPayload(payload: unknown): ObservabilityPay
 
   return { ok: true, payload: data, warnings };
 }
+
+// ── Phase 9.5: Remediation Proposal Completion ───────────────────────────────
+// Validation-only. No execution, no persistence, no task creation.
+
+const BLAST_RADIUS_SCOPES = ["environment", "project", "organization"] as const;
+const RISK_LEVELS = ["low", "medium", "high"] as const;
+const REVERSIBILITY_STATUSES = ["reversible", "irreversible", "partially_reversible"] as const;
+const POLICY_RESULTS = ["passed", "denied"] as const;
+
+type BlastRadiusScope = (typeof BLAST_RADIUS_SCOPES)[number];
+type RiskLevel = (typeof RISK_LEVELS)[number];
+
+// ── Impact Preview ────────────────────────────────────────────────────────────
+
+const impactPreviewRequestSchema = z.object({
+  proposal_id: z.string().regex(/^phase9-[a-z]+-[0-9a-f]{16}$/, "proposal_id format invalid"),
+  action_type: z.enum(AUTOMATION_ACTION_TYPES),
+  target_type: z.enum(AUTOMATION_TARGET_TYPES),
+  target_id: z.string().min(1),
+  step_type: z.enum(REMEDIATION_STEP_TYPES),
+  environment_id: z.string().min(1),
+  expected_effect: z.string().min(1),
+  reversibility_note: z.string().min(1),
+  risk_flags: z.array(z.string()),
+  evidence_refs: z.array(evidenceRefSchema).min(1),
+});
+
+export type ImpactPreviewRequest = z.infer<typeof impactPreviewRequestSchema>;
+
+export type ImpactPreview = {
+  proposal_id: string;
+  command_preview: string;
+  blast_radius: {
+    scope: BlastRadiusScope;
+    affected_target: string;
+    risk_level: RiskLevel;
+  };
+  reversibility: {
+    reversible: boolean;
+    note: string;
+  };
+  policy_decision_summary: {
+    gates_evaluated: string[];
+    result: "eligible" | "ineligible";
+  };
+  evidence_refs: Array<{ label: string; href: string }>;
+  requires_operator_review: true;
+};
+
+export type ImpactPreviewResult =
+  | { ok: true; preview: ImpactPreview; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+function blastRadiusScope(targetType: ImpactPreviewRequest["target_type"]): BlastRadiusScope {
+  if (targetType === "guardrail_policy") return "organization";
+  if (targetType === "trace_group") return "project";
+  return "environment";
+}
+
+function riskLevel(actionType: ImpactPreviewRequest["action_type"], riskFlags: string[]): RiskLevel {
+  if (actionType === "rollback" || riskFlags.length >= 2) return "high";
+  if (actionType === "open_remediation_task" || actionType === "propose_guardrail" || riskFlags.length === 1) return "medium";
+  return "low";
+}
+
+function commandPreview(req: ImpactPreviewRequest): string {
+  const actionLabels: Record<ImpactPreviewRequest["action_type"], string> = {
+    ack: "Acknowledge",
+    assign: "Assign",
+    open_remediation_task: "Open remediation task for",
+    propose_guardrail: "Propose guardrail update for",
+    rollback: "Propose rollback candidate for",
+  };
+  return `${actionLabels[req.action_type]} ${req.target_type} '${req.target_id}' in environment '${req.environment_id}'. Expected effect: ${req.expected_effect}`;
+}
+
+export function buildImpactPreview(payload: unknown): ImpactPreviewResult {
+  const parsed = impactPreviewRequestSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((i) => `${i.path.join(".") || "request"}: ${i.message}`),
+      warnings: [],
+    };
+  }
+
+  const req = parsed.data;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  for (const ref of req.evidence_refs) {
+    if (!isSafeInternalHref(ref.href)) {
+      errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+    }
+  }
+  if (errors.length > 0) return { ok: false, errors, warnings };
+
+  const level = riskLevel(req.action_type, req.risk_flags);
+  const irreversible = /irreversible/i.test(req.reversibility_note);
+  const policyGates = [
+    "tenant_scope",
+    "policy_eligibility",
+    "evidence_density",
+    "operator_confirmation_required",
+    "rollback_path",
+    "blast_radius",
+  ];
+
+  if (level === "high") {
+    warnings.push(`High-risk action '${req.action_type}' — dual operator review recommended.`);
+  }
+  if (irreversible) {
+    warnings.push("Action is irreversible — operator must explicitly acknowledge before confirmation.");
+  }
+
+  return {
+    ok: true,
+    preview: {
+      proposal_id: req.proposal_id,
+      command_preview: commandPreview(req),
+      blast_radius: {
+        scope: blastRadiusScope(req.target_type),
+        affected_target: req.target_id,
+        risk_level: level,
+      },
+      reversibility: {
+        reversible: !irreversible,
+        note: req.reversibility_note,
+      },
+      policy_decision_summary: {
+        gates_evaluated: policyGates,
+        result: "eligible",
+      },
+      evidence_refs: req.evidence_refs.map((r) => ({ label: r.label, href: r.href })),
+      requires_operator_review: true,
+    },
+    warnings,
+  };
+}
+
+// ── Operator Confirmation ─────────────────────────────────────────────────────
+
+const operatorConfirmationSchema = z.object({
+  proposal_id: z.string().regex(/^phase9-[a-z]+-[0-9a-f]{16}$/, "proposal_id format invalid"),
+  operator_identity: z.object({
+    operator_email: z.string().email(),
+    operator_id: z.string().min(1),
+  }),
+  target_summary: z.string().min(1),
+  evidence_refs: z.array(evidenceRefSchema).min(1),
+  policy_result: z.enum(POLICY_RESULTS),
+  reversibility_status: z.enum(REVERSIBILITY_STATUSES),
+  confirmation_acknowledged: z.boolean(),
+  proposal_expires_at: z.string().datetime(),
+  confirmed_at: z.string().datetime(),
+});
+
+export type OperatorConfirmationRequest = z.infer<typeof operatorConfirmationSchema>;
+
+export type OperatorConfirmationResult =
+  | {
+      ok: true;
+      data: {
+        proposal_id: string;
+        operator_email: string;
+        confirmation_status: "confirmed";
+        reversibility_status: string;
+        logged: true;
+      };
+      warnings: string[];
+    }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+export function validateOperatorConfirmation(payload: unknown): OperatorConfirmationResult {
+  const parsed = operatorConfirmationSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((i) => `${i.path.join(".") || "request"}: ${i.message}`),
+      warnings: [],
+    };
+  }
+
+  const req = parsed.data;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (!req.confirmation_acknowledged) {
+    errors.push("confirmation_acknowledged must be true — implicit approval is not permitted.");
+  }
+
+  if (new Date(req.confirmed_at).getTime() >= new Date(req.proposal_expires_at).getTime()) {
+    errors.push("proposal has expired — revalidate the proposal before confirming.");
+  }
+
+  if (req.policy_result === "denied") {
+    errors.push("policy_result is 'denied' — operator cannot confirm a policy-denied proposal.");
+  }
+
+  for (const ref of req.evidence_refs) {
+    if (!isSafeInternalHref(ref.href)) {
+      errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+    }
+  }
+
+  if (errors.length > 0) return { ok: false, errors, warnings };
+
+  if (req.reversibility_status === "irreversible") {
+    warnings.push("Confirmed irreversible action — ensure evidence receipt is emitted immediately.");
+  }
+  if (req.reversibility_status === "partially_reversible") {
+    warnings.push("Action is partially reversible — document which steps cannot be undone.");
+  }
+
+  return {
+    ok: true,
+    data: {
+      proposal_id: req.proposal_id,
+      operator_email: req.operator_identity.operator_email,
+      confirmation_status: "confirmed",
+      reversibility_status: req.reversibility_status,
+      logged: true,
+    },
+    warnings,
+  };
+}
+
+// ── Evidence Receipt ──────────────────────────────────────────────────────────
+
+const evidenceReceiptRequestSchema = z.object({
+  proposal_id: z.string().min(1),
+  actor_id: z.string().min(1),
+  action_class: z.enum(AUTOMATION_ACTION_TYPES),
+  target: z.object({
+    target_type: z.enum(AUTOMATION_TARGET_TYPES),
+    target_id: z.string().min(1),
+  }),
+  evidence_refs: z.array(evidenceRefSchema).min(1),
+  policy_gate_result: z.enum(POLICY_RESULTS),
+  created_at: z.string().datetime(),
+});
+
+export type EvidenceReceiptRequest = z.infer<typeof evidenceReceiptRequestSchema>;
+
+export type EvidenceReceipt = {
+  receipt_id: string;
+  proposal_id: string;
+  actor_id: string;
+  action_class: string;
+  target: { target_type: string; target_id: string };
+  evidence_refs: Array<{ label: string; href: string }>;
+  policy_gate_result: "passed" | "denied";
+  created_at: string;
+  immutable: true;
+};
+
+export type EvidenceReceiptResult =
+  | { ok: true; receipt: EvidenceReceipt; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+function deterministicReceiptId(proposalId: string, actorId: string, createdAt: string): string {
+  const hash = createHash("sha256")
+    .update(`${proposalId}:${actorId}:${createdAt}`)
+    .digest("hex")
+    .slice(0, 16);
+  return `receipt-${hash}`;
+}
+
+export function emitEvidenceReceipt(payload: unknown): EvidenceReceiptResult {
+  const parsed = evidenceReceiptRequestSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((i) => `${i.path.join(".") || "request"}: ${i.message}`),
+      warnings: [],
+    };
+  }
+
+  const req = parsed.data;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  for (const ref of req.evidence_refs) {
+    if (!isSafeInternalHref(ref.href)) {
+      errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+    }
+  }
+  if (errors.length > 0) return { ok: false, errors, warnings };
+
+  if (new Date(req.created_at).getTime() > Date.now() + 5000) {
+    warnings.push("created_at is in the future — verify timestamp source.");
+  }
+  if (req.policy_gate_result === "denied") {
+    warnings.push("Evidence receipt issued for a policy-denied proposal — this records the denial, not an approval.");
+  }
+
+  return {
+    ok: true,
+    receipt: {
+      receipt_id: deterministicReceiptId(req.proposal_id, req.actor_id, req.created_at),
+      proposal_id: req.proposal_id,
+      actor_id: req.actor_id,
+      action_class: req.action_class,
+      target: { target_type: req.target.target_type, target_id: req.target.target_id },
+      evidence_refs: req.evidence_refs.map((r) => ({ label: r.label, href: r.href })),
+      policy_gate_result: req.policy_gate_result,
+      created_at: req.created_at,
+      immutable: true,
+    },
+    warnings,
+  };
+}
