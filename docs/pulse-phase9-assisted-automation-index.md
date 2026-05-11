@@ -30,10 +30,11 @@ Phase 9 planning assumes:
 Automation in Phase 9 is **assisted and bounded**. It must remain observable, reversible where possible, and policy-constrained.
 
 ## Slice Index
-- 9.1 Automation Eligibility and Policy Gate
-- 9.2 Assisted Incident Automation Contract
-- 9.3 Assisted Remediation Staging Contract
-- 9.4 Automation Auditability and Kill-Switch Contract
+- 9.1 Automation Eligibility and Policy Gate — Implemented (PR #141)
+- 9.2 Assisted Incident Automation Contract — Implemented (PR #142)
+- 9.3 Assisted Remediation Staging Contract — Implemented (PR #143)
+- 9.4 Automation Auditability and Kill-Switch Contract — Implemented (PR #143)
+- 9.5 Remediation Proposal Completion — Implemented (PR #144)
 
 ## Phase 9.1 Kickoff Docs
 - `docs/pulse-phase9-policy-gate-contract.md`
@@ -42,6 +43,16 @@ Automation in Phase 9 is **assisted and bounded**. It must remain observable, re
 - `docs/pulse-phase9-operator-confirmation-requirements.md`
 - `docs/pulse-phase9-evidence-receipt-model.md`
 - `docs/pulse-phase9-pilot-surface-incident-assist.md`
+
+## Kickoff Spec Gap — Closed (PR #144)
+The six Phase 9.1 kickoff docs specified a full proposal pipeline (evidence → policy gates →
+proposal → impact preview → operator confirmation → evidence receipt) that was partially
+unimplemented after slices 9.1–9.4. Phase 9.5 closes that gap:
+- `buildImpactPreview()` — blast radius, reversibility, policy gate summary
+- `validateOperatorConfirmation()` — mandatory fields, no implicit approval, expiry guard, policy-denied block
+- `emitEvidenceReceipt()` — deterministic receipt_id, all 8 spec fields, immutable flag
+
+All three are validation-only. No execution, no persistence, no mutation.
 
 ## Explicit Non-Goals
 - No autonomous production mutation by default.
