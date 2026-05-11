@@ -1,25 +1,7 @@
 # Pulse Phase 9.2 — Assisted Incident Automation Contract
 
 ## Status
-Implemented. Runtime mapping below.
-
-## Runtime Mapping
-
-| Contract item | Implementation |
-|---|---|
-| Auto-draft incident note | `buildIncidentSuggestions()` → `suggestion.draft_note` |
-| Auto-suggest assignee candidates | `suggestion.assignee_candidates` ranked from `available_operators[]` |
-| Auto-stage escalation recommendation | `suggestion.escalation_recommendation` with confidence + rationale |
-| Operator accept/reject | `validateIncidentSuggestionReview()` → `POST /api/actions/assisted-automation/incident/suggest/[id]/review` |
-| Evidence citation required | Enforced by Zod schema (`evidence_refs` min 1) + internal-href guard |
-| Confidence + operator review flag | `requires_operator_review: true` on draft_note and escalation_recommendation |
-| No incident mutation | Validated by test: output contains no ack/assign/status/severity/escalate fields |
-| Rejection logging | Review returns `{ logged: true }` in Phase 9 envelope; no FastAPI call |
-
-## Entry Points
-
-- `POST /api/actions/assisted-automation/incident/suggest` — generate suggestion (read-only)
-- `POST /api/actions/assisted-automation/incident/suggest/[proposal_id]/review` — log operator decision
+Planning-only contract.
 
 ## Objective
 Define bounded assisted automation for incident workflows without autonomous resolution.
