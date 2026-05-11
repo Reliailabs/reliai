@@ -16,6 +16,12 @@ const evidenceRefSchema = z.object({
   href: z.string().min(1),
 });
 
+const BLAST_RADIUS_SCOPE_RANKS: Record<string, number> = {
+  environment: 0,
+  project: 1,
+  organization: 2,
+};
+
 const automationEligibilityRequestSchema = z.object({
   proposal_id: z.string().min(1),
   action_type: z.enum(AUTOMATION_ACTION_TYPES),
@@ -40,6 +46,10 @@ const automationEligibilityRequestSchema = z.object({
   approvals: z.object({
     rbac_allows_approval: z.boolean(),
     dual_approval_required: z.boolean(),
+  }),
+  blast_radius: z.object({
+    max_allowed_scope: z.enum(["environment", "project", "organization"]),
+    estimated_scope: z.enum(["environment", "project", "organization"]),
   }),
 });
 
@@ -88,6 +98,11 @@ export function validateAutomationEligibility(payload: unknown): AutomationEligi
     return { ok: false, errors, warnings };
   }
 
+  // Gate 1: tenant scope verified
+  if (request.request_context.project_id === null) {
+    reasonCodes.push("tenant_scope_incomplete");
+  }
+
   if (request.signal_quality.confidence === "insufficient") {
     reasonCodes.push("insufficient_confidence");
   }
@@ -102,6 +117,13 @@ export function validateAutomationEligibility(payload: unknown): AutomationEligi
   }
   if (!request.safety.policy_checks_passed) {
     reasonCodes.push("policy_checks_failed");
+  }
+
+  // Gate 6: blast radius within configured boundary
+  const estimatedRank = BLAST_RADIUS_SCOPE_RANKS[request.blast_radius.estimated_scope] ?? 0;
+  const maxAllowedRank = BLAST_RADIUS_SCOPE_RANKS[request.blast_radius.max_allowed_scope] ?? 0;
+  if (estimatedRank > maxAllowedRank) {
+    reasonCodes.push("blast_radius_exceeds_boundary");
   }
 
   const requiredApprovals = request.approvals.dual_approval_required || request.safety.high_risk_environment ? 2 : 1;

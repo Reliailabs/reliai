@@ -32,6 +32,10 @@ const basePayload = {
     rbac_allows_approval: true,
     dual_approval_required: false,
   },
+  blast_radius: {
+    max_allowed_scope: "environment",
+    estimated_scope: "environment",
+  },
 } as const;
 
 test("eligible request passes with operator review required", () => {
@@ -102,4 +106,95 @@ test("phase 9 validator error helper uses invariant envelope", () => {
   assert.equal(response.execution_granted, false);
   assert.equal(response.ok, false);
   assert.deepEqual(response.errors, ["unauthorized"]);
+});
+
+// ── Gate 1: tenant scope ──────────────────────────────────────────────────────
+
+test("gate 1: null project_id produces tenant_scope_incomplete reason code", () => {
+  const result = validateAutomationEligibility({
+    ...basePayload,
+    request_context: {
+      ...basePayload.request_context,
+      project_id: null,
+    },
+  });
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.eligibility.eligible, false);
+    assert.ok(result.eligibility.reason_codes.includes("tenant_scope_incomplete"));
+  }
+});
+
+test("gate 1: present project_id does not produce tenant_scope_incomplete", () => {
+  const result = validateAutomationEligibility(basePayload);
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.ok(!result.eligibility.reason_codes.includes("tenant_scope_incomplete"));
+  }
+});
+
+// ── Gate 6: blast radius boundary ────────────────────────────────────────────
+
+test("gate 6: estimated_scope exceeding max_allowed_scope produces blast_radius_exceeds_boundary", () => {
+  const result = validateAutomationEligibility({
+    ...basePayload,
+    blast_radius: {
+      max_allowed_scope: "environment",
+      estimated_scope: "organization",
+    },
+  });
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.eligibility.eligible, false);
+    assert.ok(result.eligibility.reason_codes.includes("blast_radius_exceeds_boundary"));
+  }
+});
+
+test("gate 6: estimated_scope equal to max_allowed_scope passes", () => {
+  const result = validateAutomationEligibility({
+    ...basePayload,
+    blast_radius: {
+      max_allowed_scope: "project",
+      estimated_scope: "project",
+    },
+  });
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.ok(!result.eligibility.reason_codes.includes("blast_radius_exceeds_boundary"));
+  }
+});
+
+test("gate 6: estimated_scope narrower than max_allowed_scope passes", () => {
+  const result = validateAutomationEligibility({
+    ...basePayload,
+    blast_radius: {
+      max_allowed_scope: "organization",
+      estimated_scope: "environment",
+    },
+  });
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.ok(!result.eligibility.reason_codes.includes("blast_radius_exceeds_boundary"));
+  }
+});
+
+test("gate 6: project-scope estimated exceeds environment max_allowed", () => {
+  const result = validateAutomationEligibility({
+    ...basePayload,
+    blast_radius: {
+      max_allowed_scope: "environment",
+      estimated_scope: "project",
+    },
+  });
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.eligibility.eligible, false);
+    assert.ok(result.eligibility.reason_codes.includes("blast_radius_exceeds_boundary"));
+  }
+});
+
+test("missing blast_radius field fails schema validation", () => {
+  const { blast_radius: _omit, ...rest } = basePayload;
+  const result = validateAutomationEligibility(rest);
+  assert.equal(result.ok, false);
 });
