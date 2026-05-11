@@ -322,3 +322,118 @@ export function validateIncidentSuggestionReview(
     warnings,
   };
 }
+
+// ── Phase 9.3: Remediation Staging ───────────────────────────────────────────
+// Validation-only. No persistence, no approval workflow, no execution, no remediation mutation.
+
+const REMEDIATION_STEP_TYPES = [
+  "rollback_candidate_command_set",
+  "guardrail_update_proposal",
+  "remediation_task_draft",
+] as const;
+
+export type RemediationStepType = (typeof REMEDIATION_STEP_TYPES)[number];
+
+const STAGING_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+const remediationStagingRequestSchema = z.object({
+  step_type: z.enum(REMEDIATION_STEP_TYPES),
+  target_id: z.string().min(1),
+  staged_at: z.string().datetime({ message: "staged_at must be an ISO 8601 datetime string" }),
+  staged_environment_id: z.string().min(1),
+  active_environment_id: z.string().min(1),
+  evidence_refs: z.array(evidenceRefSchema).min(1),
+  staging_metadata: z.object({
+    expected_effect: z.string().min(1),
+    reversibility_note: z.string().min(1),
+    risk_flags: z.array(z.string()),
+    approval_requirements: z.array(z.string()),
+  }),
+});
+
+export type RemediationStagingRequest = z.infer<typeof remediationStagingRequestSchema>;
+
+export type StagedRemediationStep = {
+  step_type: RemediationStepType;
+  target_id: string;
+  staged_at: string;
+  expires_at: string;
+  staged_environment_id: string;
+  evidence_refs: Array<{ label: string; href: string }>;
+  staging_metadata: RemediationStagingRequest["staging_metadata"];
+  warnings: string[];
+};
+
+export type RemediationStagingResult =
+  | { ok: true; staged_step: StagedRemediationStep; warnings: string[] }
+  | { ok: false; errors: string[]; warnings: string[] };
+
+export function stageRemediationStep(
+  payload: unknown,
+  now: Date = new Date(),
+): RemediationStagingResult {
+  const parsed = remediationStagingRequestSchema.safeParse(payload);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      errors: parsed.error.issues.map((i) => `${i.path.join(".") || "request"}: ${i.message}`),
+      warnings: [],
+    };
+  }
+
+  const req = parsed.data;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // TTL check
+  const stagedAt = new Date(req.staged_at);
+  if (now.getTime() - stagedAt.getTime() >= STAGING_TTL_MS) {
+    errors.push(
+      `staged_at is expired — staged steps must be validated within ${STAGING_TTL_MS / 60000} minutes of staging.`,
+    );
+  }
+
+  // Environment mismatch check
+  if (req.staged_environment_id !== req.active_environment_id) {
+    errors.push(
+      `environment mismatch — staged_environment_id '${req.staged_environment_id}' does not match active_environment_id '${req.active_environment_id}'.`,
+    );
+  }
+
+  // Evidence href safety
+  for (const ref of req.evidence_refs) {
+    if (!isSafeInternalHref(ref.href)) {
+      errors.push(`evidence_refs contains non-internal href '${ref.href}'.`);
+    }
+  }
+
+  if (errors.length > 0) return { ok: false, errors, warnings };
+
+  if (req.staging_metadata.risk_flags.length > 0) {
+    warnings.push(
+      `Staged step has ${req.staging_metadata.risk_flags.length} risk flag(s): ${req.staging_metadata.risk_flags.join(", ")}.`,
+    );
+  }
+  if (req.staging_metadata.approval_requirements.length > 0) {
+    warnings.push(
+      `Staged step requires approval from: ${req.staging_metadata.approval_requirements.join(", ")}.`,
+    );
+  }
+
+  const expiresAt = new Date(stagedAt.getTime() + STAGING_TTL_MS).toISOString();
+
+  return {
+    ok: true,
+    staged_step: {
+      step_type: req.step_type,
+      target_id: req.target_id,
+      staged_at: req.staged_at,
+      expires_at: expiresAt,
+      staged_environment_id: req.staged_environment_id,
+      evidence_refs: req.evidence_refs.map((r) => ({ label: r.label, href: r.href })),
+      staging_metadata: req.staging_metadata,
+      warnings,
+    },
+    warnings,
+  };
+}
