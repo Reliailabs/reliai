@@ -49,9 +49,9 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
               <ArrowLeft className="h-4 w-4" />
               Operations center
             </Link>
-            <Link href="/traces" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link href={`/regressions/${data.regressionId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
-              Trace investigation
+              Legacy regression view
             </Link>
           </div>
           <h1 className="text-2xl font-semibold">Regression Operations — {data.regressionId}</h1>
