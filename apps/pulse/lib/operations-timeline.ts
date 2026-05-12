@@ -3,6 +3,8 @@ import "server-only";
 import { createHash } from "crypto";
 import { listLifecycles } from "@/lib/proposal-lifecycle";
 import type { ProposalLifecycle } from "@/lib/proposal-lifecycle";
+import { listVerificationResults } from "@/lib/verification-engine";
+import type { VerificationResultRecord } from "@/lib/verification-engine";
 import type {
   OperationsSurfaceData,
   OperationsTimelineEntry,
@@ -292,10 +294,107 @@ export class InMemoryOperationsTimelineRepository
 // Phase 11: replace with a DB-backed OperationsTimelineRepository.
 const defaultRepository = new InMemoryOperationsTimelineRepository();
 
+// ── Verification enrichment ───────────────────────────────────────────────────
+
+/**
+ * Replaces the generic summary on `verification_result` timeline entries with
+ * outcome-specific rationale from the Verification Engine, and adds standalone
+ * entries for verification results that don't have a matching lifecycle
+ * transition (partial_recovery, no_change, verification_failed scenarios).
+ */
+function buildVerificationEnrichedEntries(
+  baseEntries: OperationsTimelineEntry[],
+  verificationResults: VerificationResultRecord[],
+): OperationsTimelineEntry[] {
+  // Index verification results by lifecycle_id for O(1) lookup.
+  const byLifecycleId = new Map<string, VerificationResultRecord>(
+    verificationResults.map((r) => [r.lifecycle_id, r]),
+  );
+
+  // Lifecycle IDs that already have a timeline entry derived from a transition.
+  const coveredLifecycleIds = new Set<string>(
+    baseEntries
+      .filter((e) => e.kind === "verification_result" && e.lifecycle_id !== null)
+      .map((e) => e.lifecycle_id as string),
+  );
+
+  // Enrich existing verification_result entries with engine rationale.
+  const enriched = baseEntries.map((entry) => {
+    if (
+      entry.kind !== "verification_result" ||
+      entry.lifecycle_id === null
+    ) {
+      return entry;
+    }
+    const vr = byLifecycleId.get(entry.lifecycle_id);
+    if (!vr) return entry;
+
+    const outcomeLabel: Record<string, string> = {
+      recovered: "Verification passed — recovered",
+      partial_recovery: "Verification passed — partial recovery",
+      no_change: "Verification complete — no change detected",
+      regressed: "Verification failed — regression detected",
+      verification_failed: "Verification failed — insufficient telemetry",
+    };
+
+    return {
+      ...entry,
+      title: outcomeLabel[vr.outcome] ?? entry.title,
+      summary: vr.rationale,
+      policy_gate_result:
+        vr.outcome === "recovered" || vr.outcome === "partial_recovery" || vr.outcome === "no_change"
+          ? ("passed" as const)
+          : ("denied" as const),
+    };
+  });
+
+  // Add standalone entries for verification results with no lifecycle match.
+  const standalone: OperationsTimelineEntry[] = verificationResults
+    .filter((vr) => !coveredLifecycleIds.has(vr.lifecycle_id))
+    .map((vr) => {
+      const outcomeLabel: Record<string, string> = {
+        recovered: "Verification passed — recovered",
+        partial_recovery: "Verification passed — partial recovery",
+        no_change: "Verification complete — no change detected",
+        regressed: "Verification failed — regression detected",
+        verification_failed: "Verification failed — insufficient telemetry",
+      };
+
+      return {
+        entry_id: deterministicEntryId("vr-standalone", vr.result_id),
+        kind: "verification_result" as OperationsTimelineEventKind,
+        occurred_at: vr.computed_at,
+        organization_id: "org-demo",
+        project_id: null,
+        lifecycle_id: vr.lifecycle_id,
+        proposal_id: vr.proposal_id,
+        incident_id: null,
+        severity: null,
+        lifecycle_state: null,
+        actor_type: "system" as const,
+        actor_label: "Reliai System",
+        title: outcomeLabel[vr.outcome] ?? "Verification complete",
+        summary: vr.rationale,
+        policy_gate_result:
+          vr.outcome === "recovered" || vr.outcome === "partial_recovery" || vr.outcome === "no_change"
+            ? ("passed" as const)
+            : ("denied" as const),
+        evidence_refs: [
+          { label: "Verification result", href: `/operations?proposal=${vr.proposal_id}` },
+        ],
+        requires_operator_review: true,
+      };
+    });
+
+  return [...enriched, ...standalone];
+}
+
 // ── Public surface data function ──────────────────────────────────────────────
 
 export async function getOperationsSurfaceData(): Promise<OperationsSurfaceData> {
-  const entries = defaultRepository.findAll();
+  const base = defaultRepository.findAll();
+  const verificationResults = listVerificationResults();
+  const entries = buildVerificationEnrichedEntries(base, verificationResults);
   return {
     entries,
     sourceErrors: [],
