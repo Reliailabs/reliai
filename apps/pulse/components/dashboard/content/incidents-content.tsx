@@ -275,10 +275,22 @@ export function IncidentsContent({
               {selectedIncident.id}
             </p>
           </div>
-          <Button variant="outline" className="gap-2 bg-transparent">
-            <ExternalLink className="w-4 h-4" />
-            Open in PagerDuty
-          </Button>
+          <div className="flex items-center gap-2">
+            {pathname?.startsWith("/incidents") ? (
+              <Button
+                variant="outline"
+                className="gap-2 bg-transparent"
+                onClick={() => router.push(`/operations/incidents/${selectedIncident.id}`)}
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in Operations
+              </Button>
+            ) : null}
+            <Button variant="outline" className="gap-2 bg-transparent">
+              <ExternalLink className="w-4 h-4" />
+              Open in PagerDuty
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-6">
