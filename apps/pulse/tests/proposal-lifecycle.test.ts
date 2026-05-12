@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   InMemoryProposalLifecycleRepository,
+  type LifecycleStateHistoryEntry,
   type ProposalLifecycle,
   type ProposalLifecycleState,
   TERMINAL_STATES,
@@ -379,7 +380,7 @@ test("repo.save returns a copy, not the same reference", () => {
     // Mutating state_history on the returned lifecycle should not corrupt the repo
     const lc = result.lifecycle;
     const originalLength = lc.state_history.length;
-    (lc.state_history as typeof lc.state_history[]).push({
+    (lc.state_history as LifecycleStateHistoryEntry[]).push({
       from_state: "analyzed",
       to_state: "proposed",
       transitioned_at: "2026-05-11T00:00:00.000Z",
