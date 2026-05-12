@@ -29,7 +29,7 @@ function makeLifecycle(
     organization_id: "org-test",
     created_at: "2026-05-11T08:00:00.000Z",
     updated_at: "2026-05-11T08:00:00.000Z",
-    expires_at: "2026-05-12T08:00:00.000Z",
+    expires_at: "2099-12-31T23:59:59.000Z",
     execution_granted: false,
     requires_operator_review: true,
     operator_email: null,

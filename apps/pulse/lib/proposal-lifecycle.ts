@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import type { ReadWriteRepository, RepositoryAdapter } from "@/lib/repository-contracts";
 
 // ── State definitions ─────────────────────────────────────────────────────────
 // Forward-only progression. Terminal states accept no further transitions.
@@ -78,11 +79,8 @@ export type LifecycleFilter = {
   proposal_id?: string;
 };
 
-export interface ProposalLifecycleRepository {
-  findById(lifecycleId: string): ProposalLifecycle | null;
-  findAll(filter?: LifecycleFilter): ProposalLifecycle[];
-  save(lifecycle: ProposalLifecycle): ProposalLifecycle;
-}
+export interface ProposalLifecycleRepository
+  extends ReadWriteRepository<ProposalLifecycle, LifecycleFilter> {}
 
 // ── In-memory fixture implementation ─────────────────────────────────────────
 
@@ -101,7 +99,10 @@ export class InMemoryProposalLifecycleRepository
   }
 
   findById(lifecycleId: string): ProposalLifecycle | null {
-    return this.store.get(lifecycleId) ?? null;
+    const found = this.store.get(lifecycleId);
+    if (!found) return null;
+    // Return a defensive copy so callers cannot mutate internal repo state.
+    return { ...found, state_history: [...found.state_history] };
   }
 
   findAll(filter?: LifecycleFilter): ProposalLifecycle[] {
@@ -371,7 +372,8 @@ const LIFECYCLE_FIXTURES: ProposalLifecycle[] = [
 
 // ── Module-level default repository ──────────────────────────────────────────
 // Phase 11: replace with a DB-backed ProposalLifecycleRepository implementation.
-const defaultRepository = new InMemoryProposalLifecycleRepository();
+const defaultRepository: RepositoryAdapter<ProposalLifecycleRepository> =
+  new InMemoryProposalLifecycleRepository();
 
 // ── Result type ───────────────────────────────────────────────────────────────
 
