@@ -21,6 +21,7 @@ export function phase13ErrorResponse(status: 400 | 401, message: string) {
     withPhase13Envelope({
       ok: false as const,
       ingest_accepted: false as const,
+      create_accepted: false as const,
       errors: [message],
       warnings: [],
     }),
