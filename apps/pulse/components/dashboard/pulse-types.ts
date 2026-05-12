@@ -564,8 +564,58 @@ export type OperationsTimelineFilter = {
   actor_type?: "human" | "system";
 };
 
+// ── Phase 10.3 / Phase 10.4 types ────────────────────────────────────────────
+
+export type ReliabilityScore = {
+  operationalScore: number;      // 0–100
+  automationConfidence: number;  // 0–100
+  recoveryPerformance: number;   // 0–100
+  policySafetyScore: number;     // 0–100
+};
+
+export type ScoreFactor = {
+  readonly name: string;
+  readonly label: string;
+  readonly value: number;        // 0–100
+  readonly weight: number;       // 0–1
+  readonly contribution: number; // value * weight
+  readonly rationale: string;
+};
+
+export type ScoredDimension = {
+  readonly score: number;        // 0–100, sum of factor contributions
+  readonly grade: "A" | "B" | "C" | "D" | "F";
+  readonly factors: ScoreFactor[];
+};
+
+export type TrendPoint = {
+  readonly date: string;               // YYYY-MM-DD
+  readonly overall: number;
+  readonly operationalScore: number;
+  readonly automationConfidence: number;
+  readonly recoveryPerformance: number;
+  readonly policySafetyScore: number;
+};
+
+export type ReliabilityScoreRecord = ReliabilityScore & {
+  readonly score_id: string;
+  readonly organization_id: string;
+  readonly computed_at: string;         // ISO 8601
+  readonly overall: number;             // weighted composite of all 4 dimensions
+  readonly overall_grade: "A" | "B" | "C" | "D" | "F";
+  readonly dimensions: {
+    readonly operationalScore: ScoredDimension;
+    readonly automationConfidence: ScoredDimension;
+    readonly recoveryPerformance: ScoredDimension;
+    readonly policySafetyScore: ScoredDimension;
+  };
+  readonly trend: TrendPoint[];         // 7-day sparkline; not persisted
+  readonly requires_operator_review: true;
+};
+
 export type OperationsSurfaceData = {
   entries: OperationsTimelineEntry[];
+  reliabilityScore: ReliabilityScoreRecord;
   sourceErrors: string[];
   dataMode: "live" | "demo";
 };

@@ -5,6 +5,7 @@ import { listLifecycles } from "@/lib/proposal-lifecycle";
 import type { ProposalLifecycle } from "@/lib/proposal-lifecycle";
 import { listVerificationResults } from "@/lib/verification-engine";
 import type { VerificationResultRecord } from "@/lib/verification-engine";
+import { getReliabilityScore } from "@/lib/reliability-scoring";
 import type {
   OperationsSurfaceData,
   OperationsTimelineEntry,
@@ -395,8 +396,10 @@ export async function getOperationsSurfaceData(): Promise<OperationsSurfaceData>
   const base = defaultRepository.findAll();
   const verificationResults = listVerificationResults();
   const entries = buildVerificationEnrichedEntries(base, verificationResults);
+  const reliabilityScore = getReliabilityScore();
   return {
     entries,
+    reliabilityScore,
     sourceErrors: [],
     dataMode: "demo",
   };
