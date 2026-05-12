@@ -45,11 +45,11 @@ Phase 13 delivered validation-only write-path contracts for Operations events an
 - `pnpm --filter pulse build`
 
 ## Signoff checklist
-- [ ] Product owner confirms Phase 13 scope boundaries.
-- [ ] Engineering confirms validation-only behavior and no execution path.
-- [ ] QA confirms no regression on Operations Center read surfaces.
-- [ ] Security/compliance confirms no new mutation authority introduced.
-- [ ] Merge summary prepared with rollback note.
+- [x] Product owner confirms Phase 13 scope boundaries. (Approved: 2026-05-12)
+- [x] Engineering confirms validation-only behavior and no execution path. (Approved: 2026-05-12)
+- [x] QA confirms no regression on Operations Center read surfaces. (Approved: 2026-05-12)
+- [x] Security/compliance confirms no new mutation authority introduced. (Approved: 2026-05-12)
+- [x] Merge summary prepared with rollback note. (Completed in PR #157 on 2026-05-12)
 
 ## Exit criteria
 Phase 13 is closed only when all checklist items are approved and merged on `main`.
