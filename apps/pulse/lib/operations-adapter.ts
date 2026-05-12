@@ -124,9 +124,19 @@ type BackendFetchResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-async function backendGet<T>(path: string): Promise<BackendFetchResult<T>> {
+/**
+ * Callable that provides a Bearer token for backend requests.
+ * The default implementation reads the session cookie via getApiAccessToken().
+ * Tests can inject a stub: `new BackendOperationsTimelineRepository(async () => "test-token")`.
+ */
+export type TokenProvider = () => Promise<string | null>;
+
+async function backendGet<T>(
+  path: string,
+  tokenProvider: TokenProvider,
+): Promise<BackendFetchResult<T>> {
   try {
-    const token = await getApiAccessToken();
+    const token = await tokenProvider();
     if (!token) {
       return { ok: false, error: "missing session token" };
     }
@@ -159,14 +169,22 @@ async function backendGet<T>(path: string): Promise<BackendFetchResult<T>> {
 /**
  * Calls GET /api/v1/operations/timeline and maps the response to
  * OperationsTimelineEntry[]. Returns an empty array (+ logs source error) if
- * the endpoint is unavailable — Phase 11.4 wires the real route.
+ * the endpoint is unavailable.
+ *
+ * @param tokenProvider — optional override for token acquisition; defaults to
+ *   getApiAccessToken(). Pass a stub in tests to avoid calling next/headers.
  */
 export class BackendOperationsTimelineRepository
   implements OperationsTimelineRepository
 {
   private readonly sourceErrors: string[] = [];
+  private readonly tokenProvider: TokenProvider;
 
-  /** Call after findAll() to retrieve any fetch errors for the sourceErrors field. */
+  constructor(tokenProvider: TokenProvider = getApiAccessToken) {
+    this.tokenProvider = tokenProvider;
+  }
+
+  /** Returns and clears accumulated fetch errors since the last drain. */
   drainErrors(): string[] {
     return this.sourceErrors.splice(0);
   }
@@ -191,7 +209,7 @@ export class BackendOperationsTimelineRepository
 
     const qs = params.toString();
     const path = `/api/v1/operations/timeline${qs ? `?${qs}` : ""}`;
-    const result = await backendGet<BackendTimelineListResponse>(path);
+    const result = await backendGet<BackendTimelineListResponse>(path, this.tokenProvider);
 
     if (!result.ok) {
       this.sourceErrors.push(result.error);
@@ -229,11 +247,18 @@ function toTimelineEntry(r: BackendTimelineEventRead): OperationsTimelineEntry {
 /**
  * Calls GET /api/v1/operations/lifecycles and GET /api/v1/operations/lifecycles/{id}.
  * Returns empty / null (+ logs source error) if endpoints are unavailable.
+ *
+ * @param tokenProvider — optional override for token acquisition (see BackendOperationsTimelineRepository).
  */
 export class BackendProposalLifecycleRepository
   implements ProposalLifecycleRepository
 {
   private readonly sourceErrors: string[] = [];
+  private readonly tokenProvider: TokenProvider;
+
+  constructor(tokenProvider: TokenProvider = getApiAccessToken) {
+    this.tokenProvider = tokenProvider;
+  }
 
   drainErrors(): string[] {
     return this.sourceErrors.splice(0);
@@ -251,9 +276,9 @@ export class BackendProposalLifecycleRepository
   }
 
   save(lifecycle: ProposalLifecycle): ProposalLifecycle {
-    // Phase 11.4: POST /api/v1/operations/lifecycles
+    // Phase 11.5: POST /api/v1/operations/lifecycles
     throw new Error(
-      "BackendProposalLifecycleRepository.save is not yet implemented — Phase 11.4.",
+      "BackendProposalLifecycleRepository.save is not yet implemented — Phase 11.5.",
     );
     return lifecycle; // unreachable; satisfies type
   }
@@ -261,6 +286,7 @@ export class BackendProposalLifecycleRepository
   async fetchById(lifecycleId: string): Promise<ProposalLifecycle | null> {
     const result = await backendGet<BackendLifecycleRead>(
       `/api/v1/operations/lifecycles/${encodeURIComponent(lifecycleId)}`,
+      this.tokenProvider,
     );
     if (!result.ok) {
       this.sourceErrors.push(result.error);
@@ -277,7 +303,7 @@ export class BackendProposalLifecycleRepository
 
     const qs = params.toString();
     const path = `/api/v1/operations/lifecycles${qs ? `?${qs}` : ""}`;
-    const result = await backendGet<BackendLifecycleListResponse>(path);
+    const result = await backendGet<BackendLifecycleListResponse>(path, this.tokenProvider);
 
     if (!result.ok) {
       this.sourceErrors.push(result.error);
