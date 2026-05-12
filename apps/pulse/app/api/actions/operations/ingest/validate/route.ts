@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getOperatorSession } from "@/lib/auth";
 import { validateOperationsEventIngest } from "@/lib/operations-ingest";
 import { checkOperationsEventDuplicate, recordOperationsEventFingerprint } from "@/lib/operations-ingest-dedup";
+import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
 import { phase13ErrorResponse, withPhase13Envelope } from "../../_response";
 
@@ -21,7 +22,13 @@ export async function POST(request: Request) {
 
   const result = validateOperationsEventIngest(payload);
   if (!result.ok) {
-    return NextResponse.json(withPhase13Envelope(result), { status: 422 });
+    return NextResponse.json(
+      withPhase13Envelope({
+        ...result,
+        retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: result.response_class }),
+      }),
+      { status: 422 },
+    );
   }
 
   const dedup = checkOperationsEventDuplicate(
@@ -60,6 +67,7 @@ export async function POST(request: Request) {
         warnings: [],
         duplicate_of_event_id: dedup.record.eventId,
         event_fingerprint: result.event_fingerprint,
+        retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: "rejected_idempotency" }),
       }),
       { status: 409 },
     );

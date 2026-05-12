@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getOperatorSession } from "@/lib/auth";
+import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { validateVerificationWriteContract } from "@/lib/operations-verification-write";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
 import { phase13ErrorResponse, withPhase13Envelope } from "../../../_response";
@@ -20,7 +21,13 @@ export async function POST(request: Request) {
 
   const result = validateVerificationWriteContract(payload);
   if (!result.ok) {
-    return NextResponse.json(withPhase13Envelope(result), { status: 422 });
+    return NextResponse.json(
+      withPhase13Envelope({
+        ...result,
+        retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: result.response_class }),
+      }),
+      { status: 422 },
+    );
   }
 
   const audit = buildOperationsWriteAuditEnvelope({
