@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getOperatorSession } from "@/lib/auth";
 import { validateOperationsEventIngest } from "@/lib/operations-ingest";
 import { checkOperationsEventDuplicate, recordOperationsEventFingerprint } from "@/lib/operations-ingest-dedup";
+import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
 import { phase13ErrorResponse, withPhase13Envelope } from "../../_response";
 
 export async function POST(request: Request) {
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
     result.request_shape_hash,
   );
   if (dedup.status === "accepted_duplicate") {
+    const audit = buildOperationsWriteAuditEnvelope({
+      request: result.request,
+      eventFingerprint: result.event_fingerprint,
+      requestShapeHash: result.request_shape_hash,
+      reason: "duplicate replay accepted",
+    });
     return NextResponse.json(
       withPhase13Envelope({
         ok: true as const,
@@ -38,6 +45,7 @@ export async function POST(request: Request) {
         duplicate_of_event_id: dedup.record.eventId,
         event_fingerprint: result.event_fingerprint,
         request_shape_hash: result.request_shape_hash,
+        audit_receipt: audit,
       }),
       { status: 200 },
     );
@@ -64,5 +72,12 @@ export async function POST(request: Request) {
     result.request.event_id,
   );
 
-  return NextResponse.json(withPhase13Envelope(result), { status: 200 });
+  const audit = buildOperationsWriteAuditEnvelope({
+    request: result.request,
+    eventFingerprint: result.event_fingerprint,
+    requestShapeHash: result.request_shape_hash,
+    reason: "ingest event accepted in validation-only mode",
+  });
+
+  return NextResponse.json(withPhase13Envelope({ ...result, audit_receipt: audit }), { status: 200 });
 }
