@@ -175,10 +175,13 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
           {settingsSections.map((section) => {
             const Icon = ("icon" in section && section.icon ? section.icon : iconById[section.id as keyof typeof iconById]) ?? Settings;
             const href = "href" in section && section.href ? section.href : "/settings";
+            const isPlanned = "status" in section && section.status === "stub";
             return (
               <Link
                 key={section.id}
                 href={href}
+                aria-disabled={isPlanned}
+                title={isPlanned ? "Planned setting surface" : undefined}
                 className="w-full flex items-center gap-4 p-6 hover:bg-muted/30 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
@@ -232,7 +235,13 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                   size="sm"
                   className={cn(integration.connected && "bg-transparent")}
                 >
-                  <Link href={integration.href}>{integration.connected ? "Manage" : "View"}</Link>
+                  <Link
+                    href={integration.href}
+                    aria-disabled={!integration.connected}
+                    title={!integration.connected ? "Planned integration wiring" : undefined}
+                  >
+                    {integration.connected ? "Manage" : "Planned"}
+                  </Link>
                 </Button>
               ) : (
                 <Button
