@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Section } from "@/components/dashboard/sections";
 import { OverviewContent } from "./content/overview-content";
 import { IncidentsContent } from "./content/incidents-content";
@@ -158,7 +158,15 @@ export function MainContent({
   operationsData,
 }: MainContentProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const config = sectionConfig[activeSection];
+
+  const setTimeRange = (range: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("range", range);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -228,7 +236,12 @@ export function MainContent({
 
         <div className="flex items-center gap-3">
           {/* Time Range */}
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-transparent"
+            onClick={() => setTimeRange("24h")}
+          >
             <Calendar className="w-4 h-4" />
             <span>Last 24 hours</span>
           </Button>
@@ -249,6 +262,7 @@ export function MainContent({
             type="button"
             className="relative p-2 rounded-xl hover:bg-muted transition-colors"
             aria-label="Alerts"
+            onClick={() => router.push("/on-call")}
           >
             <Bell className="w-5 h-5 text-muted-foreground" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
