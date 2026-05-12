@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Section } from "@/components/dashboard/sections";
 import { OverviewContent } from "./content/overview-content";
 import { IncidentsContent } from "./content/incidents-content";
@@ -155,6 +157,7 @@ export function MainContent({
   projectControlData,
   operationsData,
 }: MainContentProps) {
+  const router = useRouter();
   const config = sectionConfig[activeSection];
 
   const renderContent = () => {
@@ -231,7 +234,12 @@ export function MainContent({
           </Button>
 
           {/* Refresh */}
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-transparent"
+            onClick={() => router.refresh()}
+          >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </Button>
@@ -247,9 +255,11 @@ export function MainContent({
           </button>
 
           {/* Primary Action */}
-          <Button size="sm" className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-            <AlertCircle className="w-4 h-4" />
-            <span>Report Incident</span>
+          <Button asChild size="sm" className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+            <Link href="/incidents">
+              <AlertCircle className="w-4 h-4" />
+              <span>Report Incident</span>
+            </Link>
           </Button>
         </div>
       </header>

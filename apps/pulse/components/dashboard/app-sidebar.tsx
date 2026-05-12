@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import type { Section } from "@/components/dashboard/sections";
 import {
@@ -74,6 +75,8 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   const [advancedOpsOpen, setAdvancedOpsOpen] = useState(false);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     void fetch("/api/auth/session", { cache: "no-store" })
@@ -88,6 +91,23 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
       })
       .catch(() => undefined);
   }, []);
+
+  const routeBySection: Partial<Record<Section, string>> = {
+    performance: "/traces",
+    errors: "/errors",
+    sla: "/metrics",
+    oncall: "/on-call",
+    postmortems: "/postmortems",
+  };
+
+  const handleSectionChange = (section: Section) => {
+    const route = routeBySection[section];
+    if (route) {
+      router.push(route);
+      return;
+    }
+    onSectionChange(section);
+  };
 
   return (
     <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col shrink-0 overflow-hidden">
@@ -128,7 +148,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                 key={`fav-${item.id}`}
                 item={item}
                 isActive={false}
-                onClick={() => onSectionChange(item.id)}
+                onClick={() => handleSectionChange(item.id)}
               />
             ))}
           </nav>
@@ -145,7 +165,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                 key={item.id}
                 item={item}
                 isActive={activeSection === item.id}
-                onClick={() => onSectionChange(item.id)}
+                onClick={() => handleSectionChange(item.id)}
               />
             ))}
           </nav>
@@ -170,7 +190,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                     key={item.id}
                     item={item}
                     isActive={activeSection === item.id}
-                    onClick={() => onSectionChange(item.id)}
+                    onClick={() => handleSectionChange(item.id)}
                   />
                 ))}
               </nav>
@@ -219,6 +239,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
           </div>
           <button 
             type="button"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
             aria-label="Toggle theme"
           >
