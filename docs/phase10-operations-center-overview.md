@@ -57,19 +57,25 @@ The timeline tracks 10 event kinds, each with a distinct visual identity:
 ```
 /operations (server page)
   └── getOperationsSurfaceData()          [lib/operations-timeline.ts, server-only]
-        └── InMemoryOperationsTimelineRepository
-              ├── buildEntriesFromLifecycle()  ← derives entries from Phase 10.1 lifecycle
-              │     └── listLifecycles()        ← reads InMemoryProposalLifecycleRepository
-              └── STATIC_FIXTURE_EVENTS         ← kill-switch, denied gate
+        ├── InMemoryOperationsTimelineRepository
+        │     ├── buildEntriesFromLifecycle()  ← derives entries from Phase 10.1 lifecycle
+        │     │     └── listLifecycles()        ← reads InMemoryProposalLifecycleRepository
+        │     └── STATIC_FIXTURE_EVENTS         ← kill-switch, denied gate
+        ├── buildVerificationEnrichedEntries()  ← Phase 10.3: enriches verification_result
+        │     └── listVerificationResults()      ← reads InMemoryVerificationRepository
+        └── getReliabilityScore()               ← Phase 10.4: composite score + trend
+              └── computeReliabilityScore()      ← pure function, fixture-backed input
                                                        ↓
   → OperationsSurfaceData (serialized at Server→Client boundary)
+    { entries, reliabilityScore, sourceErrors, dataMode }
                                                        ↓
 DashboardShell (initialSection="operations")
   └── MainContent (case "operations")
         └── OperationsTimelineView [client component]
-              ├── StatsBar          ← aggregate counts by event kind
-              ├── FilterBar         ← URL search param filters
-              └── TimelineEntryCard ← per-entry display
+              ├── StatsBar              ← aggregate counts by event kind
+              ├── ReliabilityScorePanel ← Phase 10.4: overall + dimensions + 7d trend
+              ├── FilterBar             ← URL search param filters
+              └── TimelineEntryCard     ← per-entry display
 ```
 
 ### Persistence boundary
@@ -138,21 +144,30 @@ Phase 9 functions are not called by the Operations Center directly — the timel
 
 | File | Role |
 |---|---|
-| `apps/pulse/lib/operations-timeline.ts` | Repository interface, fixture implementation, `getOperationsSurfaceData()` |
+| `apps/pulse/lib/operations-timeline.ts` | Repository interface, fixture implementation, `getOperationsSurfaceData()`, verification enrichment |
+| `apps/pulse/lib/proposal-lifecycle.ts` | Phase 10.1 — `ProposalLifecycle` type, `listLifecycles()` |
+| `apps/pulse/lib/verification-engine.ts` | Phase 10.3 — `VerificationResultRecord`, `computeVerificationResult()`, `listVerificationResults()` |
+| `apps/pulse/lib/reliability-scoring.ts` | Phase 10.4 — `ReliabilityScoreRecord`, `computeReliabilityScore()`, `getReliabilityScore()` |
+| `apps/pulse/lib/phase10-orchestration-boundary.ts` | Phase 10.5 — typed pipeline boundary contract (spec-only, no runtime behavior) |
 | `apps/pulse/app/(app)/operations/page.tsx` | Server page |
-| `apps/pulse/components/operations/operations-timeline-view.tsx` | Client component: stats, filters, timeline |
-| `apps/pulse/components/dashboard/pulse-types.ts` | `OperationsTimelineEntry`, `OperationsSurfaceData`, `OperationsTimelineFilter` types |
+| `apps/pulse/components/operations/operations-timeline-view.tsx` | Client component: stats, reliability score panel, filters, timeline |
+| `apps/pulse/components/dashboard/pulse-types.ts` | All Phase 10 types: `OperationsTimelineEntry`, `ReliabilityScoreRecord`, `OperationsSurfaceData`, etc. |
 | `apps/pulse/components/dashboard/sections.ts` | `"operations"` added to `Section` union |
 | `apps/pulse/components/dashboard/dashboard-shell.tsx` | `operationsData?: OperationsSurfaceData` prop added |
 | `apps/pulse/components/dashboard/main-content.tsx` | `case "operations"` wired; sectionConfig entry added |
 | `apps/pulse/components/dashboard/app-sidebar.tsx` | "Operations Center" added to `mainMenu` |
+| `apps/pulse/tests/verification-engine.test.ts` | Phase 10.3 — 29 tests (all 5 outcomes, confidence, deterministic IDs) |
+| `apps/pulse/tests/reliability-scoring.test.ts` | Phase 10.4 — 29 tests (dimension scores, grades, trend, edge cases) |
 
 ---
 
 ## Phase 11 Extension Points
 
 1. **Real persistence**: replace `InMemoryOperationsTimelineRepository` with a DB-backed implementation that queries `operations_timeline_events` table.
-2. **Server-side filtering**: move filter evaluation to the repository query when working against large datasets.
-3. **Kill switch management**: add operator UI to activate/clear kill switches from the Operations Center.
-4. **Proposal deep-link**: `/operations/[proposalId]` — full proposal detail view with lifecycle stepper, verification results, and rollback history.
-5. **Live updates**: SSE or polling for new events without full page reload.
+2. **Verification persistence**: replace `InMemoryVerificationResultRepository` with a DB-backed implementation; wire `computeVerificationResult()` to live telemetry rather than fixtures.
+3. **Reliability score persistence**: replace `getReliabilityScore()` fixture input with a query over persisted lifecycle + verification records; optionally cache the computed score.
+4. **Server-side filtering**: move filter evaluation to the repository query when working against large datasets.
+5. **Kill switch management**: add operator UI to activate/clear kill switches from the Operations Center.
+6. **Proposal deep-link**: `/operations/[proposalId]` — full proposal detail view with lifecycle stepper, verification results, and rollback history.
+7. **Live updates**: SSE or polling for new events without full page reload.
+8. **Orchestration pipeline**: implement `PipelineStageContract` for each stage defined in `lib/phase10-orchestration-boundary.ts`.

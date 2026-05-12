@@ -7,7 +7,7 @@ import type {
   ReliabilityScoreRecord,
   ScoredDimension,
   ScoreFactor,
-  TrendPoint,
+  ReliabilityTrendPoint,
 } from "@/components/dashboard/pulse-types";
 
 // ── Dimension weights (overall composite) ────────────────────────────────────
@@ -303,8 +303,8 @@ function generateTrend(
   scores: { operationalScore: number; automationConfidence: number; recoveryPerformance: number; policySafetyScore: number; overall: number },
   now: Date,
   days = 7,
-): TrendPoint[] {
-  const points: TrendPoint[] = [];
+): ReliabilityTrendPoint[] {
+  const points: ReliabilityTrendPoint[] = [];
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);

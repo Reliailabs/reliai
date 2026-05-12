@@ -18,11 +18,13 @@ import {
   Filter,
   X,
   Activity,
+  TrendingUp,
 } from "lucide-react";
 import type {
   OperationsSurfaceData,
   OperationsTimelineEntry,
   OperationsTimelineEventKind,
+  ReliabilityScoreRecord,
 } from "@/components/dashboard/pulse-types";
 
 // ── Event kind metadata ───────────────────────────────────────────────────────
@@ -437,6 +439,202 @@ function TimelineEntryCard({ entry }: { entry: OperationsTimelineEntry }) {
   );
 }
 
+// ── Reliability score panel ───────────────────────────────────────────────────
+
+const GRADE_COLORS: Record<string, string> = {
+  A: "text-success",
+  B: "text-chart-1",
+  C: "text-warning",
+  D: "text-destructive/80",
+  F: "text-destructive",
+};
+
+const GRADE_BG: Record<string, string> = {
+  A: "bg-success/10 border-success/20",
+  B: "bg-chart-1/10 border-chart-1/20",
+  C: "bg-warning/10 border-warning/20",
+  D: "bg-destructive/10 border-destructive/20",
+  F: "bg-destructive/15 border-destructive/30",
+};
+
+const DIMENSION_LABELS: Record<keyof ReliabilityScoreRecord["dimensions"], string> = {
+  operationalScore:     "Operational",
+  automationConfidence: "Automation",
+  recoveryPerformance:  "Recovery",
+  policySafetyScore:    "Policy Safety",
+};
+
+function ScoreTrendSparkline({ trend }: { trend: ReliabilityScoreRecord["trend"] }) {
+  if (trend.length < 2) return null;
+  const values = trend.map((p) => p.overall);
+  const min = Math.min(...values) - 2;
+  const max = Math.max(...values) + 2;
+  const range = Math.max(max - min, 1);
+  const W = 80;
+  const H = 28;
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * W;
+      const y = H - ((v - min) / range) * H;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const lastX = W.toFixed(1);
+  const lastY = (H - ((values[values.length - 1] - min) / range) * H).toFixed(1);
+  return (
+    <svg width={W} height={H} className="overflow-visible">
+      <polyline
+        points={points}
+        fill="none"
+        strokeWidth="1.5"
+        className="stroke-chart-1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={lastX} cy={lastY} r="2.5" className="fill-chart-1" />
+    </svg>
+  );
+}
+
+function ReliabilityScorePanel({ score }: { score: ReliabilityScoreRecord }) {
+  const dimKeys = Object.keys(score.dimensions) as Array<
+    keyof typeof score.dimensions
+  >;
+
+  const lowestDimKey = dimKeys.reduce(
+    (min, k) =>
+      score.dimensions[k].score < score.dimensions[min].score ? k : min,
+    dimKeys[0],
+  );
+  const lowestDim = score.dimensions[lowestDimKey];
+  const lowestFactor = lowestDim.factors.reduce(
+    (min, f) => (f.value < min.value ? f : min),
+    lowestDim.factors[0],
+  );
+
+  return (
+    <div className="rounded-xl border border-border bg-card px-5 py-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <TrendingUp className="w-4 h-4 text-chart-1 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              Reliability Score
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Computed from lifecycle, verification, and policy data
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden sm:flex items-center gap-2">
+            <ScoreTrendSparkline trend={score.trend} />
+            <span className="text-[11px] text-muted-foreground">7d</span>
+          </div>
+          <div
+            className={cn(
+              "flex flex-col items-center rounded-xl border px-4 py-2",
+              GRADE_BG[score.overall_grade],
+            )}
+          >
+            <span
+              className={cn(
+                "text-2xl font-bold tabular-nums leading-none",
+                GRADE_COLORS[score.overall_grade],
+              )}
+            >
+              {score.overall}
+            </span>
+            <span
+              className={cn(
+                "text-xs font-semibold mt-0.5",
+                GRADE_COLORS[score.overall_grade],
+              )}
+            >
+              {score.overall_grade}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Dimension scores */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {dimKeys.map((key) => {
+          const dim = score.dimensions[key];
+          const isLowest = key === lowestDimKey;
+          return (
+            <div
+              key={key}
+              className={cn(
+                "rounded-lg border px-3 py-2 flex items-center justify-between gap-2",
+                isLowest
+                  ? "border-warning/30 bg-warning/5"
+                  : "border-border bg-muted/30",
+              )}
+            >
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {DIMENSION_LABELS[key]}
+                </p>
+                <p
+                  className={cn(
+                    "text-lg font-semibold tabular-nums leading-none mt-0.5",
+                    GRADE_COLORS[dim.grade],
+                  )}
+                >
+                  {dim.score}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "text-sm font-bold shrink-0",
+                  GRADE_COLORS[dim.grade],
+                )}
+              >
+                {dim.grade}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Actionable signal: weakest factor in lowest dimension */}
+      {lowestFactor && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-warning/20 bg-warning/5 px-3.5 py-2.5">
+          <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-medium text-foreground">
+              {DIMENSION_LABELS[lowestDimKey]} · {lowestFactor.label}
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
+              {lowestFactor.rationale}
+            </p>
+          </div>
+          <span
+            className={cn(
+              "text-xs font-semibold shrink-0 tabular-nums",
+              GRADE_COLORS[lowestDim.grade],
+            )}
+          >
+            {lowestDim.score}
+          </span>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-1 border-t border-border/50">
+        <span className="font-mono text-[10px] text-muted-foreground/60">
+          requires_operator_review: true
+        </span>
+        <span className="text-[10px] text-muted-foreground/50">
+          score_id: {score.score_id.slice(0, 20)}…
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function OperationsTimelineView({
@@ -517,6 +715,11 @@ export function OperationsTimelineView({
 
       {/* Stats */}
       <StatsBar entries={allEntries} />
+
+      {/* Reliability score */}
+      {operationsData?.reliabilityScore && (
+        <ReliabilityScorePanel score={operationsData.reliabilityScore} />
+      )}
 
       {/* Filters */}
       <FilterBar

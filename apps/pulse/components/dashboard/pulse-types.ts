@@ -588,7 +588,7 @@ export type ScoredDimension = {
   readonly factors: ScoreFactor[];
 };
 
-export type TrendPoint = {
+export type ReliabilityTrendPoint = {
   readonly date: string;               // YYYY-MM-DD
   readonly overall: number;
   readonly operationalScore: number;
@@ -609,7 +609,7 @@ export type ReliabilityScoreRecord = ReliabilityScore & {
     readonly recoveryPerformance: ScoredDimension;
     readonly policySafetyScore: ScoredDimension;
   };
-  readonly trend: TrendPoint[];         // 7-day sparkline; not persisted
+  readonly trend: ReliabilityTrendPoint[];  // 7-day sparkline; not persisted
   readonly requires_operator_review: true;
 };
 
