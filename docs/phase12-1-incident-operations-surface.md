@@ -53,5 +53,15 @@
   - `/operations/regressions/[regressionId]`
 - Entry points:
   - Legacy list/detail include `Open in Operations`.
-  - Operations regression surface includes `Legacy regression view`.
+- Operations regression surface includes `Legacy regression view`.
 - No redirects, no route deletions, and no write-path behavior introduced.
+
+## Operations Graph Discoverability (Phase 12.6 Bridge)
+- Graph route remains additive and shareable:
+  - `/operations/graph/[entityId]`
+- Entry points added from operations surfaces:
+  - Incident operations header includes `Open graph`.
+  - Regression operations header includes `Open graph`.
+- Bridge intent:
+  - make entity-level graph context discoverable without changing existing workflows.
+- No redirects, no route deletion, and no write/execution/approval behavior added.

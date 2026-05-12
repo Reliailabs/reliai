@@ -85,10 +85,20 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-6 py-6">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
-            <Link href="/operations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-4 w-4" />
-              Operations center
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/operations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+                Operations center
+              </Link>
+              <Link href={`/incidents/${data.incidentId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+                Legacy incident view
+              </Link>
+              <Link href={`/operations/graph/${data.incidentId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4" />
+                Open graph
+              </Link>
+            </div>
             <h1 className="text-2xl font-semibold">Incident Operations — {data.incidentId}</h1>
             <p className="text-sm text-muted-foreground">
               Read-only incident workflow surface. Requires operator review.
