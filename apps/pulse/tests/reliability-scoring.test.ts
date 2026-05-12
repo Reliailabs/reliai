@@ -8,6 +8,7 @@ import {
   type LifecycleStateCounts,
   type VerificationOutcomeCounts,
 } from "../lib/reliability-scoring";
+import type { OperationsSurfaceData } from "../components/dashboard/pulse-types";
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 
@@ -321,4 +322,36 @@ test("0 total_proposals does not crash", () => {
   );
   assert.equal(typeof result.operationalScore, "number");
   assert.ok(result.operationalScore >= 0 && result.operationalScore <= 100);
+});
+
+// ── OperationsSurfaceData shape compatibility ─────────────────────────────────
+
+test("getReliabilityScore() result satisfies OperationsSurfaceData['reliabilityScore'] shape", () => {
+  const score = getReliabilityScore();
+
+  // Type-level: assigning to the expected surface field type must compile.
+  // If this assignment fails tsc it means the lib type diverged from the surface type.
+  const field: OperationsSurfaceData["reliabilityScore"] = score;
+
+  // Runtime assertions that the panel will have something to render.
+  assert.ok(
+    field.overall >= 0 && field.overall <= 100,
+    "overall score is in render range [0, 100]",
+  );
+  assert.ok(
+    ["A", "B", "C", "D", "F"].includes(field.overall_grade),
+    "overall_grade is a renderable letter",
+  );
+  assert.equal(
+    Object.keys(field.dimensions).length,
+    4,
+    "all four dimension keys present for panel grid",
+  );
+  const dimKeys = Object.keys(field.dimensions) as Array<keyof typeof field.dimensions>;
+  for (const key of dimKeys) {
+    const dim = field.dimensions[key];
+    assert.ok(dim.score >= 0 && dim.score <= 100, `${key} score in range`);
+    assert.ok(dim.factors.length > 0, `${key} has at least one factor for weakest-callout`);
+  }
+  assert.ok(field.requires_operator_review === true, "requires_operator_review literal present");
 });

@@ -72,8 +72,8 @@ The timeline tracks 10 event kinds, each with a distinct visual identity:
 DashboardShell (initialSection="operations")
   └── MainContent (case "operations")
         └── OperationsTimelineView [client component]
+              ├── ReliabilityScorePanel ← Phase 10.4: overall + 4 dimensions + weakest callout
               ├── StatsBar              ← aggregate counts by event kind
-              ├── ReliabilityScorePanel ← Phase 10.4: overall + dimensions + 7d trend
               ├── FilterBar             ← URL search param filters
               └── TimelineEntryCard     ← per-entry display
 ```
@@ -157,7 +157,7 @@ Phase 9 functions are not called by the Operations Center directly — the timel
 | `apps/pulse/components/dashboard/main-content.tsx` | `case "operations"` wired; sectionConfig entry added |
 | `apps/pulse/components/dashboard/app-sidebar.tsx` | "Operations Center" added to `mainMenu` |
 | `apps/pulse/tests/verification-engine.test.ts` | Phase 10.3 — 29 tests (all 5 outcomes, confidence, deterministic IDs) |
-| `apps/pulse/tests/reliability-scoring.test.ts` | Phase 10.4 — 29 tests (dimension scores, grades, trend, edge cases) |
+| `apps/pulse/tests/reliability-scoring.test.ts` | Phase 10.4 — 30 tests (dimension scores, grades, trend, edge cases, `OperationsSurfaceData` render-shape assertion) |
 
 ---
 
