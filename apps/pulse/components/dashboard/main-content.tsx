@@ -34,6 +34,8 @@ import type { TraceRouteContext } from "@/components/dashboard/pulse-types";
 import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
 import type { ProjectRouteContext } from "@/components/dashboard/pulse-types";
 import type { ProjectControlParityData } from "@/components/dashboard/pulse-types";
+import type { OperationsSurfaceData } from "@/components/dashboard/pulse-types";
+import { OperationsTimelineView } from "@/components/operations/operations-timeline-view";
 
 interface MainContentProps {
   activeSection: Section;
@@ -56,6 +58,7 @@ interface MainContentProps {
   deploymentContext?: DeploymentRouteContext;
   projectContext?: ProjectRouteContext;
   projectControlData?: ProjectControlParityData;
+  operationsData?: OperationsSurfaceData;
 }
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
@@ -123,6 +126,10 @@ const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
     title: "Settings",
     subtitle: "Configuration & Integrations",
   },
+  operations: {
+    title: "Operations Center",
+    subtitle: "Proposal lifecycle, policy gates, and execution audit trail",
+  },
 };
 
 export function MainContent({
@@ -146,6 +153,7 @@ export function MainContent({
   deploymentContext,
   projectContext,
   projectControlData,
+  operationsData,
 }: MainContentProps) {
   const config = sectionConfig[activeSection];
 
@@ -186,6 +194,8 @@ export function MainContent({
         return <PostmortemsContent postmortemsData={postmortemsData} />;
       case "settings":
         return <SettingsContent settingsData={settingsData} />;
+      case "operations":
+        return <OperationsTimelineView operationsData={operationsData} />;
       default:
         return (
           <OverviewContent

@@ -14,4 +14,5 @@ export type Section =
   | "services"
   | "risk_reviews"
   | "postmortems"
-  | "settings";
+  | "settings"
+  | "operations";

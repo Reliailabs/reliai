@@ -519,3 +519,53 @@ export type SettingsSurfaceData = {
   hasSettingsData: boolean;
   dataMode: "live" | "demo";
 };
+
+// ── Phase 10: Operations Center ───────────────────────────────────────────────
+
+export type OperationsTimelineEventKind =
+  | "incident_detected"
+  | "proposal_generated"
+  | "policy_gate_evaluated"
+  | "remediation_staged"
+  | "approval_recorded"
+  | "receipt_emitted"
+  | "execution_boundary_entered"
+  | "verification_result"
+  | "rollback_event"
+  | "kill_switch_event";
+
+export type OperationsTimelineEntry = {
+  readonly entry_id: string;
+  readonly kind: OperationsTimelineEventKind;
+  readonly occurred_at: string;           // ISO 8601
+  readonly organization_id: string;
+  readonly project_id: string | null;
+  readonly lifecycle_id: string | null;   // references ProposalLifecycle.lifecycle_id
+  readonly proposal_id: string | null;    // references Phase 9 phase9-* format
+  readonly incident_id: string | null;
+  readonly severity: "critical" | "high" | "medium" | "low" | null;
+  readonly lifecycle_state: string | null; // ProposalLifecycleState at time of event
+  readonly actor_type: "human" | "system";
+  readonly actor_label: string;
+  readonly title: string;
+  readonly summary: string;
+  readonly policy_gate_result: "passed" | "denied" | null;
+  readonly evidence_refs: Array<{ label: string; href: string }>;
+  readonly requires_operator_review: true;
+};
+
+export type OperationsTimelineFilter = {
+  kind?: OperationsTimelineEventKind;
+  project_id?: string;
+  incident_id?: string;
+  proposal_id?: string;
+  severity?: "critical" | "high" | "medium" | "low";
+  lifecycle_state?: string;
+  actor_type?: "human" | "system";
+};
+
+export type OperationsSurfaceData = {
+  entries: OperationsTimelineEntry[];
+  sourceErrors: string[];
+  dataMode: "live" | "demo";
+};
