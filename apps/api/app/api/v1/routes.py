@@ -556,6 +556,13 @@ from app.services.usage_quotas import (
 from app.services.warehouse_archiver import get_archive_status
 from app.workers.deployment_simulation import enqueue_deployment_simulation
 from app.workers.scheduler import get_scheduler_status
+from app.schemas.operations import (
+    LifecycleListQuery,
+    LifecycleListResponse,
+    TimelineListQuery,
+    TimelineListResponse,
+)
+from app.services.operations import list_lifecycles, list_timeline_events
 
 router = APIRouter()
 
@@ -4942,6 +4949,45 @@ def create_policy_violation_event_endpoint(
         ).model_dump(mode="json"),
     )
     return Response(status_code=status.HTTP_202_ACCEPTED)
+
+
+# ── Operations Center (Phase 11.4) ────────────────────────────────────────────
+
+
+@router.get("/operations/timeline", response_model=TimelineListResponse)
+def list_operations_timeline_endpoint(
+    query: TimelineListQuery = Depends(),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> TimelineListResponse:
+    """GET /api/v1/operations/timeline
+
+    Returns the operations timeline events scoped to the operator's active
+    organization.  All filter parameters are optional.  Rows are append-only
+    and ordered newest-first.
+
+    Tenant isolation is enforced by filtering on organization_id ==
+    operator.active_organization_id before any other predicate.
+    """
+    items, total = list_timeline_events(db, operator, query)
+    return TimelineListResponse(items=items, total=total)
+
+
+@router.get("/operations/lifecycles", response_model=LifecycleListResponse)
+def list_operations_lifecycles_endpoint(
+    query: LifecycleListQuery = Depends(),
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> LifecycleListResponse:
+    """GET /api/v1/operations/lifecycles
+
+    Returns proposal lifecycle records scoped to the operator's active
+    organization, each with its full state_history inline.
+
+    No writes are performed.  lifecycle save() is deferred to Phase 11.5.
+    """
+    items, total = list_lifecycles(db, operator, query)
+    return LifecycleListResponse(items=items, total=total)
 
 
 @router.get(

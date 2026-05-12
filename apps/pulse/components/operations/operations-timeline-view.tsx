@@ -489,17 +489,20 @@ export function OperationsTimelineView({
     });
   }, [allEntries, kindFilter, severityFilter, actorFilter, stateFilter, incidentFilter, proposalFilter]);
 
-  if (operationsData?.sourceErrors.length) {
-    return (
-      <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">
-        Operations Center data unavailable:{" "}
-        {operationsData.sourceErrors.join("; ")}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
+      {/* Backend error banner — shown inline so partial / cached data still renders */}
+      {operationsData?.sourceErrors && operationsData.sourceErrors.length > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-5 py-3">
+          <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+          <p className="text-sm text-destructive/90 leading-relaxed">
+            <span className="font-medium">Live data unavailable.</span>{" "}
+            Showing demo fixture data.{" "}
+            <span className="text-destructive/70">{operationsData.sourceErrors[0]}</span>
+          </p>
+        </div>
+      )}
+
       {/* Governance boundary note */}
       <div className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/5 px-5 py-3">
         <XCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
@@ -542,6 +545,12 @@ export function OperationsTimelineView({
             </>
           )}
         </p>
+        {operationsData?.dataMode === "live" && (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
+            Live data
+          </span>
+        )}
         {operationsData?.dataMode === "demo" && (
           <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">
             Demo data

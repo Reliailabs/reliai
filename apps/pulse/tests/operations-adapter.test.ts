@@ -1,0 +1,275 @@
+/**
+ * Phase 11.4 — Operations adapter tests.
+ *
+ * Tests three modes:
+ *   1. Fixture mode  — getOperationsSurfaceData() with InMemoryOperationsTimelineRepository
+ *   2. Backend mode success — BackendOperationsTimelineRepository.fetchAll() with mocked fetch
+ *   3. Backend failure fallback — mocked fetch returning non-OK / throwing
+ *
+ * Run with:
+ *   TSCONFIG_PATH=tsconfig.test.json node --import tsx --test \
+ *     tests/operations-adapter.test.ts
+ *
+ * The tsconfig.test.json `paths` override maps `server-only` to a no-op stub
+ * so that imports from `operations-adapter.ts` and `operations-timeline.ts`
+ * succeed in the Node.js test runner.
+ */
+
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  BackendOperationsTimelineRepository,
+  type TokenProvider,
+} from "../lib/operations-adapter";
+import {
+  getOperationsSurfaceData,
+  InMemoryOperationsTimelineRepository,
+} from "../lib/operations-timeline";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Token provider stub — avoids calling next/headers cookies() outside a request context. */
+const TEST_TOKEN: TokenProvider = async () => "test-session-token";
+
+/** Minimal valid BackendTimelineListResponse from GET /api/v1/operations/timeline */
+function makeApiResponse(count: number = 2) {
+  return {
+    items: Array.from({ length: count }, (_, i) => ({
+      entry_id: `otl-${String(i).padStart(16, "0")}`,
+      kind: "incident_detected",
+      occurred_at: "2026-05-12T09:00:00.000Z",
+      organization_id: "org-test-uuid",
+      project_id: null,
+      lifecycle_id: null,
+      proposal_id: null,
+      incident_id: `inc-00${i}`,
+      severity: null,
+      lifecycle_state: null,
+      actor_type: "system" as const,
+      actor_label: "Reliai System",
+      title: `Test event ${i}`,
+      summary: "Test summary.",
+      policy_gate_result: null,
+      evidence_refs: [],
+      requires_operator_review: true as const,
+    })),
+    total: count,
+  };
+}
+
+/**
+ * Override globalThis.fetch for the duration of fn(), then restore it.
+ * Returns whatever fn() returns.
+ */
+async function withMockedFetch<T>(
+  mockImpl: typeof fetch,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const original = globalThis.fetch;
+  globalThis.fetch = mockImpl;
+  try {
+    return await fn();
+  } finally {
+    globalThis.fetch = original;
+  }
+}
+
+// ── Fixture mode ──────────────────────────────────────────────────────────────
+
+test("fixture mode: getOperationsSurfaceData returns demo data and dataMode=demo", async () => {
+  const fixtureRepo = new InMemoryOperationsTimelineRepository();
+  const data = await getOperationsSurfaceData(fixtureRepo);
+
+  assert.equal(data.dataMode, "demo");
+  assert.ok(
+    data.entries.length >= 1,
+    `expected at least 1 fixture entry, got ${data.entries.length}`,
+  );
+  assert.deepEqual(data.sourceErrors, []);
+});
+
+test("fixture mode: entries are deterministic across two calls", async () => {
+  const repo = new InMemoryOperationsTimelineRepository();
+  const a = await getOperationsSurfaceData(repo);
+  const b = await getOperationsSurfaceData(repo);
+
+  assert.equal(a.entries.length, b.entries.length);
+  assert.deepEqual(
+    a.entries.map((e) => e.entry_id),
+    b.entries.map((e) => e.entry_id),
+  );
+});
+
+test("fixture mode: all fixture entries have requires_operator_review=true", async () => {
+  const data = await getOperationsSurfaceData(new InMemoryOperationsTimelineRepository());
+  for (const entry of data.entries) {
+    assert.equal(
+      entry.requires_operator_review,
+      true,
+      `entry ${entry.entry_id} has requires_operator_review !== true`,
+    );
+  }
+});
+
+// ── Backend mode: fetchAll success ────────────────────────────────────────────
+
+test("backend mode success: fetchAll maps API response to OperationsTimelineEntry[]", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+  const apiResponse = makeApiResponse(2);
+
+  const entries = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => apiResponse,
+      }) as Response,
+    () => repo.fetchAll(),
+  );
+
+  assert.equal(entries.length, 2);
+  assert.equal(entries[0].entry_id, "otl-0000000000000000");
+  assert.equal(entries[0].kind, "incident_detected");
+  assert.equal(entries[0].actor_type, "system");
+  assert.equal(entries[0].requires_operator_review, true);
+  assert.equal(repo.drainErrors().length, 0);
+});
+
+test("backend mode success: getOperationsSurfaceData with backend repo sets dataMode=live", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+  const apiResponse = makeApiResponse(3);
+
+  const data = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => apiResponse,
+      }) as Response,
+    () => getOperationsSurfaceData(repo),
+  );
+
+  assert.equal(data.dataMode, "live");
+  assert.equal(data.entries.length, 3);
+  assert.deepEqual(data.sourceErrors, []);
+});
+
+test("backend mode success: fetchAll passes filter params as query string", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+  let capturedUrl = "";
+
+  await withMockedFetch(
+    async (url, _init) => {
+      capturedUrl = String(url);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ items: [], total: 0 }),
+      } as Response;
+    },
+    () => repo.fetchAll({ kind: "approval_recorded", incident_id: "inc-001" }),
+  );
+
+  assert.ok(capturedUrl.includes("kind=approval_recorded"), `URL missing kind param: ${capturedUrl}`);
+  assert.ok(capturedUrl.includes("incident_id=inc-001"), `URL missing incident_id param: ${capturedUrl}`);
+});
+
+// ── Backend mode: failure fallback ────────────────────────────────────────────
+
+test("backend failure: 404 returns empty entries and populates sourceErrors", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+
+  const entries = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: false,
+        status: 404,
+        json: async () => ({}),
+      }) as Response,
+    () => repo.fetchAll(),
+  );
+
+  assert.deepEqual(entries, []);
+  const errors = repo.drainErrors();
+  assert.equal(errors.length, 1);
+  assert.ok(
+    errors[0].includes("not yet implemented"),
+    `expected 'not yet implemented' in error: ${errors[0]}`,
+  );
+});
+
+test("backend failure: non-OK status returns empty entries and sourceErrors", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+
+  const entries = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      }) as Response,
+    () => repo.fetchAll(),
+  );
+
+  assert.deepEqual(entries, []);
+  const errors = repo.drainErrors();
+  assert.equal(errors.length, 1);
+  assert.ok(errors[0].includes("503"), `expected status code in error: ${errors[0]}`);
+});
+
+test("backend failure: network error returns empty entries and sourceErrors", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+
+  const entries = await withMockedFetch(
+    async (_url, _init) => {
+      throw new Error("ECONNREFUSED");
+    },
+    () => repo.fetchAll(),
+  );
+
+  assert.deepEqual(entries, []);
+  const errors = repo.drainErrors();
+  assert.equal(errors.length, 1);
+  assert.ok(errors[0].includes("ECONNREFUSED"), `expected error message: ${errors[0]}`);
+});
+
+test("backend failure: getOperationsSurfaceData with backend repo exposes sourceErrors in result", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+
+  const data = await withMockedFetch(
+    async (_url, _init) => {
+      throw new Error("backend down");
+    },
+    () => getOperationsSurfaceData(repo),
+  );
+
+  assert.equal(data.dataMode, "live");
+  assert.deepEqual(data.entries, []);
+  assert.equal(data.sourceErrors.length, 1);
+  assert.ok(data.sourceErrors[0].includes("backend down"));
+});
+
+// ── drainErrors clears the buffer ────────────────────────────────────────────
+
+test("drainErrors is idempotent: second call returns empty after first drain", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+
+  await withMockedFetch(
+    async () => ({ ok: false, status: 503, json: async () => ({}) }) as Response,
+    () => repo.fetchAll(),
+  );
+
+  const first = repo.drainErrors();
+  const second = repo.drainErrors();
+  assert.equal(first.length, 1);
+  assert.deepEqual(second, []);
+});
+
+// ── sync findAll() stub ───────────────────────────────────────────────────────
+
+test("BackendOperationsTimelineRepository.findAll() is a sync no-op returning []", () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+  const result = repo.findAll();
+  assert.deepEqual(result, []);
+});

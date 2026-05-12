@@ -3,6 +3,8 @@ import "server-only";
 import { createHash } from "crypto";
 import { listLifecycles } from "@/lib/proposal-lifecycle";
 import type { ProposalLifecycle } from "@/lib/proposal-lifecycle";
+import type { AppendOnlyRepository, RepositoryAdapter } from "@/lib/repository-contracts";
+import { createTimelineRepo, getOperationsAdapterMode } from "@/lib/operations-adapter";
 import type {
   OperationsSurfaceData,
   OperationsTimelineEntry,
@@ -17,9 +19,8 @@ export type { OperationsSurfaceData, OperationsTimelineEntry, OperationsTimeline
 // Persistence-ready. Phase 11: replace InMemoryOperationsTimelineRepository
 // at the defaultRepository assignment below.
 
-export interface OperationsTimelineRepository {
-  findAll(filter?: OperationsTimelineFilter): OperationsTimelineEntry[];
-}
+export interface OperationsTimelineRepository
+  extends AppendOnlyRepository<OperationsTimelineEntry, OperationsTimelineFilter> {}
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -289,16 +290,48 @@ export class InMemoryOperationsTimelineRepository
 }
 
 // ── Module-level singleton ────────────────────────────────────────────────────
-// Phase 11: replace with a DB-backed OperationsTimelineRepository.
-const defaultRepository = new InMemoryOperationsTimelineRepository();
+// Phase 11.3: the factory selects the in-memory fixture or the FastAPI backend
+// based on RELIAI_OPERATIONS_DATA_MODE (default: "fixture").
+// Phase 11.4+: the backend adapter will call real FastAPI routes.
+const defaultRepository: RepositoryAdapter<OperationsTimelineRepository> =
+  createTimelineRepo(
+    getOperationsAdapterMode(),
+    new InMemoryOperationsTimelineRepository(),
+  );
+
+// ── Async-capable repo type guard ─────────────────────────────────────────────
+// BackendOperationsTimelineRepository exposes fetchAll() + drainErrors() beyond
+// the base OperationsTimelineRepository interface. We use structural duck-typing
+// rather than importing the class directly to avoid any chance of circular deps.
+
+interface AsyncTimelineRepo extends OperationsTimelineRepository {
+  fetchAll(filter?: OperationsTimelineFilter): Promise<OperationsTimelineEntry[]>;
+  drainErrors(): string[];
+}
+
+function isAsyncTimelineRepo(
+  repo: OperationsTimelineRepository,
+): repo is AsyncTimelineRepo {
+  return (
+    "fetchAll" in repo &&
+    typeof (repo as AsyncTimelineRepo).fetchAll === "function"
+  );
+}
 
 // ── Public surface data function ──────────────────────────────────────────────
 
-export async function getOperationsSurfaceData(): Promise<OperationsSurfaceData> {
-  const entries = defaultRepository.findAll();
-  return {
-    entries,
-    sourceErrors: [],
-    dataMode: "demo",
-  };
+export async function getOperationsSurfaceData(
+  repo: OperationsTimelineRepository = defaultRepository,
+): Promise<OperationsSurfaceData> {
+  // Live mode: use fetchAll() so the backend call is actually awaited.
+  // The sync findAll() stub on BackendOperationsTimelineRepository always
+  // returns [] — only fetchAll() reaches the FastAPI endpoint.
+  if (isAsyncTimelineRepo(repo)) {
+    const entries = await repo.fetchAll();
+    const sourceErrors = repo.drainErrors();
+    return { entries, sourceErrors, dataMode: "live" };
+  }
+
+  const entries = repo.findAll();
+  return { entries, sourceErrors: [], dataMode: "demo" };
 }

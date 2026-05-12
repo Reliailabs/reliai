@@ -70,6 +70,9 @@ from app.models.trace_retrieval_span import TraceRetrievalSpan
 from app.models.model_version import ModelVersion
 from app.models.user import User
 from app.models.usage_quota import UsageQuota
+from app.models.operations_timeline_event import OperationsTimelineEvent
+from app.models.proposal_lifecycle_record import ProposalLifecycleRecord
+from app.models.lifecycle_transition_history import LifecycleTransitionHistory
 
 __all__ = [
     "AlertDelivery",
@@ -143,4 +146,7 @@ __all__ = [
     "TraceRetrievalSpan",
     "User",
     "UsageQuota",
+    "OperationsTimelineEvent",
+    "ProposalLifecycleRecord",
+    "LifecycleTransitionHistory",
 ]
