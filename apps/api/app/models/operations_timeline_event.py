@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, JSON, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -31,6 +31,11 @@ class OperationsTimelineEvent(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Index("ix_ote_org_proposal_id", "organization_id", "proposal_id"),
         Index("ix_ote_org_incident_id", "organization_id", "incident_id"),
         Index("ix_ote_policy_gate_result", "policy_gate_result"),
+        # Governance invariant — mirror of Phase 11.2 Alembic migration CHECK constraint.
+        CheckConstraint(
+            "requires_operator_review = TRUE",
+            name="requires_operator_review_true",
+        ),
     )
 
     entry_id: Mapped[str] = mapped_column(String(64), nullable=False)

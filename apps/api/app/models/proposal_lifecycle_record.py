@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -30,6 +30,16 @@ class ProposalLifecycleRecord(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ),
         Index("ix_plr_org_state", "organization_id", "state"),
         Index("ix_plr_org_proposal_id", "organization_id", "proposal_id"),
+        # Governance invariants — enforced at DB level so no code path can bypass them.
+        # Mirror the CHECK constraints in the Phase 11.2 Alembic migration.
+        CheckConstraint(
+            "execution_granted = FALSE",
+            name="execution_granted_false",
+        ),
+        CheckConstraint(
+            "requires_operator_review = TRUE",
+            name="requires_operator_review_true",
+        ),
     )
 
     lifecycle_id: Mapped[str] = mapped_column(String(64), nullable=False)
