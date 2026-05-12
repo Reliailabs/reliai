@@ -316,6 +316,18 @@ export function IncidentsContent({
               <p className="text-sm font-medium text-foreground mb-2 line-clamp-2">
                 {incident.title}
               </p>
+              <div className="mb-2">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    router.push(`/operations/incidents/${incident.id}`);
+                  }}
+                  className="text-[11px] font-medium text-primary hover:underline"
+                >
+                  Open in Operations
+                </button>
+              </div>
               <div className="flex items-center justify-between">
                 <span className={cn(
                   "px-2 py-0.5 text-[10px] font-medium rounded-full",

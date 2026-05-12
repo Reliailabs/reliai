@@ -8,6 +8,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, GitCompare, History, Li
 import { cn } from "@/lib/utils";
 import type { IncidentOperationsSurfaceData, IncidentOperationsTab } from "@/lib/incident-operations-data";
 import { OperationsReliabilitySummaryPanel } from "@/components/operations/operations-reliability-summary-panel";
+import { resolveIncidentOperationsTab } from "@/lib/incident-operations-tabs";
 
 const TAB_ORDER: Array<{ id: IncidentOperationsTab; label: string }> = [
   { id: "overview", label: "Overview" },
@@ -61,7 +62,7 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
   const searchParams = useSearchParams();
 
   const tabParam = searchParams.get("tab");
-  const activeTab = (TAB_ORDER.some((tab) => tab.id === tabParam) ? tabParam : "overview") as IncidentOperationsTab;
+  const activeTab = resolveIncidentOperationsTab(tabParam) as IncidentOperationsTab;
 
   const setTab = (tab: IncidentOperationsTab) => {
     const params = new URLSearchParams(searchParams.toString());
