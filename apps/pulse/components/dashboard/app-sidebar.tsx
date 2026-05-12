@@ -27,6 +27,7 @@ import {
   ClipboardCheck,
   Boxes,
   FileSearch,
+  Terminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -58,6 +59,7 @@ const mainMenu: NavItem[] = [
   { id: "audits", label: "Audits", icon: ClipboardCheck },
   { id: "risk_reviews", label: "Risk Reviews", icon: FileSearch },
   { id: "services", label: "Services", icon: Boxes },
+  { id: "operations", label: "Operations Center", icon: Terminal },
 ];
 
 const advancedOpsMenu: NavItem[] = [
