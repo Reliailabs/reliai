@@ -46,6 +46,8 @@ interface AppSidebarProps {
   onSectionChange: (section: Section) => void;
 }
 
+type SidebarProfile = { initials: string; name: string; role: string };
+
 interface NavItem {
   id: Section;
   label: string;
@@ -84,6 +86,11 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   const [advancedOpsOpen, setAdvancedOpsOpen] = useState(false);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [sidebarProfile, setSidebarProfile] = useState<SidebarProfile>({
+    initials: "RO",
+    name: "Reliai Operator",
+    role: "operator",
+  });
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
@@ -96,12 +103,22 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
     void fetch("/api/auth/session", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
-        return response.json() as Promise<{ session?: { operator?: { is_system_admin?: boolean } } }>;
+        return response.json() as Promise<{ session?: { operator?: { is_system_admin?: boolean; email?: string } } }>;
       })
       .then((payload) => {
         if (payload?.session?.operator?.is_system_admin) {
           setIsSystemAdmin(true);
         }
+        const email = payload?.session?.operator?.email ?? "operator@reliai.dev";
+        const localPart = email.split("@")[0] ?? "operator";
+        const parts = localPart.split(/[._-]+/).filter(Boolean);
+        const first = parts[0] ? parts[0][0].toUpperCase() + parts[0].slice(1) : "Reliai";
+        const last = parts[1] ? parts[1][0].toUpperCase() + parts[1].slice(1) : "Operator";
+        setSidebarProfile({
+          initials: `${first[0] ?? "R"}${last[0] ?? "O"}`.toUpperCase(),
+          name: `${first} ${last}`,
+          role: "operator",
+        });
       })
       .catch(() => undefined);
   }, []);
@@ -252,11 +269,11 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                 aria-label="Open profile menu"
               >
                 <div className="w-9 h-9 rounded-full bg-chart-1/20 flex items-center justify-center">
-                  <span className="text-chart-1 text-sm font-medium">JD</span>
+                  <span className="text-chart-1 text-sm font-medium">{sidebarProfile.initials}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-                  <p className="text-xs text-muted-foreground truncate">Reliability Lead</p>
+                  <p className="text-sm font-medium text-foreground truncate">{sidebarProfile.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{sidebarProfile.role}</p>
                 </div>
               </button>
             </DropdownMenuTrigger>

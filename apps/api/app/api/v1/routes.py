@@ -2281,12 +2281,31 @@ def switch_organization_endpoint(
 
 
 
+def _ensure_operator_profile_columns(db: Session) -> None:
+    inspector = inspect(db.bind)
+    columns = {column["name"] for column in inspector.get_columns("operator_users")}
+    statements: list[str] = []
+    if "first_name" not in columns:
+      statements.append("ALTER TABLE operator_users ADD COLUMN first_name VARCHAR(120)")
+    if "last_name" not in columns:
+      statements.append("ALTER TABLE operator_users ADD COLUMN last_name VARCHAR(120)")
+
+    if not statements:
+      return
+
+    for statement in statements:
+      db.execute(text(statement))
+    db.commit()
+
+
+
 @router.patch("/auth/profile", response_model=OperatorRead)
 def update_profile_endpoint(
     payload: AuthProfileUpdateRequest,
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OperatorRead:
+    _ensure_operator_profile_columns(db)
     user = operator.operator
     user.first_name = payload.first_name.strip()
     user.last_name = payload.last_name.strip()
