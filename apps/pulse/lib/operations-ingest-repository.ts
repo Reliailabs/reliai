@@ -91,3 +91,18 @@ export function createOperationsIngestRepo(
 ): RepositoryAdapter<OperationsIngestRepository> {
   return mode === "live" ? new BackendOperationsIngestRepository() : fixtureRepo;
 }
+
+const globalStore = globalThis as typeof globalThis & {
+  __reliai_ops_ingest_repo__?: InMemoryOperationsIngestRepository;
+};
+
+export function getOperationsIngestRepo(): OperationsIngestRepository {
+  const mode = getOperationsIngestAdapterMode();
+  if (mode === "live") {
+    return createOperationsIngestRepo("live");
+  }
+  if (!globalStore.__reliai_ops_ingest_repo__) {
+    globalStore.__reliai_ops_ingest_repo__ = new InMemoryOperationsIngestRepository();
+  }
+  return globalStore.__reliai_ops_ingest_repo__;
+}

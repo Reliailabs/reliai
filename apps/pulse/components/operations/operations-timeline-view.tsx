@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -444,6 +444,10 @@ export function OperationsTimelineView({
 }: {
   operationsData?: OperationsSurfaceData;
 }) {
+  const [projectionSummary, setProjectionSummary] = useState<{
+    lifecycleCount: number;
+    verificationCount: number;
+  } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -489,8 +493,41 @@ export function OperationsTimelineView({
     });
   }, [allEntries, kindFilter, severityFilter, actorFilter, stateFilter, incidentFilter, proposalFilter]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/actions/operations/ingest/projections", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{
+          lifecycle_intents?: Array<unknown>;
+          verification_intents?: Array<unknown>;
+        }>;
+      })
+      .then((payload) => {
+        if (cancelled || !payload) return;
+        setProjectionSummary({
+          lifecycleCount: payload.lifecycle_intents?.length ?? 0,
+          verificationCount: payload.verification_intents?.length ?? 0,
+        });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="space-y-5">
+      {projectionSummary ? (
+        <div className="rounded-xl border border-border bg-card px-5 py-3">
+          <p className="text-sm text-muted-foreground">
+            Persisted ingest projections:{" "}
+            <span className="font-medium text-foreground">{projectionSummary.lifecycleCount}</span> lifecycle intent(s),{" "}
+            <span className="font-medium text-foreground">{projectionSummary.verificationCount}</span> verification intent(s).
+          </p>
+        </div>
+      ) : null}
       {/* Backend error banner — shown inline so partial / cached data still renders */}
       {operationsData?.sourceErrors && operationsData.sourceErrors.length > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-5 py-3">

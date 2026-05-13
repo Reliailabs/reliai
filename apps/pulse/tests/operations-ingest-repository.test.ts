@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   BackendOperationsIngestRepository,
   createOperationsIngestRepo,
+  getOperationsIngestRepo,
   InMemoryOperationsIngestRepository,
 } from "../lib/operations-ingest-repository";
 
@@ -50,4 +51,11 @@ test("createOperationsIngestRepo returns fixture adapter in fixture mode", () =>
 test("createOperationsIngestRepo returns backend stub in live mode", () => {
   const repo = createOperationsIngestRepo("live");
   assert.ok(repo instanceof BackendOperationsIngestRepository);
+});
+
+test("getOperationsIngestRepo returns shared fixture repo by default", () => {
+  const repoA = getOperationsIngestRepo();
+  const repoB = getOperationsIngestRepo();
+  assert.ok(repoA instanceof InMemoryOperationsIngestRepository);
+  assert.equal(repoA, repoB);
 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getOperatorSession } from "@/lib/auth";
+import { getOperationsIngestRepo } from "@/lib/operations-ingest-repository";
 import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { validateVerificationWriteContract } from "@/lib/operations-verification-write";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
@@ -27,6 +28,52 @@ export async function POST(request: Request) {
         retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: result.response_class }),
       }),
       { status: 422 },
+    );
+  }
+
+  try {
+    const ingestRepo = getOperationsIngestRepo();
+    ingestRepo.append({
+      ingest_record_id: `ing-verification-${result.request.verification_result_id}`,
+      accepted_at: new Date().toISOString(),
+      event_fingerprint: `${result.request.lifecycle_id}:${result.request.verification_result_id}`,
+      request_shape_hash: `${result.request.proposal_id}:${result.request.outcome}`,
+      event: {
+        event_id: `verification-write-${result.request.verification_result_id}`,
+        idempotency_key: `verification-write-${result.request.verification_result_id}`,
+        event_type: "verification_result",
+        occurred_at: result.request.verified_at,
+        request_context: {
+          organization_id: result.request.organization_id,
+          project_id: "none",
+          environment_id: "none",
+        },
+        actor: {
+          actor_type: "system",
+          actor_id: "verification-write-validator",
+        },
+        target: {
+          target_type: "verification",
+          target_id: result.request.verification_result_id,
+        },
+        payload: {
+          lifecycle_id: result.request.lifecycle_id,
+          proposal_id: result.request.proposal_id,
+          outcome: result.request.outcome,
+        },
+        evidence_refs: result.request.evidence_refs,
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      withPhase13Envelope({
+        ok: false as const,
+        verification_write_accepted: false as const,
+        response_class: "rejected_policy" as const,
+        errors: ["verification-write persistence backend unavailable"],
+        warnings: [],
+      }),
+      { status: 503 },
     );
   }
 
