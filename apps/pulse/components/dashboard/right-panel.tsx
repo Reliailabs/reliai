@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Activity, Clock, Users, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
@@ -74,11 +77,48 @@ const oncallTeam = [
 ];
 
 export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOverviewData }) {
+  const pathname = usePathname();
   const recentActivityItems = pulseOverviewData?.recentActivity ?? recentActivity;
+  const [responseTeam, setResponseTeam] = useState(oncallTeam);
+  const [teamLoading, setTeamLoading] = useState(true);
   const areiScore = pulseOverviewData?.areiScore ?? 62;
   const deltaValue = pulseOverviewData?.areiDelta;
   const deltaLabel = deltaValue == null ? "n/a" : `${deltaValue >= 0 ? "+" : ""}${deltaValue}`;
   const stable = areiScore < 50;
+
+  useEffect(() => {
+    let mounted = true;
+    const projectMatch = pathname.match(/^\/projects\/([^/]+)/);
+    const projectId = projectMatch?.[1];
+    const endpoint = projectId
+      ? `/api/oncall/response-team?projectId=${encodeURIComponent(projectId)}`
+      : "/api/oncall/response-team";
+
+    void fetch(endpoint, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { items?: typeof oncallTeam };
+      })
+      .then((payload) => {
+        if (!mounted) return;
+        if (payload?.items && payload.items.length > 0) {
+          setResponseTeam(payload.items);
+        } else {
+          setResponseTeam([]);
+        }
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setResponseTeam([]);
+      })
+      .finally(() => {
+        if (mounted) setTeamLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [pathname]);
 
   return (
     <aside className="w-[280px] h-screen bg-card border-l border-border flex flex-col shrink-0 overflow-hidden">
@@ -156,41 +196,56 @@ export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOve
           <Users className="w-4 h-4 text-muted-foreground" />
           Response Team
         </h3>
-        <div className="space-y-2">
-          {oncallTeam.map((member) => (
-            <button
-              key={member.id}
-              type="button"
-              className="w-full flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
-            >
-              <div className="relative">
-                <div
-                  className={cn(
-                    "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium",
-                    member.status === "active" 
-                      ? "bg-chart-1/20 text-chart-1" 
-                      : member.status === "standby"
-                        ? "bg-warning/20 text-warning"
-                        : "bg-muted text-muted-foreground"
+        {teamLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((index) => (
+              <div key={index} className="h-10 rounded-lg bg-muted/50 animate-pulse" />
+            ))}
+          </div>
+        ) : responseTeam.length === 0 ? (
+          <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+            <p>No response team configured.</p>
+            <Link href="/settings#team" className="mt-2 inline-flex text-xs text-foreground underline underline-offset-2">
+              Configure team members
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {responseTeam.map((member) => (
+              <button
+                key={member.id}
+                type="button"
+                className="w-full flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
+              >
+                <div className="relative">
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium",
+                      member.status === "active"
+                        ? "bg-chart-1/20 text-chart-1"
+                        : member.status === "standby"
+                          ? "bg-warning/20 text-warning"
+                          : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {member.initials}
+                  </div>
+                  {member.status === "active" && (
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-card" />
                   )}
-                >
-                  {member.initials}
                 </div>
-                {member.status === "active" && (
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-card" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {member.name}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {member.role}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {member.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {member.role}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </aside>
   );

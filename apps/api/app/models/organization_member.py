@@ -17,6 +17,7 @@ class OrganizationMember(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     auth_user_id: Mapped[str | None] = mapped_column(String(255))
+    display_name: Mapped[str | None] = mapped_column(String(120))
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="owner")
 
     organization = relationship("Organization", back_populates="members")

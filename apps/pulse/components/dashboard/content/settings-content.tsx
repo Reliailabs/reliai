@@ -104,6 +104,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [teamLoading, setTeamLoading] = useState(true);
   const [teamError, setTeamError] = useState<string | null>(null);
+  const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("engineer");
   const [isInviting, setIsInviting] = useState(false);
@@ -162,14 +163,14 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
   }, []);
 
   async function handleInvite() {
-    if (!inviteEmail.trim() || isInviting) return;
+    if (!inviteName.trim() || !inviteEmail.trim() || isInviting) return;
     setIsInviting(true);
     setInviteMessage(null);
     try {
       const r = await fetch("/api/settings/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+        body: JSON.stringify({ name: inviteName.trim(), email: inviteEmail.trim(), role: inviteRole }),
       });
       if (r.status === 404) {
         setInviteMessage({ text: "No Reliai account found for that email. They need to sign up first.", ok: false });
@@ -185,6 +186,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       }
       const newMember = (await r.json()) as TeamMember;
       setMembers((prev) => [...prev, newMember]);
+      setInviteName("");
       setInviteEmail("");
       setInviteMessage({ text: `${newMember.email} added as ${newMember.role}.`, ok: true });
     } catch {
@@ -395,7 +397,8 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                   {member.email.split("@")[0]!.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{member.email}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                   <p className="text-xs text-muted-foreground">{formatJoinedAt(member.joinedAt)}</p>
                 </div>
                 <span className="rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground capitalize shrink-0">
@@ -418,7 +421,17 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
         {/* Add member form */}
         <div className="space-y-3">
           <p className="text-xs font-medium text-foreground">Add member</p>
+          <p className="text-[11px] text-muted-foreground">
+            Invitation role is an access role (permissions): <span className="font-medium">admin</span>, <span className="font-medium">engineer</span>, <span className="font-medium">viewer</span>.
+          </p>
           <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Full name"
+              value={inviteName}
+              onChange={(e) => setInviteName(e.target.value)}
+              className="w-44 px-3 py-2 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
             <input
               type="email"
               placeholder="colleague@company.com"
@@ -440,7 +453,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
               type="button"
               size="sm"
               onClick={() => void handleInvite()}
-              disabled={isInviting || !inviteEmail.trim()}
+              disabled={isInviting || !inviteName.trim() || !inviteEmail.trim()}
               className="gap-1.5 shrink-0"
             >
               <UserPlus className="w-3.5 h-3.5" />
@@ -455,6 +468,9 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
           <p className="text-[11px] text-muted-foreground">
             The person must already have a Reliai account.{" "}
             <span className="text-muted-foreground/60">Email-based invites are coming soon.</span>
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            On-call duty roles are configured separately in <Link href="/on-call" className="underline underline-offset-2">On-Call</Link>.
           </p>
         </div>
       </div>

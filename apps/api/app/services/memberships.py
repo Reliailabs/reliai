@@ -32,6 +32,7 @@ def add_organization_member(
     organization_id: UUID,
     user_id: UUID,
     role: str,
+    display_name: str | None,
     actor_user_id: UUID,
 ) -> OrganizationMember:
     organization = db.get(Organization, organization_id)
@@ -45,6 +46,7 @@ def add_organization_member(
         user_id=user_id,
         auth_user_id=str(user_id),
         role=normalize_org_role(role),
+        display_name=display_name.strip() if display_name else None,
     )
     db.add(membership)
     try:
