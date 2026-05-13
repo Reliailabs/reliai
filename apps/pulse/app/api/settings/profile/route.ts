@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSettingsProfile, updateSettingsProfile } from "@/lib/settings-profile-repository";
+import { ProfileUpdateError, getSettingsProfile, updateSettingsProfile } from "@/lib/settings-profile-repository";
 
 export async function GET() {
   try {
@@ -37,7 +37,13 @@ export async function PATCH(request: Request) {
 
     const data = await updateSettingsProfile({ firstName, lastName });
     return NextResponse.json(data, { status: 200 });
-  } catch {
+  } catch (error) {
+    if (error instanceof ProfileUpdateError) {
+      return NextResponse.json(
+        { error: error.message, upstream_status: error.status, detail: error.detail },
+        { status: error.status >= 400 && error.status < 600 ? error.status : 500 },
+      );
+    }
     return NextResponse.json({ error: "profile update failed" }, { status: 500 });
   }
 }

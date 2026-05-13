@@ -98,6 +98,17 @@ export async function getSettingsProfile(): Promise<ProfileSurfaceRead> {
 }
 
 
+export class ProfileUpdateError extends Error {
+  status: number;
+  detail: unknown;
+
+  constructor(message: string, status: number, detail: unknown) {
+    super(message);
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
 export type ProfileUpdateInput = {
   firstName: string;
   lastName: string;
@@ -116,7 +127,15 @@ export async function updateSettingsProfile(input: ProfileUpdateInput): Promise<
     cache: "no-store",
   });
 
-  if (!response.ok) throw new Error(`profile update failed: ${response.status}`);
+  if (!response.ok) {
+    let detail: unknown = null;
+    try {
+      detail = await response.json();
+    } catch {
+      detail = await response.text().catch(() => null);
+    }
+    throw new ProfileUpdateError("profile update failed", response.status, detail);
+  }
 
   const payload = (await response.json()) as {
     first_name?: string | null;
@@ -134,7 +153,7 @@ export async function updateSettingsProfile(input: ProfileUpdateInput): Promise<
       firstName,
       lastName,
       email,
-      role: session.operator.email ? "operator" : "operator",
+      role: "operator",
     },
     organization: { id: orgId },
     dataMode: "live",
