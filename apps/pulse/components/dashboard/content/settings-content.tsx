@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,13 +93,35 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     ? settingsData.quickItems
     : defaultSettingsSections.map((section) => ({ ...section, status: "mapped" as const }));
   const integrations = settingsData?.integrations?.length ? settingsData.integrations : defaultIntegrations;
-  const profile = settingsData?.profile ?? {
+  const [profileState, setProfileState] = useState(settingsData?.profile ?? null);
+
+  useEffect(() => {
+    let isMounted = true;
+    void fetch("/api/settings/profile", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { profile?: SettingsSurfaceData["profile"] };
+      })
+      .then((payload) => {
+        if (!isMounted || !payload?.profile) return;
+        setProfileState(payload.profile);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const profile = profileState ?? settingsData?.profile ?? {
     initials: "JD",
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@company.com",
     role: "SRE Lead",
   };
+  const anchorTargets = ["appearance", "integrations", "security", "profile", "notifications", "team"] as const;
+
   const sourceErrorText =
     settingsData && settingsData.sourceErrors.length > 0
       ? `Data source unavailable: ${settingsData.sourceErrors.join(", ")}.`
@@ -111,8 +134,13 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
           {sourceErrorText}
         </div>
       ) : null}
+      <div className="sr-only" aria-hidden="true">
+        {anchorTargets.map((anchorId) => (
+          <span key={anchorId} id={anchorId} />
+        ))}
+      </div>
       {/* Profile Section */}
-      <div className="bg-card rounded-2xl border border-border p-6">
+      <div id="profile" className="bg-card rounded-2xl border border-border p-6">
         <h3 className="font-semibold text-foreground mb-6">Profile Settings</h3>
         
         <div className="flex items-start gap-6">
@@ -166,7 +194,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       </div>
 
       {/* Quick Settings */}
-      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div id="appearance" className="bg-card rounded-2xl border border-border overflow-hidden">
         <h3 className="font-semibold text-foreground p-6 pb-4">Quick Settings</h3>
         <p className="px-6 pb-4 text-xs text-muted-foreground">
           Some controls are staged for upcoming parity slices and are marked as Planned or Partial.
@@ -210,7 +238,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       </div>
 
       {/* Integrations */}
-      <div className="bg-card rounded-2xl border border-border p-6">
+      <div id="integrations" className="bg-card rounded-2xl border border-border p-6">
         <h3 className="font-semibold text-foreground mb-6">Integrations</h3>
         <div className="space-y-3">
           {integrations.map((integration) => (
