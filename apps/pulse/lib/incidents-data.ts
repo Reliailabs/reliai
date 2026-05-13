@@ -24,8 +24,8 @@ type IncidentRead = {
 
 type IncidentEventRead = {
   event_type: string;
-  happened_at: string;
-  summary: string;
+  created_at: string;
+  metadata_json: Record<string, unknown> | null;
 };
 
 type IncidentDetailRead = {
@@ -50,12 +50,11 @@ function relDuration(value: string): string {
   }
 }
 
-function timeStamp(value: string): string {
-  try {
-    return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return "--:--";
-  }
+function timeStamp(value: string | null | undefined): string {
+  if (!value) return "--:--";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "--:--";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 async function apiRequest<T>(path: string): Promise<T> {
@@ -106,8 +105,10 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
     const timeline =
       eventsResult.data?.items?.length
         ? eventsResult.data.items.slice(0, 4).map((event) => ({
-            time: timeStamp(event.happened_at),
-            event: event.summary,
+            time: timeStamp(event.created_at),
+            event: typeof event.metadata_json?.description === "string"
+              ? event.metadata_json.description
+              : event.event_type.replace(/_/g, " "),
             type:
               event.event_type.includes("ack") || event.event_type.includes("notify")
                 ? ("notification" as const)
