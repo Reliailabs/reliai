@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings } from "lucide-react";
+import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings, Trash2, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { TeamMember } from "@/app/api/settings/team/route";
 
 const defaultSettingsSections = [
   {
@@ -99,6 +100,16 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
+  // Team state
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [teamLoading, setTeamLoading] = useState(true);
+  const [teamError, setTeamError] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("engineer");
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
   useEffect(() => {
     let isMounted = true;
     void fetch("/api/settings/profile", { cache: "no-store" })
@@ -133,6 +144,74 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     setFirstName((prev) => (prev ? prev : profile.firstName));
     setLastName((prev) => (prev ? prev : profile.lastName));
   }, [profile]);
+
+  useEffect(() => {
+    setTeamLoading(true);
+    void fetch("/api/settings/team", { cache: "no-store" })
+      .then(async (r) => {
+        if (r.status === 403) {
+          setTeamError("Team management requires a plan upgrade.");
+          return;
+        }
+        if (!r.ok) return;
+        const data = (await r.json()) as { items: TeamMember[] };
+        setMembers(data.items ?? []);
+      })
+      .catch(() => setTeamError("Could not load team members."))
+      .finally(() => setTeamLoading(false));
+  }, []);
+
+  async function handleInvite() {
+    if (!inviteEmail.trim() || isInviting) return;
+    setIsInviting(true);
+    setInviteMessage(null);
+    try {
+      const r = await fetch("/api/settings/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+      });
+      if (r.status === 404) {
+        setInviteMessage({ text: "No Reliai account found for that email. They need to sign up first.", ok: false });
+        return;
+      }
+      if (r.status === 403) {
+        setInviteMessage({ text: "Adding members requires a plan upgrade.", ok: false });
+        return;
+      }
+      if (!r.ok) {
+        setInviteMessage({ text: "Failed to add member. Please try again.", ok: false });
+        return;
+      }
+      const newMember = (await r.json()) as TeamMember;
+      setMembers((prev) => [...prev, newMember]);
+      setInviteEmail("");
+      setInviteMessage({ text: `${newMember.email} added as ${newMember.role}.`, ok: true });
+    } catch {
+      setInviteMessage({ text: "Failed to add member. Please try again.", ok: false });
+    } finally {
+      setIsInviting(false);
+    }
+  }
+
+  async function handleRemove(userId: string) {
+    if (removingId) return;
+    setRemovingId(userId);
+    try {
+      const r = await fetch(`/api/settings/team/${userId}`, { method: "DELETE" });
+      if (r.ok || r.status === 204) {
+        setMembers((prev) => prev.filter((m) => m.userId !== userId));
+      }
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
+  function formatJoinedAt(iso: string): string {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
 
   async function handleSaveProfile() {
     setIsSaving(true);
@@ -282,6 +361,101 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
               </Link>
             );
           })}
+        </div>
+      </div>
+
+      {/* Team */}
+      <div id="team" className="bg-card rounded-2xl border border-border p-6">
+        <h3 className="font-semibold text-foreground mb-1">Team Members</h3>
+        <p className="text-xs text-muted-foreground mb-6">
+          Members can be assigned to incidents. Admins can add and remove members.
+        </p>
+
+        {teamError ? (
+          <div className="flex items-center gap-2 rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300 mb-4">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            {teamError}
+          </div>
+        ) : null}
+
+        {/* Member list */}
+        {teamLoading ? (
+          <div className="space-y-2 mb-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 rounded-xl bg-muted/40 animate-pulse" />
+            ))}
+          </div>
+        ) : members.length === 0 ? (
+          <p className="text-sm text-muted-foreground mb-6">No team members yet.</p>
+        ) : (
+          <div className="mb-6 divide-y divide-border rounded-xl border border-border overflow-hidden">
+            {members.map((member) => (
+              <div key={member.userId} className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-muted/20 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-chart-1/15 flex items-center justify-center text-xs font-semibold text-chart-1 shrink-0">
+                  {member.email.split("@")[0]!.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{member.email}</p>
+                  <p className="text-xs text-muted-foreground">{formatJoinedAt(member.joinedAt)}</p>
+                </div>
+                <span className="rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground capitalize shrink-0">
+                  {member.role}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleRemove(member.userId)}
+                  disabled={removingId === member.userId}
+                  aria-label={`Remove ${member.email}`}
+                  className="ml-1 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add member form */}
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-foreground">Add member</p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              placeholder="colleague@company.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void handleInvite(); }}
+              className="flex-1 px-3 py-2 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="admin">Admin</option>
+              <option value="engineer">Engineer</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void handleInvite()}
+              disabled={isInviting || !inviteEmail.trim()}
+              className="gap-1.5 shrink-0"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              {isInviting ? "Adding…" : "Add"}
+            </Button>
+          </div>
+          {inviteMessage ? (
+            <p className={cn("text-xs", inviteMessage.ok ? "text-success" : "text-destructive")}>
+              {inviteMessage.text}
+            </p>
+          ) : null}
+          <p className="text-[11px] text-muted-foreground">
+            The person must already have a Reliai account.{" "}
+            <span className="text-muted-foreground/60">Email-based invites are coming soon.</span>
+          </p>
         </div>
       </div>
 

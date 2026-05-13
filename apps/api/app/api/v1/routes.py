@@ -2529,6 +2529,27 @@ def list_org_escalation_policies_endpoint(
     return EscalationPolicyListResponse(items=items)
 
 
+class OperatorLookupRead(BaseModel):
+    user_id: str
+    email: str
+
+
+@router.get("/operators/lookup", response_model=OperatorLookupRead)
+def operator_lookup_by_email_endpoint(
+    email: str,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OperatorLookupRead:
+    normalized = email.strip().lower()
+    user = db.scalar(select(User).where(User.email == normalized))
+    if user is None:
+        user_via_legacy = db.scalar(select(OperatorUser).where(OperatorUser.email == normalized))
+        if user_via_legacy is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No account found for that email address.")
+        return OperatorLookupRead(user_id=str(user_via_legacy.id), email=user_via_legacy.email)
+    return OperatorLookupRead(user_id=str(user.id), email=user.email)
+
+
 @router.get("/organizations/{organization_id}/members", response_model=OrganizationMemberListResponse)
 def list_organization_members_endpoint(
     organization_id: UUID,
