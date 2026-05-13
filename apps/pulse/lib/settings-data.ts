@@ -32,6 +32,18 @@ async function apiRequest<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+async function apiRequestOrNull<T>(path: string, notFoundValue: T): Promise<T> {
+  const token = await getApiAccessToken();
+  if (!token) throw new Error("missing session token");
+  const response = await fetch(`${API_URL}${path}`, {
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+  if (response.status === 404) return notFoundValue;
+  if (!response.ok) throw new Error(`api request failed: ${response.status}`);
+  return (await response.json()) as T;
+}
+
 async function safeFetch<T>(promise: Promise<T>): Promise<FetchResult<T>> {
   try {
     return { data: await promise, error: false };
@@ -52,7 +64,10 @@ export async function getSettingsSurfaceData(organizationId: string | null): Pro
   const alertResult =
     organizationId
       ? await safeFetch(
-          apiRequest<AlertTargetRead>(`/api/v1/organizations/${organizationId}/alert-target`),
+          apiRequestOrNull<AlertTargetRead>(
+            `/api/v1/organizations/${organizationId}/alert-target`,
+            { enabled: false },
+          ),
         )
       : ({ data: null, error: false } as FetchResult<AlertTargetRead>);
   if (alertResult.error) sourceErrors.push("alert-target");
