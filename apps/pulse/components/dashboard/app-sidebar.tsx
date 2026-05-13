@@ -19,6 +19,7 @@ import {
   Settings,
   Search,
   Moon,
+  Sun,
   ShieldCheck,
   ChevronDown,
   ChevronRight,
@@ -31,6 +32,14 @@ import {
   Terminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AppSidebarProps {
   activeSection: Section;
@@ -229,21 +238,54 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
         </Link>
         
         {/* User Profile */}
-        <div className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer">
-          <div className="w-9 h-9 rounded-full bg-chart-1/20 flex items-center justify-center">
-            <span className="text-chart-1 text-sm font-medium">JD</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-          <p className="text-xs text-muted-foreground truncate">Reliability Lead</p>
-          </div>
-          <button 
+        <div className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-muted/60 transition-colors">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                aria-label="Open profile menu"
+              >
+                <div className="w-9 h-9 rounded-full bg-chart-1/20 flex items-center justify-center">
+                  <span className="text-chart-1 text-sm font-medium">JD</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground truncate">John Doe</p>
+                  <p className="text-xs text-muted-foreground truncate">Reliability Lead</p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Profile</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/settings#profile">View profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings#team">Team settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <form method="post" action="/api/auth/sign-out" className="w-full">
+                  <button type="submit" className="w-full text-left">
+                    Sign out
+                  </button>
+                </form>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <button
             type="button"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            aria-label="Toggle theme"
+            aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
-            <Moon className="w-4 h-4 text-muted-foreground" />
+            {resolvedTheme === "dark" ? (
+              <Sun className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <Moon className="w-4 h-4 text-muted-foreground" />
+            )}
           </button>
         </div>
         <form method="post" action="/api/auth/sign-out">
