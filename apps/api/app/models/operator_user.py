@@ -10,6 +10,8 @@ class OperatorUser(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "operator_users"
 
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    first_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     # Legacy admin flag retained for backward compatibility with early operator flows.

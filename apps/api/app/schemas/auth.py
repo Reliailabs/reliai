@@ -27,7 +27,14 @@ class AuthSwitchOrganizationRequest(BaseModel):
 class OperatorRead(BaseModel):
     id: UUID
     email: str
+    first_name: str | None = None
+    last_name: str | None = None
     is_system_admin: bool = False
+
+
+class AuthProfileUpdateRequest(BaseModel):
+    first_name: str = Field(min_length=1, max_length=120)
+    last_name: str = Field(min_length=1, max_length=120)
 
 
 class AuthSessionResponse(BaseModel):

@@ -44,6 +44,7 @@ from app.schemas.ai import (
 )
 from app.schemas.auth import (
     AuthSessionResponse,
+    AuthProfileUpdateRequest,
     AuthSignInRequest,
     AuthSwitchOrganizationRequest,
     OperatorMembershipRead,
@@ -2222,6 +2223,8 @@ def sign_in_operator_endpoint(
         operator=OperatorRead(
             id=operator.id,
             email=operator.email,
+            first_name=operator.first_name,
+            last_name=operator.last_name,
             is_system_admin=operator.is_system_admin,
         ),
         memberships=_membership_items(db, get_operator_memberships(db, operator.id)),
@@ -2239,6 +2242,8 @@ def auth_session_endpoint(
         operator=OperatorRead(
             id=operator.operator.id,
             email=operator.operator.email,
+            first_name=operator.operator.first_name,
+            last_name=operator.operator.last_name,
             is_system_admin=operator.operator.is_system_admin,
         ),
         memberships=_membership_items(db, operator.memberships),
@@ -2263,6 +2268,8 @@ def switch_organization_endpoint(
         operator=OperatorRead(
             id=user.id,
             email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
             is_system_admin=user.is_system_admin,
         ),
         memberships=_membership_items(db, memberships),
@@ -2271,6 +2278,28 @@ def switch_organization_endpoint(
         session_token=operator.session_token,
     )
 
+
+
+
+@router.patch("/auth/profile", response_model=OperatorRead)
+def update_profile_endpoint(
+    payload: AuthProfileUpdateRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OperatorRead:
+    user = operator.operator
+    user.first_name = payload.first_name.strip()
+    user.last_name = payload.last_name.strip()
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return OperatorRead(
+        id=user.id,
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        is_system_admin=user.is_system_admin,
+    )
 
 @router.post("/auth/sign-out", status_code=status.HTTP_204_NO_CONTENT)
 def sign_out_operator_endpoint(
