@@ -17,6 +17,13 @@ import { RiskReviewsContent } from "./content/risk-reviews-content";
 import { SettingsContent } from "./content/settings-content";
 import { Bell, Calendar, RefreshCw, Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { CausalityEvidenceData } from "@/components/dashboard/pulse-types";
 import type { AttributionSuggestionData } from "@/components/dashboard/pulse-types";
@@ -62,6 +69,27 @@ interface MainContentProps {
   projectControlData?: ProjectControlParityData;
   operationsData?: OperationsSurfaceData;
 }
+
+const alertInboxItems = [
+  {
+    id: "alert-inc-001",
+    title: "SEV-1 incident requires response",
+    meta: "2m ago • Incident",
+    href: "/incidents",
+  },
+  {
+    id: "alert-trace-001",
+    title: "Trace regression detected in production",
+    meta: "7m ago • Traces",
+    href: "/traces",
+  },
+  {
+    id: "alert-oncall-001",
+    title: "On-call escalation triggered",
+    meta: "12m ago • On-Call",
+    href: "/on-call",
+  },
+] as const;
 
 const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
   overview: {
@@ -258,15 +286,47 @@ export function MainContent({
           </Button>
 
           {/* Alerts */}
-          <button
-            type="button"
-            className="relative p-2 rounded-xl hover:bg-muted transition-colors"
-            aria-label="Alerts"
-            onClick={() => router.push("/on-call")}
-          >
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="relative p-2 rounded-xl hover:bg-muted transition-colors"
+                aria-label="Alerts inbox"
+              >
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[360px] p-0">
+              <div className="p-3">
+                <DropdownMenuLabel className="px-0 py-0 text-sm font-semibold text-foreground">
+                  Alert Inbox
+                </DropdownMenuLabel>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Read-only alerts. Requires operator review.
+                </p>
+              </div>
+              <DropdownMenuSeparator />
+              <div className="max-h-[320px] overflow-y-auto p-2">
+                {alertInboxItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className="block rounded-md border border-border bg-card px-3 py-2.5 transition-colors hover:bg-muted"
+                  >
+                    <p className="text-sm font-medium text-foreground">{item.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{item.meta}</p>
+                  </Link>
+                ))}
+              </div>
+              <DropdownMenuSeparator />
+              <div className="p-2">
+                <Button asChild variant="outline" size="sm" className="w-full bg-transparent">
+                  <Link href="/on-call">Open On-Call Queue</Link>
+                </Button>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Primary Action */}
           <Button asChild size="sm" className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
