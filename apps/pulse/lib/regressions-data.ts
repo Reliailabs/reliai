@@ -45,16 +45,19 @@ async function safeFetch<T>(promise: Promise<T>): Promise<FetchResult<T>> {
   }
 }
 
-export async function getRegressionsSurfaceData(): Promise<RegressionsSurfaceData> {
+export async function getRegressionsSurfaceData(projectId?: string): Promise<RegressionsSurfaceData> {
   const sourceErrors: string[] = [];
-  const projectsResult = await safeFetch(apiRequest<ListResponse<{ id: string }>>("/api/v1/projects"));
-  if (projectsResult.error) sourceErrors.push("projects");
-  const firstProjectId = projectsResult.data?.items?.[0]?.id ?? null;
-  if (!firstProjectId) {
-    return { items: [], sourceErrors };
+  let resolvedProjectId: string | null = projectId ?? null;
+  if (!resolvedProjectId) {
+    const projectsResult = await safeFetch(apiRequest<ListResponse<{ id: string }>>("/api/v1/projects"));
+    if (projectsResult.error) sourceErrors.push("projects");
+    resolvedProjectId = projectsResult.data?.items?.[0]?.id ?? null;
+    if (!resolvedProjectId) {
+      return { items: [], sourceErrors };
+    }
   }
   const regressionsResult = await safeFetch(
-    apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${firstProjectId}/regressions?limit=50`),
+    apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${resolvedProjectId}/regressions?limit=50`),
   );
   if (regressionsResult.error) sourceErrors.push("regressions");
 
