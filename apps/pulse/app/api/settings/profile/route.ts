@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSettingsProfile } from "@/lib/settings-profile-repository";
+import { getSettingsProfile, updateSettingsProfile } from "@/lib/settings-profile-repository";
 
 export async function GET() {
   try {
@@ -21,5 +21,23 @@ export async function GET() {
       },
       { status: 500 },
     );
+  }
+}
+
+
+export async function PATCH(request: Request) {
+  try {
+    const body = (await request.json()) as { firstName?: string; lastName?: string };
+    const firstName = body.firstName?.trim();
+    const lastName = body.lastName?.trim();
+
+    if (!firstName || !lastName) {
+      return NextResponse.json({ error: "firstName and lastName are required" }, { status: 400 });
+    }
+
+    const data = await updateSettingsProfile({ firstName, lastName });
+    return NextResponse.json(data, { status: 200 });
+  } catch {
+    return NextResponse.json({ error: "profile update failed" }, { status: 500 });
   }
 }

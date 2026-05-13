@@ -96,3 +96,48 @@ async function readLiveProfile(): Promise<ProfileSurfaceRead> {
 export async function getSettingsProfile(): Promise<ProfileSurfaceRead> {
   return readLiveProfile();
 }
+
+
+export type ProfileUpdateInput = {
+  firstName: string;
+  lastName: string;
+};
+
+export async function updateSettingsProfile(input: ProfileUpdateInput): Promise<ProfileSurfaceRead> {
+  const session = await requireOperatorSession("/settings");
+  const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
+  const token = await getApiAccessToken();
+  if (!token) throw new Error("missing session token");
+
+  const response = await fetch(`${API_URL}/api/v1/auth/profile`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ first_name: input.firstName, last_name: input.lastName }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) throw new Error(`profile update failed: ${response.status}`);
+
+  const payload = (await response.json()) as {
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+  };
+
+  const firstName = payload.first_name ?? input.firstName;
+  const lastName = payload.last_name ?? input.lastName;
+  const email = payload.email ?? "operator@reliai.dev";
+
+  return {
+    profile: {
+      initials: toInitials(firstName, lastName),
+      firstName,
+      lastName,
+      email,
+      role: session.operator.email ? "operator" : "operator",
+    },
+    organization: { id: orgId },
+    dataMode: "live",
+    sourceErrors: [],
+  };
+}

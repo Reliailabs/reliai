@@ -94,6 +94,10 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     : defaultSettingsSections.map((section) => ({ ...section, status: "mapped" as const }));
   const integrations = settingsData?.integrations?.length ? settingsData.integrations : defaultIntegrations;
   const [profileState, setProfileState] = useState(settingsData?.profile ?? null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -105,6 +109,8 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       .then((payload) => {
         if (!isMounted || !payload?.profile) return;
         setProfileState(payload.profile);
+        setFirstName(payload.profile.firstName);
+        setLastName(payload.profile.lastName);
       })
       .catch(() => undefined);
 
@@ -121,6 +127,32 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     role: "SRE Lead",
   };
   const anchorTargets = ["appearance", "integrations", "security", "profile", "notifications", "team"] as const;
+
+  useEffect(() => {
+    if (!profile) return;
+    setFirstName((prev) => (prev ? prev : profile.firstName));
+    setLastName((prev) => (prev ? prev : profile.lastName));
+  }, [profile]);
+
+  async function handleSaveProfile() {
+    setIsSaving(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/settings/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName }),
+      });
+      if (!response.ok) throw new Error("save failed");
+      const payload = (await response.json()) as { profile?: SettingsSurfaceData["profile"] };
+      if (payload.profile) setProfileState(payload.profile);
+      setSaveMessage("Profile saved.");
+    } catch {
+      setSaveMessage("Unable to save profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   const sourceErrorText =
     settingsData && settingsData.sourceErrors.length > 0
@@ -154,7 +186,8 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 <input
                   type="text"
                   id="firstName"
-                  defaultValue={profile.firstName}
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -163,7 +196,8 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 <input
                   type="text"
                   id="lastName"
-                  defaultValue={profile.lastName}
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -187,7 +221,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
               </div>
             </div>
             <div className="flex justify-end mt-6">
-              <Button>Save Changes</Button>
+              <Button type="button" onClick={handleSaveProfile} disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
             </div>
           </div>
         </div>
