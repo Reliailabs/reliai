@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, inspect, select, text
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.dependencies import require_operator
@@ -14,8 +14,10 @@ from app.db.session import get_db
 from app.models.deployment import Deployment
 from app.models.audit_artifact import AuditArtifact
 from app.models.trace import Trace
+from app.models.user import User
 from app.models.model_version import ModelVersion
 from app.models.organization import Organization
+from app.models.operator_user import OperatorUser
 from app.models.prompt_version import PromptVersion
 from app.models.project import Project
 from app.models.reliability_graph_edge import ReliabilityGraphEdge
@@ -579,6 +581,26 @@ def _active_organization_id(operator: OperatorContext) -> UUID:
     if organization_id is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active organization")
     return organization_id
+
+
+def _resolve_operator_name_fields(db: Session, operator: User | OperatorUser) -> tuple[str | None, str | None]:
+    first_name = getattr(operator, "first_name", None)
+    last_name = getattr(operator, "last_name", None)
+    if first_name or last_name:
+        return first_name, last_name
+
+    legacy_id = getattr(operator, "legacy_operator_user_id", None)
+    legacy_operator: OperatorUser | None = None
+    if legacy_id is not None:
+        legacy_operator = db.get(OperatorUser, legacy_id)
+    if legacy_operator is None:
+        email = getattr(operator, "email", None)
+        if email:
+            legacy_operator = db.scalar(select(OperatorUser).where(OperatorUser.email == email))
+
+    if legacy_operator is None:
+        return None, None
+    return legacy_operator.first_name, legacy_operator.last_name
 
 
 def _membership_items(db: Session, memberships) -> list[OperatorMembershipRead]:
@@ -2223,8 +2245,8 @@ def sign_in_operator_endpoint(
         operator=OperatorRead(
             id=operator.id,
             email=operator.email,
-            first_name=operator.first_name,
-            last_name=operator.last_name,
+            first_name=getattr(operator, "first_name", None),
+            last_name=getattr(operator, "last_name", None),
             is_system_admin=operator.is_system_admin,
         ),
         memberships=_membership_items(db, get_operator_memberships(db, operator.id)),
@@ -2238,12 +2260,13 @@ def auth_session_endpoint(
     operator: OperatorContext = Depends(require_operator),
     db: Session = Depends(get_db),
 ) -> AuthSessionResponse:
+    first_name, last_name = _resolve_operator_name_fields(db, operator.operator)
     return AuthSessionResponse(
         operator=OperatorRead(
             id=operator.operator.id,
             email=operator.operator.email,
-            first_name=operator.operator.first_name,
-            last_name=operator.operator.last_name,
+            first_name=first_name,
+            last_name=last_name,
             is_system_admin=operator.operator.is_system_admin,
         ),
         memberships=_membership_items(db, operator.memberships),
@@ -2264,12 +2287,13 @@ def switch_organization_endpoint(
         organization_id=payload.organization_id,
     )
     memberships = get_operator_memberships(db, user.id)
+    first_name, last_name = _resolve_operator_name_fields(db, user)
     return AuthSessionResponse(
         operator=OperatorRead(
             id=user.id,
             email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
+            first_name=first_name,
+            last_name=last_name,
             is_system_admin=user.is_system_admin,
         ),
         memberships=_membership_items(db, memberships),
@@ -2306,18 +2330,33 @@ def update_profile_endpoint(
     operator: OperatorContext = Depends(require_operator),
 ) -> OperatorRead:
     _ensure_operator_profile_columns(db)
-    user = operator.operator
-    user.first_name = payload.first_name.strip()
-    user.last_name = payload.last_name.strip()
-    db.add(user)
+    current = operator.operator
+
+    target: OperatorUser | None = None
+    if isinstance(current, OperatorUser):
+        target = current
+    else:
+        legacy_id = getattr(current, "legacy_operator_user_id", None)
+        if legacy_id is not None:
+            target = db.get(OperatorUser, legacy_id)
+        if target is None:
+            target = db.scalar(select(OperatorUser).where(OperatorUser.email == current.email))
+
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operator profile not found")
+
+    target.first_name = payload.first_name.strip()
+    target.last_name = payload.last_name.strip()
+    db.add(target)
     db.commit()
-    db.refresh(user)
+    db.refresh(target)
+
     return OperatorRead(
-        id=user.id,
-        email=user.email,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        is_system_admin=user.is_system_admin,
+        id=target.id,
+        email=target.email,
+        first_name=target.first_name,
+        last_name=target.last_name,
+        is_system_admin=target.is_system_admin,
     )
 
 @router.post("/auth/sign-out", status_code=status.HTTP_204_NO_CONTENT)
