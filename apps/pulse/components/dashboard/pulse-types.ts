@@ -301,8 +301,13 @@ export type ProjectRouteContextMode =
   | "audits"
   | "traces"
   | "deployments"
+  | "regressions"
+  | "ingestion"
+  | "processors"
+  | "settings"
   | "guardrails"
-  | "metrics";
+  | "metrics"
+  | "reliability";
 
 export type ProjectRouteContext = {
   projectId: string;

@@ -5,6 +5,7 @@ import { API_URL, SESSION_COOKIE_NAME } from "@/lib/constants";
 
 const PROTECTED_PATH_PREFIXES = [
   "/pulse",
+  "/projects",
   "/services",
   "/incidents",
   "/errors",
@@ -16,6 +17,7 @@ const PROTECTED_PATH_PREFIXES = [
   "/on-call",
   "/postmortems",
   "/settings",
+  "/playground",
 ];
 
 function isProtectedPath(pathname: string): boolean {
@@ -59,6 +61,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/pulse/:path*",
+    "/projects/:path*",
     "/services/:path*",
     "/incidents/:path*",
     "/errors/:path*",
@@ -70,5 +73,6 @@ export const config = {
     "/on-call/:path*",
     "/postmortems/:path*",
     "/settings/:path*",
+    "/playground/:path*",
   ],
 };
