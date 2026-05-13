@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Section } from "@/components/dashboard/sections";
@@ -15,7 +16,8 @@ import { ServicesContent } from "./content/services-content";
 import { PostmortemsContent } from "./content/postmortems-content";
 import { RiskReviewsContent } from "./content/risk-reviews-content";
 import { SettingsContent } from "./content/settings-content";
-import { Bell, Calendar, RefreshCw, Plus, AlertCircle } from "lucide-react";
+import { Bell, Calendar, RefreshCw, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -91,14 +93,18 @@ const alertInboxItems = [
   },
 ] as const;
 
-const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
+type PrimaryAction = { label: string; href: string; icon: React.ReactNode };
+
+const sectionConfig: Record<Section, { title: string; subtitle: string; primaryAction?: PrimaryAction }> = {
   overview: {
     title: "Pulse Overview",
     subtitle: "Real-time AI reliability signals",
+    primaryAction: { label: "Report Incident", href: "/incidents", icon: <AlertCircle className="w-4 h-4" /> },
   },
   incidents: {
     title: "Incidents",
     subtitle: "Active & Recent Incidents",
+    primaryAction: { label: "Report Incident", href: "/incidents", icon: <AlertCircle className="w-4 h-4" /> },
   },
   deployments: {
     title: "Deployments",
@@ -188,12 +194,19 @@ export function MainContent({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isRefreshing, startRefresh] = useTransition();
   const config = sectionConfig[activeSection];
 
   const setTimeRange = (range: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("range", range);
     router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const handleRefresh = () => {
+    startRefresh(() => {
+      router.refresh();
+    });
   };
 
   const renderContent = () => {
@@ -279,9 +292,10 @@ export function MainContent({
             variant="outline"
             size="sm"
             className="gap-2 bg-transparent"
-            onClick={() => router.refresh()}
+            onClick={handleRefresh}
+            disabled={isRefreshing}
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
             <span>Refresh</span>
           </Button>
 
@@ -328,13 +342,15 @@ export function MainContent({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Primary Action */}
-          <Button asChild size="sm" className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-            <Link href="/incidents">
-              <AlertCircle className="w-4 h-4" />
-              <span>Report Incident</span>
-            </Link>
-          </Button>
+          {/* Primary Action — section-aware */}
+          {config.primaryAction ? (
+            <Button asChild size="sm" className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+              <Link href={config.primaryAction.href}>
+                {config.primaryAction.icon}
+                <span>{config.primaryAction.label}</span>
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </header>
 
