@@ -103,17 +103,20 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
     void fetch("/api/auth/session", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
-        return response.json() as Promise<{ session?: { operator?: { is_system_admin?: boolean; email?: string } } }>;
+        return response.json() as Promise<{ session?: { operator?: { is_system_admin?: boolean; email?: string; first_name?: string | null; last_name?: string | null } } }>;
       })
       .then((payload) => {
         if (payload?.session?.operator?.is_system_admin) {
           setIsSystemAdmin(true);
         }
-        const email = payload?.session?.operator?.email ?? "operator@reliai.dev";
+        const op = payload?.session?.operator;
+        const email = op?.email ?? "operator@reliai.dev";
         const localPart = email.split("@")[0] ?? "operator";
         const parts = localPart.split(/[._-]+/).filter(Boolean);
-        const first = parts[0] ? parts[0][0].toUpperCase() + parts[0].slice(1) : "Reliai";
-        const last = parts[1] ? parts[1][0].toUpperCase() + parts[1].slice(1) : "Operator";
+        const emailFirst = parts[0] ? parts[0][0].toUpperCase() + parts[0].slice(1) : "Reliai";
+        const emailLast = parts[1] ? parts[1][0].toUpperCase() + parts[1].slice(1) : "Operator";
+        const first = op?.first_name?.trim() || emailFirst;
+        const last = op?.last_name?.trim() || emailLast;
         setSidebarProfile({
           initials: `${first[0] ?? "R"}${last[0] ?? "O"}`.toUpperCase(),
           name: `${first} ${last}`,
