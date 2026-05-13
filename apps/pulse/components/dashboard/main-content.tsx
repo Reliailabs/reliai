@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useTransition, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { AlertInboxResponse } from "@/app/api/alerts/inbox/route";
 import type { Section } from "@/components/dashboard/sections";
 import { OverviewContent } from "./content/overview-content";
 import { IncidentsContent } from "./content/incidents-content";
@@ -22,10 +23,12 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Check } from "lucide-react";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
 import type { CausalityEvidenceData } from "@/components/dashboard/pulse-types";
 import type { AttributionSuggestionData } from "@/components/dashboard/pulse-types";
@@ -72,26 +75,15 @@ interface MainContentProps {
   operationsData?: OperationsSurfaceData;
 }
 
-const alertInboxItems = [
-  {
-    id: "alert-inc-001",
-    title: "SEV-1 incident requires response",
-    meta: "2m ago • Incident",
-    href: "/incidents",
-  },
-  {
-    id: "alert-trace-001",
-    title: "Trace regression detected in production",
-    meta: "7m ago • Traces",
-    href: "/traces",
-  },
-  {
-    id: "alert-oncall-001",
-    title: "On-call escalation triggered",
-    meta: "12m ago • On-Call",
-    href: "/on-call",
-  },
+const TIME_RANGES = [
+  { value: "1h", label: "Last 1 hour" },
+  { value: "6h", label: "Last 6 hours" },
+  { value: "24h", label: "Last 24 hours" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
 ] as const;
+
+type TimeRange = (typeof TIME_RANGES)[number]["value"];
 
 type PrimaryAction = { label: string; href: string; icon: React.ReactNode };
 
@@ -195,9 +187,13 @@ export function MainContent({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isRefreshing, startRefresh] = useTransition();
+  const [alerts, setAlerts] = useState<AlertInboxResponse>({ items: [], count: 0 });
   const config = sectionConfig[activeSection];
 
-  const setTimeRange = (range: string) => {
+  const currentRange = (searchParams.get("range") ?? "24h") as TimeRange;
+  const currentRangeLabel = TIME_RANGES.find((r) => r.value === currentRange)?.label ?? "Last 24 hours";
+
+  const setTimeRange = (range: TimeRange) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("range", range);
     router.replace(`${pathname}?${params.toString()}`);
@@ -208,6 +204,13 @@ export function MainContent({
       router.refresh();
     });
   };
+
+  useEffect(() => {
+    void fetch("/api/alerts/inbox", { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<AlertInboxResponse>) : null))
+      .then((data) => { if (data) setAlerts(data); })
+      .catch(() => undefined);
+  }, []);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -277,15 +280,26 @@ export function MainContent({
 
         <div className="flex items-center gap-3">
           {/* Time Range */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 bg-transparent"
-            onClick={() => setTimeRange("24h")}
-          >
-            <Calendar className="w-4 h-4" />
-            <span>Last 24 hours</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <Calendar className="w-4 h-4" />
+                <span>{currentRangeLabel}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {TIME_RANGES.map((r) => (
+                <DropdownMenuItem
+                  key={r.value}
+                  onClick={() => setTimeRange(r.value)}
+                  className="gap-2"
+                >
+                  <Check className={cn("w-3.5 h-3.5", currentRange === r.value ? "opacity-100" : "opacity-0")} />
+                  {r.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Refresh */}
           <Button
@@ -308,7 +322,9 @@ export function MainContent({
                 aria-label="Alerts inbox"
               >
                 <Bell className="w-5 h-5 text-muted-foreground" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                {alerts.count > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[360px] p-0">
@@ -317,26 +333,28 @@ export function MainContent({
                   Alert Inbox
                 </DropdownMenuLabel>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Read-only alerts. Requires operator review.
+                  {alerts.count > 0 ? `${alerts.count} open incident${alerts.count === 1 ? "" : "s"} requiring attention.` : "No open incidents."}
                 </p>
               </div>
               <DropdownMenuSeparator />
               <div className="max-h-[320px] overflow-y-auto p-2">
-                {alertInboxItems.map((item) => (
+                {alerts.items.length > 0 ? alerts.items.map((item) => (
                   <Link
                     key={item.id}
                     href={item.href}
-                    className="block rounded-md border border-border bg-card px-3 py-2.5 transition-colors hover:bg-muted"
+                    className="block rounded-md border border-border bg-card px-3 py-2.5 mb-1 transition-colors hover:bg-muted"
                   >
                     <p className="text-sm font-medium text-foreground">{item.title}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{item.meta}</p>
                   </Link>
-                ))}
+                )) : (
+                  <p className="px-3 py-4 text-sm text-muted-foreground text-center">All clear.</p>
+                )}
               </div>
               <DropdownMenuSeparator />
               <div className="p-2">
                 <Button asChild variant="outline" size="sm" className="w-full bg-transparent">
-                  <Link href="/on-call">Open On-Call Queue</Link>
+                  <Link href="/incidents">View all incidents</Link>
                 </Button>
               </div>
             </DropdownMenuContent>
