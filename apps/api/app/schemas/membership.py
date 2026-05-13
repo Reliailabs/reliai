@@ -9,12 +9,14 @@ from app.schemas.common import APIModel
 class OrganizationMemberCreate(BaseModel):
     user_id: UUID
     role: str = Field(min_length=3, max_length=32)
+    display_name: str | None = Field(default=None, min_length=1, max_length=120)
 
 
 class OrganizationMemberRead(APIModel):
     user_id: UUID
     organization_id: UUID
     role: str
+    display_name: str | None = None
     email: str | None = None
     created_at: datetime
 

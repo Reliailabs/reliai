@@ -43,6 +43,9 @@ from app.models.organization_config_snapshot import OrganizationConfigSnapshot
 from app.models.organization_guardrail_policy import OrganizationGuardrailPolicy
 from app.models.organization_alert_target import OrganizationAlertTarget
 from app.models.organization_member import OrganizationMember
+from app.models.oncall_assignment import OncallAssignment
+from app.models.oncall_escalation_policy import OncallEscalationPolicy
+from app.models.oncall_rotation import OncallRotation
 from app.models.org_escalation_policy import OrgEscalationPolicy, OrgEscalationPolicyStep
 from app.models.operator_session import OperatorSession
 from app.models.operator_user import OperatorUser

@@ -4,6 +4,7 @@ import { API_URL } from "@/lib/constants";
 
 export type TeamMember = {
   userId: string;
+  name: string;
   email: string;
   role: string;
   joinedAt: string;
@@ -37,10 +38,11 @@ export async function GET() {
     if (!response.ok) return NextResponse.json({ items: [], organizationId: auth.orgId }, { status: 200 });
 
     const data = (await response.json()) as {
-      items: Array<{ user_id: string; email: string | null; role: string; created_at: string }>;
+      items: Array<{ user_id: string; display_name: string | null; email: string | null; role: string; created_at: string }>;
     };
     const items: TeamMember[] = (data.items ?? []).map((m) => ({
       userId: m.user_id,
+      name: m.display_name ?? (m.email?.split("@")[0] ?? "Unknown Member"),
       email: m.email ?? "(no email)",
       role: m.role,
       joinedAt: m.created_at,
@@ -56,9 +58,9 @@ export async function POST(request: Request) {
   const auth = await resolveOrgId();
   if (!auth) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = (await request.json()) as { email?: string; role?: string };
-  if (!body.email || !body.role) {
-    return NextResponse.json({ error: "email and role are required" }, { status: 400 });
+  const body = (await request.json()) as { name?: string; email?: string; role?: string };
+  if (!body.name || !body.email || !body.role) {
+    return NextResponse.json({ error: "name, email and role are required" }, { status: 400 });
   }
 
   // Step 1 — resolve email → user_id
@@ -83,7 +85,7 @@ export async function POST(request: Request) {
   const addResponse = await fetch(`${API_URL}/api/v1/organizations/${auth.orgId}/members`, {
     method: "POST",
     headers: { Authorization: `Bearer ${auth.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id, role: body.role }),
+    body: JSON.stringify({ user_id, role: body.role, display_name: body.name.trim() }),
     cache: "no-store",
   });
 
@@ -95,9 +97,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "add_failed" }, { status: addResponse.status });
   }
 
-  const member = (await addResponse.json()) as { user_id: string; email: string | null; role: string; created_at: string };
+  const member = (await addResponse.json()) as { user_id: string; display_name: string | null; email: string | null; role: string; created_at: string };
   return NextResponse.json({
     userId: member.user_id,
+    name: member.display_name ?? body.name.trim(),
     email: member.email ?? body.email,
     role: member.role,
     joinedAt: member.created_at,

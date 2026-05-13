@@ -17,6 +17,7 @@ from app.models.trace import Trace
 from app.models.user import User
 from app.models.model_version import ModelVersion
 from app.models.organization import Organization
+from app.models.organization_member import OrganizationMember
 from app.models.operator_user import OperatorUser
 from app.models.prompt_version import PromptVersion
 from app.models.project import Project
@@ -206,6 +207,13 @@ from app.schemas.onboarding_simulation import (
     OnboardingSimulationCreate,
     OnboardingSimulationCreateResponse,
     OnboardingSimulationStatusRead,
+)
+from app.schemas.oncall import (
+    OncallAssignmentsUpdateRequest,
+    OncallEscalationPolicyUpdateRequest,
+    OncallEscalationStepRead,
+    OncallAssignmentRead,
+    ProjectOncallRead,
 )
 from app.schemas.org_escalation_policy import (
     EscalationPolicyListResponse,
@@ -525,6 +533,11 @@ from app.services.onboarding_simulations import (
     create_onboarding_simulation,
     get_onboarding_simulation,
     run_onboarding_simulation,
+)
+from app.services.project_oncall import (
+    get_project_oncall_snapshot,
+    upsert_project_oncall_assignments,
+    upsert_project_oncall_escalation_policy,
 )
 from app.services.workos_roles import normalize_org_role
 from app.services.trace_ingestion_control import (
@@ -1253,6 +1266,51 @@ def _trace_ingestion_policy_item(db: Session, project: Project) -> TraceIngestio
                 limit_reached=item.unique_values_count >= policy.max_cardinality_per_field,
             )
             for item in cardinality
+        ],
+    )
+
+
+def _project_oncall_item(db: Session, project: Project) -> ProjectOncallRead:
+    rotation, assignments, escalation_policy = get_project_oncall_snapshot(db, project=project)
+    assignment_user_ids = [assignment.user_id for assignment in assignments]
+    name_by_user_id = {}
+    if assignment_user_ids:
+        name_by_user_id = {
+            item.user_id: item.display_name
+            for item in db.scalars(
+                select(OrganizationMember).where(
+                    OrganizationMember.organization_id == project.organization_id,
+                    OrganizationMember.user_id.in_(assignment_user_ids),
+                )
+            ).all()
+        }
+    return ProjectOncallRead(
+        project_id=project.id,
+        rotation_id=rotation.id,
+        rotation_name=rotation.name,
+        timezone=rotation.timezone,
+        is_active=rotation.is_active,
+        assignments=[
+            OncallAssignmentRead(
+                id=assignment.id,
+                role=assignment.role,
+                user_id=assignment.user_id,
+                name=name_by_user_id.get(assignment.user_id),
+                email=assignment.user.email if getattr(assignment, "user", None) is not None else None,
+                starts_at=assignment.starts_at,
+                ends_at=assignment.ends_at,
+            )
+            for assignment in assignments
+        ],
+        escalation_policy=[
+            OncallEscalationStepRead(
+                id=step.id,
+                step_order=step.step_order,
+                target_role=step.target_role,
+                wait_minutes=step.wait_minutes,
+                channel=step.channel,
+            )
+            for step in escalation_policy
         ],
     )
 
@@ -2564,6 +2622,7 @@ def list_organization_members_endpoint(
                 user_id=item.user_id,
                 organization_id=item.organization_id,
                 role=item.role,
+                display_name=item.display_name,
                 email=item.user.email if getattr(item, "user", None) is not None else None,
                 created_at=item.created_at,
             )
@@ -2599,12 +2658,14 @@ def add_organization_member_endpoint(
         organization_id=organization_id,
         user_id=payload.user_id,
         role=normalized_role,
+        display_name=payload.display_name,
         actor_user_id=operator.operator.id,
     )
     return OrganizationMemberRead(
         user_id=item.user_id,
         organization_id=item.organization_id,
         role=item.role,
+        display_name=item.display_name,
         email=item.user.email if getattr(item, "user", None) is not None else None,
         created_at=item.created_at,
     )
@@ -3217,6 +3278,50 @@ def update_project_ingestion_policy_endpoint(
     project = require_project_role(db, operator, project_id, "engineer")
     upsert_project_ingestion_policy(db, project=project, payload=payload)
     return _trace_ingestion_policy_item(db, project)
+
+
+@router.get("/projects/{project_id}/oncall", response_model=ProjectOncallRead)
+def get_project_oncall_endpoint(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectOncallRead:
+    project = require_project_access(db, operator, project_id)
+    return _project_oncall_item(db, project)
+
+
+@router.put("/projects/{project_id}/oncall/assignments", response_model=ProjectOncallRead)
+def update_project_oncall_assignments_endpoint(
+    project_id: UUID,
+    payload: OncallAssignmentsUpdateRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectOncallRead:
+    project = require_project_role(db, operator, project_id, "engineer")
+    upsert_project_oncall_assignments(
+        db,
+        project=project,
+        items=payload.items,
+        actor_user_id=operator.operator.id,
+    )
+    return _project_oncall_item(db, project)
+
+
+@router.put("/projects/{project_id}/oncall/escalation-policy", response_model=ProjectOncallRead)
+def update_project_oncall_escalation_policy_endpoint(
+    project_id: UUID,
+    payload: OncallEscalationPolicyUpdateRequest,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> ProjectOncallRead:
+    project = require_project_role(db, operator, project_id, "engineer")
+    upsert_project_oncall_escalation_policy(
+        db,
+        project=project,
+        items=payload.items,
+        actor_user_id=operator.operator.id,
+    )
+    return _project_oncall_item(db, project)
 
 
 @router.get("/projects/{project_id}/custom-metrics", response_model=ProjectCustomMetricListResponse)

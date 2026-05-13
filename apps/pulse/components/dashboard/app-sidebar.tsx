@@ -64,6 +64,7 @@ const favorites: NavItem[] = [
 const mainMenu: NavItem[] = [
   { id: "overview", label: "Pulse", icon: LayoutDashboard },
   { id: "incidents", label: "Incidents", icon: AlertTriangle, badge: 3, badgeColor: "red" },
+  { id: "oncall", label: "On-Call", icon: Phone },
   { id: "deployments", label: "Deployments", icon: Rocket, badge: 8 },
   { id: "traces", label: "Traces", icon: Waypoints },
   { id: "metrics", label: "Metrics", icon: BarChart3, badge: 24, badgeColor: "yellow" },

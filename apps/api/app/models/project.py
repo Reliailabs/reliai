@@ -60,3 +60,4 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     audits = relationship("Audit", back_populates="project")
     audit_summary = relationship("ProjectAuditSummary", uselist=False, back_populates="project")
+    oncall_rotations = relationship("OncallRotation", back_populates="project")
