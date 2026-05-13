@@ -83,9 +83,14 @@ const advancedOpsMenu: NavItem[] = [
 export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
   const [advancedOpsOpen, setAdvancedOpsOpen] = useState(false);
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     void fetch("/api/auth/session", { cache: "no-store" })
@@ -278,10 +283,10 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
             type="button"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={mounted && resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={mounted && resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {resolvedTheme === "dark" ? (
+            {mounted && resolvedTheme === "dark" ? (
               <Sun className="w-4 h-4 text-muted-foreground" />
             ) : (
               <Moon className="w-4 h-4 text-muted-foreground" />
