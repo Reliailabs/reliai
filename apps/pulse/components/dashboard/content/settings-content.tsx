@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,13 +93,67 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     ? settingsData.quickItems
     : defaultSettingsSections.map((section) => ({ ...section, status: "mapped" as const }));
   const integrations = settingsData?.integrations?.length ? settingsData.integrations : defaultIntegrations;
-  const profile = settingsData?.profile ?? {
+  const [profileState, setProfileState] = useState(settingsData?.profile ?? null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    void fetch("/api/settings/profile", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { profile?: SettingsSurfaceData["profile"] };
+      })
+      .then((payload) => {
+        if (!isMounted || !payload?.profile) return;
+        setProfileState(payload.profile);
+        setFirstName(payload.profile.firstName);
+        setLastName(payload.profile.lastName);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const profile = profileState ?? settingsData?.profile ?? {
     initials: "JD",
     firstName: "John",
     lastName: "Doe",
     email: "john.doe@company.com",
     role: "SRE Lead",
   };
+  const anchorTargets = ["appearance", "integrations", "security", "profile", "notifications", "team"] as const;
+
+  useEffect(() => {
+    if (!profile) return;
+    setFirstName((prev) => (prev ? prev : profile.firstName));
+    setLastName((prev) => (prev ? prev : profile.lastName));
+  }, [profile]);
+
+  async function handleSaveProfile() {
+    setIsSaving(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/settings/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName }),
+      });
+      if (!response.ok) throw new Error("save failed");
+      const payload = (await response.json()) as { profile?: SettingsSurfaceData["profile"] };
+      if (payload.profile) setProfileState(payload.profile);
+      setSaveMessage("Profile saved.");
+    } catch {
+      setSaveMessage("Unable to save profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   const sourceErrorText =
     settingsData && settingsData.sourceErrors.length > 0
       ? `Data source unavailable: ${settingsData.sourceErrors.join(", ")}.`
@@ -111,8 +166,13 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
           {sourceErrorText}
         </div>
       ) : null}
+      <div className="sr-only" aria-hidden="true">
+        {anchorTargets.map((anchorId) => (
+          <span key={anchorId} id={anchorId} />
+        ))}
+      </div>
       {/* Profile Section */}
-      <div className="bg-card rounded-2xl border border-border p-6">
+      <div id="profile" className="bg-card rounded-2xl border border-border p-6">
         <h3 className="font-semibold text-foreground mb-6">Profile Settings</h3>
         
         <div className="flex items-start gap-6">
@@ -126,7 +186,8 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 <input
                   type="text"
                   id="firstName"
-                  defaultValue={profile.firstName}
+                  value={firstName}
+                  onChange={(event) => setFirstName(event.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -135,7 +196,8 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 <input
                   type="text"
                   id="lastName"
-                  defaultValue={profile.lastName}
+                  value={lastName}
+                  onChange={(event) => setLastName(event.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -159,14 +221,14 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
               </div>
             </div>
             <div className="flex justify-end mt-6">
-              <Button>Save Changes</Button>
+              <Button type="button" onClick={handleSaveProfile} disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick Settings */}
-      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div id="appearance" className="bg-card rounded-2xl border border-border overflow-hidden">
         <h3 className="font-semibold text-foreground p-6 pb-4">Quick Settings</h3>
         <p className="px-6 pb-4 text-xs text-muted-foreground">
           Some controls are staged for upcoming parity slices and are marked as Planned or Partial.
@@ -213,7 +275,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       </div>
 
       {/* Integrations */}
-      <div className="bg-card rounded-2xl border border-border p-6">
+      <div id="integrations" className="bg-card rounded-2xl border border-border p-6">
         <h3 className="font-semibold text-foreground mb-6">Integrations</h3>
         <div className="space-y-3">
           {integrations.map((integration) => (
