@@ -226,7 +226,12 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 />
               </div>
             </div>
-            <div className="flex justify-end mt-6">
+            <div className="flex items-center justify-end gap-3 mt-6">
+              {saveMessage ? (
+                <p className={cn("text-sm", saveMessage === "Profile saved." ? "text-success" : "text-destructive")}>
+                  {saveMessage}
+                </p>
+              ) : null}
               <Button type="button" onClick={handleSaveProfile} disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
             </div>
           </div>
