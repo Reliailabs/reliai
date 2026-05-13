@@ -61,7 +61,7 @@ export async function getPostmortemsSurfaceData(): Promise<PostmortemsSurfaceDat
       incident: incident.id,
       severity: incident.severity,
       duration: relDuration(incident.started_at),
-      date: new Date(incident.started_at).toLocaleDateString(),
+      date: (() => { const d = new Date(incident.started_at); return isNaN(d.getTime()) ? "—" : d.toLocaleDateString(); })(),
       author: "Reliability Team",
       authorInitials: "RT",
       status: (resolved ? "published" : "draft") as "published" | "draft",

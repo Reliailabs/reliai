@@ -99,8 +99,11 @@ const ACTOR_OPTIONS = ["human", "system"] as const;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatRelativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+function formatRelativeTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  const diff = Date.now() - d.getTime();
   const mins = Math.floor(diff / 60_000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
@@ -110,8 +113,11 @@ function formatRelativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
-function formatAbsoluteTime(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
+function formatAbsoluteTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     hour: "2-digit",

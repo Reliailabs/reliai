@@ -164,9 +164,10 @@ function buildEntriesFromLifecycle(lc: ProposalLifecycle): OperationsTimelineEnt
         entry_id: deterministicEntryId(lc.lifecycle_id, "receipt", h.transitioned_at),
         kind: "receipt_emitted",
         // 500ms offset to keep sort order deterministic
-        occurred_at: new Date(
-          new Date(h.transitioned_at).getTime() + 500,
-        ).toISOString(),
+        occurred_at: (() => {
+          const t = h.transitioned_at ? new Date(h.transitioned_at).getTime() : NaN;
+          return isNaN(t) ? (h.transitioned_at ?? new Date().toISOString()) : new Date(t + 500).toISOString();
+        })(),
         organization_id: lc.organization_id,
         project_id: null,
         lifecycle_id: lc.lifecycle_id,

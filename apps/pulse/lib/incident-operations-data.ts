@@ -90,11 +90,11 @@ function buildFallbackIncident(
   if (related.length === 0) return null;
 
   const latest = related[0];
-  const timeline = related.slice(0, 4).map((entry) => ({
-    time: new Date(entry.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    event: entry.title,
-    type: entry.kind === "verification_result" ? ("action" as const) : ("alert" as const),
-  }));
+  const timeline = related.slice(0, 4).map((entry) => {
+    const d = entry.occurred_at ? new Date(entry.occurred_at) : null;
+    const time = d && !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--";
+    return { time, event: entry.title, type: entry.kind === "verification_result" ? ("action" as const) : ("alert" as const) };
+  });
 
   return {
     id: incidentId,

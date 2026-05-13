@@ -167,7 +167,7 @@ export async function getGuardrailsSurfaceData(
       service: incident.project_name ?? "Unknown service",
       duration: relDuration(incident.started_at),
       impact: incident.title,
-      date: new Date(incident.started_at).toLocaleDateString(),
+      date: (() => { const d = new Date(incident.started_at); return isNaN(d.getTime()) ? "—" : d.toLocaleDateString(); })(),
       resolved: Boolean(incident.resolved_at),
     }));
 
