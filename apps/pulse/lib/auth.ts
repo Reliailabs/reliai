@@ -11,6 +11,8 @@ export interface OperatorSession {
     id: string;
     email: string;
     is_system_admin: boolean;
+    first_name?: string | null;
+    last_name?: string | null;
   };
   memberships: Array<{
     organization_id: string;

@@ -202,25 +202,36 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 />
               </div>
               <div className="col-span-2">
-                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                  Email <span className="text-xs text-muted-foreground font-normal">(contact support to change)</span>
+                </label>
                 <input
                   type="email"
                   id="email"
-                  defaultValue={profile.email}
-                  className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={profile.email}
+                  readOnly
+                  className="w-full px-4 py-2.5 rounded-xl bg-muted/30 border border-border text-sm text-muted-foreground cursor-not-allowed"
                 />
               </div>
               <div className="col-span-2">
-                <label htmlFor="role" className="block text-sm font-medium text-foreground mb-2">Role</label>
+                <label htmlFor="role" className="block text-sm font-medium text-foreground mb-2">
+                  Role <span className="text-xs text-muted-foreground font-normal">(set by organization)</span>
+                </label>
                 <input
                   type="text"
                   id="role"
-                  defaultValue={profile.role}
-                  className="w-full px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={profile.role}
+                  readOnly
+                  className="w-full px-4 py-2.5 rounded-xl bg-muted/30 border border-border text-sm text-muted-foreground cursor-not-allowed"
                 />
               </div>
             </div>
-            <div className="flex justify-end mt-6">
+            <div className="flex items-center justify-end gap-3 mt-6">
+              {saveMessage ? (
+                <p className={cn("text-sm", saveMessage === "Profile saved." ? "text-success" : "text-destructive")}>
+                  {saveMessage}
+                </p>
+              ) : null}
               <Button type="button" onClick={handleSaveProfile} disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>
             </div>
           </div>
