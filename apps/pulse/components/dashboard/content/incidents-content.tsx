@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
-import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, XCircle, Search, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, XCircle, Search, Filter, ChevronDown, UserX } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
+import type { IncidentMember } from "@/app/api/incidents/members/route";
 
 const defaultIncidents = [
   {
@@ -132,6 +140,41 @@ export function IncidentsContent({
     incidents.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidents[0];
   const [selectedIncident, setSelectedIncident] = useState(initialSelectedIncident);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [members, setMembers] = useState<IncidentMember[]>([]);
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  useEffect(() => {
+    void fetch("/api/incidents/members", { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ items: IncidentMember[] }>) : null))
+      .then((data) => { if (data) setMembers(data.items); })
+      .catch(() => undefined);
+  }, []);
+
+  async function handleAssign(userId: string | null, email: string | null) {
+    if (isAssigning) return;
+    setIsAssigning(true);
+    // Optimistic update
+    const optimisticAssignee = email ?? "Unassigned";
+    const optimisticInitials = email
+      ? email.split("@")[0]!.split(/[._-]/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("") || email.slice(0, 2).toUpperCase()
+      : "UA";
+    setSelectedIncident((prev) => ({ ...prev, assignee: optimisticAssignee, assigneeInitials: optimisticInitials }));
+    try {
+      const response = await fetch(`/api/incidents/${selectedIncident.id}/assign`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (response.ok) {
+        const data = (await response.json()) as { assignee: string; assigneeInitials: string };
+        setSelectedIncident((prev) => ({ ...prev, assignee: data.assignee, assigneeInitials: data.assigneeInitials }));
+      }
+    } catch {
+      // optimistic state stays; will correct on next page load
+    } finally {
+      setIsAssigning(false);
+    }
+  }
 
   useEffect(() => {
     const contextIncident =
@@ -303,12 +346,52 @@ export function IncidentsContent({
           </div>
           <div className="p-4 rounded-xl bg-muted/50">
             <p className="text-xs text-muted-foreground mb-1">Assignee</p>
-            <div className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-chart-1/20 flex items-center justify-center text-xs font-medium text-chart-1">
-                {selectedIncident.assigneeInitials}
-              </div>
-              {selectedIncident.assignee}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  disabled={isAssigning}
+                  className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors disabled:opacity-60"
+                >
+                  <div className="w-6 h-6 rounded-full bg-chart-1/20 flex items-center justify-center text-xs font-medium text-chart-1">
+                    {selectedIncident.assigneeInitials}
+                  </div>
+                  <span className="text-sm">{selectedIncident.assignee}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Assign to</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {members.length === 0 ? (
+                  <DropdownMenuItem disabled>No members found</DropdownMenuItem>
+                ) : (
+                  members.map((member) => (
+                    <DropdownMenuItem
+                      key={member.userId}
+                      onClick={() => void handleAssign(member.userId, member.email)}
+                      className={cn(
+                        "gap-2",
+                        selectedIncident.assignee === member.email && "font-medium text-primary",
+                      )}
+                    >
+                      <div className="w-5 h-5 rounded-full bg-chart-1/20 flex items-center justify-center text-[10px] font-medium text-chart-1 shrink-0">
+                        {member.email.split("@")[0]!.slice(0, 2).toUpperCase()}
+                      </div>
+                      <span className="truncate">{member.email}</span>
+                    </DropdownMenuItem>
+                  ))
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => void handleAssign(null, null)}
+                  className="gap-2 text-muted-foreground"
+                >
+                  <UserX className="w-4 h-4 shrink-0" />
+                  Unassign
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="p-4 rounded-xl bg-muted/50">
             <p className="text-xs text-muted-foreground mb-1">Impacted Services</p>
