@@ -30,7 +30,7 @@ Validation:
 ### M8.1 — Onboarding Ownership Transfer
 Route: /onboarding
 Source route: apps/web/app/(onboarding)/onboarding/page.tsx
-Pulse route: apps/pulse/app/onboarding/page.tsx
+Pulse route: apps/pulse/app/(app)/onboarding/page.tsx
 Data loader: apps/pulse/lib/onboarding-data.ts
 Presenter/component: apps/pulse/components/onboarding/onboarding-simulation-runner.tsx
 Project scoping preserved: yes
@@ -39,3 +39,16 @@ Write actions introduced: no
 Legacy deep links remaining: no
 Known deltas: none material; source-style incident command handoff path is preserved via compatibility route.
 Validation: pending (`pnpm --filter pulse lint`, `pnpm --filter pulse build`, route-map check, unauth return-path probe)
+
+### M8.2 — Incident Detail Action Parity
+Route: /incidents/[incidentId]
+Source route: apps/web/app/(app)/incidents/[incidentId]/page.tsx
+Pulse route: apps/pulse/app/(app)/incidents/[incidentId]/page.tsx
+Data loader: apps/pulse/lib/incidents-data.ts
+Presenter/component: apps/pulse/components/dashboard/content/incidents-content.tsx
+Project scoping preserved: yes (org-scoped incident API contracts preserved)
+Auth preserved: yes
+Write actions introduced: yes (source-parity incident lifecycle actions only: acknowledge/resolve/reopen/assign owner)
+Legacy deep links remaining: yes (`/incidents/[incidentId]/investigate` and `/compare` parity remains queued)
+Known deltas: Pulse still uses dashboard presenter instead of source incident-detail presenter; action set is now parity-wired through Pulse API proxies.
+Validation: passed (`pnpm --filter pulse lint`, `pnpm --filter pulse build`, build-map includes incident action API routes); unauth probe blocked locally because `localhost:3005` was not running in shell context.

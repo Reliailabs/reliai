@@ -1,7 +1,7 @@
 # Pulse M8 — Deferred Migration Features Backlog
 
-Date: 2026-05-13
-Status: In progress (`M8.1` implemented, validation pending)
+Date: 2026-05-14
+Status: In progress (`M8.1` accepted, `M8.2` implemented, validation pending)
 Classification: Migration
 
 ## Why This Exists
@@ -36,6 +36,21 @@ This document is the single queue for those deferred migration features so they 
   1. Port source read contracts and presenter actions used in investigation workflow.
   2. Keep execution/approval boundaries consistent with existing Pulse governance.
   3. No autonomous action behavior.
+
+#### M8.2 Implementation Notes (2026-05-14)
+- Preserved existing Pulse route ownership for:
+  - `apps/pulse/app/(app)/incidents/[incidentId]/page.tsx`
+  - `apps/pulse/app/(app)/incidents/[incidentId]/command/page.tsx`
+- Added lifecycle action proxy routes:
+  - `apps/pulse/app/api/incidents/[id]/acknowledge/route.ts`
+  - `apps/pulse/app/api/incidents/[id]/resolve/route.ts`
+  - `apps/pulse/app/api/incidents/[id]/reopen/route.ts`
+- Corrected owner assignment contract path in:
+  - `apps/pulse/app/api/incidents/[id]/assign/route.ts` (`/owner` endpoint)
+- Added incident-detail action UI wiring in:
+  - `apps/pulse/components/dashboard/content/incidents-content.tsx`
+  - actions: `Acknowledge`, `Resolve`, `Reopen`, assignment update
+  - state sync: list/detail status + assignee refresh after action
 
 ### M8.3 — Audit Stage/Results Action Parity
 - Current state: audits routes are present; full stage-action/results presenter parity remains partial.
