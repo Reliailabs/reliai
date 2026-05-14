@@ -75,6 +75,17 @@ async function authRequest<T>(path: string, token: string, init?: RequestInit): 
   return response.json() as Promise<T>;
 }
 
+export async function switchOrganization(organizationId: string): Promise<OperatorSession> {
+  const token = await getApiAccessToken();
+  if (!token) {
+    throw new Error("No session");
+  }
+  return authRequest<OperatorSession>("/api/v1/auth/switch-organization", token, {
+    method: "POST",
+    body: JSON.stringify({ organization_id: organizationId }),
+  });
+}
+
 export async function getApiAccessToken(): Promise<string | null> {
   return (await cookies()).get(SESSION_COOKIE_NAME)?.value ?? null;
 }

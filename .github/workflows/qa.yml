@@ -11,7 +11,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  qa:
+  web-qa:
+    if: ${{ vars.RUN_WEB_QA == 'true' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -98,3 +99,132 @@ jobs:
 
       - name: Run screenshot audit
         run: pnpm audit:screenshots
+
+  pulse-route-gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: reliai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d reliai"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/reliai
+      TEST_DATABASE_ADMIN_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/postgres
+      REDIS_URL: redis://127.0.0.1:6379/0
+      API_KEY_HASH_SECRET: test-secret
+      AUTH_SESSION_HASH_SECRET: test-session-secret
+      PYTHONPATH: ${{ github.workspace }}/apps/api
+      PW_REQUIRE_AUTH_E2E: "1"
+      PW_E2E_EMAIL: ${{ secrets.PULSE_E2E_EMAIL }}
+      PW_E2E_PASSWORD: ${{ secrets.PULSE_E2E_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install Python dependencies
+        run: python -m pip install -r apps/api/requirements.txt
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run migrations
+        working-directory: apps/api
+        run: python -m alembic -c alembic.ini upgrade head
+
+      - name: Ensure Pulse E2E operator exists
+        run: |
+          python - <<'PY'
+          import os
+          from sqlalchemy import select
+          from app.db.session import SessionLocal
+          from app.models.operator_user import OperatorUser
+          from app.services.auth import create_operator_user, _hash_password
+
+          email = (os.environ.get("PW_E2E_EMAIL") or "").strip().lower()
+          password = os.environ.get("PW_E2E_PASSWORD") or ""
+          if not email or not password:
+              raise RuntimeError("PW_E2E_EMAIL and PW_E2E_PASSWORD must be set")
+
+          with SessionLocal() as db:
+              operator = db.scalar(select(OperatorUser).where(OperatorUser.email == email))
+              if operator is None:
+                  create_operator_user(db, email=email, password=password, is_system_admin=True)
+                  db.commit()
+                  print(f"created operator user for {email}")
+              else:
+                  operator.password_hash = _hash_password(password)
+                  operator.is_active = True
+                  operator.is_system_admin = True
+                  db.add(operator)
+                  db.commit()
+                  print(f"updated operator user for {email}")
+          PY
+
+      - name: Run Pulse lint
+        run: pnpm --filter pulse lint
+
+      - name: Run Pulse build
+        run: pnpm --filter pulse build
+
+      - name: Run Pulse app route migration gate (contract)
+        run: pnpm --filter pulse test:app-route-gate
+
+      - name: Validate Pulse E2E credentials
+        run: |
+          if [ -z "${PW_E2E_EMAIL}" ] || [ -z "${PW_E2E_PASSWORD}" ]; then
+            echo "Missing required secrets for strict Pulse auth e2e gate."
+            echo "Set repository secrets: PULSE_E2E_EMAIL and PULSE_E2E_PASSWORD."
+            exit 1
+          fi
+
+      - name: Run Pulse app route migration gate (strict e2e auth)
+        run: pnpm --filter pulse test:e2e:app-route-gate:ci
+
+      - name: Upload Pulse Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-playwright-report
+          path: |
+            apps/pulse/playwright-report
+            apps/pulse/test-results
+          if-no-files-found: ignore

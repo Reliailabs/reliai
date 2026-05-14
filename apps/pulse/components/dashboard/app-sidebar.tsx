@@ -128,6 +128,15 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   }, []);
 
   const routeBySection: Partial<Record<Section, string>> = {
+    overview: "/pulse",
+    incidents: "/incidents",
+    deployments: "/deployments",
+    traces: "/traces",
+    metrics: "/metrics",
+    guardrails: "/guardrails",
+    audits: "/audits",
+    services: "/services",
+    operations: "/operations",
     performance: "/traces",
     errors: "/errors",
     sla: "/metrics",
@@ -138,6 +147,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   const handleSectionChange = (section: Section) => {
     const route = routeBySection[section];
     if (route) {
+      onSectionChange(section);
       router.push(route);
       return;
     }
@@ -250,6 +260,18 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
             <span className="flex-1 text-left">System</span>
           </Link>
         ) : null}
+        <Link
+          href="/onboarding"
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+            pathname?.startsWith("/onboarding")
+              ? "bg-primary text-primary-foreground font-medium shadow-sm"
+              : "text-foreground/80 hover:bg-muted/80 hover:text-foreground",
+          )}
+        >
+          <FileText className="w-[18px] h-[18px] shrink-0" />
+          <span className="flex-1 text-left">Onboarding</span>
+        </Link>
         <Link
           href="/settings"
           className={cn(

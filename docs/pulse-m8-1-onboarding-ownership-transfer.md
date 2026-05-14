@@ -1,7 +1,7 @@
 # Pulse M8 — Deferred Migration Features Backlog
 
 Date: 2026-05-13
-Status: Planned (not started)
+Status: In progress (`M8.1` implemented, validation pending)
 Classification: Migration
 
 ## Why This Exists
@@ -11,13 +11,23 @@ This document is the single queue for those deferred migration features so they 
 ## Deferred Migration Slices (M8 Queue)
 
 ### M8.1 — Onboarding Ownership Transfer
-- Current state: `/onboarding` retained in `apps/web` by M7.8 waiver.
-- Pulse target: add `/onboarding` only if ownership is explicitly flipped.
+- Current state: Pulse now owns `/onboarding` route implementation.
+- Pulse target: validate and accept ownership transfer with migration contract checks.
 - Scope:
   1. Add Pulse-owned `/onboarding` route.
   2. Reuse source onboarding contracts/presenter behavior where safe.
   3. Preserve auth/session, deep-link return-path, and post-onboarding destinations.
   4. No net-new onboarding behavior.
+
+#### M8.1 Implementation Notes (2026-05-13)
+- Added Pulse route: `apps/pulse/app/onboarding/page.tsx`
+- Added Pulse onboarding helpers: `apps/pulse/lib/onboarding-data.ts`
+- Added simulation proxies:
+  - `apps/pulse/app/api/onboarding/simulations/route.ts`
+  - `apps/pulse/app/api/onboarding/simulations/[simulationId]/status/route.ts`
+- Added onboarding components:
+  - `apps/pulse/components/onboarding/onboarding-path-tracker.tsx`
+  - `apps/pulse/components/onboarding/onboarding-simulation-runner.tsx`
 
 ### M8.2 — Incident Detail Action Parity
 - Current state: incident list/detail exists in Pulse; source investigation/compare/command flows are not fully ported.

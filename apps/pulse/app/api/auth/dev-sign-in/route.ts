@@ -19,18 +19,19 @@ export async function POST(request: Request) {
   const email = formData.get("email");
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || request.url;
+  const requestOrigin = request.headers.get("origin") ?? new URL(request.url).origin;
+  const redirectUrl = (path: string) => new URL(path, requestOrigin);
 
   if (typeof email !== "string" || typeof password !== "string") {
-    return NextResponse.redirect(new URL("/sign-in?error=1", baseUrl), { status: 303 });
+    return NextResponse.redirect(redirectUrl("/sign-in?error=1"), { status: 303 });
   }
 
   const result = await signIn(email, password);
   if (!result) {
-    return NextResponse.redirect(new URL("/sign-in?error=1", baseUrl), { status: 303 });
+    return NextResponse.redirect(redirectUrl("/sign-in?error=1"), { status: 303 });
   }
 
-  const response = NextResponse.redirect(new URL(returnTo, baseUrl), { status: 303 });
+  const response = NextResponse.redirect(redirectUrl(returnTo), { status: 303 });
   const secureCookie = new URL(request.url).protocol === "https:";
   response.cookies.set(SESSION_COOKIE_NAME, result.session_token, {
     httpOnly: true,
@@ -47,4 +48,3 @@ export function GET() {
     { status: 405 },
   );
 }
-

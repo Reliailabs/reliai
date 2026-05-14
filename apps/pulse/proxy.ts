@@ -18,6 +18,8 @@ const PROTECTED_PATH_PREFIXES = [
   "/postmortems",
   "/settings",
   "/playground",
+  "/onboarding",
+  "/system",
 ];
 
 function isProtectedPath(pathname: string): boolean {
@@ -74,5 +76,7 @@ export const config = {
     "/postmortems/:path*",
     "/settings/:path*",
     "/playground/:path*",
+    "/onboarding/:path*",
+    "/system/:path*",
   ],
 };
