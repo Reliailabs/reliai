@@ -251,6 +251,18 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
           </Link>
         ) : null}
         <Link
+          href="/onboarding"
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",
+            pathname?.startsWith("/onboarding")
+              ? "bg-primary text-primary-foreground font-medium shadow-sm"
+              : "text-foreground/80 hover:bg-muted/80 hover:text-foreground",
+          )}
+        >
+          <FileText className="w-[18px] h-[18px] shrink-0" />
+          <span className="flex-1 text-left">Onboarding</span>
+        </Link>
+        <Link
           href="/settings"
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200",

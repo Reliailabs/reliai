@@ -18,17 +18,17 @@ Date: 2026-05-13
 | `/docs-marketing` | Present | Missing | Keep in apps/web | Portability audit classification only. |
 | `/pricing` | Present | Missing | Keep in apps/web | Portability audit classification only. |
 | `/signup` | Present | Missing | Keep in apps/web | Portability audit classification only. |
-| `/onboarding` | Present | Missing | Keep in apps/web | Explicitly waived from Pulse migration readiness gate in M7.8 decision doc. |
+| `/onboarding` | Present | Present | Transferred to Pulse in M8.1 | Ownership moved to Pulse route `apps/pulse/app/onboarding/page.tsx`; M7.8 waiver superseded for onboarding only. |
 | `/billing/success` | Present | Missing | Keep in apps/web | Explicitly waived from Pulse migration readiness gate in M7.8 decision doc. |
 
 ## Findings
 - `apps/pulse` already has `/settings` and keeps core app-auth settings surface active.
 - `apps/pulse` does not currently expose `/settings/billing` in app shell.
 - Public and growth routes (`/docs`, `/docs-marketing`, `/pricing`, `/signup`) remain in `apps/web` as intended.
-- `/onboarding` and `/billing/success` remain owned by `apps/web` under explicit migration waiver.
+- `/billing/success` remains owned by `apps/web` under explicit migration waiver.
 
 ## Decision
-M6 portability decision is explicit for current migration target: `/docs`, `/docs-marketing`, `/pricing`, `/signup`, `/settings/billing`, `/onboarding`, and `/billing/success` remain in `apps/web`. Pulse owns `/settings` and `/playground`.
+M6 portability decision was explicit for the initial gate. Current state after `M8.1`: `/onboarding` moved to Pulse. `/docs`, `/docs-marketing`, `/pricing`, `/signup`, `/settings/billing`, and `/billing/success` remain in `apps/web`. Pulse owns `/settings`, `/playground`, and `/onboarding`.
 
 ## Phase 9 Impact
 Phase 9 remains blocked by migration completion gate until portability classifications and remaining migration slices are accepted.
