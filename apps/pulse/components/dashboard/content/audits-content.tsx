@@ -1,9 +1,10 @@
 "use client";
 
-import { Phone, Clock, User, TrendingDown, AlertTriangle, CheckCircle } from "lucide-react";
+import { Clock, User, TrendingDown, AlertTriangle, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   BarChart,
   Bar,
@@ -15,6 +16,14 @@ import {
 } from "recharts";
 import type { AuditsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
+import {
+  canContinueReview,
+  canRerunStage,
+  canStartRun,
+  resolveAuditDetailStateAfterAction,
+  type AuditDetailState,
+} from "@/lib/audits-surface-actions";
+import type { AuditActionKind } from "@/lib/audits-action-contract";
 
 const defaultResponseTimeData = [
   { week: "W1", ack: 2.3, resolve: 45 },
@@ -95,6 +104,63 @@ export function AuditsContent({
     [recentPages, auditContext?.selectedAuditId],
   );
   const [contextLabel, setContextLabel] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [auditDetail, setAuditDetail] = useState<AuditDetailState>(null);
+  const selectedAuditId = selectedAudit?.id ?? auditContext?.selectedAuditId ?? null;
+
+  const refreshAuditDetail = useCallback(async (): Promise<AuditDetailState> => {
+    if (!selectedAuditId || (auditContext?.mode !== "detail" && auditContext?.mode !== "results")) {
+      setAuditDetail(null);
+      return null;
+    }
+    try {
+      const response = await fetch(`/api/audits/${selectedAuditId}/detail`, { cache: "no-store" });
+      if (!response.ok) {
+        setAuditDetail(null);
+        return null;
+      }
+      const payload = (await response.json()) as {
+        latest_run?: { id: string; status?: string | null } | null;
+        stages?: Array<{ id: string; stage_key: string; stage_label: string; status: string }>;
+      };
+      const nextState: AuditDetailState = {
+        latest_run: payload.latest_run ?? null,
+        stages: payload.stages ?? [],
+      };
+      setAuditDetail(nextState);
+      return nextState;
+    } catch {
+      setAuditDetail(null);
+      return null;
+    }
+  }, [auditContext?.mode, selectedAuditId]);
+
+  async function runAction(action: AuditActionKind, stageKey?: string) {
+    if (!selectedAuditId || isSubmittingAction) return;
+    const runId = auditDetail?.latest_run?.id ?? null;
+    setActionError(null);
+    setIsSubmittingAction(true);
+    try {
+      const response = await fetch(`/api/audits/${selectedAuditId}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, runId, stageKey }),
+      });
+      if (!response.ok) {
+        setAuditDetail((current) => resolveAuditDetailStateAfterAction(current, current, false));
+        setActionError("Audit action failed. Refresh and retry.");
+        return;
+      }
+      const refreshed = await refreshAuditDetail();
+      setAuditDetail((current) => resolveAuditDetailStateAfterAction(current, refreshed, true));
+    } catch {
+      setAuditDetail((current) => resolveAuditDetailStateAfterAction(current, current, false));
+      setActionError("Audit action failed. Refresh and retry.");
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  }
 
   useEffect(() => {
     if (auditContext?.mode === "new") {
@@ -119,6 +185,10 @@ export function AuditsContent({
     }
     setContextLabel(null);
   }, [auditContext?.mode, selectedAudit]);
+
+  useEffect(() => {
+    void refreshAuditDetail();
+  }, [refreshAuditDetail]);
 
   if (auditsData && !auditsData.hasAuditData) {
     return (
@@ -145,6 +215,57 @@ export function AuditsContent({
       {sourceErrorText ? (
         <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {sourceErrorText}
+        </div>
+      ) : null}
+      {auditContext?.mode === "detail" && selectedAuditId ? (
+        <div className="rounded-xl border border-border bg-card px-4 py-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isSubmittingAction}
+              onClick={() => void runAction("new_run")}
+            >
+              New Run
+            </Button>
+            <Button
+              size="sm"
+              disabled={isSubmittingAction || !canStartRun(auditDetail?.latest_run?.status)}
+              onClick={() => void runAction("start")}
+            >
+              Start Run
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isSubmittingAction || !canContinueReview(auditDetail?.latest_run?.status)}
+              onClick={() => void runAction("continue")}
+            >
+              Continue To Certification
+            </Button>
+            <Button size="sm" variant="ghost" disabled={isSubmittingAction} onClick={() => void refreshAuditDetail()}>
+              Refresh
+            </Button>
+            <Link href={`/audits/${selectedAuditId}/results`} className="text-xs text-primary hover:underline">
+              View Results
+            </Link>
+          </div>
+          {actionError ? <p className="mt-2 text-xs text-destructive">{actionError}</p> : null}
+          {auditDetail?.stages.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {auditDetail.stages.map((stage) => (
+                <Button
+                  key={stage.id}
+                  size="sm"
+                  variant="outline"
+                  disabled={isSubmittingAction || !canRerunStage(auditDetail?.latest_run?.status)}
+                  onClick={() => void runAction("rerun", stage.stage_key)}
+                >
+                  Re-run {stage.stage_label}
+                </Button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
       <div className="grid grid-cols-4 gap-4">

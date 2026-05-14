@@ -60,6 +60,22 @@ This document is the single queue for those deferred migration features so they 
   2. Ensure results/detail data shape parity.
   3. Preserve auth/project scoping and non-destructive defaults.
 
+#### M8.3 Implementation Notes (2026-05-14)
+- Added Pulse audit detail + action proxies:
+  - `apps/pulse/app/api/audits/[id]/detail/route.ts`
+  - `apps/pulse/app/api/audits/[id]/actions/route.ts`
+- Added explicit audit action contract mapping:
+  - `apps/pulse/lib/audits-action-contract.ts`
+  - `new_run`, `start`, `continue`, `rerun(stage)` path resolution
+- Added action availability + failure-state guard helpers:
+  - `apps/pulse/lib/audits-surface-actions.ts`
+- Wired detail-context action controls in:
+  - `apps/pulse/components/dashboard/content/audits-content.tsx`
+  - non-optimistic update model: action success triggers detail refresh; failure does not mutate local stage/run state.
+- Added focused tests:
+  - `apps/pulse/tests/audits-action-parity.test.ts`
+  - script: `pnpm --filter pulse test:audit-action-parity`
+
 ### M8.4 — Trace Forensics Presenter Parity
 - Current state: trace detail/compare/graph routes exist; full forensic presenter behavior remains partial.
 - Pulse target: source-equivalent trace deep-dive behavior on existing routes.

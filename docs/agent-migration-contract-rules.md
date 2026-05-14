@@ -52,3 +52,16 @@ Write actions introduced: yes (source-parity incident lifecycle actions only: ac
 Legacy deep links remaining: yes (`/incidents/[incidentId]/investigate` and `/compare` parity remains queued)
 Known deltas: Pulse still uses dashboard presenter instead of source incident-detail presenter; action set is now parity-wired through Pulse API proxies.
 Validation: passed (`pnpm --filter pulse lint`, `pnpm --filter pulse build`, build-map includes incident action API routes); unauth probe blocked locally because `localhost:3005` was not running in shell context.
+
+### M8.3 — Audit Stage/Results Action Parity
+Route: /audits/[id], /audits/[id]/results
+Source route: apps/web/app/(app)/audits/[id]/page.tsx, apps/web/app/(app)/audits/[id]/results/page.tsx
+Pulse route: apps/pulse/app/(app)/audits/[id]/page.tsx, apps/pulse/app/(app)/audits/[id]/results/page.tsx
+Data loader: apps/pulse/lib/audits-data.ts + apps/pulse/app/api/audits/[id]/detail/route.ts
+Presenter/component: apps/pulse/components/dashboard/content/audits-content.tsx
+Project scoping preserved: yes
+Auth preserved: yes
+Write actions introduced: yes (source-parity audit run/stage actions only: new_run/start/continue/rerun)
+Legacy deep links remaining: no
+Known deltas: Pulse keeps dashboard-native presenter; results-table parity depth remains queued under later presenter-depth slice.
+Validation: passed (`pnpm --filter pulse test:audit-action-parity`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
