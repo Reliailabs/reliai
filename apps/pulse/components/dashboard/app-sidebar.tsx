@@ -128,6 +128,15 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   }, []);
 
   const routeBySection: Partial<Record<Section, string>> = {
+    overview: "/pulse",
+    incidents: "/incidents",
+    deployments: "/deployments",
+    traces: "/traces",
+    metrics: "/metrics",
+    guardrails: "/guardrails",
+    audits: "/audits",
+    services: "/services",
+    operations: "/operations",
     performance: "/traces",
     errors: "/errors",
     sla: "/metrics",
@@ -138,6 +147,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   const handleSectionChange = (section: Section) => {
     const route = routeBySection[section];
     if (route) {
+      onSectionChange(section);
       router.push(route);
       return;
     }
