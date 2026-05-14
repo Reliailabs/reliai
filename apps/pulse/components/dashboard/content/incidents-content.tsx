@@ -18,6 +18,7 @@ import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 import type { IncidentMember } from "@/app/api/incidents/members/route";
+import { optimisticAssigneeFromEmail, patchIncidentList, toSurfaceStatus } from "@/lib/incidents-surface-actions";
 
 const defaultIncidents = [
   {
@@ -145,20 +146,11 @@ export function IncidentsContent({
   const [isAssigning, setIsAssigning] = useState(false);
   const [isMutatingStatus, setIsMutatingStatus] = useState(false);
 
-  function toSurfaceStatus(status: string): "investigating" | "mitigating" | "monitoring" | "resolved" {
-    if (status === "resolved") return "resolved";
-    if (status === "acknowledged") return "mitigating";
-    if (status === "open") return "investigating";
-    return "monitoring";
-  }
-
   function patchIncident(
     incidentId: string,
     patch: Partial<(typeof incidents)[number]>,
   ) {
-    setIncidentItems((prev) =>
-      prev.map((item) => (item.id === incidentId ? { ...item, ...patch } : item)),
-    );
+    setIncidentItems((prev) => patchIncidentList(prev, incidentId, patch));
     setSelectedIncident((prev) => (prev.id === incidentId ? { ...prev, ...patch } : prev));
   }
 
@@ -176,24 +168,26 @@ export function IncidentsContent({
   async function handleAssign(userId: string | null, email: string | null) {
     if (isAssigning) return;
     setIsAssigning(true);
-    // Optimistic update
-    const optimisticAssignee = email ?? "Unassigned";
-    const optimisticInitials = email
-      ? email.split("@")[0]!.split(/[._-]/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("") || email.slice(0, 2).toUpperCase()
-      : "UA";
-    patchIncident(selectedIncident.id, { assignee: optimisticAssignee, assigneeInitials: optimisticInitials });
+    const previous = {
+      assignee: selectedIncident.assignee,
+      assigneeInitials: selectedIncident.assigneeInitials,
+    };
+    const optimistic = optimisticAssigneeFromEmail(email);
+    patchIncident(selectedIncident.id, optimistic);
     try {
       const response = await fetch(`/api/incidents/${selectedIncident.id}/assign`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
-      if (response.ok) {
-        const data = (await response.json()) as { assignee: string; assigneeInitials: string };
-        patchIncident(selectedIncident.id, { assignee: data.assignee, assigneeInitials: data.assigneeInitials });
+      if (!response.ok) {
+        patchIncident(selectedIncident.id, previous);
+        return;
       }
+      const data = (await response.json()) as { assignee: string; assigneeInitials: string };
+      patchIncident(selectedIncident.id, { assignee: data.assignee, assigneeInitials: data.assigneeInitials });
     } catch {
-      // optimistic state stays; will correct on next page load
+      patchIncident(selectedIncident.id, previous);
     } finally {
       setIsAssigning(false);
     }

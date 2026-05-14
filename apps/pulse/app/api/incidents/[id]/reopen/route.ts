@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApiAccessToken } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
+import { incidentReopenPath } from "@/lib/incidents-action-contract";
 
 export type IncidentLifecycleResponse = {
   status: string;
@@ -24,7 +25,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   const { id } = await params;
 
   try {
-    const response = await fetch(`${API_URL}/api/v1/incidents/${id}/reopen`, {
+    const response = await fetch(`${API_URL}${incidentReopenPath(id)}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       cache: "no-store",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApiAccessToken } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
+import { incidentOwnerPath } from "@/lib/incidents-action-contract";
 
 export type AssignResponse = {
   assignee: string;
@@ -27,7 +28,7 @@ export async function PATCH(
   const body = (await request.json()) as { userId: string | null };
 
   try {
-    const response = await fetch(`${API_URL}/api/v1/incidents/${id}/owner`, {
+    const response = await fetch(`${API_URL}${incidentOwnerPath(id)}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ owner_operator_user_id: body.userId ?? null }),
