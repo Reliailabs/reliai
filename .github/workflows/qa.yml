@@ -170,6 +170,35 @@ jobs:
         working-directory: apps/api
         run: python -m alembic -c alembic.ini upgrade head
 
+      - name: Ensure Pulse E2E operator exists
+        run: |
+          python - <<'PY'
+          import os
+          from sqlalchemy import select
+          from app.db.session import SessionLocal
+          from app.models.operator_user import OperatorUser
+          from app.services.auth import create_operator_user, _hash_password
+
+          email = (os.environ.get("PW_E2E_EMAIL") or "").strip().lower()
+          password = os.environ.get("PW_E2E_PASSWORD") or ""
+          if not email or not password:
+              raise RuntimeError("PW_E2E_EMAIL and PW_E2E_PASSWORD must be set")
+
+          with SessionLocal() as db:
+              operator = db.scalar(select(OperatorUser).where(OperatorUser.email == email))
+              if operator is None:
+                  create_operator_user(db, email=email, password=password, is_system_admin=True)
+                  db.commit()
+                  print(f"created operator user for {email}")
+              else:
+                  operator.password_hash = _hash_password(password)
+                  operator.is_active = True
+                  operator.is_system_admin = True
+                  db.add(operator)
+                  db.commit()
+                  print(f"updated operator user for {email}")
+          PY
+
       - name: Run Pulse lint
         run: pnpm --filter pulse lint
 
@@ -178,6 +207,14 @@ jobs:
 
       - name: Run Pulse app route migration gate (contract)
         run: pnpm --filter pulse test:app-route-gate
+
+      - name: Validate Pulse E2E credentials
+        run: |
+          if [ -z "${PW_E2E_EMAIL}" ] || [ -z "${PW_E2E_PASSWORD}" ]; then
+            echo "Missing required secrets for strict Pulse auth e2e gate."
+            echo "Set repository secrets: PULSE_E2E_EMAIL and PULSE_E2E_PASSWORD."
+            exit 1
+          fi
 
       - name: Run Pulse app route migration gate (strict e2e auth)
         run: pnpm --filter pulse test:e2e:app-route-gate:ci
