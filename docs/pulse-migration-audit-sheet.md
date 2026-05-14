@@ -51,6 +51,7 @@ Phase 9 implementation may proceed only when an item is either:
 
 ## Linked Migration Plans
 - `docs/agent-migration-contract-rules.md`
+- `docs/pulse-app-route-migration-gate.md`
 - `docs/pulse-m7-deferred-project-routes-audit.md`
 - `docs/pulse-m7-8-conditional-ownership-decision.md`
 - `docs/pulse-m8-1-onboarding-ownership-transfer.md`

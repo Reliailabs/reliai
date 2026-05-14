@@ -4,6 +4,7 @@ import type { Route } from "next";
 
 import { OnboardingPathTracker } from "@/components/onboarding/onboarding-path-tracker";
 import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
+import { AppShellFrame } from "@/components/dashboard/app-shell-frame";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getOperatorSession, requireOperatorSession, switchOrganization } from "@/lib/auth";
@@ -126,6 +127,7 @@ export default async function OnboardingPage({
   }
 
   return (
+    <AppShellFrame activeSection="overview">
     <div className="mx-auto max-w-[1100px] px-6 py-6 space-y-6">
       <OnboardingPathTracker path={selectedPath} />
       <Card className="p-6">
@@ -188,5 +190,6 @@ export default async function OnboardingPage({
         </section>
       ) : null}
     </div>
+    </AppShellFrame>
   );
 }
