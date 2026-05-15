@@ -9,6 +9,14 @@ Required:
 - before parity acceptance for migrated routes
 - before `Phase 9` unblock
 
+## Proxy Route Exception Policy
+Default:
+- proxy routes are required for client/API action parity slices
+
+Allowed exception:
+- server-side read presenters may use direct source-contract loaders without a proxy route
+- the exception is valid only when mapper tests and presenter/surface tests cover the route contract
+
 ## Contract Template (Required Per Route)
 
 ```md

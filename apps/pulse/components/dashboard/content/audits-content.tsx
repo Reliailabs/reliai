@@ -170,16 +170,16 @@ export function AuditsContent({
     if (auditContext?.mode === "results") {
       setContextLabel(
         selectedAudit
-          ? `Results route selected for ${selectedAudit.title}. Full results presenter parity is pending.`
-          : "Results route selected. Full results presenter parity is pending.",
+          ? `Results route selected for ${selectedAudit.title}. Review stage outcomes, evidence, and certifications below.`
+          : "Results route selected. Review stage outcomes, evidence, and certifications below.",
       );
       return;
     }
     if (auditContext?.mode === "detail") {
       setContextLabel(
         selectedAudit
-          ? `Detail route selected for ${selectedAudit.title}. Stage-level actions remain pending parity.`
-          : "Detail route selected. Stage-level actions remain pending parity.",
+          ? `Detail route selected for ${selectedAudit.title}. Stage actions are available from this panel.`
+          : "Detail route selected. Stage actions are available from this panel.",
       );
       return;
     }
