@@ -46,7 +46,7 @@ Auth preserved: yes
 Write actions introduced: no
 Legacy deep links remaining: no
 Known deltas: none material; source-style incident command handoff path is preserved via compatibility route.
-Validation: pending (`pnpm --filter pulse lint`, `pnpm --filter pulse build`, route-map check, unauth return-path probe)
+Validation: completed / CI-enforced (`pnpm --filter pulse lint`, `pnpm --filter pulse build`, `pnpm --filter pulse test:app-route-gate`, `pnpm --filter pulse test:e2e:app-route-gate:ci`)
 
 ### M8.2 — Incident Detail Action Parity
 Route: /incidents/[incidentId]
