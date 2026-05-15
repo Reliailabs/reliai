@@ -104,6 +104,21 @@ This document is the single queue for those deferred migration features so they 
   2. Preserve source contract usage and guard behavior.
   3. No net-new deployment workflows.
 
+#### M8.5 Implementation Notes (2026-05-15)
+- Added deployment detail read proxy:
+  - `apps/pulse/app/api/deployments/[id]/detail/route.ts`
+- Added deployment detail presenter mapper:
+  - `apps/pulse/lib/deployment-detail-mapper.ts`
+- Wired deployment detail route-mode presenter blocks in:
+  - `apps/pulse/components/dashboard/content/deployments-content.tsx`
+  - includes mapped deployment metadata, gate summary, risk pattern snippets, and linked incident/event counts.
+- Added focused tests:
+  - `apps/pulse/tests/deployment-detail-mapper.test.ts`
+  - `apps/pulse/tests/deployment-detail-presenter-smoke.test.tsx`
+  - scripts:
+    - `pnpm --filter pulse test:deployment-detail-mapper`
+    - `pnpm --filter pulse test:deployment-detail-presenter-smoke`
+
 ### M8.6 — Project Presenter Depth Parity
 - Current state: required project routes exist; some views still use narrowed read presenters.
 - Pulse target: close presenter-depth parity for project reliability/regressions/timeline views where source behavior is still reduced.

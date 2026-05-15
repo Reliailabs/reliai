@@ -78,3 +78,16 @@ Write actions introduced: no
 Legacy deep links remaining: no
 Known deltas: Pulse keeps dashboard-native presenter structure while porting web-equivalent forensic capability (detail metadata, key findings, compare summary, graph summary) through existing contracts.
 Validation: passed (`pnpm --filter pulse test:trace-forensics-mapper`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
+
+### M8.5 — Deployment Detail Presenter Parity
+Route: /deployments/[deploymentId]
+Source route: apps/web/app/(app)/deployments/[deploymentId]/page.tsx
+Pulse route: apps/pulse/app/(app)/deployments/[deploymentId]/page.tsx
+Data loader: apps/pulse/lib/deployments-data.ts + apps/pulse/app/api/deployments/[id]/detail/route.ts
+Presenter/component: apps/pulse/components/dashboard/content/deployments-content.tsx
+Project scoping preserved: yes
+Auth preserved: yes
+Write actions introduced: no
+Legacy deep links remaining: no
+Known deltas: Pulse keeps dashboard-native presenter structure while porting source-equivalent deployment detail capability through mapped read contracts (metadata/gate/risk patterns/correlation counts).
+Validation: passed (`pnpm --filter pulse test:deployment-detail-mapper`, `pnpm --filter pulse test:deployment-detail-presenter-smoke`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)

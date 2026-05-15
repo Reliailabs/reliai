@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle, XCircle, Clock, GitBranch, User, MoreHorizontal, Rocket } from "lucide-react";
+import { CheckCircle, XCircle, Clock, GitBranch, MoreHorizontal, Rocket } from "lucide-react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   AreaChart,
@@ -14,6 +15,7 @@ import {
 } from "recharts";
 import type { DeploymentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
+import type { DeploymentDetailPresenter } from "@/lib/deployment-detail-mapper";
 
 const defaultDeploymentFrequency = [
   { day: "Mon", deploys: 12 },
@@ -115,6 +117,54 @@ const defaultMetrics = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
+export function DeploymentDetailPanel({
+  detail,
+  error,
+}: {
+  detail: DeploymentDetailPresenter | null;
+  error: string | null;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5" style={{ boxShadow: cardShadow }}>
+      {error ? (
+        <p className="text-sm text-amber-300">{error}</p>
+      ) : !detail ? (
+        <p className="text-sm text-muted-foreground">Loading deployment detail…</p>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <span className="font-medium text-foreground">{detail.id}</span>
+            <span className="text-muted-foreground">Prompt {detail.promptVersion ?? "n/a"}</span>
+            <span className="text-muted-foreground">Model {detail.modelName ?? "n/a"}</span>
+            <span className="text-muted-foreground">Env {detail.environment ?? "n/a"}</span>
+          </div>
+          {detail.gate ? (
+            <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+              Gate: {detail.gate.decision} · Risk score {detail.gate.riskScore}
+            </div>
+          ) : null}
+          {detail.intelligence?.graphRiskPatterns.length ? (
+            <div className="rounded-lg border border-border bg-muted/20 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Risk patterns</p>
+              <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                {detail.intelligence.graphRiskPatterns.map((pattern) => (
+                  <p key={`${pattern.pattern}-${pattern.traceCount}`}>
+                    {pattern.pattern} · {pattern.risk} · {pattern.traceCount} traces
+                  </p>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="grid gap-2 md:grid-cols-2 text-sm text-muted-foreground">
+            <p>Incidents linked: {detail.incidentIds.length}</p>
+            <p>Events: {detail.events.length}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DeploymentsContent({
   deploymentsData,
   deploymentContext,
@@ -127,10 +177,41 @@ export function DeploymentsContent({
   const deployments = deploymentsData?.deployments?.length ? deploymentsData.deployments : defaultDeployments;
   const metrics = deploymentsData?.metrics?.length ? deploymentsData.metrics : defaultMetrics;
   const selectedDeploymentId = deploymentContext?.selectedDeploymentId;
+  const [detail, setDetail] = useState<DeploymentDetailPresenter | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const sourceErrorText =
     deploymentsData && deploymentsData.sourceErrors.length > 0
       ? `Data source unavailable: ${deploymentsData.sourceErrors.join(", ")}.`
       : null;
+
+  useEffect(() => {
+    if (deploymentContext?.mode !== "detail" || !selectedDeploymentId) {
+      setDetail(null);
+      setDetailError(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch(`/api/deployments/${selectedDeploymentId}/detail`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (!data) {
+          setDetail(null);
+          setDetailError("Deployment detail unavailable.");
+          return;
+        }
+        setDetail(data as DeploymentDetailPresenter);
+        setDetailError(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDetail(null);
+        setDetailError("Deployment detail unavailable.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [deploymentContext?.mode, selectedDeploymentId]);
 
   if (deploymentsData && !deploymentsData.hasDeploymentData) {
     return (
@@ -151,13 +232,16 @@ export function DeploymentsContent({
     <div className="space-y-6">
       {deploymentContext?.mode === "detail" ? (
         <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
-          Deployment detail route selected{selectedDeploymentId ? ` (${selectedDeploymentId})` : ""}. Full deployment presenter parity is pending.
+          Deployment detail route selected{selectedDeploymentId ? ` (${selectedDeploymentId})` : ""}.
         </div>
       ) : null}
       {sourceErrorText ? (
         <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {sourceErrorText}
         </div>
+      ) : null}
+      {deploymentContext?.mode === "detail" ? (
+        <DeploymentDetailPanel detail={detail} error={detailError} />
       ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
