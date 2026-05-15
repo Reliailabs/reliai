@@ -78,4 +78,16 @@ test("anonymous route redirect smoke keeps return_to semantics", async ({ page }
   await expect(page).toHaveURL(/\/sign-in\?return_to=%2Fonboarding%3Fpath%3Dsimulation%26autostart%3D1/);
   await page.goto("/system");
   await expect(page).toHaveURL(/\/sign-in\?return_to=%2Fsystem/);
+  await page.goto("/incidents/inc_123/investigate");
+  await expect(page).toHaveURL(/\/sign-in\?return_to=%2Fincidents%2Finc_123%2Finvestigate/);
+  await page.goto("/incidents/inc_123/compare");
+  await expect(page).toHaveURL(/\/sign-in\?return_to=%2Fincidents%2Finc_123%2Fcompare/);
+});
+
+test("auth return continuity preserves incident alias deep links", async ({ page }) => {
+  await ensureSignedIn(page, "/incidents/inc_123/investigate");
+  await expect(page).toHaveURL(/\/operations\/incidents\/inc_123\?tab=investigation/);
+
+  await page.goto("/incidents/inc_123/compare");
+  await expect(page).toHaveURL(/\/operations\/incidents\/inc_123\?tab=compare/);
 });

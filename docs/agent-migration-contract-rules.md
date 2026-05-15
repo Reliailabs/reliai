@@ -9,6 +9,10 @@ Required:
 - before parity acceptance for migrated routes
 - before `Phase 9` unblock
 
+Current state:
+- `Phase 9` unblock condition is satisfied as of `M9.3` migration-gate closure.
+- This contract remains mandatory for any additional migration slices and for all approved `Net-new` work that depends on migrated surfaces.
+
 ## Proxy Route Exception Policy
 Default:
 - proxy routes are required for client/API action parity slices
@@ -57,9 +61,35 @@ Presenter/component: apps/pulse/components/dashboard/content/incidents-content.t
 Project scoping preserved: yes (org-scoped incident API contracts preserved)
 Auth preserved: yes
 Write actions introduced: yes (source-parity incident lifecycle actions only: acknowledge/resolve/reopen/assign owner)
-Legacy deep links remaining: yes (`/incidents/[incidentId]/investigate` and `/compare` parity remains queued)
-Known deltas: Pulse still uses dashboard presenter instead of source incident-detail presenter; action set is now parity-wired through Pulse API proxies.
+Legacy deep links remaining: no
+Known deltas: Pulse still uses dashboard presenter instead of source incident-detail presenter; action set is parity-wired through Pulse API proxies and deep-link aliases.
 Validation: passed (`pnpm --filter pulse lint`, `pnpm --filter pulse build`, build-map includes incident action API routes); unauth probe blocked locally because `localhost:3005` was not running in shell context.
+
+### M9.1 — Incident Investigate/Compare Deep-Link Parity
+Route: /incidents/[incidentId]/investigate, /incidents/[incidentId]/compare
+Source route: apps/web/app/(app)/incidents/[incidentId]/investigate/page.tsx, apps/web/app/(app)/incidents/[incidentId]/compare/page.tsx
+Pulse route: apps/pulse/app/(app)/incidents/[incidentId]/investigate/page.tsx, apps/pulse/app/(app)/incidents/[incidentId]/compare/page.tsx
+Data loader: apps/pulse/lib/incident-operations-data.ts (reused via operations incident surface)
+Presenter/component: apps/pulse/components/operations/incident-operations-surface.tsx
+Project scoping preserved: yes (incident route auth/session and org-scoped backend contracts preserved)
+Auth preserved: yes
+Write actions introduced: no
+Legacy deep links remaining: no
+Known deltas: Pulse implements parity via route alias redirects to existing incident operations tabs (`investigation`, `compare`) rather than duplicating source page composition.
+Validation: passed (`pnpm --filter pulse test:incident-deeplink-parity`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
+
+### M9.2 — Conditional Billing Ownership Shim
+Route: /settings/billing, /billing/success
+Source route: apps/web/app/(app)/settings/billing/page.tsx, apps/web/app/(app)/billing/success/page.tsx
+Pulse route: apps/pulse/app/(app)/settings/billing/page.tsx, apps/pulse/app/(app)/billing/success/page.tsx
+Data loader: none (redirect-only shim)
+Presenter/component: none (redirect-only shim)
+Project scoping preserved: yes (app-shell auth/session boundary preserved)
+Auth preserved: yes
+Write actions introduced: no
+Legacy deep links remaining: no
+Known deltas: billing feature ownership intentionally remains in `apps/web`; Pulse now provides explicit route shims that resolve to `/settings` instead of unresolved paths.
+Validation: passed (`pnpm --filter pulse lint`, `pnpm --filter pulse build`)
 
 ### M8.3 — Audit Stage/Results Action Parity
 Route: /audits/[id], /audits/[id]/results
