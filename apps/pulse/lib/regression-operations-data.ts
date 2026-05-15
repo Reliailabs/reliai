@@ -4,6 +4,7 @@ import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
 import { getOperationsSurfaceData } from "@/lib/operations-timeline";
 import { listLifecycles, type ProposalLifecycle } from "@/lib/proposal-lifecycle";
+import { getVerificationResults } from "@/lib/operations-verification-results";
 import type { OperationsTimelineEntry } from "@/components/dashboard/pulse-types";
 
 export type RegressionOperationsTab =
@@ -110,13 +111,14 @@ export async function getRegressionOperationsSurfaceData(regressionId: string): 
     proposal.proposal_id.toLowerCase().includes("regression"),
   );
 
-  const verificationRecords = proposals
-    .filter((proposal) => proposal.state === "verified" || proposal.state === "failed")
-    .map((proposal) => ({
-      proposalId: proposal.proposal_id,
-      state: proposal.state as "verified" | "failed",
-      verificationResultId: proposal.verification_result_id,
-      updatedAt: proposal.updated_at,
+  const proposalById = new Map(proposals.map((proposal) => [proposal.proposal_id, proposal]));
+  const verificationRecords = getVerificationResults({ target_id: regressionId })
+    .filter((record) => proposalById.has(record.proposal_id))
+    .map((record) => ({
+      proposalId: record.proposal_id,
+      state: record.outcome === "passed" ? ("verified" as const) : ("failed" as const),
+      verificationResultId: record.verification_result_id,
+      updatedAt: record.verified_at,
     }));
 
   const compareLinks = [

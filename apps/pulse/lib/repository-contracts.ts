@@ -16,7 +16,7 @@
  * Adapters:
  *   OperationsTimelineRepository    → AppendOnlyRepository  (entries are immutable once written)
  *   ProposalLifecycleRepository     → ReadWriteRepository   (lifecycle state is mutated)
- *   VerificationResultRepository    → ReadWriteRepository   (Phase 10.3 — not yet merged)
+ *   VerificationResultRepository    → ReadWriteRepository   (Phase 10.5 — verification read-path parity)
  *   ReliabilityScoreRepository      → AppendOnlyRepository  (Phase 10.4 — score snapshots, read-only)
  *
  * Phase 11 invariant: replacing the in-memory adapter at the `defaultRepository`
