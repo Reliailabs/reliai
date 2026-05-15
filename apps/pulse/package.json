@@ -16,6 +16,7 @@
     "test:project-reliability-surface": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/project-reliability-surface.test.ts",
     "test:regressions-data-mapper": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/regressions-data-mapper.test.ts",
     "test:m8-migration-parity": "pnpm test:incident-action-parity && pnpm test:audit-action-parity && pnpm test:trace-forensics-mapper && pnpm test:trace-forensics-presenter-smoke && pnpm test:deployment-detail-mapper && pnpm test:deployment-detail-presenter-smoke && pnpm test:project-reliability-surface && pnpm test:regressions-data-mapper",
+    "test:phase10-lifecycle-gate": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/proposal-lifecycle.test.ts tests/repository-contracts.test.ts tests/operations-lifecycle-create-contract.test.ts tests/operations-lifecycle-transition-intent-contract.test.ts tests/operations-write-path-integration-contract.test.ts tests/operations-ingest-projections.test.ts",
     "test:trace-forensics-mapper": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/trace-forensics-mapper.test.ts",
     "test:trace-forensics-presenter-smoke": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/trace-forensics-presenter-smoke.test.tsx",
     "test:e2e:app-route-gate": "playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts",

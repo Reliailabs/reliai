@@ -12,6 +12,35 @@ All items must be `pass` before proceeding:
 - [ ] Governance board approves autonomous pilot scope.
 - [ ] Kill-switch drills successfully exercised.
 
+## Executable Validation Gate
+Run:
+- `pnpm --filter pulse test:phase10-lifecycle-gate`
+
+This gate must pass in CI (`pulse-route-gate`) before Phase 10 lifecycle work is treated as validated.
+
+## Gate Ownership Rules
+To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
+- In scope:
+  - lifecycle state machine and transition invariants
+  - repository contract invariants
+  - lifecycle create/transition/write-path validation contracts
+  - lifecycle ingest projection contracts
+- Out of scope:
+  - UI presenter smoke tests
+  - cross-surface route migration tests
+  - unrelated assisted-automation suggestion UX tests
+  - long-running e2e/browser flows
+- Runtime budget:
+  - target under 2 seconds local runtime on baseline dev machine
+  - warning threshold: over 5 seconds in CI
+- Determinism:
+  - tests must be order-independent and avoid shared mutable global state
+  - no network dependencies
+  - fixture data must be local and deterministic
+- Failure policy:
+  - CI failure blocks merge for Phase 10 lifecycle-affecting changes
+  - release readiness requires gate pass on `main`
+
 ## Pilot Constraints
 - Single environment pilot.
 - Narrow action classes only.
