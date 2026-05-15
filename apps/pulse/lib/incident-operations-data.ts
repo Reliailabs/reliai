@@ -8,6 +8,7 @@ import {
   type ProposalLifecycleRepository,
 } from "@/lib/operations-adapter";
 import { InMemoryProposalLifecycleRepository, type ProposalLifecycle } from "@/lib/proposal-lifecycle";
+import { getVerificationResults } from "@/lib/operations-verification-results";
 import type { IncidentSurfaceItem, OperationsTimelineEntry } from "@/components/dashboard/pulse-types";
 
 export type IncidentOperationsTab =
@@ -150,16 +151,25 @@ export async function getIncidentOperationsSurfaceData(
 
   const incident = incidentFromList ?? buildFallbackIncident(incidentId, timelineEntries, proposals);
 
+  const verificationByLifecycleId = new Map(
+    getVerificationResults({ target_id: incidentId }).map((record) => [
+      record.lifecycle_id,
+      record,
+    ]),
+  );
   const verificationRecords: IncidentOperationsVerificationRecord[] = proposals
     .filter((proposal) => isVerificationState(proposal.state))
-    .map((proposal) => ({
-      lifecycleId: proposal.lifecycle_id,
-      proposalId: proposal.proposal_id,
-      state: proposal.state,
-      verificationResultId: proposal.verification_result_id,
-      updatedAt: proposal.updated_at,
-      reason: extractTransitionReason(proposal),
-    }))
+    .map((proposal) => {
+      const verification = verificationByLifecycleId.get(proposal.lifecycle_id);
+      return {
+        lifecycleId: proposal.lifecycle_id,
+        proposalId: proposal.proposal_id,
+        state: proposal.state,
+        verificationResultId: verification?.verification_result_id ?? proposal.verification_result_id,
+        updatedAt: verification?.verified_at ?? proposal.updated_at,
+        reason: extractTransitionReason(proposal),
+      };
+    })
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const rollbackRecords: IncidentOperationsRollbackRecord[] = proposals
