@@ -583,7 +583,7 @@ export type OperationsSurfaceData = {
     rolled_back_count: number;
     requires_operator_review: true;
     execution_granted: false;
-  };
+  } | null;
   sourceErrors: string[];
   dataMode: "live" | "demo";
 };

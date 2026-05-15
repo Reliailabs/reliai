@@ -339,7 +339,13 @@ function getIntentProjectionTimelineEntries(): OperationsTimelineEntry[] {
 export async function getOperationsSurfaceData(
   repo: OperationsTimelineRepository = defaultRepository,
 ): Promise<OperationsSurfaceData> {
-  const reliabilitySnapshot = getReliabilityScore();
+  const reliabilitySnapshot = (() => {
+    try {
+      return getReliabilityScore();
+    } catch {
+      return null;
+    }
+  })();
   // Live mode: use fetchAll() so the backend call is actually awaited.
   // The sync findAll() stub on BackendOperationsTimelineRepository always
   // returns [] — only fetchAll() reaches the FastAPI endpoint.
