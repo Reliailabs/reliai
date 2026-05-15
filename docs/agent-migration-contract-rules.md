@@ -74,6 +74,19 @@ Legacy deep links remaining: no
 Known deltas: Pulse implements parity via route alias redirects to existing incident operations tabs (`investigation`, `compare`) rather than duplicating source page composition.
 Validation: passed (`pnpm --filter pulse test:incident-deeplink-parity`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
 
+### M9.2 — Conditional Billing Ownership Shim
+Route: /settings/billing, /billing/success
+Source route: apps/web/app/(app)/settings/billing/page.tsx, apps/web/app/(app)/billing/success/page.tsx
+Pulse route: apps/pulse/app/(app)/settings/billing/page.tsx, apps/pulse/app/(app)/billing/success/page.tsx
+Data loader: none (redirect-only shim)
+Presenter/component: none (redirect-only shim)
+Project scoping preserved: yes (app-shell auth/session boundary preserved)
+Auth preserved: yes
+Write actions introduced: no
+Legacy deep links remaining: no
+Known deltas: billing feature ownership intentionally remains in `apps/web`; Pulse now provides explicit route shims that resolve to `/settings` instead of unresolved paths.
+Validation: passed (`pnpm --filter pulse lint`, `pnpm --filter pulse build`)
+
 ### M8.3 — Audit Stage/Results Action Parity
 Route: /audits/[id], /audits/[id]/results
 Source route: apps/web/app/(app)/audits/[id]/page.tsx, apps/web/app/(app)/audits/[id]/results/page.tsx
