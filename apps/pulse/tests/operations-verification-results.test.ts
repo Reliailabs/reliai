@@ -37,6 +37,16 @@ test("mapLifecycleToVerificationResult returns null for non-verification states"
   assert.equal(mapped, null);
 });
 
+test("mapLifecycleToVerificationResult returns null when verification state lacks result id", () => {
+  const mapped = mapLifecycleToVerificationResult(
+    makeLifecycle({
+      state: "verified",
+      verification_result_id: null,
+    }),
+  );
+  assert.equal(mapped, null);
+});
+
 test("mapLifecycleToVerificationResult maps verified/failed with required invariants", () => {
   const verified = mapLifecycleToVerificationResult(
     makeLifecycle({
@@ -134,4 +144,41 @@ test("getVerificationResults applies filter through injected repository", () => 
   const failed = getVerificationResults({ outcome: "failed" }, repo);
   assert.equal(failed.length, 1);
   assert.equal(failed[0].verification_result_id, "vr-2");
+
+  const noMatch = getVerificationResults(
+    { target_id: "inc-1", proposal_id: "prop-2" },
+    repo,
+  );
+  assert.equal(noMatch.length, 0);
+});
+
+test("repository ordering keeps newest verification snapshot first", () => {
+  const repo = new InMemoryVerificationResultRepository([
+    {
+      verification_result_id: "vr-old",
+      lifecycle_id: "lc-1",
+      proposal_id: "prop-1",
+      organization_id: "org-a",
+      target_id: "inc-1",
+      outcome: "passed",
+      verified_at: "2026-05-15T10:00:00.000Z",
+      execution_granted: false,
+      requires_operator_review: true,
+    },
+    {
+      verification_result_id: "vr-new",
+      lifecycle_id: "lc-2",
+      proposal_id: "prop-2",
+      organization_id: "org-a",
+      target_id: "inc-2",
+      outcome: "failed",
+      verified_at: "2026-05-15T12:00:00.000Z",
+      execution_granted: false,
+      requires_operator_review: true,
+    },
+  ]);
+
+  const results = repo.findAll();
+  assert.equal(results[0].verification_result_id, "vr-new");
+  assert.equal(results[1].verification_result_id, "vr-old");
 });
