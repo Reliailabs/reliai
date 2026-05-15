@@ -57,9 +57,22 @@ Presenter/component: apps/pulse/components/dashboard/content/incidents-content.t
 Project scoping preserved: yes (org-scoped incident API contracts preserved)
 Auth preserved: yes
 Write actions introduced: yes (source-parity incident lifecycle actions only: acknowledge/resolve/reopen/assign owner)
-Legacy deep links remaining: yes (`/incidents/[incidentId]/investigate` and `/compare` parity remains queued)
-Known deltas: Pulse still uses dashboard presenter instead of source incident-detail presenter; action set is now parity-wired through Pulse API proxies.
+Legacy deep links remaining: no
+Known deltas: Pulse still uses dashboard presenter instead of source incident-detail presenter; action set is parity-wired through Pulse API proxies and deep-link aliases.
 Validation: passed (`pnpm --filter pulse lint`, `pnpm --filter pulse build`, build-map includes incident action API routes); unauth probe blocked locally because `localhost:3005` was not running in shell context.
+
+### M9.1 — Incident Investigate/Compare Deep-Link Parity
+Route: /incidents/[incidentId]/investigate, /incidents/[incidentId]/compare
+Source route: apps/web/app/(app)/incidents/[incidentId]/investigate/page.tsx, apps/web/app/(app)/incidents/[incidentId]/compare/page.tsx
+Pulse route: apps/pulse/app/(app)/incidents/[incidentId]/investigate/page.tsx, apps/pulse/app/(app)/incidents/[incidentId]/compare/page.tsx
+Data loader: apps/pulse/lib/incident-operations-data.ts (reused via operations incident surface)
+Presenter/component: apps/pulse/components/operations/incident-operations-surface.tsx
+Project scoping preserved: yes (incident route auth/session and org-scoped backend contracts preserved)
+Auth preserved: yes
+Write actions introduced: no
+Legacy deep links remaining: no
+Known deltas: Pulse implements parity via route alias redirects to existing incident operations tabs (`investigation`, `compare`) rather than duplicating source page composition.
+Validation: passed (`pnpm --filter pulse test:incident-deeplink-parity`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
 
 ### M8.3 — Audit Stage/Results Action Parity
 Route: /audits/[id], /audits/[id]/results
