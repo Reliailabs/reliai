@@ -91,3 +91,16 @@ Write actions introduced: no
 Legacy deep links remaining: no
 Known deltas: Pulse keeps dashboard-native presenter structure while porting source-equivalent deployment detail capability through mapped read contracts (metadata/gate/risk patterns/correlation counts).
 Validation: passed (`pnpm --filter pulse test:deployment-detail-mapper`, `pnpm --filter pulse test:deployment-detail-presenter-smoke`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
+
+### M8.6 — Project Presenter Depth Parity
+Route: /projects/[projectId]/reliability, /projects/[projectId]/regressions, /projects/[projectId]/timeline
+Source route: apps/web/app/(app)/projects/[projectId]/reliability/page.tsx, apps/web/app/(app)/projects/[projectId]/regressions/page.tsx, apps/web/app/(app)/projects/[projectId]/timeline/page.tsx
+Pulse route: apps/pulse/app/(app)/projects/[projectId]/reliability/page.tsx, apps/pulse/app/(app)/projects/[projectId]/regressions/page.tsx, apps/pulse/app/(app)/projects/[projectId]/timeline/page.tsx
+Data loader: apps/pulse/lib/project-reliability-surface.ts, apps/pulse/lib/project-reliability-mapper.ts, apps/pulse/lib/regressions-data.ts, apps/pulse/lib/regression-list-mapper.ts, apps/pulse/lib/project-timeline-data.ts
+Presenter/component: project route pages under apps/pulse/app/(app)/projects/[projectId]/*
+Project scoping preserved: yes
+Auth preserved: yes
+Write actions introduced: no
+Legacy deep links remaining: no
+Known deltas: Pulse stays read-only and dashboard-native, but closes narrowed presenter gaps by rendering source-contract reliability signals and richer regression context.
+Validation: passed (`pnpm --filter pulse test:project-reliability-surface`, `pnpm --filter pulse test:regressions-data-mapper`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)

@@ -2,24 +2,10 @@ import "server-only";
 
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
+import { mapRegressionListItem, type RegressionListItem, type RegressionRead } from "@/lib/regression-list-mapper";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 type ListResponse<T> = { items: T[] };
-
-type RegressionRead = {
-  id: string;
-  detected_at?: string | null;
-  created_at?: string | null;
-  summary?: string | null;
-  status?: string | null;
-};
-
-export type RegressionListItem = {
-  id: string;
-  detectedAt: string | null;
-  summary: string;
-  status: string;
-};
 
 export type RegressionsSurfaceData = {
   items: RegressionListItem[];
@@ -62,12 +48,7 @@ export async function getRegressionsSurfaceData(projectId?: string): Promise<Reg
   if (regressionsResult.error) sourceErrors.push("regressions");
 
   return {
-    items: (regressionsResult.data?.items ?? []).map((item) => ({
-      id: item.id,
-      detectedAt: item.detected_at ?? item.created_at ?? null,
-      summary: item.summary ?? "Regression signal detected in reliability window.",
-      status: item.status ?? "detected",
-    })),
+    items: (regressionsResult.data?.items ?? []).map(mapRegressionListItem),
     sourceErrors,
   };
 }

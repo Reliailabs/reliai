@@ -127,6 +127,24 @@ This document is the single queue for those deferred migration features so they 
   2. Keep current write boundaries and safety constraints unchanged.
   3. Avoid unrelated UI redesign.
 
+#### M8.6 Implementation Notes (2026-05-15)
+- Replaced project reliability route shallow guardrails shell usage with project reliability presenter:
+  - `apps/pulse/app/(app)/projects/[projectId]/reliability/page.tsx`
+  - uses source reliability contract fields through:
+    - `apps/pulse/lib/project-reliability-surface.ts`
+    - `apps/pulse/lib/project-reliability-mapper.ts`
+- Deepened project regressions presenter mapping:
+  - `apps/pulse/lib/regressions-data.ts`
+  - `apps/pulse/lib/regression-list-mapper.ts`
+  - `apps/pulse/app/(app)/projects/[projectId]/regressions/page.tsx`
+  - now includes metric/baseline/delta compare context and compare-link parity.
+- Added focused mapper tests:
+  - `apps/pulse/tests/project-reliability-surface.test.ts`
+  - `apps/pulse/tests/regressions-data-mapper.test.ts`
+  - scripts:
+    - `pnpm --filter pulse test:project-reliability-surface`
+    - `pnpm --filter pulse test:regressions-data-mapper`
+
 ## Cross-Slice Preconditions
 1. Slice-level source-of-truth mapping in `apps/web` (route + presenter + API contract).
 2. Explicit ownership decision for waived routes before implementation (onboarding/billing flows).

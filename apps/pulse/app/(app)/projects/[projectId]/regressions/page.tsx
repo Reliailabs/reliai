@@ -54,6 +54,10 @@ export default async function ProjectRegressionsPage({ params }: ProjectRegressi
               <p className="mt-1 text-xs text-muted-foreground">
                 {item.id} • {item.status} • {time(item.detectedAt)}
               </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {item.metricName}: {item.currentValue} vs {item.baselineValue}
+                {item.deltaPercent ? ` · Δ ${item.deltaPercent}` : ""}
+              </p>
               <div className="mt-3 flex gap-2">
                 <Link
                   href={`/regressions/${item.id}`}
@@ -61,6 +65,14 @@ export default async function ProjectRegressionsPage({ params }: ProjectRegressi
                 >
                   Open legacy detail
                 </Link>
+                {item.comparePath ? (
+                  <Link
+                    href={item.comparePath}
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted"
+                  >
+                    Open compare
+                  </Link>
+                ) : null}
                 <Link
                   href={`/operations/regressions/${item.id}`}
                   className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted"
