@@ -12,7 +12,7 @@ Phase 9 implementation may proceed only when an item is either:
 - Keep in `apps/web` for now: `/docs`, `/docs-marketing`, `/pricing`, `/signup`.
 - Required in `apps/pulse` before readiness: `/projects/[projectId]/reliability`, `/projects/[projectId]/regressions`, `/projects/[projectId]/timeline`, `/projects/[projectId]/ingestion`, `/projects/[projectId]/processors`, `/projects/[projectId]/settings`, `/playground`.
 - Conditional ownership routes explicitly retained in `apps/web` for this migration gate: `/settings/billing`, `/billing/success` (`/onboarding` moved to Pulse in `M8.1`).
-- Phase 9 expansion remains blocked until this migration gate is closed.
+- Migration gate closure achieved in `M9.3`; Phase 9 is unblocked for explicitly approved `Net-new` slices.
 
 ## Status Vocabulary
 - `Not started`
@@ -87,3 +87,12 @@ Phase 9 implementation may proceed only when an item is either:
 - Docs reconciled to remove contradictory M8 status/path entries.
 - Known public route exception remains intentional: `apps/pulse/app/(marketing)/page.tsx`.
 - `AGENTS.md` drift exists locally and is explicitly excluded from M8 closure scope.
+
+## M9.3 Migration Gate Closure Note
+- Migration parity matrix rows are now either `Complete`, `Complete (compatibility shim)`, or `Parity reached` for in-scope migration routes.
+- Deferred incident deep-link parity (`M9.1`) and conditional billing ownership compatibility (`M9.2`) are closed.
+- CI enforcement is active in `pulse-route-gate`, including:
+  - `pnpm --filter pulse test:app-route-gate`
+  - `pnpm --filter pulse test:m8-migration-parity`
+  - `pnpm --filter pulse test:e2e:app-route-gate:ci` (strict auth creds required)
+- Phase 9 work may proceed only for explicitly approved `Net-new` slices per this sheet’s classification and approval rules.

@@ -9,6 +9,10 @@ Required:
 - before parity acceptance for migrated routes
 - before `Phase 9` unblock
 
+Current state:
+- `Phase 9` unblock condition is satisfied as of `M9.3` migration-gate closure.
+- This contract remains mandatory for any additional migration slices and for all approved `Net-new` work that depends on migrated surfaces.
+
 ## Proxy Route Exception Policy
 Default:
 - proxy routes are required for client/API action parity slices
