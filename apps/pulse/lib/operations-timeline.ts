@@ -5,6 +5,11 @@ import { listLifecycles } from "@/lib/proposal-lifecycle";
 import type { ProposalLifecycle } from "@/lib/proposal-lifecycle";
 import type { AppendOnlyRepository, RepositoryAdapter } from "@/lib/repository-contracts";
 import { createTimelineRepo, getOperationsAdapterMode } from "@/lib/operations-adapter";
+import { getRecentLifecycleIntents, getRecentVerificationIntents } from "@/lib/operations-ingest-projections";
+import {
+  mapIntentProjectionsToTimelineEntries,
+  mergeTimelineEntriesWithIntentProjections,
+} from "@/lib/operations-intent-timeline-bridge";
 import type {
   OperationsSurfaceData,
   OperationsTimelineEntry,
@@ -319,6 +324,15 @@ function isAsyncTimelineRepo(
   );
 }
 
+function getIntentProjectionTimelineEntries(): OperationsTimelineEntry[] {
+  const lifecycleIntents = getRecentLifecycleIntents(50);
+  const verificationIntents = getRecentVerificationIntents(50);
+  return mapIntentProjectionsToTimelineEntries(
+    lifecycleIntents,
+    verificationIntents,
+  );
+}
+
 // ── Public surface data function ──────────────────────────────────────────────
 
 export async function getOperationsSurfaceData(
@@ -330,9 +344,19 @@ export async function getOperationsSurfaceData(
   if (isAsyncTimelineRepo(repo)) {
     const entries = await repo.fetchAll();
     const sourceErrors = repo.drainErrors();
-    return { entries, sourceErrors, dataMode: "live" };
+    const intentEntries = getIntentProjectionTimelineEntries();
+    const mergedEntries = mergeTimelineEntriesWithIntentProjections(
+      entries,
+      intentEntries,
+    );
+    return { entries: mergedEntries, sourceErrors, dataMode: "live" };
   }
 
   const entries = repo.findAll();
-  return { entries, sourceErrors: [], dataMode: "demo" };
+  const intentEntries = getIntentProjectionTimelineEntries();
+  const mergedEntries = mergeTimelineEntriesWithIntentProjections(
+    entries,
+    intentEntries,
+  );
+  return { entries: mergedEntries, sourceErrors: [], dataMode: "demo" };
 }

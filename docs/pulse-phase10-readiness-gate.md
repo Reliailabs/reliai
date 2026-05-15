@@ -18,6 +18,10 @@ Run:
 
 This gate must pass in CI (`pulse-route-gate`) before Phase 10 lifecycle work is treated as validated.
 
+## Phase 10.4 Scope Note
+Phase 10.4 currently ships score snapshot infrastructure only (`getReliabilityScore` + repository/tests).
+No Pulse UI surface consumes this read-path yet. Do not treat this as reliability-score presenter parity.
+
 ## Gate Ownership Rules
 To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
 - In scope:
@@ -25,6 +29,16 @@ To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
   - repository contract invariants
   - lifecycle create/transition/write-path validation contracts
   - lifecycle ingest projection contracts
+  - timeline projection hardening contracts:
+    - deterministic ordering
+    - dedupe behavior
+    - lifecycle + verification projection merge consistency
+    - policy-result mapping consistency
+    - duplicate-ingest replay resilience
+  - reliability score snapshot contracts:
+    - deterministic score clamping and rounding
+    - verification pass-rate mapping consistency
+    - read-only snapshot repository ordering/filtering
 - Out of scope:
   - UI presenter smoke tests
   - cross-surface route migration tests
