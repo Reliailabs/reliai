@@ -12,6 +12,12 @@ All items must be `pass` before proceeding:
 - [ ] Governance board approves autonomous pilot scope.
 - [ ] Kill-switch drills successfully exercised.
 
+## Executable Validation Gate
+Run:
+- `pnpm --filter pulse test:phase10-lifecycle-gate`
+
+This gate must pass in CI (`pulse-route-gate`) before Phase 10 lifecycle work is treated as validated.
+
 ## Pilot Constraints
 - Single environment pilot.
 - Narrow action classes only.
