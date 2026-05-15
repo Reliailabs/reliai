@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -55,6 +56,75 @@ const defaultServiceLatencies = [
 
 const cardShadow = "rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px";
 
+export type TraceForensicsViewModel = {
+  detail: {
+    traceId: string;
+    requestId: string;
+    success: boolean;
+    latencyMs: number | null;
+    environment: string | null;
+    createdAt: string | null;
+    modelName: string | null;
+    promptVersion: string | null;
+    errorType: string | null;
+    comparePath: string | null;
+    payloadTruncated: boolean;
+  };
+  findings: Array<{ label: string; detail: string }>;
+  compare: { changedBlockCount: number; totalBlockCount: number; baselineTraceId: string | null; baselineRequestId: string | null } | null;
+  graph: { nodeCount: number; edgeCount: number; environment: string | null } | null;
+};
+
+export function TraceForensicsPanel({
+  mode,
+  forensics,
+  forensicsError,
+}: {
+  mode: Exclude<TraceRouteContext["mode"], "list">;
+  forensics: TraceForensicsViewModel | null;
+  forensicsError: string | null;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5" style={{ boxShadow: cardShadow }}>
+      {forensicsError ? (
+        <p className="text-sm text-amber-300">{forensicsError}</p>
+      ) : forensics ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <span className="font-medium text-foreground">{forensics.detail.requestId}</span>
+            <span className="text-muted-foreground">Latency {forensics.detail.latencyMs ?? "—"} ms</span>
+            <span className="text-muted-foreground">Model {forensics.detail.modelName ?? "—"}</span>
+            <span className="text-muted-foreground">Env {forensics.detail.environment ?? "—"}</span>
+          </div>
+          {forensics.findings.length > 0 ? (
+            <div className="grid gap-2 md:grid-cols-3">
+              {forensics.findings.map((finding) => (
+                <div key={finding.label} className="rounded-lg border border-border bg-muted/20 p-3">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{finding.label}</p>
+                  <p className="mt-1 text-sm text-foreground">{finding.detail}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {mode === "compare" && forensics.compare ? (
+            <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+              Changed blocks: {forensics.compare.changedBlockCount}/{forensics.compare.totalBlockCount}
+              {forensics.compare.baselineTraceId ? ` · Baseline ${forensics.compare.baselineTraceId}` : ""}
+            </div>
+          ) : null}
+          {mode === "graph" && forensics.graph ? (
+            <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+              Graph nodes: {forensics.graph.nodeCount} · edges: {forensics.graph.edgeCount}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">Loading trace forensic detail…</p>
+      )}
+    </div>
+  );
+}
+
 export function PerformanceContent({
   tracesData,
   traceContext,
@@ -71,10 +141,42 @@ export function PerformanceContent({
   const intelligenceSnippets = tracesData?.intelligenceSnippets ?? [];
   const traceRefs = tracesData?.traceRefs ?? [];
   const selectedTraceRef = traceRefs.find((trace) => trace.id === traceContext?.selectedTraceId) ?? null;
+  const [forensics, setForensics] = useState<TraceForensicsViewModel | null>(null);
+  const [forensicsError, setForensicsError] = useState<string | null>(null);
   const sourceErrorText =
     tracesData && tracesData.sourceErrors.length > 0
       ? `Data source unavailable: ${tracesData.sourceErrors.join(", ")}.`
       : null;
+
+  useEffect(() => {
+    const traceId = traceContext?.selectedTraceId;
+    if (!traceId || !traceContext?.mode || traceContext.mode === "list") {
+      setForensics(null);
+      setForensicsError(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch(`/api/traces/${traceId}/forensics`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (!data) {
+          setForensicsError("Trace forensic detail unavailable.");
+          setForensics(null);
+          return;
+        }
+        setForensics(data);
+        setForensicsError(null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setForensicsError("Trace forensic detail unavailable.");
+        setForensics(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [traceContext?.mode, traceContext?.selectedTraceId]);
 
   if (tracesData && !tracesData.hasTraceData) {
     return (
@@ -96,16 +198,19 @@ export function PerformanceContent({
       {traceContext?.mode && traceContext.mode !== "list" ? (
         <div className="rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
           {traceContext.mode === "detail"
-            ? `Trace detail route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}. Full presenter parity is pending.`
+            ? `Trace detail route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}.`
             : traceContext.mode === "compare"
-              ? `Trace compare route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}. Full compare presenter parity is pending.`
-              : `Trace graph route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}. Full graph presenter parity is pending.`}
+              ? `Trace compare route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}.`
+              : `Trace graph route selected${selectedTraceRef ? ` (${selectedTraceRef.requestId})` : ""}.`}
         </div>
       ) : null}
       {sourceErrorText ? (
         <div className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           {sourceErrorText}
         </div>
+      ) : null}
+      {traceContext?.mode && traceContext.mode !== "list" ? (
+        <TraceForensicsPanel mode={traceContext.mode} forensics={forensics} forensicsError={forensicsError} />
       ) : null}
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">

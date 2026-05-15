@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, XCircle, Search, Filter, ChevronDown, UserX } from "lucide-react";
+import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, Search, Filter, ChevronDown, UserX } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
 import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 import type { IncidentMember } from "@/app/api/incidents/members/route";
+import { optimisticAssigneeFromEmail, patchIncidentList, toSurfaceStatus } from "@/lib/incidents-surface-actions";
 
 const defaultIncidents = [
   {
@@ -136,12 +137,26 @@ export function IncidentsContent({
   const incidents = incidentsData?.incidents?.length ? incidentsData.incidents : defaultIncidents;
   const router = useRouter();
   const pathname = usePathname();
+  const [incidentItems, setIncidentItems] = useState(incidents);
   const initialSelectedIncident =
-    incidents.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidents[0];
+    incidentItems.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidentItems[0];
   const [selectedIncident, setSelectedIncident] = useState(initialSelectedIncident);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [members, setMembers] = useState<IncidentMember[]>([]);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isMutatingStatus, setIsMutatingStatus] = useState(false);
+
+  function patchIncident(
+    incidentId: string,
+    patch: Partial<(typeof incidents)[number]>,
+  ) {
+    setIncidentItems((prev) => patchIncidentList(prev, incidentId, patch));
+    setSelectedIncident((prev) => (prev.id === incidentId ? { ...prev, ...patch } : prev));
+  }
+
+  useEffect(() => {
+    setIncidentItems(incidents);
+  }, [incidents]);
 
   useEffect(() => {
     void fetch("/api/incidents/members", { cache: "no-store" })
@@ -153,38 +168,66 @@ export function IncidentsContent({
   async function handleAssign(userId: string | null, email: string | null) {
     if (isAssigning) return;
     setIsAssigning(true);
-    // Optimistic update
-    const optimisticAssignee = email ?? "Unassigned";
-    const optimisticInitials = email
-      ? email.split("@")[0]!.split(/[._-]/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("") || email.slice(0, 2).toUpperCase()
-      : "UA";
-    setSelectedIncident((prev) => ({ ...prev, assignee: optimisticAssignee, assigneeInitials: optimisticInitials }));
+    const previous = {
+      assignee: selectedIncident.assignee,
+      assigneeInitials: selectedIncident.assigneeInitials,
+    };
+    const optimistic = optimisticAssigneeFromEmail(email);
+    patchIncident(selectedIncident.id, optimistic);
     try {
       const response = await fetch(`/api/incidents/${selectedIncident.id}/assign`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
-      if (response.ok) {
-        const data = (await response.json()) as { assignee: string; assigneeInitials: string };
-        setSelectedIncident((prev) => ({ ...prev, assignee: data.assignee, assigneeInitials: data.assigneeInitials }));
+      if (!response.ok) {
+        patchIncident(selectedIncident.id, previous);
+        return;
       }
+      const data = (await response.json()) as { assignee: string; assigneeInitials: string };
+      patchIncident(selectedIncident.id, { assignee: data.assignee, assigneeInitials: data.assigneeInitials });
     } catch {
-      // optimistic state stays; will correct on next page load
+      patchIncident(selectedIncident.id, previous);
     } finally {
       setIsAssigning(false);
     }
   }
 
+  async function handleLifecycleAction(action: "acknowledge" | "resolve" | "reopen") {
+    if (isMutatingStatus) return;
+    setIsMutatingStatus(true);
+    try {
+      const response = await fetch(`/api/incidents/${selectedIncident.id}/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as {
+        status: string;
+        assignee: string;
+        assigneeInitials: string;
+      };
+      patchIncident(selectedIncident.id, {
+        status: toSurfaceStatus(data.status),
+        assignee: data.assignee,
+        assigneeInitials: data.assigneeInitials,
+      });
+    } finally {
+      setIsMutatingStatus(false);
+    }
+  }
+
   useEffect(() => {
     const contextIncident =
-      incidents.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidents[0];
-    setSelectedIncident(contextIncident);
-  }, [incidentContext?.selectedIncidentId, incidents]);
+      incidentItems.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidentItems[0];
+    if (contextIncident) {
+      setSelectedIncident(contextIncident);
+    }
+  }, [incidentContext?.selectedIncidentId, incidentItems]);
 
   const filteredIncidents = filterStatus === "all" 
-    ? incidents 
-    : incidents.filter(i => i.status === filterStatus);
+    ? incidentItems
+    : incidentItems.filter(i => i.status === filterStatus);
   const sourceErrorText =
     incidentsData && incidentsData.sourceErrors.length > 0
       ? `Data source unavailable: ${incidentsData.sourceErrors.join(", ")}.`
@@ -319,6 +362,35 @@ export function IncidentsContent({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {selectedIncident.status !== "resolved" ? (
+              <Button
+                variant="outline"
+                className="bg-transparent"
+                disabled={isMutatingStatus || selectedIncident.status !== "investigating"}
+                onClick={() => void handleLifecycleAction("acknowledge")}
+              >
+                Acknowledge
+              </Button>
+            ) : null}
+            {selectedIncident.status === "resolved" ? (
+              <Button
+                variant="outline"
+                className="bg-transparent"
+                disabled={isMutatingStatus}
+                onClick={() => void handleLifecycleAction("reopen")}
+              >
+                Reopen
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="bg-transparent"
+                disabled={isMutatingStatus}
+                onClick={() => void handleLifecycleAction("resolve")}
+              >
+                Resolve
+              </Button>
+            )}
             {pathname?.startsWith("/incidents") ? (
               <Button
                 variant="outline"

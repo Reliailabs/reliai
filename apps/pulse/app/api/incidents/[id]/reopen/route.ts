@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getApiAccessToken } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
-import { incidentOwnerPath } from "@/lib/incidents-action-contract";
+import { incidentReopenPath } from "@/lib/incidents-action-contract";
 
-export type AssignResponse = {
+export type IncidentLifecycleResponse = {
+  status: string;
   assignee: string;
   assigneeInitials: string;
 };
@@ -15,41 +16,36 @@ function initials(email: string): string {
   return local.slice(0, 2).toUpperCase();
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const token = await getApiAccessToken();
   if (!token) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
-  const body = (await request.json()) as { userId: string | null };
 
   try {
-    const response = await fetch(`${API_URL}${incidentOwnerPath(id)}`, {
+    const response = await fetch(`${API_URL}${incidentReopenPath(id)}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ owner_operator_user_id: body.userId ?? null }),
       cache: "no-store",
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: "assign failed" }, { status: response.status });
+      return NextResponse.json({ error: "reopen failed" }, { status: response.status });
     }
 
     const data = (await response.json()) as {
+      status: string;
       acknowledged_by_operator_email?: string | null;
     };
-
     const email = data.acknowledged_by_operator_email ?? null;
-    const assignee = email ?? "Unassigned";
     return NextResponse.json({
-      assignee,
+      status: data.status,
+      assignee: email ?? "Unassigned",
       assigneeInitials: email ? initials(email) : "UA",
-    } satisfies AssignResponse);
+    } satisfies IncidentLifecycleResponse);
   } catch {
-    return NextResponse.json({ error: "assign failed" }, { status: 500 });
+    return NextResponse.json({ error: "reopen failed" }, { status: 500 });
   }
 }

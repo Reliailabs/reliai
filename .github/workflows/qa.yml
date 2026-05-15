@@ -208,6 +208,9 @@ jobs:
       - name: Run Pulse app route migration gate (contract)
         run: pnpm --filter pulse test:app-route-gate
 
+      - name: Run Pulse M8 migration parity suite
+        run: pnpm --filter pulse test:m8-migration-parity
+
       - name: Validate Pulse E2E credentials
         run: |
           if [ -z "${PW_E2E_EMAIL}" ] || [ -z "${PW_E2E_PASSWORD}" ]; then

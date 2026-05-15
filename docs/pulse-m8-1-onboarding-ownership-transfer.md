@@ -1,7 +1,7 @@
 # Pulse M8 — Deferred Migration Features Backlog
 
-Date: 2026-05-13
-Status: In progress (`M8.1` implemented, validation pending)
+Date: 2026-05-14
+Status: In progress (`M8.1` accepted, `M8.2` implemented, validation pending)
 Classification: Migration
 
 ## Why This Exists
@@ -37,6 +37,21 @@ This document is the single queue for those deferred migration features so they 
   2. Keep execution/approval boundaries consistent with existing Pulse governance.
   3. No autonomous action behavior.
 
+#### M8.2 Implementation Notes (2026-05-14)
+- Preserved existing Pulse route ownership for:
+  - `apps/pulse/app/(app)/incidents/[incidentId]/page.tsx`
+  - `apps/pulse/app/(app)/incidents/[incidentId]/command/page.tsx`
+- Added lifecycle action proxy routes:
+  - `apps/pulse/app/api/incidents/[id]/acknowledge/route.ts`
+  - `apps/pulse/app/api/incidents/[id]/resolve/route.ts`
+  - `apps/pulse/app/api/incidents/[id]/reopen/route.ts`
+- Corrected owner assignment contract path in:
+  - `apps/pulse/app/api/incidents/[id]/assign/route.ts` (`/owner` endpoint)
+- Added incident-detail action UI wiring in:
+  - `apps/pulse/components/dashboard/content/incidents-content.tsx`
+  - actions: `Acknowledge`, `Resolve`, `Reopen`, assignment update
+  - state sync: list/detail status + assignee refresh after action
+
 ### M8.3 — Audit Stage/Results Action Parity
 - Current state: audits routes are present; full stage-action/results presenter parity remains partial.
 - Pulse target: source-equivalent audit action/results behavior on existing routes.
@@ -44,6 +59,22 @@ This document is the single queue for those deferred migration features so they 
   1. Port missing audit stage actions from source route behavior.
   2. Ensure results/detail data shape parity.
   3. Preserve auth/project scoping and non-destructive defaults.
+
+#### M8.3 Implementation Notes (2026-05-14)
+- Added Pulse audit detail + action proxies:
+  - `apps/pulse/app/api/audits/[id]/detail/route.ts`
+  - `apps/pulse/app/api/audits/[id]/actions/route.ts`
+- Added explicit audit action contract mapping:
+  - `apps/pulse/lib/audits-action-contract.ts`
+  - `new_run`, `start`, `continue`, `rerun(stage)` path resolution
+- Added action availability + failure-state guard helpers:
+  - `apps/pulse/lib/audits-surface-actions.ts`
+- Wired detail-context action controls in:
+  - `apps/pulse/components/dashboard/content/audits-content.tsx`
+  - non-optimistic update model: action success triggers detail refresh; failure does not mutate local stage/run state.
+- Added focused tests:
+  - `apps/pulse/tests/audits-action-parity.test.ts`
+  - script: `pnpm --filter pulse test:audit-action-parity`
 
 ### M8.4 — Trace Forensics Presenter Parity
 - Current state: trace detail/compare/graph routes exist; full forensic presenter behavior remains partial.
@@ -53,6 +84,18 @@ This document is the single queue for those deferred migration features so they 
   2. Preserve incident/deployment linkage semantics.
   3. No new trace feature expansion.
 
+#### M8.4 Implementation Notes (2026-05-14)
+- Added trace forensics read proxy:
+  - `apps/pulse/app/api/traces/[id]/forensics/route.ts`
+- Added presenter mapping layer from existing web/API contracts:
+  - `apps/pulse/lib/trace-forensics-mapper.ts`
+- Wired trace route context panels in:
+  - `apps/pulse/components/dashboard/content/performance-content.tsx`
+  - detail/compare/graph route modes now render mapped forensics data (metadata, key findings, compare summary, graph summary) instead of parity-pending placeholder text.
+- Added focused mapping tests:
+  - `apps/pulse/tests/trace-forensics-mapper.test.ts`
+  - script: `pnpm --filter pulse test:trace-forensics-mapper`
+
 ### M8.5 — Deployment Detail Presenter Parity
 - Current state: deployment detail route exists; full intelligence presenter parity remains partial.
 - Pulse target: source-equivalent deployment detail behavior on existing route.
@@ -61,6 +104,21 @@ This document is the single queue for those deferred migration features so they 
   2. Preserve source contract usage and guard behavior.
   3. No net-new deployment workflows.
 
+#### M8.5 Implementation Notes (2026-05-15)
+- Added deployment detail read proxy:
+  - `apps/pulse/app/api/deployments/[id]/detail/route.ts`
+- Added deployment detail presenter mapper:
+  - `apps/pulse/lib/deployment-detail-mapper.ts`
+- Wired deployment detail route-mode presenter blocks in:
+  - `apps/pulse/components/dashboard/content/deployments-content.tsx`
+  - includes mapped deployment metadata, gate summary, risk pattern snippets, and linked incident/event counts.
+- Added focused tests:
+  - `apps/pulse/tests/deployment-detail-mapper.test.ts`
+  - `apps/pulse/tests/deployment-detail-presenter-smoke.test.tsx`
+  - scripts:
+    - `pnpm --filter pulse test:deployment-detail-mapper`
+    - `pnpm --filter pulse test:deployment-detail-presenter-smoke`
+
 ### M8.6 — Project Presenter Depth Parity
 - Current state: required project routes exist; some views still use narrowed read presenters.
 - Pulse target: close presenter-depth parity for project reliability/regressions/timeline views where source behavior is still reduced.
@@ -68,6 +126,24 @@ This document is the single queue for those deferred migration features so they 
   1. Align project-scoped presenter depth with `apps/web` behavior.
   2. Keep current write boundaries and safety constraints unchanged.
   3. Avoid unrelated UI redesign.
+
+#### M8.6 Implementation Notes (2026-05-15)
+- Replaced project reliability route shallow guardrails shell usage with project reliability presenter:
+  - `apps/pulse/app/(app)/projects/[projectId]/reliability/page.tsx`
+  - uses source reliability contract fields through:
+    - `apps/pulse/lib/project-reliability-surface.ts`
+    - `apps/pulse/lib/project-reliability-mapper.ts`
+- Deepened project regressions presenter mapping:
+  - `apps/pulse/lib/regressions-data.ts`
+  - `apps/pulse/lib/regression-list-mapper.ts`
+  - `apps/pulse/app/(app)/projects/[projectId]/regressions/page.tsx`
+  - now includes metric/baseline/delta compare context and compare-link parity.
+- Added focused mapper tests:
+  - `apps/pulse/tests/project-reliability-surface.test.ts`
+  - `apps/pulse/tests/regressions-data-mapper.test.ts`
+  - scripts:
+    - `pnpm --filter pulse test:project-reliability-surface`
+    - `pnpm --filter pulse test:regressions-data-mapper`
 
 ## Cross-Slice Preconditions
 1. Slice-level source-of-truth mapping in `apps/web` (route + presenter + API contract).
