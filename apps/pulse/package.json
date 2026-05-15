@@ -11,6 +11,7 @@
     "test:audit-action-parity": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/audits-action-parity.test.ts",
     "test:incident-action-parity": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/incidents-action-parity.test.ts",
     "test:trace-forensics-mapper": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/trace-forensics-mapper.test.ts",
+    "test:trace-forensics-presenter-smoke": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/trace-forensics-presenter-smoke.test.tsx",
     "test:e2e:app-route-gate": "playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts",
     "test:e2e:app-route-gate:ci": "PW_REQUIRE_AUTH_E2E=1 playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts"
   },
