@@ -84,6 +84,18 @@ This document is the single queue for those deferred migration features so they 
   2. Preserve incident/deployment linkage semantics.
   3. No new trace feature expansion.
 
+#### M8.4 Implementation Notes (2026-05-14)
+- Added trace forensics read proxy:
+  - `apps/pulse/app/api/traces/[id]/forensics/route.ts`
+- Added presenter mapping layer from existing web/API contracts:
+  - `apps/pulse/lib/trace-forensics-mapper.ts`
+- Wired trace route context panels in:
+  - `apps/pulse/components/dashboard/content/performance-content.tsx`
+  - detail/compare/graph route modes now render mapped forensics data (metadata, key findings, compare summary, graph summary) instead of parity-pending placeholder text.
+- Added focused mapping tests:
+  - `apps/pulse/tests/trace-forensics-mapper.test.ts`
+  - script: `pnpm --filter pulse test:trace-forensics-mapper`
+
 ### M8.5 — Deployment Detail Presenter Parity
 - Current state: deployment detail route exists; full intelligence presenter parity remains partial.
 - Pulse target: source-equivalent deployment detail behavior on existing route.

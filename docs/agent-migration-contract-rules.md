@@ -65,3 +65,16 @@ Write actions introduced: yes (source-parity audit run/stage actions only: new_r
 Legacy deep links remaining: no
 Known deltas: Pulse keeps dashboard-native presenter; results-table parity depth remains queued under later presenter-depth slice.
 Validation: passed (`pnpm --filter pulse test:audit-action-parity`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
+
+### M8.4 — Trace Forensics Presenter Parity
+Route: /traces/[traceId], /traces/[traceId]/compare, /traces/[traceId]/graph
+Source route: apps/web/app/(app)/traces/[traceId]/page.tsx, apps/web/app/(app)/traces/[traceId]/compare/page.tsx, apps/web/app/(app)/traces/[traceId]/graph/page.tsx
+Pulse route: apps/pulse/app/(app)/traces/[traceId]/page.tsx, apps/pulse/app/(app)/traces/[traceId]/compare/page.tsx, apps/pulse/app/(app)/traces/[traceId]/graph/page.tsx
+Data loader: apps/pulse/lib/traces-data.ts + apps/pulse/app/api/traces/[id]/forensics/route.ts
+Presenter/component: apps/pulse/components/dashboard/content/performance-content.tsx
+Project scoping preserved: yes
+Auth preserved: yes
+Write actions introduced: no
+Legacy deep links remaining: no
+Known deltas: Pulse keeps dashboard-native presenter structure while porting web-equivalent forensic capability (detail metadata, key findings, compare summary, graph summary) through existing contracts.
+Validation: passed (`pnpm --filter pulse test:trace-forensics-mapper`, `pnpm --filter pulse lint`, `pnpm --filter pulse build`)
