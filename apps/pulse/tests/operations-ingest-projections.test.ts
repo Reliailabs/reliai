@@ -38,7 +38,11 @@ function appendVerification(repo: ReturnType<typeof getOperationsIngestRepo>, su
       request_context: { organization_id: "org_test", project_id: "none", environment_id: "none" },
       actor: { actor_type: "system", actor_id: "test" },
       target: { target_type: "verification", target_id: `verification-${suffix}` },
-      payload: {},
+      payload: {
+        lifecycle_id: `lifecycle-${suffix}`,
+        proposal_id: `proposal-${suffix}`,
+        outcome: "passed",
+      },
       evidence_refs: [{ label: "Test", href: "/operations" }],
     },
   });
@@ -56,6 +60,18 @@ test("projections return recently appended lifecycle and verification intents", 
 
   assert.ok(lifecycle.some((item) => item.event_id === `evt-lifecycle-${suffix}`));
   assert.ok(verification.some((item) => item.event_id === `evt-verify-${suffix}`));
+});
+
+test("verification projections preserve proposal/lifecycle consistency links", () => {
+  const repo = getOperationsIngestRepo();
+  const suffix = `${Date.now()}-consistency`;
+  appendVerification(repo, suffix, new Date().toISOString());
+
+  const projection = getRecentVerificationIntents(200).find((item) => item.event_id === `evt-verify-${suffix}`);
+  assert.ok(projection);
+  assert.equal(projection?.proposal_id, `proposal-${suffix}`);
+  assert.equal(projection?.lifecycle_id, `lifecycle-${suffix}`);
+  assert.equal(projection?.outcome, "passed");
 });
 
 test("projections enforce event-type filtering", () => {
