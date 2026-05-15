@@ -6,6 +6,10 @@ import type { ProposalLifecycle } from "@/lib/proposal-lifecycle";
 import type { AppendOnlyRepository, RepositoryAdapter } from "@/lib/repository-contracts";
 import { createTimelineRepo, getOperationsAdapterMode } from "@/lib/operations-adapter";
 import { getRecentLifecycleIntents, getRecentVerificationIntents } from "@/lib/operations-ingest-projections";
+import {
+  mapIntentProjectionsToTimelineEntries,
+  mergeTimelineEntriesWithIntentProjections,
+} from "@/lib/operations-intent-timeline-bridge";
 import type {
   OperationsSurfaceData,
   OperationsTimelineEntry,
@@ -320,56 +324,13 @@ function isAsyncTimelineRepo(
   );
 }
 
-function mapIntentProjectionsToTimelineEntries(): OperationsTimelineEntry[] {
+function getIntentProjectionTimelineEntries(): OperationsTimelineEntry[] {
   const lifecycleIntents = getRecentLifecycleIntents(50);
   const verificationIntents = getRecentVerificationIntents(50);
-
-  const mappedLifecycle: OperationsTimelineEntry[] = lifecycleIntents.map((intent) => ({
-    entry_id: deterministicEntryId("intent", intent.event_id),
-    kind: "proposal_generated",
-    occurred_at: intent.accepted_at,
-    organization_id: intent.organization_id,
-    project_id: null,
-    lifecycle_id: intent.lifecycle_id,
-    proposal_id: intent.proposal_id,
-    incident_id: null,
-    severity: null,
-    lifecycle_state: null,
-    actor_type: "system",
-    actor_label: "Reliai System",
-    title: "Lifecycle intent accepted",
-    summary: `Lifecycle ingest intent accepted for target '${intent.target_id}'.`,
-    policy_gate_result: null,
-    evidence_refs: [{ label: "Ingest projection", href: "/operations" }],
-    requires_operator_review: true,
-  }));
-
-  const mappedVerification: OperationsTimelineEntry[] = verificationIntents.map((intent) => ({
-    entry_id: deterministicEntryId("intent", intent.event_id),
-    kind: "verification_result",
-    occurred_at: intent.accepted_at,
-    organization_id: intent.organization_id,
-    project_id: null,
-    lifecycle_id: intent.lifecycle_id,
-    proposal_id: intent.proposal_id,
-    incident_id: null,
-    severity: null,
-    lifecycle_state: null,
-    actor_type: "system",
-    actor_label: "Reliai System",
-    title: "Verification intent accepted",
-    summary: `Verification ingest intent accepted (${intent.outcome ?? "unknown"}).`,
-    policy_gate_result: intent.outcome === "passed" ? "passed" : intent.outcome === "failed" ? "denied" : null,
-    evidence_refs: [{ label: "Ingest projection", href: "/operations" }],
-    requires_operator_review: true,
-  }));
-
-  const merged = [...mappedLifecycle, ...mappedVerification];
-  const byId = new Map<string, OperationsTimelineEntry>();
-  for (const entry of merged) {
-    byId.set(entry.entry_id, entry);
-  }
-  return Array.from(byId.values());
+  return mapIntentProjectionsToTimelineEntries(
+    lifecycleIntents,
+    verificationIntents,
+  );
 }
 
 // ── Public surface data function ──────────────────────────────────────────────
@@ -383,21 +344,19 @@ export async function getOperationsSurfaceData(
   if (isAsyncTimelineRepo(repo)) {
     const entries = await repo.fetchAll();
     const sourceErrors = repo.drainErrors();
-    const intentEntries = mapIntentProjectionsToTimelineEntries();
-    const byId = new Map<string, OperationsTimelineEntry>();
-    for (const entry of [...entries, ...intentEntries]) byId.set(entry.entry_id, entry);
-    const mergedEntries = Array.from(byId.values()).sort(
-      (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime(),
+    const intentEntries = getIntentProjectionTimelineEntries();
+    const mergedEntries = mergeTimelineEntriesWithIntentProjections(
+      entries,
+      intentEntries,
     );
     return { entries: mergedEntries, sourceErrors, dataMode: "live" };
   }
 
   const entries = repo.findAll();
-  const intentEntries = mapIntentProjectionsToTimelineEntries();
-  const byId = new Map<string, OperationsTimelineEntry>();
-  for (const entry of [...entries, ...intentEntries]) byId.set(entry.entry_id, entry);
-  const mergedEntries = Array.from(byId.values()).sort(
-    (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime(),
+  const intentEntries = getIntentProjectionTimelineEntries();
+  const mergedEntries = mergeTimelineEntriesWithIntentProjections(
+    entries,
+    intentEntries,
   );
   return { entries: mergedEntries, sourceErrors: [], dataMode: "demo" };
 }

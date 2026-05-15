@@ -25,6 +25,12 @@ To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
   - repository contract invariants
   - lifecycle create/transition/write-path validation contracts
   - lifecycle ingest projection contracts
+  - timeline projection hardening contracts:
+    - deterministic ordering
+    - dedupe behavior
+    - lifecycle + verification projection merge consistency
+    - policy-result mapping consistency
+    - duplicate-ingest replay resilience
 - Out of scope:
   - UI presenter smoke tests
   - cross-surface route migration tests
