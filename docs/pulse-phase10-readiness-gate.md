@@ -18,6 +18,10 @@ Run:
 
 This gate must pass in CI (`pulse-route-gate`) before Phase 10 lifecycle work is treated as validated.
 
+## Phase 10.4 Scope Note
+Phase 10.4 currently ships score snapshot infrastructure only (`getReliabilityScore` + repository/tests).
+No Pulse UI surface consumes this read-path yet. Do not treat this as reliability-score presenter parity.
+
 ## Gate Ownership Rules
 To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
 - In scope:
