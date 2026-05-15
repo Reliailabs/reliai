@@ -7,10 +7,25 @@ export type OperationsIntentProjection = {
   event_type: "proposal_lifecycle" | "verification_result";
   target_id: string;
   organization_id: string;
+  proposal_id: string | null;
+  lifecycle_id: string | null;
+  outcome: "passed" | "failed" | "inconclusive" | null;
 };
 
 function byAcceptedAtDesc(a: OperationsIngestRecord, b: OperationsIngestRecord): number {
   return new Date(b.accepted_at).getTime() - new Date(a.accepted_at).getTime();
+}
+
+function payloadString(payload: unknown, key: string): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const value = (payload as Record<string, unknown>)[key];
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function payloadOutcome(payload: unknown): "passed" | "failed" | "inconclusive" | null {
+  const value = payloadString(payload, "outcome");
+  if (value === "passed" || value === "failed" || value === "inconclusive") return value;
+  return null;
 }
 
 export function getRecentLifecycleIntents(limit = 20): OperationsIntentProjection[] {
@@ -26,6 +41,11 @@ export function getRecentLifecycleIntents(limit = 20): OperationsIntentProjectio
       event_type: record.event.event_type,
       target_id: record.event.target.target_id,
       organization_id: record.event.request_context.organization_id,
+      proposal_id:
+        payloadString(record.event.payload, "proposal_id") ??
+        (record.event.target.target_type === "proposal" ? record.event.target.target_id : null),
+      lifecycle_id: payloadString(record.event.payload, "lifecycle_id"),
+      outcome: payloadOutcome(record.event.payload),
     }));
 }
 
@@ -42,5 +62,8 @@ export function getRecentVerificationIntents(limit = 20): OperationsIntentProjec
       event_type: record.event.event_type,
       target_id: record.event.target.target_id,
       organization_id: record.event.request_context.organization_id,
+      proposal_id: payloadString(record.event.payload, "proposal_id"),
+      lifecycle_id: payloadString(record.event.payload, "lifecycle_id"),
+      outcome: payloadOutcome(record.event.payload),
     }));
 }
