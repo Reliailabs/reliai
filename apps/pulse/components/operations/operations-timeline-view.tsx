@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { buildOperationsReliabilitySummary } from "@/lib/operations-reliability-summary";
 import {
   AlertTriangle,
   Cpu,
@@ -531,6 +532,13 @@ export function OperationsTimelineView({
             Persisted ingest projections:{" "}
             <span className="font-medium text-foreground">{projectionSummary.lifecycleCount}</span> lifecycle intent(s),{" "}
             <span className="font-medium text-foreground">{projectionSummary.verificationCount}</span> verification intent(s).
+          </p>
+        </div>
+      ) : null}
+      {operationsData?.reliabilitySnapshot ? (
+        <div className="rounded-xl border border-border bg-card px-5 py-3">
+          <p className="text-sm text-muted-foreground">
+            {buildOperationsReliabilitySummary(operationsData.reliabilitySnapshot)}
           </p>
         </div>
       ) : null}
