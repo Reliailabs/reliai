@@ -43,6 +43,9 @@ To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
     - lifecycle -> verification result mapping invariants
     - centralized verification repository filter consistency
     - incident/regression surfaces consume shared verification read model
+  - reliability snapshot read-consumer contracts:
+    - operations surface includes reliability snapshot payload
+    - snapshot governance invariants preserved in read surface
 - Out of scope:
   - UI presenter smoke tests
   - cross-surface route migration tests

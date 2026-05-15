@@ -6,6 +6,7 @@ import type { ProposalLifecycle } from "@/lib/proposal-lifecycle";
 import type { AppendOnlyRepository, RepositoryAdapter } from "@/lib/repository-contracts";
 import { createTimelineRepo, getOperationsAdapterMode } from "@/lib/operations-adapter";
 import { getRecentLifecycleIntents, getRecentVerificationIntents } from "@/lib/operations-ingest-projections";
+import { getReliabilityScore } from "@/lib/operations-reliability-score";
 import {
   mapIntentProjectionsToTimelineEntries,
   mergeTimelineEntriesWithIntentProjections,
@@ -338,6 +339,7 @@ function getIntentProjectionTimelineEntries(): OperationsTimelineEntry[] {
 export async function getOperationsSurfaceData(
   repo: OperationsTimelineRepository = defaultRepository,
 ): Promise<OperationsSurfaceData> {
+  const reliabilitySnapshot = getReliabilityScore();
   // Live mode: use fetchAll() so the backend call is actually awaited.
   // The sync findAll() stub on BackendOperationsTimelineRepository always
   // returns [] — only fetchAll() reaches the FastAPI endpoint.
@@ -349,7 +351,12 @@ export async function getOperationsSurfaceData(
       entries,
       intentEntries,
     );
-    return { entries: mergedEntries, sourceErrors, dataMode: "live" };
+    return {
+      entries: mergedEntries,
+      reliabilitySnapshot,
+      sourceErrors,
+      dataMode: "live",
+    };
   }
 
   const entries = repo.findAll();
@@ -358,5 +365,10 @@ export async function getOperationsSurfaceData(
     entries,
     intentEntries,
   );
-  return { entries: mergedEntries, sourceErrors: [], dataMode: "demo" };
+  return {
+    entries: mergedEntries,
+    reliabilitySnapshot,
+    sourceErrors: [],
+    dataMode: "demo",
+  };
 }

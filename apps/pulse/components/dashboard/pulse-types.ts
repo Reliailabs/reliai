@@ -571,6 +571,19 @@ export type OperationsTimelineFilter = {
 
 export type OperationsSurfaceData = {
   entries: OperationsTimelineEntry[];
+  reliabilitySnapshot: {
+    snapshot_id: string;
+    captured_at: string;
+    organization_id: string;
+    project_id: string | null;
+    reliability_score: number;
+    verification_pass_rate: number | null;
+    verified_count: number;
+    failed_count: number;
+    rolled_back_count: number;
+    requires_operator_review: true;
+    execution_granted: false;
+  };
   sourceErrors: string[];
   dataMode: "live" | "demo";
 };
