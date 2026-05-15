@@ -31,6 +31,10 @@ To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
     - lifecycle + verification projection merge consistency
     - policy-result mapping consistency
     - duplicate-ingest replay resilience
+  - reliability score snapshot contracts:
+    - deterministic score clamping and rounding
+    - verification pass-rate mapping consistency
+    - read-only snapshot repository ordering/filtering
 - Out of scope:
   - UI presenter smoke tests
   - cross-surface route migration tests
