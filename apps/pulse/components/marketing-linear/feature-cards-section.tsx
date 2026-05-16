@@ -1,6 +1,3 @@
-"use client"
-
-import { motion } from "framer-motion"
 import { ChevronRight, Plus } from "lucide-react"
 
 const featureCards = [
@@ -95,13 +92,8 @@ export function FeatureCardsSection() {
       />
       <div className="w-full flex justify-center px-6">
         <div className="w-full max-w-5xl">
-          {/* Header row */}
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-16">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+            <h2
               className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] text-white max-w-md"
               style={{
                 letterSpacing: "-0.0325em",
@@ -111,14 +103,8 @@ export function FeatureCardsSection() {
               }}
             >
               Pulse capabilities in production
-            </motion.h2>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="max-w-md"
-            >
+            </h2>
+            <div className="max-w-md">
               <p className="text-zinc-400 leading-relaxed">
                 Reliai continuously tracks AI behavior to surface regressions, group incidents, and convert
                 reliability signals into clear next steps for production AI teams.{" "}
@@ -126,18 +112,13 @@ export function FeatureCardsSection() {
                   View capability map <ChevronRight className="w-4 h-4" />
                 </a>
               </p>
-            </motion.div>
+            </div>
           </div>
 
-          {/* Feature cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {featureCards.map((card, index) => (
-              <motion.div
+            {featureCards.map((card) => (
+              <div
                 key={card.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
                 className="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer group overflow-hidden relative flex flex-col justify-end"
                 style={{
                   aspectRatio: "336 / 360",
@@ -167,7 +148,7 @@ export function FeatureCardsSection() {
                     <Plus className="w-4 h-4" />
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

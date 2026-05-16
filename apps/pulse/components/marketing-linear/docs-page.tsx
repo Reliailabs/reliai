@@ -2,8 +2,6 @@
 
 import { motion } from "framer-motion"
 import { ChevronRight } from "lucide-react"
-import { Navbar } from "./navbar"
-import { Footer } from "./footer"
 
 const workflowSteps = [
   { title: "Detect", description: "Identify regressions through metrics and trace patterns." },
@@ -60,8 +58,6 @@ const startHere = [
 export function DocsPage() {
   return (
     <div style={{ backgroundColor: "#09090B", minHeight: "100vh" }}>
-      <Navbar />
-
       {/* Hero */}
       <div className="w-full flex justify-center px-6 pt-40 pb-24">
         <div className="w-full max-w-5xl">
@@ -446,7 +442,6 @@ export function DocsPage() {
         </div>
       </section>
 
-      <Footer />
     </div>
   )
 }

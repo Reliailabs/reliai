@@ -1,5 +1,3 @@
-"use client"
-
 import { ChevronRight } from "lucide-react"
 
 export function ProductDirectionSection() {
