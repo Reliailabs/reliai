@@ -47,7 +47,7 @@ To prevent gate drift, `test:phase10-lifecycle-gate` is constrained as follows:
     - operations surface includes reliability snapshot payload
     - snapshot governance invariants preserved in read surface
 - Out of scope:
-  - UI presenter smoke tests
+  - UI presenter smoke tests (optional; when added, keep them outside the core lifecycle gate unless they validate lifecycle contract semantics directly)
   - cross-surface route migration tests
   - unrelated assisted-automation suggestion UX tests
   - long-running e2e/browser flows
