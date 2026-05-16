@@ -119,7 +119,21 @@ Three new tables, one Alembic migration:
 - Added `pulse-route-gate` CI enforcement in `.github/workflows/qa.yml`:
   - `python -m pytest apps/api/tests/test_operations.py apps/api/tests/test_operations_hardening.py -q`
   - `pnpm --filter pulse test:phase11-readpath-gate`
-- Outcome: Phase 11 parity and hardening checks are now merge-blocking instead of local-only.
+- Outcome: Phase 11 parity and hardening checks are CI-defined and runnable in PR checks.
+
+### Branch protection prerequisite (required for mandatory enforcement)
+
+Phase 11 check wiring alone is not a hard control. Mandatory enforcement requires
+GitHub branch protection rules on `main`.
+
+Required repository settings:
+- Protect `main`
+- Require a pull request before merge
+- Require status checks to pass before merge
+- Required checks:
+  - `pulse-route-gate`
+  - `operator-smoke`
+- Block direct pushes to `main` (except admins only if explicitly intended)
 
 ---
 
@@ -211,6 +225,17 @@ docs/
 - Expand read endpoints only where a documented contract exists.
 - Preserve org scoping + invariant enforcement as non-negotiable gates.
 - Require targeted tests per endpoint before parity acceptance.
+
+### Phase 11 closeout checklist
+
+- [x] Read-path parity tests implemented for API + adapter boundaries
+- [x] CI job wiring added (`pulse-route-gate`)
+- [ ] Branch protection enabled on `main`
+- [ ] PR-before-merge required
+- [ ] Required checks enabled:
+  - [ ] `pulse-route-gate`
+  - [ ] `operator-smoke`
+- [ ] Direct pushes to `main` blocked
 
 ---
 
