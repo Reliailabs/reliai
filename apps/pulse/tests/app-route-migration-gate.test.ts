@@ -52,6 +52,9 @@ test("gate: /system canonicalizes to /pulse/system", () => {
 test("gate: app-owned pages outside (app) are documented shims only", () => {
   const allowed = new Set([
     "app/(marketing)/page.tsx",
+    "app/(marketing)/pricing/page.tsx",
+    "app/(marketing)/docs/page.tsx",
+    "app/(marketing)/ai-reliability-audit/page.tsx",
     "app/sign-in/page.tsx",
     "app/demo/page.tsx",
   ]);
