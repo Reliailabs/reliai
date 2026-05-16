@@ -1,6 +1,3 @@
-"use client"
-
-import { motion } from "framer-motion"
 import { ChevronRight, Check, Paperclip, Globe, Lightbulb } from "lucide-react"
 
 const agents = [
@@ -24,25 +21,13 @@ export function AISection() {
       />
       <div className="w-full flex justify-center px-6">
         <div className="w-full max-w-5xl">
-          {/* Section label */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="flex items-center gap-2 mb-6"
-          >
+          <div className="flex items-center gap-2 mb-6">
             <div className="w-2 h-2 rounded-full bg-blue-500" />
             <span className="text-zinc-400 text-sm">Core signal</span>
             <ChevronRight className="w-4 h-4 text-zinc-500" />
-          </motion.div>
+          </div>
 
-          {/* Heading */}
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+          <h2
             className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] text-white max-w-3xl mb-8"
             style={{
               letterSpacing: "-0.0325em",
@@ -52,39 +37,21 @@ export function AISection() {
             }}
           >
             AI Reliability Exposure Index (AREI)
-          </motion.h2>
+          </h2>
 
-          {/* Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-zinc-400 max-w-md mb-8"
-          >
+          <p className="text-zinc-400 max-w-md mb-8">
             <span className="text-white font-medium">AREI is a 0–100 reliability exposure score.</span> Higher scores indicate greater production exposure. It is built from traces, incidents, audits, and deployments.
-          </motion.p>
+          </p>
 
-          {/* View Pulse capabilities button */}
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="px-5 py-2.5 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors text-sm flex items-center gap-2 mb-16"
+          <a
+            href="/demo"
+            className="px-5 py-2.5 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors text-sm inline-flex items-center gap-2 mb-16"
           >
             View Pulse capabilities
             <ChevronRight className="w-4 h-4" />
-          </motion.button>
+          </a>
 
-          {/* AREI breakdown grid */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-16"
-          >
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-16">
             {[
               { label: "Failure risk", dot: "bg-red-500" },
               { label: "Incident risk", dot: "bg-orange-500" },
@@ -101,16 +68,9 @@ export function AISection() {
                 <span className="text-zinc-300 text-sm">{factor.label}</span>
               </div>
             ))}
-          </motion.div>
+          </div>
 
-          {/* Agent dropdown mockup */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex justify-center mb-24"
-          >
+          <div className="flex justify-center mb-24">
             <div
               style={{
                 perspective: "900px",
@@ -129,7 +89,6 @@ export function AISection() {
                   position: "relative",
                 }}
               >
-                {/* Glass overlay effect */}
                 <div
                   style={{
                     border: "1px solid rgba(66, 66, 66, 0.5)",
@@ -160,12 +119,10 @@ export function AISection() {
                   }}
                 />
 
-                {/* Input field */}
                 <div className="bg-zinc-800/50 border border-zinc-700 rounded-t-xl px-5 py-4">
                   <span className="text-zinc-500 italic">Assign to...</span>
                 </div>
 
-                {/* Dropdown options */}
                 <div className="bg-zinc-900/80 border border-t-0 border-zinc-700 rounded-b-xl py-1">
                   {agents.map((agent, index) => (
                     <div
@@ -192,11 +149,7 @@ export function AISection() {
                     >
                       <div
                         className="flex items-center justify-between h-full"
-                        style={{
-                          paddingLeft: "24px",
-                          paddingRight: "24px",
-                          gap: "12px",
-                        }}
+                        style={{ paddingLeft: "24px", paddingRight: "24px", gap: "12px" }}
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-zinc-400 text-lg">{agent.icon}</span>
@@ -214,25 +167,16 @@ export function AISection() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Bottom divider with two columns */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-16"
-          >
+          <div className="mt-16">
             <div className="grid grid-cols-1 md:grid-cols-2">
-              {/* Left column */}
               <div className="border-t border-r border-b border-zinc-800/60 pt-12 pr-12 pb-16">
                 <h3 className="text-zinc-200 font-medium text-xl mb-3">Operational reliability guidance</h3>
                 <p className="text-zinc-500 text-base mb-8">
                   Prioritize production AI risks with evidence-linked recommendations and clear remediation paths.
                 </p>
 
-                {/* Triage Intelligence Card */}
                 <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-5">
                     <svg className="w-4 h-4 text-zinc-500" viewBox="0 0 16 16" fill="currentColor">
@@ -243,7 +187,6 @@ export function AISection() {
                     </span>
                   </div>
 
-                  {/* Suggestions Row */}
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-zinc-600 text-sm w-20">Suggestions</span>
                     <div className="flex items-center gap-2">
@@ -265,17 +208,14 @@ export function AISection() {
                     </div>
                   </div>
 
-                  {/* Similar signals */}
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-zinc-600 text-sm w-20">Similar</span>
                   </div>
 
-                  {/* Related Row */}
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-zinc-600 text-sm w-20">Related to</span>
                   </div>
 
-                  {/* Expanded Suggestion Card */}
                   <div className="bg-zinc-800/40 rounded-lg p-4 ml-4">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="w-5 h-5 bg-zinc-600 rounded-full" />
@@ -308,14 +248,12 @@ export function AISection() {
                 </div>
               </div>
 
-              {/* Right column */}
               <div className="border-t border-b border-zinc-800/60 pt-12 pl-12 pb-16">
                 <h3 className="text-zinc-200 font-medium text-xl mb-3">Pulse integrations</h3>
                 <p className="text-zinc-500 text-base mb-8">
                   Connect production reliability signals from your existing tooling and release systems.
                 </p>
 
-                {/* MCP Code Snippet */}
                 <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-xl p-5 font-mono text-sm">
                   <p className="text-zinc-700 mb-3">//mcp.sprint.app/sse</p>
                   <div className="space-y-1 mb-6">
@@ -334,7 +272,6 @@ export function AISection() {
                     </p>
                   </div>
 
-                  {/* Ask Anything Input */}
                   <div className="bg-zinc-800/40 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-4">
                       <span className="w-0.5 h-5 bg-zinc-600" />
@@ -359,7 +296,7 @@ export function AISection() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>
