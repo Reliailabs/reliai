@@ -33,7 +33,7 @@ export function AISection() {
             className="flex items-center gap-2 mb-6"
           >
             <div className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-zinc-400 text-sm">AI reliability operations</span>
+            <span className="text-zinc-400 text-sm">Core signal</span>
             <ChevronRight className="w-4 h-4 text-zinc-500" />
           </motion.div>
 
@@ -51,7 +51,7 @@ export function AISection() {
               lineHeight: 1.1,
             }}
           >
-            AI reliability monitoring and response
+            AI Reliability Exposure Index (AREI)
           </motion.h2>
 
           {/* Description */}
@@ -62,7 +62,7 @@ export function AISection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-zinc-400 max-w-md mb-8"
           >
-            <span className="text-white font-medium">Reliai Pulse for operators.</span> Detect regressions, investigate incidents, and track reliability risk across production AI workflows.
+            <span className="text-white font-medium">AREI is a 0–100 reliability exposure score.</span> Higher scores indicate greater production exposure. It is built from traces, incidents, audits, and deployments.
           </motion.p>
 
           {/* View Pulse capabilities button */}
@@ -76,6 +76,32 @@ export function AISection() {
             View Pulse capabilities
             <ChevronRight className="w-4 h-4" />
           </motion.button>
+
+          {/* AREI breakdown grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.35 }}
+            className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-16"
+          >
+            {[
+              { label: "Failure risk", dot: "bg-red-500" },
+              { label: "Incident risk", dot: "bg-orange-500" },
+              { label: "Drift risk", dot: "bg-yellow-500" },
+              { label: "Guardrail risk", dot: "bg-blue-500" },
+              { label: "Audit readiness gap", dot: "bg-purple-500" },
+              { label: "Production criticality", dot: "bg-zinc-400" },
+            ].map((factor) => (
+              <div
+                key={factor.label}
+                className="bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3"
+              >
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${factor.dot}`} />
+                <span className="text-zinc-300 text-sm">{factor.label}</span>
+              </div>
+            ))}
+          </motion.div>
 
           {/* Agent dropdown mockup */}
           <motion.div

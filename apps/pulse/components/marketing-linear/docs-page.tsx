@@ -1,0 +1,452 @@
+"use client"
+
+import { motion } from "framer-motion"
+import { ChevronRight } from "lucide-react"
+import { Navbar } from "./navbar"
+import { Footer } from "./footer"
+
+const workflowSteps = [
+  { title: "Detect", description: "Identify regressions through metrics and trace patterns." },
+  { title: "Understand", description: "Analyze root cause using trace comparison and evidence." },
+  { title: "Fix", description: "Apply changes based on system recommendations and inspection." },
+  { title: "Prove", description: "Verify improvement using resolution impact." },
+  { title: "Share", description: "Export context via ticket drafts and fix summaries." },
+]
+
+const systemAreas = [
+  {
+    title: "Instrumentation",
+    description:
+      "Capture traces across your AI system — requests and responses, retrieval and tool calls, guardrail and policy events.",
+  },
+  {
+    title: "Operator workflows",
+    description:
+      "Investigate incidents, compare traces, review root cause analysis, and validate fixes using the command center.",
+  },
+  {
+    title: "Governance and runtime protection",
+    description:
+      "Apply guardrail policies, monitor compliance checks, and get mitigation guidance for production paths.",
+  },
+]
+
+const aiUses = [
+  "Summarize incidents",
+  "Explain root cause evidence",
+  "Draft tickets and summaries",
+]
+
+const aiNonUses = [
+  "Generate traces",
+  "Determine root cause",
+  "Trigger actions",
+  "Modify system data",
+]
+
+const limits = [
+  { title: "Sampling active", description: "Some traces are not stored." },
+  { title: "Rate limited", description: "Some data may be delayed or dropped." },
+  { title: "Processing delayed", description: "Analysis is queued." },
+  { title: "Payload truncated", description: "Some fields are incomplete." },
+]
+
+const startHere = [
+  { title: "Incident workflow", description: "Debug issues step by step." },
+  { title: "Core concepts", description: "Traces, incidents, and evidence." },
+  { title: "AI guide", description: "How to use AI safely in Reliai." },
+]
+
+export function DocsPage() {
+  return (
+    <div style={{ backgroundColor: "#09090B", minHeight: "100vh" }}>
+      <Navbar />
+
+      {/* Hero */}
+      <div className="w-full flex justify-center px-6 pt-40 pb-24">
+        <div className="w-full max-w-5xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-2 mb-6"
+          >
+            <div className="w-2 h-2 rounded-full bg-zinc-400" />
+            <span className="text-zinc-400 text-sm">Docs</span>
+            <ChevronRight className="w-4 h-4 text-zinc-500" />
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-4xl md:text-5xl lg:text-[56px] font-medium text-white max-w-3xl mb-8"
+            style={{
+              letterSpacing: "-0.0325em",
+              fontVariationSettings: '"opsz" 28',
+              lineHeight: 1.1,
+            }}
+          >
+            Understand, debug, and operate AI systems in production.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-zinc-400 max-w-lg mb-4"
+          >
+            Reliai helps teams detect, investigate, and resolve AI system issues using real-time
+            telemetry, deterministic root cause analysis, and AI-assisted workflows. These docs are
+            designed for operators and engineers working with production AI systems.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.25 }}
+            className="text-zinc-500 text-sm italic mb-10"
+          >
+            Reliai never replaces system truth with AI — it helps you understand it faster.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex items-center gap-4"
+          >
+            <a
+              href="/demo"
+              className="px-5 py-2.5 border border-zinc-700 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors text-sm"
+            >
+              View demo
+            </a>
+            <a
+              href="/sign-in"
+              className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
+            >
+              Get started
+            </a>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* How it works */}
+      <div className="relative z-20 py-24" style={{ backgroundColor: "#09090B" }}>
+        <div
+          className="absolute top-0 left-0 right-0 pointer-events-none"
+          style={{
+            height: "20%",
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 100%)",
+          }}
+        />
+        <div className="w-full flex justify-center px-6">
+          <div className="w-full max-w-5xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex items-center gap-2 mb-6"
+            >
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-zinc-400 text-sm">How it works</span>
+              <ChevronRight className="w-4 h-4 text-zinc-500" />
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] text-white max-w-3xl mb-4"
+              style={{
+                letterSpacing: "-0.0325em",
+                fontVariationSettings: '"opsz" 28',
+                fontWeight: 538,
+                lineHeight: 1.1,
+              }}
+            >
+              How Reliai works
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-zinc-500 mb-16"
+            >
+              Reliai is built around a single operational loop.
+            </motion.p>
+
+            <div className="flex flex-col max-w-lg">
+              {workflowSteps.map((step, index) => (
+                <motion.div
+                  key={step.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.3 + index * 0.08 }}
+                  className="flex gap-6"
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="w-7 h-7 rounded-full border border-zinc-700 bg-zinc-900 flex items-center justify-center text-zinc-400 text-xs font-medium flex-shrink-0">
+                      {index + 1}
+                    </div>
+                    {index < workflowSteps.length - 1 && (
+                      <div className="w-px flex-1 bg-zinc-800 my-2" />
+                    )}
+                  </div>
+                  <div className="pb-10">
+                    <h3 className="text-white font-medium mb-1">{step.title}</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">{step.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* System areas */}
+      <div className="relative z-20 py-24" style={{ backgroundColor: "#09090B" }}>
+        <div className="w-full flex justify-center px-6">
+          <div className="w-full max-w-5xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex items-center gap-2 mb-6"
+            >
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-zinc-400 text-sm">System areas</span>
+              <ChevronRight className="w-4 h-4 text-zinc-500" />
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] text-white max-w-3xl mb-16"
+              style={{
+                letterSpacing: "-0.0325em",
+                fontVariationSettings: '"opsz" 28',
+                fontWeight: 538,
+                lineHeight: 1.1,
+              }}
+            >
+              System areas
+            </motion.h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {systemAreas.map((area, index) => (
+                <motion.div
+                  key={area.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
+                  className="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-colors rounded-2xl p-6 flex flex-col gap-3"
+                >
+                  <h3 className="text-white font-medium text-lg">{area.title}</h3>
+                  <p className="text-zinc-500 text-sm leading-relaxed">{area.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI in Reliai */}
+      <div className="relative z-20 py-24" style={{ backgroundColor: "#09090B" }}>
+        <div className="w-full flex justify-center px-6">
+          <div className="w-full max-w-5xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex items-center gap-2 mb-6"
+            >
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-zinc-400 text-sm">AI in Reliai</span>
+              <ChevronRight className="w-4 h-4 text-zinc-500" />
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] text-white max-w-3xl mb-4"
+              style={{
+                letterSpacing: "-0.0325em",
+                fontVariationSettings: '"opsz" 28',
+                fontWeight: 538,
+                lineHeight: 1.1,
+              }}
+            >
+              AI in Reliai
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-zinc-500 mb-16"
+            >
+              Reliai uses AI to assist operators — not replace them.
+            </motion.p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="border-t border-r border-b border-zinc-800/60 pt-12 pr-12 pb-16"
+              >
+                <h3 className="text-zinc-200 font-medium text-xl mb-6">AI is used for</h3>
+                <div className="flex flex-col gap-3">
+                  {aiUses.map((item) => (
+                    <div key={item} className="flex items-center gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                      <span className="text-zinc-400 text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="border-t border-b border-zinc-800/60 pt-12 pl-12 pb-16"
+              >
+                <h3 className="text-zinc-200 font-medium text-xl mb-6">AI is NOT used for</h3>
+                <div className="flex flex-col gap-3">
+                  {aiNonUses.map((item) => (
+                    <div key={item} className="flex items-center gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 flex-shrink-0" />
+                      <span className="text-zinc-500 text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Limits */}
+      <div className="relative z-20 py-24" style={{ backgroundColor: "#09090B" }}>
+        <div className="w-full flex justify-center px-6">
+          <div className="w-full max-w-5xl">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl sm:text-4xl text-white max-w-xl mb-4"
+              style={{ letterSpacing: "-0.0325em", fontWeight: 538, lineHeight: 1.1 }}
+            >
+              Limits & partial data
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-zinc-500 mb-12"
+            >
+              Reliai surfaces system limits clearly. You may see:
+            </motion.p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {limits.map((limit, index) => (
+                <motion.div
+                  key={limit.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.2 + index * 0.08 }}
+                  className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5"
+                >
+                  <p className="text-zinc-300 font-medium text-sm mb-2">{limit.title}</p>
+                  <p className="text-zinc-500 text-xs leading-relaxed">{limit.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Start here */}
+      <div className="relative z-20 py-24" style={{ backgroundColor: "#09090B" }}>
+        <div className="w-full flex justify-center px-6">
+          <div className="w-full max-w-5xl">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl sm:text-4xl text-white max-w-xl mb-12"
+              style={{ letterSpacing: "-0.0325em", fontWeight: 538, lineHeight: 1.1 }}
+            >
+              Start here
+            </motion.h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {startHere.map((item, index) => (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.1 + index * 0.1 }}
+                  className="bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-colors rounded-2xl p-6 flex flex-col gap-3"
+                >
+                  <h3 className="text-white font-medium text-lg">{item.title}</h3>
+                  <p className="text-zinc-500 text-sm leading-relaxed">{item.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <section className="py-24 px-6" style={{ backgroundColor: "#09090B" }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <h2 className="text-3xl md:text-4xl lg:text-[42px] font-medium text-white tracking-tight">
+              Start understanding your AI system.
+            </h2>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <a
+                href="/demo"
+                className="px-5 py-2.5 border border-zinc-700 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors text-sm"
+              >
+                View demo
+              </a>
+              <a
+                href="/sign-in"
+                className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
+              >
+                Get started
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  )
+}

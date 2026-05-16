@@ -6,6 +6,7 @@ import { DashboardMockup } from "./dashboard-mockup"
 import { Navbar } from "./navbar"
 import { LogoCloud } from "./logo-cloud"
 import { FeatureCardsSection } from "./feature-cards-section"
+import { UseCaseSection } from "./use-case-section"
 import { AISection } from "./ai-section"
 import { ProductDirectionSection } from "./product-direction-section"
 import { WorkflowsSection } from "./workflows-section"
@@ -72,7 +73,7 @@ export function Hero3DStage() {
                 className="mt-6 text-lg text-zinc-400"
               >
                 Reliai Pulse monitors AI agents, RAG systems, and model behavior to detect regressions,
-                surface incidents, and support production reliability decisions.
+                surface incidents, and prove reliability in production.
               </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -98,9 +99,14 @@ export function Hero3DStage() {
 
           {/* 3D Stage - full bleed */}
           <div className="w-full flex justify-center px-6 mt-8">
-            <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-300">
-              Pulse dashboard preview
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-300">
+                Pulse dashboard preview
+              </span>
+              <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-500">
+                AREI · Incidents · Actions
+              </span>
+            </div>
           </div>
           <div
             className="relative mt-16"
@@ -172,6 +178,7 @@ export function Hero3DStage() {
 
           <LogoCloud />
           <FeatureCardsSection />
+          <UseCaseSection />
           <AISection />
           <ProductDirectionSection />
           <WorkflowsSection />
