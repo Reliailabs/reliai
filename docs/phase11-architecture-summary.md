@@ -189,9 +189,11 @@ docs/
 
 ## Next sequence (post-11.4 hardening)
 
-1. **Phase 11.2 follow-up — Schema/adapter consistency checks**
-- Add explicit adapter mapping checks for every field in `LifecycleRead`.
-- Keep these checks contract-level (no new behavior semantics).
+1. **Phase 11.2 follow-up — Schema/adapter consistency checks** (complete)
+- Added `apps/pulse/tests/operations-adapter-consistency.test.ts`.
+- Explicitly verifies lifecycle adapter mapping coverage for all mapped `LifecycleRead` fields.
+- Explicitly allowlists the only unmapped backend lifecycle fields: `project_id`, `audit_receipt_id`.
+- Added runnable gate: `pnpm --filter pulse test:phase11-schema-adapter-consistency`.
 2. **Phase 11.3+ rollout — Backend read-path parity by contract**
 - Expand read endpoints only where a documented contract exists.
 - Preserve org scoping + invariant enforcement as non-negotiable gates.
