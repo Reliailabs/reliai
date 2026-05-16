@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { buildOperationsReliabilitySummary } from "@/lib/operations-reliability-summary";
+import { OperationsReliabilitySummaryPanel } from "@/components/operations/operations-reliability-summary-panel";
 import {
   AlertTriangle,
   Cpu,
@@ -535,11 +535,9 @@ export function OperationsTimelineView({
           </p>
         </div>
       ) : null}
-      <div className="rounded-xl border border-border bg-card px-5 py-3">
-        <p className="text-sm text-muted-foreground">
-          {buildOperationsReliabilitySummary(operationsData?.reliabilitySnapshot)}
-        </p>
-      </div>
+      <OperationsReliabilitySummaryPanel
+        snapshot={operationsData?.reliabilitySnapshot}
+      />
       {/* Backend error banner — shown inline so partial / cached data still renders */}
       {operationsData?.sourceErrors && operationsData.sourceErrors.length > 0 && (
         <div className="flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-5 py-3">
