@@ -3,10 +3,10 @@ import { Footer } from "@/components/marketing-linear/footer"
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div style={{ backgroundColor: "#09090B", minHeight: "100vh" }}>
       <Navbar />
       {children}
       <Footer />
-    </>
+    </div>
   )
 }
