@@ -385,6 +385,37 @@ test("backend timeline repo success: fetchById maps timeline payload", async () 
   assert.deepEqual(repo.drainErrors(), []);
 });
 
+test("backend timeline repo shape parity: fetchAll item and fetchById result have identical keys", async () => {
+  const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
+  const event = makeApiResponse(1).items[0];
+
+  const listEntries = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({ items: [event], total: 1 }),
+      }) as Response,
+    () => repo.fetchAll(),
+  );
+
+  const detailEntry = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => event,
+      }) as Response,
+    () => repo.fetchById(event.entry_id),
+  );
+
+  assert.ok(detailEntry);
+  assert.deepEqual(
+    Object.keys(listEntries[0]).sort(),
+    Object.keys(detailEntry!).sort(),
+  );
+});
+
 test("backend timeline repo missing record: fetchById returns null without source error", async () => {
   const repo = new BackendOperationsTimelineRepository(TEST_TOKEN);
 

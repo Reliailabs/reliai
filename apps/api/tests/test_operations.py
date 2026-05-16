@@ -360,6 +360,41 @@ def test_timeline_by_id_returns_event_for_org(client, db_session):
     assert body["policy_gate_result"] == "passed"
 
 
+def test_timeline_list_item_and_by_id_shapes_match(client, db_session):
+    session, org_id = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+    event = _make_event(
+        db_session,
+        organization_id=org_id,
+        entry_id="otl-shape-match-0001",
+        kind="approval_recorded",
+        incident_id="inc-shape-1",
+        proposal_id="phase9-inc-shape-1",
+        lifecycle_id="lifecycle-shape-1",
+        severity="high",
+        lifecycle_state="approved",
+        policy_gate_result="passed",
+    )
+    db_session.commit()
+
+    list_response = client.get(
+        "/api/v1/operations/timeline",
+        headers=auth_headers(session),
+        params={"incident_id": "inc-shape-1"},
+    )
+    detail_response = client.get(
+        f"/api/v1/operations/timeline/{event.entry_id}",
+        headers=auth_headers(session),
+    )
+    assert list_response.status_code == 200
+    assert detail_response.status_code == 200
+
+    list_item = list_response.json()["items"][0]
+    detail_item = detail_response.json()
+    assert set(list_item.keys()) == set(detail_item.keys())
+
+
 def test_timeline_by_id_not_found_returns_404(client, db_session):
     session, _ = _setup_org(
         client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
