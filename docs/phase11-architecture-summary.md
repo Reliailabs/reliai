@@ -1,6 +1,6 @@
 # Phase 11 Architecture Summary — Operations Center
 
-**Phases:** 11.1 – 11.5  
+**Phases:** 11.1 – 11.6  
 **Completed:** 2026-05-12  
 **Branch merged:** feat/pulse-phase11-persistence-adapter-boundary  
 
@@ -110,6 +110,17 @@ Three new tables, one Alembic migration:
 - `OperationsTimelineView` upgraded to inline error banner + live data badge
 - `RELIAI_OPERATIONS_DATA_MODE` added to `.env.example`
 
+### Phase 11.6 — CI read-path gate enforcement
+
+- Added dedicated Pulse script: `test:phase11-readpath-gate`
+  - `tests/operations-adapter.test.ts`
+  - `tests/operations-hardening.test.ts`
+  - `tests/operations-adapter-consistency.test.ts`
+- Added `pulse-route-gate` CI enforcement in `.github/workflows/qa.yml`:
+  - `python -m pytest apps/api/tests/test_operations.py apps/api/tests/test_operations_hardening.py -q`
+  - `pnpm --filter pulse test:phase11-readpath-gate`
+- Outcome: Phase 11 parity and hardening checks are now merge-blocking instead of local-only.
+
 ---
 
 ## Governance invariants (enforced at every layer)
@@ -214,5 +225,9 @@ docs/
 cd apps/pulse
 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test \
   tests/operations-adapter.test.ts \
-  tests/operations-hardening.test.ts
+  tests/operations-hardening.test.ts \
+  tests/operations-adapter-consistency.test.ts
+
+# Aggregated Pulse gate
+pnpm --filter pulse test:phase11-readpath-gate
 ```
