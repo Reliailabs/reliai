@@ -575,10 +575,11 @@ from app.workers.scheduler import get_scheduler_status
 from app.schemas.operations import (
     LifecycleListQuery,
     LifecycleListResponse,
+    LifecycleRead,
     TimelineListQuery,
     TimelineListResponse,
 )
-from app.services.operations import list_lifecycles, list_timeline_events
+from app.services.operations import get_lifecycle_by_id, list_lifecycles, list_timeline_events
 
 router = APIRouter()
 
@@ -5201,6 +5202,19 @@ def list_operations_lifecycles_endpoint(
     """
     items, total = list_lifecycles(db, operator, query)
     return LifecycleListResponse(items=items, total=total)
+
+
+@router.get("/operations/lifecycles/{lifecycle_id}", response_model=LifecycleRead)
+def get_operations_lifecycle_by_id_endpoint(
+    lifecycle_id: str,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> LifecycleRead:
+    """GET /api/v1/operations/lifecycles/{lifecycle_id}."""
+    lifecycle = get_lifecycle_by_id(db, operator, lifecycle_id)
+    if lifecycle is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lifecycle not found")
+    return lifecycle
 
 
 @router.get(

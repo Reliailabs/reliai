@@ -42,6 +42,7 @@ Writes are staged for a future phase once the full ingest pipeline is defined.
 │  FastAPI  (apps/api)                                │
 │  GET /api/v1/operations/timeline                    │
 │  GET /api/v1/operations/lifecycles                  │
+│  GET /api/v1/operations/lifecycles/{id}             │
 │  → require_operator (tenant scope)                  │
 ├─────────────────────────────────────────────────────┤
 │  app/services/operations.py                         │
@@ -92,10 +93,11 @@ Three new tables, one Alembic migration:
 
 - `GET /api/v1/operations/timeline` — org-scoped, filtered, paginated
 - `GET /api/v1/operations/lifecycles` — org-scoped, batch history load
+- `GET /api/v1/operations/lifecycles/{id}` — org-scoped single-lifecycle read
 - `app/services/operations.py` — `list_timeline_events`, `list_lifecycles`, `_build_lifecycle_read`
 - `app/schemas/operations.py` — full Pydantic schema set
-- `apps/pulse/tests/operations-adapter.test.ts` — 12 tests (fixture, backend, failure)
-- `apps/api/tests/test_operations.py` — 19 tests (auth, isolation, filters, invariants)
+- `apps/pulse/tests/operations-adapter.test.ts` — 19 tests (fixture, timeline backend, lifecycle backend, failure)
+- `apps/api/tests/test_operations.py` — 23 tests (auth, isolation, filters, invariants, lifecycle-by-id)
 
 ### Phase 11.5 — Persistence hardening
 **Doc:** `docs/phase11-5-persistence-hardening.md`
@@ -125,12 +127,12 @@ Three new tables, one Alembic migration:
 
 | File | Tests | What it covers |
 |---|---|---|
-| `apps/api/tests/test_operations.py` | 19 | API routes, tenant isolation, filters, invariants |
+| `apps/api/tests/test_operations.py` | 23 | API routes, tenant isolation, filters, invariants, lifecycle-by-id |
 | `apps/api/tests/test_operations_hardening.py` | 24 | DB constraints, append-only shape, write-path absent, column parity |
-| `apps/pulse/tests/operations-adapter.test.ts` | 12 | Fixture mode, backend mode, failure fallback |
+| `apps/pulse/tests/operations-adapter.test.ts` | 19 | Fixture mode, backend mode, lifecycle read-path, failure fallback |
 | `apps/pulse/tests/operations-hardening.test.ts` | 14 | Write-path absent, governance fields, sourceErrors, drainErrors |
 
-**Total: 69 tests — all passing**
+**Total: 80 tests — all passing**
 
 ---
 
@@ -182,6 +184,18 @@ docs/
 - `/operations/incidents/[id]` incident detail surface
 - Verification + reliability scoring integration into incident response UX
 - Unified compare/investigate/command semantics across incidents + regressions
+
+---
+
+## Next sequence (post-11.4 hardening)
+
+1. **Phase 11.2 follow-up — Schema/adapter consistency checks**
+- Add explicit adapter mapping checks for every field in `LifecycleRead`.
+- Keep these checks contract-level (no new behavior semantics).
+2. **Phase 11.3+ rollout — Backend read-path parity by contract**
+- Expand read endpoints only where a documented contract exists.
+- Preserve org scoping + invariant enforcement as non-negotiable gates.
+- Require targeted tests per endpoint before parity acceptance.
 
 ---
 

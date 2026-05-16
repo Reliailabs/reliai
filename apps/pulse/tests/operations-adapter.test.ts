@@ -20,6 +20,7 @@ import test from "node:test";
 
 import {
   BackendOperationsTimelineRepository,
+  BackendProposalLifecycleRepository,
   type TokenProvider,
 } from "../lib/operations-adapter";
 import {
@@ -53,6 +54,32 @@ function makeApiResponse(count: number = 2) {
       policy_gate_result: null,
       evidence_refs: [],
       requires_operator_review: true as const,
+    })),
+    total: count,
+  };
+}
+
+function makeLifecycleListResponse(count: number = 2) {
+  return {
+    items: Array.from({ length: count }, (_, i) => ({
+      lifecycle_id: `lifecycle-${String(i).padStart(16, "0")}`,
+      proposal_id: `proposal-${i}`,
+      action_type: "ack",
+      target_type: "incident",
+      target_id: `inc-00${i}`,
+      organization_id: "org-test-uuid",
+      project_id: null,
+      state: "detected",
+      execution_granted: false as const,
+      requires_operator_review: true as const,
+      operator_email: null,
+      verification_result_id: null,
+      audit_receipt_id: null,
+      failure_reason: null,
+      expires_at: "2026-05-20T00:00:00.000Z",
+      created_at: "2026-05-12T09:00:00.000Z",
+      updated_at: "2026-05-12T09:05:00.000Z",
+      state_history: [],
     })),
     total: count,
   };
@@ -316,6 +343,82 @@ test("backend failure: getOperationsSurfaceData with backend repo exposes source
   assert.deepEqual(data.entries, []);
   assert.equal(data.sourceErrors.length, 1);
   assert.ok(data.sourceErrors[0].includes("backend down"));
+});
+
+test("backend lifecycle repo success: fetchAll maps lifecycle list", async () => {
+  const repo = new BackendProposalLifecycleRepository(TEST_TOKEN);
+  const apiResponse = makeLifecycleListResponse(2);
+
+  const lifecycles = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => apiResponse,
+      }) as Response,
+    () => repo.fetchAll(),
+  );
+
+  assert.equal(lifecycles.length, 2);
+  assert.equal(lifecycles[0].lifecycle_id, "lifecycle-0000000000000000");
+  assert.equal(lifecycles[0].requires_operator_review, true);
+  assert.deepEqual(repo.drainErrors(), []);
+});
+
+test("backend lifecycle repo success: fetchById maps lifecycle payload", async () => {
+  const repo = new BackendProposalLifecycleRepository(TEST_TOKEN);
+  const lifecycle = makeLifecycleListResponse(1).items[0];
+
+  const found = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => lifecycle,
+      }) as Response,
+    () => repo.fetchById(lifecycle.lifecycle_id),
+  );
+
+  assert.ok(found);
+  assert.equal(found?.lifecycle_id, lifecycle.lifecycle_id);
+  assert.equal(found?.proposal_id, lifecycle.proposal_id);
+  assert.deepEqual(repo.drainErrors(), []);
+});
+
+test("backend lifecycle repo missing record: fetchById returns null without source error", async () => {
+  const repo = new BackendProposalLifecycleRepository(TEST_TOKEN);
+
+  const found = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: false,
+        status: 404,
+        json: async () => ({}),
+      }) as Response,
+    () => repo.fetchById("lifecycle-missing"),
+  );
+
+  assert.equal(found, null);
+  assert.deepEqual(repo.drainErrors(), []);
+});
+
+test("backend lifecycle repo backend failure: fetchById returns null and records source error", async () => {
+  const repo = new BackendProposalLifecycleRepository(TEST_TOKEN);
+
+  const found = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      }) as Response,
+    () => repo.fetchById("lifecycle-error"),
+  );
+
+  assert.equal(found, null);
+  const errors = repo.drainErrors();
+  assert.equal(errors.length, 1);
+  assert.ok(errors[0].includes("503"));
 });
 
 // ── drainErrors clears the buffer ────────────────────────────────────────────

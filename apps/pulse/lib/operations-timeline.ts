@@ -1,5 +1,3 @@
-import "server-only";
-
 import { createHash } from "crypto";
 import { listLifecycles } from "@/lib/proposal-lifecycle";
 import type { ProposalLifecycle } from "@/lib/proposal-lifecycle";

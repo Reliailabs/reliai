@@ -522,3 +522,81 @@ def test_lifecycles_limit_is_respected(client, db_session):
     body = response.json()
     assert body["total"] == 4
     assert len(body["items"]) == 2
+
+
+def test_lifecycle_by_id_unauthenticated_returns_401(client):
+    response = client.get("/api/v1/operations/lifecycles/lifecycle-missing")
+    assert response.status_code == 401
+
+
+def test_lifecycle_by_id_returns_record_with_state_history(client, db_session):
+    session, org_id = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+    lc = _make_lifecycle(
+        db_session,
+        organization_id=org_id,
+        state="approved",
+        lifecycle_id="lifecycle-by-id-01",
+    )
+    _make_transition(
+        db_session,
+        lifecycle_id=lc.lifecycle_id,
+        organization_id=org_id,
+        from_state="detected",
+        to_state="analyzed",
+        transitioned_at=datetime(2026, 5, 12, 9, 0, tzinfo=timezone.utc),
+    )
+    _make_transition(
+        db_session,
+        lifecycle_id=lc.lifecycle_id,
+        organization_id=org_id,
+        from_state="analyzed",
+        to_state="approved",
+        transitioned_at=datetime(2026, 5, 12, 10, 0, tzinfo=timezone.utc),
+    )
+    db_session.commit()
+
+    response = client.get(
+        f"/api/v1/operations/lifecycles/{lc.lifecycle_id}",
+        headers=auth_headers(session),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["lifecycle_id"] == lc.lifecycle_id
+    assert body["execution_granted"] is False
+    assert body["requires_operator_review"] is True
+    assert [h["to_state"] for h in body["state_history"]] == ["analyzed", "approved"]
+
+
+def test_lifecycle_by_id_not_found_returns_404(client, db_session):
+    session, _ = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+
+    response = client.get(
+        "/api/v1/operations/lifecycles/lifecycle-does-not-exist",
+        headers=auth_headers(session),
+    )
+    assert response.status_code == 404
+
+
+def test_lifecycle_by_id_tenant_isolated_returns_404_for_other_org(client, db_session):
+    _session_a, org_a_id = _setup_org(
+        client, db_session, email="alice@alpha.test", org_name="Alpha", org_slug="alpha"
+    )
+    session_b, _org_b_id = _setup_org(
+        client, db_session, email="bob@beta.test", org_name="Beta", org_slug="beta"
+    )
+    lc = _make_lifecycle(
+        db_session,
+        organization_id=org_a_id,
+        lifecycle_id="lifecycle-org-a-only",
+    )
+    db_session.commit()
+
+    response = client.get(
+        f"/api/v1/operations/lifecycles/{lc.lifecycle_id}",
+        headers=auth_headers(session_b),
+    )
+    assert response.status_code == 404

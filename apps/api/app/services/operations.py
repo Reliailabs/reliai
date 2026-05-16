@@ -136,6 +136,35 @@ def list_lifecycles(
     return items, total
 
 
+def get_lifecycle_by_id(
+    db: Session,
+    operator: OperatorContext,
+    lifecycle_id: str,
+) -> LifecycleRead | None:
+    """Return one lifecycle scoped to the operator's active organization."""
+    org_id: UUID | None = operator.active_organization_id
+    if org_id is None:
+        return None
+
+    record = db.scalar(
+        select(ProposalLifecycleRecord).where(
+            ProposalLifecycleRecord.lifecycle_id == lifecycle_id,
+            ProposalLifecycleRecord.organization_id == org_id,
+        )
+    )
+    if record is None:
+        return None
+
+    history_rows = list(
+        db.scalars(
+            select(LifecycleTransitionHistory)
+            .where(LifecycleTransitionHistory.lifecycle_id == lifecycle_id)
+            .order_by(LifecycleTransitionHistory.transitioned_at.asc())
+        ).all()
+    )
+    return _build_lifecycle_read(record, history_rows)
+
+
 def _build_lifecycle_read(
     record: ProposalLifecycleRecord,
     history: list[LifecycleTransitionHistory],
