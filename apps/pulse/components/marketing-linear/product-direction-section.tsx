@@ -308,9 +308,9 @@ export function ProductDirectionSection() {
           {/* Left column - Feature list */}
           <div className="border-r border-zinc-800 pt-16 pr-10 pb-16 flex flex-col justify-center">
             <h3 className="text-2xl font-medium text-zinc-200 mb-8 leading-tight">
-              Ideate and specify
+              Investigate and document
               <br />
-              what to build next
+              reliability issues
             </h3>
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3">

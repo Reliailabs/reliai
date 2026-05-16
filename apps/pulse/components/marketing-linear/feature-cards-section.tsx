@@ -5,7 +5,8 @@ import { ChevronRight, Plus } from "lucide-react"
 
 const featureCards = [
   {
-    title: "Reliability planning for AI workflows",
+    title: "Detect failures early",
+    description: "Reliai continuously tracks AI behavior and surfaces reliability regressions before they become customer-visible incidents.",
     illustration: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-lg">
         <svg
@@ -53,7 +54,8 @@ const featureCards = [
     ),
   },
   {
-    title: "Regression monitoring at production scale",
+    title: "Investigate incidents",
+    description: "When reliability degrades, Reliai groups signals into incidents and links each incident to the traces and failure patterns driving it.",
     illustration: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
         <img
@@ -66,7 +68,8 @@ const featureCards = [
     ),
   },
   {
-    title: "Evidence-backed reliability decisions",
+    title: "Take action",
+    description: "Pulse converts reliability signals into clear next steps, with guardrail posture and certification readiness visible in the same workflow.",
     illustration: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
         <img
@@ -107,7 +110,7 @@ export function FeatureCardsSection() {
                 lineHeight: 1.1,
               }}
             >
-              Built for AI reliability operators
+              Pulse capabilities in production
             </motion.h2>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -117,8 +120,8 @@ export function FeatureCardsSection() {
               className="max-w-md"
             >
               <p className="text-zinc-400 leading-relaxed">
-                Reliai Pulse is designed for teams that need clear reliability signals, incident context,
-                and fast operational decisions for production AI.{" "}
+                Reliai continuously tracks AI behavior to surface regressions, group incidents, and convert
+                reliability signals into clear next steps for production AI teams.{" "}
                 <a href="/pulse" className="text-white inline-flex items-center gap-1 hover:underline">
                   View capability map <ChevronRight className="w-4 h-4" />
                 </a>
@@ -156,7 +159,10 @@ export function FeatureCardsSection() {
                   className="relative z-10 flex items-center justify-between w-full"
                   style={{ padding: "0 24px 40px", gap: "16px" }}
                 >
-                  <h3 className="text-white font-medium text-lg leading-tight">{card.title}</h3>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-zinc-500 text-xs leading-relaxed">{card.description}</p>
+                    <h3 className="text-white font-medium text-lg leading-tight">{card.title}</h3>
+                  </div>
                   <div className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center text-zinc-500 group-hover:border-zinc-500 group-hover:text-zinc-300 transition-colors flex-shrink-0">
                     <Plus className="w-4 h-4" />
                   </div>

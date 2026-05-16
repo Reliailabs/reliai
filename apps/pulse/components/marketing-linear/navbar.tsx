@@ -12,20 +12,17 @@ export function Navbar() {
             <span className="text-white font-semibold">Reliai</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
-              Reliability
+            <a href="/demo" className="text-sm text-zinc-400 hover:text-white transition-colors">
+              Product
             </a>
-            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
-              Audits
-            </a>
-            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
-              Incidents
-            </a>
-            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
-              Guardrails
-            </a>
-            <a href="/pulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/docs" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Docs
+            </a>
+            <a href="/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors">
+              Pricing
+            </a>
+            <a href="/ai-reliability-audit" className="text-sm text-zinc-400 hover:text-white transition-colors">
+              Audit
             </a>
           </div>
           <div className="flex items-center gap-4">

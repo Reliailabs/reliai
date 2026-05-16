@@ -3,10 +3,16 @@ export function CTASection() {
     <section className="py-24 px-6" style={{ backgroundColor: "#09090B" }}>
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-          <h2 className="text-3xl md:text-4xl lg:text-[42px] font-medium text-white tracking-tight">
-            Monitor behavior. Resolve risk. Ship with confidence.
-          </h2>
-          <div className="flex items-center gap-3">
+          <div className="max-w-lg">
+            <h2 className="text-3xl md:text-4xl lg:text-[42px] font-medium text-white tracking-tight mb-4">
+              Start with audit or live Pulse preview.
+            </h2>
+            <p className="text-zinc-400 text-base leading-relaxed">
+              Run an AI reliability audit to get certification posture, or review Pulse to see how
+              Reliai turns production reliability signals into action.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
             <a
               href="/demo"
               className="px-5 py-2.5 border border-zinc-700 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors text-sm"
