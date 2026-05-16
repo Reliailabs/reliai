@@ -41,6 +41,7 @@ Writes are staged for a future phase once the full ingest pipeline is defined.
 ├─────────────────────────────────────────────────────┤
 │  FastAPI  (apps/api)                                │
 │  GET /api/v1/operations/timeline                    │
+│  GET /api/v1/operations/timeline/{id}               │
 │  GET /api/v1/operations/lifecycles                  │
 │  GET /api/v1/operations/lifecycles/{id}             │
 │  → require_operator (tenant scope)                  │
@@ -92,12 +93,13 @@ Three new tables, one Alembic migration:
 **Doc:** `docs/phase11-4-read-path-integration.md`
 
 - `GET /api/v1/operations/timeline` — org-scoped, filtered, paginated
+- `GET /api/v1/operations/timeline/{id}` — org-scoped single-event read
 - `GET /api/v1/operations/lifecycles` — org-scoped, batch history load
 - `GET /api/v1/operations/lifecycles/{id}` — org-scoped single-lifecycle read
 - `app/services/operations.py` — `list_timeline_events`, `list_lifecycles`, `_build_lifecycle_read`
 - `app/schemas/operations.py` — full Pydantic schema set
-- `apps/pulse/tests/operations-adapter.test.ts` — 19 tests (fixture, timeline backend, lifecycle backend, failure)
-- `apps/api/tests/test_operations.py` — 23 tests (auth, isolation, filters, invariants, lifecycle-by-id)
+- `apps/pulse/tests/operations-adapter.test.ts` — 22 tests (fixture, timeline backend, lifecycle backend, failure)
+- `apps/api/tests/test_operations.py` — 27 tests (auth, isolation, filters, invariants, timeline-by-id, lifecycle-by-id)
 
 ### Phase 11.5 — Persistence hardening
 **Doc:** `docs/phase11-5-persistence-hardening.md`
@@ -127,12 +129,12 @@ Three new tables, one Alembic migration:
 
 | File | Tests | What it covers |
 |---|---|---|
-| `apps/api/tests/test_operations.py` | 23 | API routes, tenant isolation, filters, invariants, lifecycle-by-id |
+| `apps/api/tests/test_operations.py` | 27 | API routes, tenant isolation, filters, invariants, timeline-by-id, lifecycle-by-id |
 | `apps/api/tests/test_operations_hardening.py` | 24 | DB constraints, append-only shape, write-path absent, column parity |
-| `apps/pulse/tests/operations-adapter.test.ts` | 19 | Fixture mode, backend mode, lifecycle read-path, failure fallback |
+| `apps/pulse/tests/operations-adapter.test.ts` | 22 | Fixture mode, backend mode, timeline/lifecycle read-path, failure fallback |
 | `apps/pulse/tests/operations-hardening.test.ts` | 14 | Write-path absent, governance fields, sourceErrors, drainErrors |
 
-**Total: 80 tests — all passing**
+**Total: 87 tests — all passing**
 
 ---
 

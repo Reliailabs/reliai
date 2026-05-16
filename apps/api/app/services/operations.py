@@ -84,6 +84,27 @@ def list_timeline_events(
     return items, total
 
 
+def get_timeline_event_by_id(
+    db: Session,
+    operator: OperatorContext,
+    entry_id: str,
+) -> TimelineEventRead | None:
+    """Return one timeline event scoped to the operator's active organization."""
+    org_id: UUID | None = operator.active_organization_id
+    if org_id is None:
+        return None
+
+    event = db.scalar(
+        select(OperationsTimelineEvent).where(
+            OperationsTimelineEvent.entry_id == entry_id,
+            OperationsTimelineEvent.organization_id == org_id,
+        )
+    )
+    if event is None:
+        return None
+    return TimelineEventRead.model_validate(event)
+
+
 # ── Lifecycles ────────────────────────────────────────────────────────────────
 
 

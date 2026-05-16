@@ -576,10 +576,16 @@ from app.schemas.operations import (
     LifecycleListQuery,
     LifecycleListResponse,
     LifecycleRead,
+    TimelineEventRead as OperationsTimelineEventRead,
     TimelineListQuery,
     TimelineListResponse,
 )
-from app.services.operations import get_lifecycle_by_id, list_lifecycles, list_timeline_events
+from app.services.operations import (
+    get_lifecycle_by_id,
+    get_timeline_event_by_id,
+    list_lifecycles,
+    list_timeline_events,
+)
 
 router = APIRouter()
 
@@ -5185,6 +5191,19 @@ def list_operations_timeline_endpoint(
     """
     items, total = list_timeline_events(db, operator, query)
     return TimelineListResponse(items=items, total=total)
+
+
+@router.get("/operations/timeline/{entry_id}", response_model=OperationsTimelineEventRead)
+def get_operations_timeline_by_id_endpoint(
+    entry_id: str,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OperationsTimelineEventRead:
+    """GET /api/v1/operations/timeline/{entry_id}."""
+    event = get_timeline_event_by_id(db, operator, entry_id)
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Timeline event not found")
+    return event
 
 
 @router.get("/operations/lifecycles", response_model=LifecycleListResponse)
