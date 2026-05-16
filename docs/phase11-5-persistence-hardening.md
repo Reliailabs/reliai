@@ -51,7 +51,7 @@ Re-submitting an event with the same `idempotency_key` raises `IntegrityError` a
 
 - **No `updated_at` column** — absence of `updated_at` is the invariant signal; any migration that adds `updated_at` to these tables violates the contract.
 - **No update/upsert service functions** — `app/services/operations.py` exports only `list_timeline_events` and `list_lifecycles`. No `save`, `update`, or `upsert` functions exist.
-- **No write endpoints** — `GET /api/v1/operations/timeline` and `GET /api/v1/operations/lifecycles` are the only routes under `/operations/`. No `POST`, `PUT`, `PATCH`, or `DELETE` methods are registered.
+- **No write endpoints** — read routes under `/operations/` include timeline/lifecycle list and by-id endpoints only (`GET /api/v1/operations/timeline`, `GET /api/v1/operations/timeline/{entry_id}`, `GET /api/v1/operations/lifecycles`, `GET /api/v1/operations/lifecycles/{lifecycle_id}`). No `POST`, `PUT`, `PATCH`, or `DELETE` methods are registered.
 
 These are verified programmatically in `tests/test_operations_hardening.py`:
 

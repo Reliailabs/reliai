@@ -327,6 +327,73 @@ def test_timeline_limit_is_respected(client, db_session):
     assert len(body["items"]) == 3
 
 
+def test_timeline_by_id_unauthenticated_returns_401(client):
+    response = client.get("/api/v1/operations/timeline/otl-missing")
+    assert response.status_code == 401
+
+
+def test_timeline_by_id_returns_event_for_org(client, db_session):
+    session, org_id = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+    event = _make_event(
+        db_session,
+        organization_id=org_id,
+        entry_id="otl-by-id-0001",
+        kind="verification_result",
+        incident_id="inc-123",
+        proposal_id="phase9-inc-123",
+        policy_gate_result="passed",
+    )
+    db_session.commit()
+
+    response = client.get(
+        f"/api/v1/operations/timeline/{event.entry_id}",
+        headers=auth_headers(session),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["entry_id"] == event.entry_id
+    assert body["kind"] == "verification_result"
+    assert body["incident_id"] == "inc-123"
+    assert body["proposal_id"] == "phase9-inc-123"
+    assert body["policy_gate_result"] == "passed"
+
+
+def test_timeline_by_id_not_found_returns_404(client, db_session):
+    session, _ = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+
+    response = client.get(
+        "/api/v1/operations/timeline/otl-does-not-exist",
+        headers=auth_headers(session),
+    )
+    assert response.status_code == 404
+
+
+def test_timeline_by_id_tenant_isolated_returns_404_for_other_org(client, db_session):
+    _session_a, org_a_id = _setup_org(
+        client, db_session, email="alice@alpha.test", org_name="Alpha", org_slug="alpha"
+    )
+    session_b, _org_b_id = _setup_org(
+        client, db_session, email="bob@beta.test", org_name="Beta", org_slug="beta"
+    )
+    event = _make_event(
+        db_session,
+        organization_id=org_a_id,
+        entry_id="otl-org-a-only",
+        kind="incident_detected",
+    )
+    db_session.commit()
+
+    response = client.get(
+        f"/api/v1/operations/timeline/{event.entry_id}",
+        headers=auth_headers(session_b),
+    )
+    assert response.status_code == 404
+
+
 # ── Lifecycles: auth + empty ──────────────────────────────────────────────────
 
 

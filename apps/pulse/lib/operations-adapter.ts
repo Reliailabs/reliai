@@ -224,6 +224,22 @@ export class BackendOperationsTimelineRepository
 
     return result.data.items.map(toTimelineEntry);
   }
+
+  async fetchById(entryId: string): Promise<OperationsTimelineEntry | null> {
+    const result = await backendGet<BackendTimelineEventRead>(
+      `/api/v1/operations/timeline/${encodeURIComponent(entryId)}`,
+      this.tokenProvider,
+      { allowNotFound: true },
+    );
+    if (!result.ok) {
+      if (result.notFound) {
+        return null;
+      }
+      this.sourceErrors.push(result.error);
+      return null;
+    }
+    return toTimelineEntry(result.data);
+  }
 }
 
 function toTimelineEntry(r: BackendTimelineEventRead): OperationsTimelineEntry {
