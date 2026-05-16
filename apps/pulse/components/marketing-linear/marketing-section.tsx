@@ -18,7 +18,7 @@ export function MarketingSection({
   className,
   innerClassName,
 }: MarketingSectionProps) {
-  const pyClass = py === "hero" ? "pt-40 pb-24" : "py-24"
+  const pyClass = py === "hero" ? "pt-40 pb-24" : "py-40"
   const maxClass =
     maxWidth === "4xl" ? "max-w-4xl" : maxWidth === "6xl" ? "max-w-6xl" : "max-w-5xl"
 

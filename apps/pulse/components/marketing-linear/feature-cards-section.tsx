@@ -102,7 +102,7 @@ export function FeatureCardsSection() {
                 lineHeight: 1.1,
               }}
             >
-              Pulse capabilities in production
+              Built for production AI reliability
             </h2>
             <div className="max-w-md">
               <p className="text-zinc-400 leading-relaxed">

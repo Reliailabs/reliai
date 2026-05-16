@@ -474,11 +474,11 @@ export function AuditPage() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-lg">
             <h2 className="text-3xl md:text-4xl lg:text-[42px] font-medium text-white tracking-tight mb-4">
-              Book a 20-minute call to scope the audit.
+              Review the demo, then scope the audit.
             </h2>
             <p className="text-zinc-400 text-base leading-relaxed">
-              We&apos;ll confirm fit, scope the audit, and map the fastest path to a 7-day
-              engagement.
+              See what Reliai surfaces on a real system before committing. Most teams scope the
+              audit within a week of running the demo.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
