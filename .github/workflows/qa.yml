@@ -214,6 +214,9 @@ jobs:
       - name: Run Pulse Phase 10 lifecycle gate
         run: pnpm --filter pulse test:phase10-lifecycle-gate
 
+      - name: Run Pulse operations reliability presenter smoke
+        run: pnpm --filter pulse test:operations-reliability-presenter-smoke
+
       - name: Validate Pulse E2E credentials
         run: |
           if [ -z "${PW_E2E_EMAIL}" ] || [ -z "${PW_E2E_PASSWORD}" ]; then

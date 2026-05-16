@@ -74,3 +74,9 @@ Immediate stop and rollback to supervised mode if:
 - audit gap is detected
 - false-positive threshold is breached
 - operator override usage spikes beyond threshold
+
+## Phase 10.10 Closure Note
+- Code gate remains mandatory in CI: `pnpm --filter pulse test:phase10-lifecycle-gate`.
+- Operations reliability presenter smoke is CI-enforced in `pulse-route-gate`: `pnpm --filter pulse test:operations-reliability-presenter-smoke`.
+- Lifecycle/read-path contract slices 10.1–10.9 are complete under parity-only scope.
+- Remaining work moves to Phase 11 read-path persistence/integration hardening.
