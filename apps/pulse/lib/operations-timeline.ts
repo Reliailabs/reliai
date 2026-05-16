@@ -338,10 +338,15 @@ function getIntentProjectionTimelineEntries(): OperationsTimelineEntry[] {
 
 export async function getOperationsSurfaceData(
   repo: OperationsTimelineRepository = defaultRepository,
+  deps?: {
+    getReliabilitySnapshot?: () => OperationsSurfaceData["reliabilitySnapshot"];
+  },
 ): Promise<OperationsSurfaceData> {
+  const readReliabilitySnapshot =
+    deps?.getReliabilitySnapshot ?? (() => getReliabilityScore());
   const reliabilitySnapshot = (() => {
     try {
-      return getReliabilityScore();
+      return readReliabilitySnapshot();
     } catch {
       return null;
     }

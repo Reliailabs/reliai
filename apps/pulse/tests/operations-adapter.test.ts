@@ -112,6 +112,74 @@ test("fixture mode: all fixture entries have requires_operator_review=true", asy
   }
 });
 
+test("fixture mode: injected reliability snapshot is used verbatim", async () => {
+  const repo = new InMemoryOperationsTimelineRepository();
+  const injected = {
+    snapshot_id: "score-org-demo-injected",
+    captured_at: "2026-05-16T00:00:00.000Z",
+    organization_id: "org-demo",
+    project_id: null,
+    reliability_score: 77,
+    verification_pass_rate: 0.7,
+    verified_count: 7,
+    failed_count: 2,
+    rolled_back_count: 1,
+    requires_operator_review: true as const,
+    execution_granted: false as const,
+  };
+
+  const data = await getOperationsSurfaceData(repo, {
+    getReliabilitySnapshot: () => injected,
+  });
+
+  assert.deepEqual(data.reliabilitySnapshot, injected);
+});
+
+test("fixture mode: thrown snapshot reader falls back to reliabilitySnapshot=null", async () => {
+  const repo = new InMemoryOperationsTimelineRepository();
+  const data = await getOperationsSurfaceData(repo, {
+    getReliabilitySnapshot: () => {
+      throw new Error("snapshot unavailable");
+    },
+  });
+
+  assert.equal(data.reliabilitySnapshot, null);
+});
+
+test("fixture mode: snapshot fallback does not mutate timeline entries ordering/content", async () => {
+  const repo = new InMemoryOperationsTimelineRepository();
+
+  const baseline = await getOperationsSurfaceData(repo, {
+    getReliabilitySnapshot: () => ({
+      snapshot_id: "score-1",
+      captured_at: "2026-05-16T00:00:00.000Z",
+      organization_id: "org-demo",
+      project_id: null,
+      reliability_score: 65,
+      verification_pass_rate: 0.6,
+      verified_count: 6,
+      failed_count: 3,
+      rolled_back_count: 1,
+      requires_operator_review: true,
+      execution_granted: false,
+    }),
+  });
+  const fallback = await getOperationsSurfaceData(repo, {
+    getReliabilitySnapshot: () => {
+      throw new Error("snapshot down");
+    },
+  });
+
+  assert.deepEqual(
+    baseline.entries.map((e) => e.entry_id),
+    fallback.entries.map((e) => e.entry_id),
+  );
+  assert.deepEqual(
+    baseline.entries.map((e) => e.occurred_at),
+    fallback.entries.map((e) => e.occurred_at),
+  );
+});
+
 // ── Backend mode: fetchAll success ────────────────────────────────────────────
 
 test("backend mode success: fetchAll maps API response to OperationsTimelineEntry[]", async () => {
