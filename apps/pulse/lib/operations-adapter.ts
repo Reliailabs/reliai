@@ -1,5 +1,3 @@
-import "server-only";
-
 /**
  * Phase 11.3 — FastAPI Adapter Boundary
  *
@@ -24,7 +22,6 @@ import "server-only";
  */
 
 import { API_URL } from "@/lib/constants";
-import { getApiAccessToken } from "@/lib/auth";
 import type {
   OperationsTimelineRepository,
   OperationsTimelineFilter,
@@ -122,7 +119,7 @@ type BackendLifecycleListResponse = {
 
 type BackendFetchResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: string };
+  | { ok: false; error: string; notFound?: boolean };
 
 /**
  * Callable that provides a Bearer token for backend requests.
@@ -131,9 +128,15 @@ type BackendFetchResult<T> =
  */
 export type TokenProvider = () => Promise<string | null>;
 
+async function defaultTokenProvider(): Promise<string | null> {
+  const auth = await import("@/lib/auth");
+  return auth.getApiAccessToken();
+}
+
 async function backendGet<T>(
   path: string,
   tokenProvider: TokenProvider,
+  options?: { allowNotFound?: boolean },
 ): Promise<BackendFetchResult<T>> {
   try {
     const token = await tokenProvider();
@@ -148,6 +151,9 @@ async function backendGet<T>(
       cache: "no-store",
     });
     if (response.status === 404) {
+      if (options?.allowNotFound) {
+        return { ok: false, error: `not found: ${path}`, notFound: true };
+      }
       return {
         ok: false,
         error: `operations endpoint not yet implemented: ${path} — set RELIAI_OPERATIONS_DATA_MODE=fixture`,
@@ -180,7 +186,7 @@ export class BackendOperationsTimelineRepository
   private readonly sourceErrors: string[] = [];
   private readonly tokenProvider: TokenProvider;
 
-  constructor(tokenProvider: TokenProvider = getApiAccessToken) {
+  constructor(tokenProvider: TokenProvider = defaultTokenProvider) {
     this.tokenProvider = tokenProvider;
   }
 
@@ -256,7 +262,7 @@ export class BackendProposalLifecycleRepository
   private readonly sourceErrors: string[] = [];
   private readonly tokenProvider: TokenProvider;
 
-  constructor(tokenProvider: TokenProvider = getApiAccessToken) {
+  constructor(tokenProvider: TokenProvider = defaultTokenProvider) {
     this.tokenProvider = tokenProvider;
   }
 
@@ -287,8 +293,12 @@ export class BackendProposalLifecycleRepository
     const result = await backendGet<BackendLifecycleRead>(
       `/api/v1/operations/lifecycles/${encodeURIComponent(lifecycleId)}`,
       this.tokenProvider,
+      { allowNotFound: true },
     );
     if (!result.ok) {
+      if (result.notFound) {
+        return null;
+      }
       this.sourceErrors.push(result.error);
       return null;
     }

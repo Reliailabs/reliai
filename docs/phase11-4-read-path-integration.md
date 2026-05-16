@@ -46,6 +46,14 @@ Returns `ProposalLifecycleRecord` rows with their full `LifecycleTransitionHisto
 
 **Response:** `LifecycleListResponse` — `{ items: LifecycleRead[], total: int }`
 
+### `GET /api/v1/operations/lifecycles/{lifecycle_id}`
+
+Returns one lifecycle row (with inline `state_history`) scoped to the operator's
+active organization.
+
+- `200` when found in the operator's org
+- `404` when missing or outside the operator's org
+
 ---
 
 ## Service layer (`app/services/operations.py`)
@@ -66,6 +74,13 @@ Returns `ProposalLifecycleRecord` rows with their full `LifecycleTransitionHisto
    - Hardcode `execution_granted=False` at the read layer (defence-in-depth)
    - Hardcode `requires_operator_review=True`
    - Attach `state_history` sorted ascending by `transitioned_at`
+
+### `get_lifecycle_by_id(db, operator, lifecycle_id) → LifecycleRead | None`
+
+1. Same org guard
+2. Single-row lookup by `(lifecycle_id, organization_id)`
+3. Batch-style history load for the target lifecycle
+4. Reuses `_build_lifecycle_read()` for invariant-preserving mapping
 
 ---
 
@@ -89,8 +104,10 @@ table loaded in a second query.
 
 ## Pulse adapter (`apps/pulse/lib/operations-adapter.ts`)
 
-`BackendOperationsTimelineRepository` injects a `TokenProvider` (default: `getApiAccessToken`),
-forwarded to `backendGet<BackendTimelineListResponse>` as a Bearer token provider.
+`BackendOperationsTimelineRepository` injects a `TokenProvider`, using a lazy
+default provider that imports `getApiAccessToken` only at call-time.
+This keeps server-only auth wiring in production while allowing pure Node test
+execution when tests inject `async () => "test-token"`.
 
 This decoupling allows test injection of `async () => "test-token"` without touching `next/headers`.
 
@@ -108,6 +125,7 @@ getOperationsSurfaceData(repo: BackendOperationsTimelineRepository)
 - Any non-OK HTTP response or network error → `repo._errors.push(...)` → `drainErrors()` returns them
 - `getOperationsSurfaceData` propagates `drainErrors()` into `sourceErrors[]`
 - `dataMode` remains `"live"` (mode reflects repo type, not health)
+- For lifecycle `fetchById`, `404` is treated as record-not-found (`null`) rather than a source error.
 
 ---
 
@@ -130,7 +148,7 @@ in `_build_lifecycle_read()` at the API layer (defence-in-depth, verified by tes
 
 ## Test coverage
 
-**`apps/api/tests/test_operations.py`** — 19 tests:
+**`apps/api/tests/test_operations.py`** — 23 tests:
 - Auth guard (401 without operator session)
 - Empty org returns 0 items
 - Basic timeline + lifecycle reads
@@ -140,11 +158,17 @@ in `_build_lifecycle_read()` at the API layer (defence-in-depth, verified by tes
 - State history ordering (ascending `transitioned_at`)
 - State history empty list
 - `execution_granted` and `requires_operator_review` hardcoded invariants
+- Lifecycle-by-id route: auth, found, not-found, tenant isolation
 
-**`apps/pulse/tests/operations-adapter.test.ts`** — 12 tests:
+**`apps/pulse/tests/operations-adapter.test.ts`** — 19 tests:
 - Fixture mode: deterministic, `dataMode=demo`, `requires_operator_review=true`
 - Backend mode success: response mapping, `dataMode=live`, filter params → query string
 - Backend failures: 404 / 503 / network error → empty entries + `sourceErrors`
+- Lifecycle backend read path:
+  - `fetchAll` mapping
+  - `fetchById` mapping
+  - missing lifecycle (`404`) returns `null` without false source error
+  - non-404 backend failures still surface source errors
 - `drainErrors()` idempotency
 - `findAll()` sync no-op
 
