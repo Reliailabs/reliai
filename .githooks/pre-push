@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Reliai main-branch push guard.
+# Override intentionally for emergency/admin flows:
+#   RELIAI_ALLOW_MAIN_PUSH=1 git push origin main
+
+if [[ "${RELIAI_ALLOW_MAIN_PUSH:-}" == "1" ]]; then
+  exit 0
+fi
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "${remote_ref}" in
+    refs/heads/main|refs/heads/master)
+      echo "ERROR: Direct pushes to ${remote_ref#refs/heads/} are blocked by local policy."
+      echo "Use a feature branch + PR workflow."
+      echo "If this is a true emergency, re-run with RELIAI_ALLOW_MAIN_PUSH=1."
+      exit 1
+      ;;
+  esac
+done
+
+exit 0
