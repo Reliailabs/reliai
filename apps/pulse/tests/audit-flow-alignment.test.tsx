@@ -14,4 +14,8 @@ test("ai-reliability-audit CTA contract aligns copy with /demo behavior", () => 
 
   const demoHrefMatches = html.match(/href=\"\/demo\"/g) ?? [];
   assert.ok(demoHrefMatches.length >= 2);
+
+  // Guard semantic drift: final CTA label must resolve to the demo route.
+  assert.match(html, /<a href="\/demo"[^>]*>Open demo scenario<\/a>/);
+  assert.doesNotMatch(html, /<a href="(?!\/demo)[^"]*"[^>]*>Open demo scenario<\/a>/);
 });
