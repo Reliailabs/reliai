@@ -24,8 +24,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.1` Contract-first fixture baseline | Complete (merged) | merged to `main` |
 | `P12.2` Demo scenario engine | Complete (merged) | merged to `main` |
 | `P12.3` Pulse `/demo` thin surface baseline | Complete (merged) | merged to `main` |
-| `P12.4` Audit flow alignment | Active | open PR |
-| `P12.5` Signup ownership decision | Blocked pending explicit ownership decision | not started |
+| `P12.4` Audit flow alignment | Complete (merged) | merged to `main` |
+| `P12.5` Signup ownership decision | Complete (merged) | merged to `main` |
 
 ## Ownership contract
 
@@ -43,11 +43,12 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 ### `/signup`
 
-- Current owner: `apps/web` (explicitly retained).
-- Phase 12 decision required:
-  - keep in `apps/web` as shared growth/auth entrypoint, or
-  - migrate to Pulse-owned flow after auth/session continuity acceptance.
-- No silent ownership drift.
+- Decision: keep owner in `apps/web` as shared growth/auth entrypoint.
+- Pulse contract: provide `/signup` compatibility shim that redirects to configured external owner URL.
+- Contract guardrails:
+  - `NEXT_PUBLIC_RELIAI_SIGNUP_URL` must resolve to absolute `http(s)` `/signup`.
+  - unset/invalid/ambiguous values fall back to `/sign-in` (safe local auth path).
+  - local `/signup` self-loop values are rejected.
 
 ## Phase 12 implementation sequence
 
@@ -91,6 +92,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Explicitly decide owner for `/signup`.
 - Document session/auth continuity implications.
 - Implement only after decision acceptance.
+- Implemented:
+  - `apps/pulse/app/signup/page.tsx` (compatibility redirect shim)
+  - `apps/pulse/lib/signup-link.ts`
+  - `apps/pulse/tests/signup-link.test.ts`
+  - command: `pnpm --filter pulse test:phase12-signup-ownership-contract`
 
 ## Acceptance criteria
 

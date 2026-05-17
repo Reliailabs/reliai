@@ -9,7 +9,7 @@ Phase 9 implementation may proceed only when an item is either:
 
 ## Locked Scope Decision (2026-05-13)
 - Migration readiness target is `apps/web operational parity`, not full app parity.
-- Keep in `apps/web` for now: `/docs`, `/docs-marketing`, `/pricing`, `/signup`.
+- Keep in `apps/web` for now: `/docs`, `/docs-marketing`, `/pricing`, `/signup` (Pulse now provides explicit `/signup` compatibility shim redirect in `P12.5`).
 - Required in `apps/pulse` before readiness: `/projects/[projectId]/reliability`, `/projects/[projectId]/regressions`, `/projects/[projectId]/timeline`, `/projects/[projectId]/ingestion`, `/projects/[projectId]/processors`, `/projects/[projectId]/settings`, `/playground`.
 - Conditional ownership routes explicitly retained in `apps/web` for this migration gate: `/settings/billing`, `/billing/success` (`/onboarding` moved to Pulse in `M8.1`).
 - Migration gate closure achieved in `M9.3`; Phase 9 is unblocked for explicitly approved `Net-new` slices.
