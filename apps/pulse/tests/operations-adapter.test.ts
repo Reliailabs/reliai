@@ -289,8 +289,8 @@ test("backend failure: 404 returns empty entries and populates sourceErrors", as
   const errors = repo.drainErrors();
   assert.equal(errors.length, 1);
   assert.ok(
-    errors[0].includes("not yet implemented"),
-    `expected 'not yet implemented' in error: ${errors[0]}`,
+    errors[0].includes("endpoint unavailable"),
+    `expected 'endpoint unavailable' in error: ${errors[0]}`,
   );
 });
 

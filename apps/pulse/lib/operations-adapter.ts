@@ -6,8 +6,8 @@
  *
  *   1. Backend API response types — typed shapes for what the FastAPI endpoints
  *      return (matching the Phase 11.2 Alembic schema columns).
- *   2. BackendOperationsTimelineRepository — calls the FastAPI API; stubs with
- *      graceful fallback until Phase 11.4 wires the real route.
+ *   2. BackendOperationsTimelineRepository — calls the FastAPI API with
+ *      graceful fallback semantics when endpoints or sessions are unavailable.
  *   3. BackendProposalLifecycleRepository — same for lifecycle data.
  *   4. Feature-flag factory functions — return the appropriate implementation
  *      based on RELIAI_OPERATIONS_DATA_MODE env var.
@@ -16,9 +16,8 @@
  *   RELIAI_OPERATIONS_DATA_MODE=fixture  → in-memory Phase 10 fixture data (default)
  *   RELIAI_OPERATIONS_DATA_MODE=live     → FastAPI backend via Bearer token
  *
- * Phase 11.4 adds the actual FastAPI route implementations. Until then, any
- * attempt to use "live" mode will produce a sourceErrors entry and the caller
- * will fall back to an empty result set rather than crashing.
+ * FastAPI read routes for operations timeline/lifecycle are now wired. In live
+ * mode, failures are surfaced via sourceErrors and callers fall back safely.
  */
 
 import { API_URL } from "@/lib/constants";
@@ -156,7 +155,7 @@ async function backendGet<T>(
       }
       return {
         ok: false,
-        error: `operations endpoint not yet implemented: ${path} — set RELIAI_OPERATIONS_DATA_MODE=fixture`,
+        error: `operations endpoint unavailable: ${path}`,
       };
     }
     if (!response.ok) {
