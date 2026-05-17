@@ -27,6 +27,7 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.4` Audit flow alignment | Complete (merged) | merged to `main` |
 | `P12.5` Signup ownership decision | Complete (merged) | merged to `main` |
 | `P12.6` Closure gate enforcement | Complete (merged) | merged to `main` |
+| `P12.7` Demo ownership drift contract | Complete (merged) | merged to `main` |
 
 ## Ownership contract
 
@@ -116,6 +117,7 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Canonical aggregated gate:
   - `pnpm --filter pulse test:phase12-route-ownership-gate`
   - enforced in `.github/workflows/qa.yml` (`pulse-route-gate`)
+  - includes `pnpm --filter pulse test:phase12-demo-route-ownership-contract`
 
 ## Phase 12 closure note
 
