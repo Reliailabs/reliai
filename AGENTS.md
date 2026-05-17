@@ -299,6 +299,29 @@ Update `CHANGELOG.md` when a change affects:
 
 Do not require changelog updates for trivial internal cleanup.
 
+## Marketing Copy Enforcement
+
+Any PR touching marketing surfaces (`apps/pulse/app/(marketing)/`, `apps/pulse/components/marketing-linear/`, `apps/pulse/app/demo/`) must comply with the full enforcement contract at:
+
+**[`docs/marketing-copy-language-enforcement-rules.md`](docs/marketing-copy-language-enforcement-rules.md)**
+
+### Hard rejection triggers (inline summary)
+
+A PR must be rejected or corrected before merge if it introduces:
+
+- "dashboard" as a positive descriptor (e.g., "View dashboard", "Pulse dashboard")
+- "solution", "tool", "software", "visibility" (unqualified), or "insights" as outcome nouns
+- "Pulse" in a value statement or outcome claim ("Pulse monitors…", "Pulse platform")
+- A CTA that describes format instead of action ("View dashboard", "Explore the platform")
+- Any headline that describes what the product is instead of what production problem it solves
+
+### Naming rule (inline summary)
+
+- **Reliai** — outcomes, value statements, product behavior, marketing headlines
+- **Pulse** — concrete application surface references only (nav, footer, module names)
+
+See the full document for the complete checklist, approved language, and canonical positioning statements.
+
 ## Standard Operating Rule
 
 If uncertain, choose the path that:
@@ -318,7 +341,7 @@ NOTE: Avoid destructive cleans (e.g., git clean -fdx) because they remove .env a
 <claude-mem-context>
 # Memory Context
 
-# [Reliai] recent context, 2026-05-16 2:11am EDT
+# [Reliai] recent context, 2026-05-17 6:45pm EDT
 
 No previous sessions found.
 </claude-mem-context>
