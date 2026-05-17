@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Clock3, GitCompare, History, Li
 
 import { cn } from "@/lib/utils";
 import type { IncidentOperationsSurfaceData, IncidentOperationsTab } from "@/lib/incident-operations-data";
+import { OperationsReliabilitySummaryPanel } from "@/components/operations/operations-reliability-summary-panel";
 
 const TAB_ORDER: Array<{ id: IncidentOperationsTab; label: string }> = [
   { id: "overview", label: "Overview" },
@@ -132,19 +133,22 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
         </div>
 
         {activeTab === "overview" ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Severity</p>
-              <p className="mt-2 text-lg font-semibold">{incident?.severity ?? "unknown"}</p>
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Severity</p>
+                <p className="mt-2 text-lg font-semibold">{incident?.severity ?? "unknown"}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
+                <p className="mt-2 text-lg font-semibold">{incident?.status ?? "unavailable"}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Duration</p>
+                <p className="mt-2 text-lg font-semibold">{incident?.duration ?? "unknown"}</p>
+              </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
-              <p className="mt-2 text-lg font-semibold">{incident?.status ?? "unavailable"}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Duration</p>
-              <p className="mt-2 text-lg font-semibold">{incident?.duration ?? "unknown"}</p>
-            </div>
+            <OperationsReliabilitySummaryPanel snapshot={data.reliabilitySnapshot} />
           </div>
         ) : null}
 

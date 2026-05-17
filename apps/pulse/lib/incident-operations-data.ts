@@ -9,7 +9,7 @@ import {
 } from "@/lib/operations-adapter";
 import { InMemoryProposalLifecycleRepository, type ProposalLifecycle } from "@/lib/proposal-lifecycle";
 import { getVerificationResults } from "@/lib/operations-verification-results";
-import type { IncidentSurfaceItem, OperationsTimelineEntry } from "@/components/dashboard/pulse-types";
+import type { IncidentSurfaceItem, OperationsTimelineEntry, OperationsSurfaceData } from "@/components/dashboard/pulse-types";
 
 export type IncidentOperationsTab =
   | "overview"
@@ -47,6 +47,7 @@ export type IncidentOperationsSurfaceData = {
   compareLinks: Array<{ label: string; href: string }>;
   sourceErrors: string[];
   dataMode: "live" | "demo";
+  reliabilitySnapshot: OperationsSurfaceData["reliabilitySnapshot"];
   reliabilityContext: {
     openRelatedProposals: number;
     latestPolicyDecision: "passed" | "denied" | "unavailable";
@@ -127,6 +128,7 @@ export async function getIncidentOperationsSurfaceData(
   deps?: {
     lifecycleRepo?: ProposalLifecycleRepository;
     timelineRepo?: OperationsTimelineRepository;
+    getReliabilitySnapshot?: () => OperationsSurfaceData["reliabilitySnapshot"];
   },
 ): Promise<IncidentOperationsSurfaceData> {
   const sourceErrors: string[] = [];
@@ -134,10 +136,13 @@ export async function getIncidentOperationsSurfaceData(
     deps?.lifecycleRepo ??
     createLifecycleRepo(getOperationsAdapterMode(), new InMemoryProposalLifecycleRepository());
   const timelineRepo = deps?.timelineRepo;
+  const reliabilitySnapshotDeps = deps?.getReliabilitySnapshot
+    ? { getReliabilitySnapshot: deps.getReliabilitySnapshot }
+    : undefined;
 
   const [incidentsData, operationsData, lifecycleRead] = await Promise.all([
     getIncidentsSurfaceData(),
-    getOperationsSurfaceData(timelineRepo),
+    getOperationsSurfaceData(timelineRepo, reliabilitySnapshotDeps),
     readLifecycles(lifecycleRepo),
   ]);
 
@@ -212,6 +217,7 @@ export async function getIncidentOperationsSurfaceData(
     compareLinks,
     sourceErrors: Array.from(new Set(sourceErrors)),
     dataMode: inferredMode,
+    reliabilitySnapshot: operationsData.reliabilitySnapshot,
     reliabilityContext: {
       openRelatedProposals,
       latestPolicyDecision,
