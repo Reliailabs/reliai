@@ -17,6 +17,16 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - `/ai-reliability-audit` exists as a marketing route in Pulse with CTA-driven flow.
 - `/signup` is intentionally retained in `apps/web` per migration portability decisions.
 
+## Slice status
+
+| Slice | Status | Branch / PR state |
+| --- | --- | --- |
+| `P12.1` Contract-first fixture baseline | Complete (merged) | merged to `main` |
+| `P12.2` Demo scenario engine | Complete (merged) | merged to `main` |
+| `P12.3` Pulse `/demo` thin surface baseline | Complete (merged) | merged to `main` |
+| `P12.4` Audit flow alignment | Active | open PR |
+| `P12.5` Signup ownership decision | Blocked pending explicit ownership decision | not started |
+
 ## Ownership contract
 
 ### `/demo`
@@ -72,6 +82,10 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 4. `P12.4` Audit flow alignment
 - Ensure `/ai-reliability-audit` CTA chain maps to real demo/audit outcomes.
 - Remove any copy/route contract mismatches.
+- Alignment baseline landed:
+  - `apps/pulse/components/marketing-linear/audit-page.tsx`
+  - `apps/pulse/tests/audit-flow-alignment.test.tsx`
+  - command: `pnpm --filter pulse test:phase12-audit-flow-alignment`
 
 5. `P12.5` Signup ownership decision
 - Explicitly decide owner for `/signup`.

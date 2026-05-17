@@ -474,11 +474,11 @@ export function AuditPage() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-lg">
             <h2 className="text-3xl md:text-4xl lg:text-[42px] font-medium text-white tracking-tight mb-4">
-              Book a 20-minute call to scope the audit.
+              Run the demo scenario to preview the audit path.
             </h2>
             <p className="text-zinc-400 text-base leading-relaxed">
-              We&apos;ll confirm fit, scope the audit, and map the fastest path to a 7-day
-              engagement.
+              Walk the deterministic incident simulation, then decide whether to move into a
+              scoped 7-day reliability audit.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -486,7 +486,7 @@ export function AuditPage() {
               href="/demo"
               className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
             >
-              View demo
+              Open demo scenario
             </a>
           </div>
         </div>
