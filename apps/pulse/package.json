@@ -17,6 +17,7 @@
     "test:operations-reliability-score": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/operations-reliability-score.test.ts",
     "test:phase11-schema-adapter-consistency": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/operations-adapter-consistency.test.ts",
     "test:phase11-readpath-gate": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/operations-adapter.test.ts tests/operations-hardening.test.ts tests/operations-adapter-consistency.test.ts",
+    "test:phase12-demo-fixture-baseline": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/demo-scenario-fixtures.test.ts",
     "test:operations-reliability-presenter-smoke": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/operations-reliability-presenter-smoke.test.tsx",
     "test:regressions-data-mapper": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/regressions-data-mapper.test.ts",
     "test:incident-operations-reliability-context": "TSCONFIG_PATH=tsconfig.test.json TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/incident-operations-reliability-context.test.ts",
