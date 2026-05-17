@@ -6,11 +6,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { OperationsReliabilitySummaryPanel } from "@/components/operations/operations-reliability-summary-panel";
 
 test("reliability summary panel renders populated snapshot text", () => {
+  const capturedAt = new Date().toISOString();
   const html = renderToStaticMarkup(
     <OperationsReliabilitySummaryPanel
       snapshot={{
         snapshot_id: "score-org-demo-1",
-        captured_at: "2026-05-16T00:00:00.000Z",
+        captured_at: capturedAt,
         organization_id: "org-demo",
         project_id: null,
         reliability_score: 66,
