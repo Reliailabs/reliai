@@ -671,6 +671,47 @@ def test_lifecycle_by_id_returns_record_with_state_history(client, db_session):
     assert [h["to_state"] for h in body["state_history"]] == ["analyzed", "approved"]
 
 
+def test_lifecycle_list_item_and_by_id_shapes_match(client, db_session):
+    session, org_id = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+    lifecycle_id = "lifecycle-shape-match-0001"
+    proposal_id = "phase9-inc-shape-lifecycle-1"
+    _make_lifecycle(
+        db_session,
+        organization_id=org_id,
+        state="approved",
+        lifecycle_id=lifecycle_id,
+        proposal_id=proposal_id,
+    )
+    _make_transition(
+        db_session,
+        lifecycle_id=lifecycle_id,
+        organization_id=org_id,
+        from_state="detected",
+        to_state="approved",
+        transitioned_at=datetime(2026, 5, 12, 11, 0, tzinfo=timezone.utc),
+        reason="Shape parity test transition.",
+    )
+    db_session.commit()
+
+    list_response = client.get(
+        "/api/v1/operations/lifecycles",
+        headers=auth_headers(session),
+        params={"proposal_id": proposal_id},
+    )
+    detail_response = client.get(
+        f"/api/v1/operations/lifecycles/{lifecycle_id}",
+        headers=auth_headers(session),
+    )
+    assert list_response.status_code == 200
+    assert detail_response.status_code == 200
+
+    list_item = list_response.json()["items"][0]
+    detail_item = detail_response.json()
+    assert set(list_item.keys()) == set(detail_item.keys())
+
+
 def test_lifecycle_by_id_not_found_returns_404(client, db_session):
     session, _ = _setup_org(
         client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"

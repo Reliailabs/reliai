@@ -98,8 +98,8 @@ Three new tables, one Alembic migration:
 - `GET /api/v1/operations/lifecycles/{id}` — org-scoped single-lifecycle read
 - `app/services/operations.py` — `list_timeline_events`, `list_lifecycles`, `_build_lifecycle_read`
 - `app/schemas/operations.py` — full Pydantic schema set
-- `apps/pulse/tests/operations-adapter.test.ts` — 22 tests (fixture, timeline backend, lifecycle backend, failure)
-- `apps/api/tests/test_operations.py` — 27 tests (auth, isolation, filters, invariants, timeline-by-id, lifecycle-by-id)
+- `apps/pulse/tests/operations-adapter.test.ts` — 24 tests (fixture, timeline backend, lifecycle backend, failure, list/detail shape parity)
+- `apps/api/tests/test_operations.py` — 29 tests (auth, isolation, filters, invariants, timeline-by-id, lifecycle-by-id, list/detail shape parity)
 
 ### Phase 11.5 — Persistence hardening
 **Doc:** `docs/phase11-5-persistence-hardening.md`
@@ -129,12 +129,12 @@ Three new tables, one Alembic migration:
 
 | File | Tests | What it covers |
 |---|---|---|
-| `apps/api/tests/test_operations.py` | 27 | API routes, tenant isolation, filters, invariants, timeline-by-id, lifecycle-by-id |
+| `apps/api/tests/test_operations.py` | 29 | API routes, tenant isolation, filters, invariants, timeline-by-id, lifecycle-by-id, list/detail shape parity |
 | `apps/api/tests/test_operations_hardening.py` | 24 | DB constraints, append-only shape, write-path absent, column parity |
-| `apps/pulse/tests/operations-adapter.test.ts` | 22 | Fixture mode, backend mode, timeline/lifecycle read-path, failure fallback |
+| `apps/pulse/tests/operations-adapter.test.ts` | 24 | Fixture mode, backend mode, timeline/lifecycle read-path, failure fallback, list/detail shape parity |
 | `apps/pulse/tests/operations-hardening.test.ts` | 14 | Write-path absent, governance fields, sourceErrors, drainErrors |
 
-**Total: 87 tests — all passing**
+**Total: 91 tests — all passing**
 
 ---
 
