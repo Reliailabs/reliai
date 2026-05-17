@@ -62,6 +62,12 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 3. `P12.3` Pulse `/demo` surface migration
 - Build/port real interactive demo surface in Pulse.
 - Remove ambiguous fallback/placeholder behavior.
+- Thin surface baseline landed:
+  - `apps/pulse/app/demo/page.tsx`
+  - `apps/pulse/components/demo/demo-scenario-surface.tsx`
+  - `apps/pulse/tests/demo-surface-smoke.test.tsx`
+  - command: `pnpm --filter pulse test:phase12-demo-surface-smoke`
+- Current implementation is intentionally offline deterministic and fixture-engine backed.
 
 4. `P12.4` Audit flow alignment
 - Ensure `/ai-reliability-audit` CTA chain maps to real demo/audit outcomes.
