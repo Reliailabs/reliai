@@ -223,6 +223,9 @@ jobs:
       - name: Run Pulse operations reliability presenter smoke
         run: pnpm --filter pulse test:operations-reliability-presenter-smoke
 
+      - name: Run Pulse Phase 12 route/ownership gate
+        run: pnpm --filter pulse test:phase12-route-ownership-gate
+
       - name: Validate Pulse E2E credentials
         run: |
           if [ -z "${PW_E2E_EMAIL}" ] || [ -z "${PW_E2E_PASSWORD}" ]; then
