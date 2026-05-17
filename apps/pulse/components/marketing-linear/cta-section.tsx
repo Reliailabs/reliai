@@ -5,10 +5,10 @@ export function CTASection() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-lg">
             <h2 className="text-3xl md:text-4xl lg:text-[42px] font-medium text-white tracking-tight mb-4">
-              Start with audit or live Pulse preview.
+              Start with an audit or live operational demo.
             </h2>
             <p className="text-zinc-400 text-base leading-relaxed">
-              Run an AI reliability audit to get certification posture, or review Pulse to see how
+              Run an AI reliability audit to get certification posture, or review the platform to see how
               Reliai turns production reliability signals into action.
             </p>
           </div>
@@ -17,7 +17,7 @@ export function CTASection() {
               href="/demo"
               className="px-5 py-2.5 border border-zinc-700 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors text-sm"
             >
-              View Pulse dashboard
+              Explore the platform
             </a>
             <a
               href="/ai-reliability-audit"

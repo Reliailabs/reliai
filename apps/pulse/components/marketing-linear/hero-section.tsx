@@ -60,7 +60,7 @@ export function HeroSection() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="mt-6 text-lg text-zinc-400"
             >
-              Reliai Pulse monitors AI agents, RAG systems, and model behavior to detect regressions,
+              Reliai monitors AI agents, RAG systems, and model behavior to detect regressions,
               surface incidents, and prove reliability in production.
             </motion.p>
             <motion.div
@@ -79,7 +79,7 @@ export function HeroSection() {
                 href="/demo"
                 className="text-zinc-300 font-medium hover:text-white transition-colors flex items-center gap-2 text-sm"
               >
-                View Pulse dashboard <span aria-hidden="true">→</span>
+                Explore the platform <span aria-hidden="true">→</span>
               </a>
             </motion.div>
           </div>
@@ -89,7 +89,7 @@ export function HeroSection() {
         <div className="w-full flex justify-center px-6 mt-8">
           <div className="flex items-center gap-2">
             <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-300">
-              Pulse dashboard preview
+              Operational demo preview
             </span>
             <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-500">
               AREI · Incidents · Actions
