@@ -248,6 +248,9 @@ docs/
 ## Running all Phase 11 tests
 
 ```bash
+# Canonical Phase 11 read-path gate (API + Pulse)
+pnpm test:phase11-readpath-gate
+
 # Python (from repo root)
 .venv/bin/python -m pytest apps/api/tests/test_operations.py \
                            apps/api/tests/test_operations_hardening.py -v
