@@ -53,6 +53,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 2. `P12.2` Demo scenario engine
 - Implement deterministic replay timeline and state controller.
 - Enforce stable IDs/outcomes for repeatable sales/investor/demo runs.
+- Baseline engine landed:
+  - `apps/pulse/lib/demo-scenario-engine.ts`
+  - `apps/pulse/tests/demo-scenario-engine.test.ts`
+  - command: `pnpm --filter pulse test:phase12-demo-scenario-engine`
+- Still no UI work in this step.
 
 3. `P12.3` Pulse `/demo` surface migration
 - Build/port real interactive demo surface in Pulse.
