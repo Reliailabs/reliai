@@ -53,6 +53,10 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
               <ArrowLeft className="h-4 w-4" />
               Legacy regression view
             </Link>
+            <Link href={`/operations/graph/${data.regressionId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+              Open graph
+            </Link>
           </div>
           <h1 className="text-2xl font-semibold">Regression Operations — {data.regressionId}</h1>
           <p className="text-sm text-muted-foreground">Read-only regression workflow surface. Requires operator review.</p>
