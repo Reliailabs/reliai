@@ -7,7 +7,7 @@ for Operations Center data. This phase introduces:
 
 1. `operations-adapter.ts` — the adapter boundary module
 2. Factory functions wired into `operations-timeline.ts` via a feature flag
-3. Graceful fallback stubs so the system stays operational until Phase 11.4
+3. Graceful fallback behavior so the system remains operational on transient backend/session failures
    implements the real FastAPI routes
 
 ---
@@ -46,7 +46,7 @@ as a parameter so the caller owns construction.
 
 ---
 
-## Backend API Contracts (FastAPI — Phase 11.4 target)
+## Backend API Contracts (implemented in Phase 11.4)
 
 ### `GET /api/v1/operations/timeline`
 
@@ -141,7 +141,9 @@ All backend calls go through `backendGet`. It:
 
 1. Calls `getApiAccessToken()` — returns `null` if no session, producing an error entry
 2. Issues `fetch(API_URL + path)` with `Authorization: Bearer <token>`, `cache: "no-store"`
-3. On HTTP 404 → returns `{ ok: false, error: "operations endpoint not yet implemented: ... — set RELIAI_OPERATIONS_DATA_MODE=fixture" }`
+3. On HTTP 404:
+   - with `allowNotFound=true` → returns `{ ok: false, error: "not found: ...", notFound: true }`
+   - otherwise → returns `{ ok: false, error: "operations endpoint unavailable: ..." }`
 4. On other non-OK status → returns `{ ok: false, error: "backend request failed: <status> <path>" }`
 5. On network/parse error → returns `{ ok: false, error: "backend fetch error: <message>" }`
 6. Never throws — always returns a discriminated union `{ ok: true; data: T } | { ok: false; error: string }`
@@ -179,21 +181,17 @@ into `operations-timeline.ts`, which would create a circular dependency.
 
 ---
 
-## Phase 11.4 Extension Points
+## Historical extension-point note
 
-Phase 11.4 wires the actual FastAPI route handlers. From the adapter's perspective,
-no changes are needed — the `backendGet` helper will receive real responses instead
-of 404s.
+The original Phase 11.3 doc anticipated Phase 11.4 route wiring. That wiring is complete.
 
-Two gaps remain after 11.3 that Phase 11.4 must close:
+Remaining write-path items (for later phase, not Phase 11 read parity):
 
-1. **`BackendProposalLifecycleRepository.save()`** — currently throws
-   `"not yet implemented — Phase 11.4"`. Needs a `POST /api/v1/operations/lifecycles`
-   endpoint and implementation.
+1. **`BackendProposalLifecycleRepository.save()`** still intentionally throws because
+   write-path endpoints are out of Phase 11 read-scope.
 
-2. **`proposal-lifecycle.ts` defaultRepository** — still uses `InMemoryProposalLifecycleRepository`
-   unconditionally. Phase 11.4 should wire `createLifecycleRepo` the same way
-   `operations-timeline.ts` was updated in Phase 11.3.
+2. Lifecycle/timeline read repositories now support both list and by-id parity with
+   org-scoped backend reads and explicit 404 semantics.
 
 ---
 
@@ -203,7 +201,7 @@ Two gaps remain after 11.3 that Phase 11.4 must close:
   read from the backend response field (which is also always `false` per DB CHECK).
 - `requires_operator_review` is always hardcoded `true` in `toTimelineEntry()` and
   `toLifecycle()` — same rationale.
-- All backend calls filter by `organization_id` at the FastAPI layer (Phase 11.4
-  responsibility); the adapter trusts the response shape but not the auth boundary.
+- All backend calls filter by `organization_id` at the FastAPI layer; the adapter
+  trusts the response shape but not the auth boundary.
 - The adapter module carries `import "server-only"` — it cannot be bundled into
   client components.
