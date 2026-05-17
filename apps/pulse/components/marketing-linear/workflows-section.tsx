@@ -20,7 +20,7 @@ const carouselCards = [
   },
   {
     id: 3,
-    category: "Pulse mobile",
+    category: "Mobile workflows",
     title: "Review incidents and alerts from anywhere",
     icon: ArrowRight,
     mockup: "mobile",
@@ -34,7 +34,7 @@ const carouselCards = [
   },
   {
     id: 5,
-    category: "Pulse integrations",
+    category: "Integrations",
     title: "Connect your reliability stack and incident workflow",
     icon: ArrowRight,
     mockup: "integrations",

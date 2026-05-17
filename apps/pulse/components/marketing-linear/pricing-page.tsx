@@ -395,7 +395,7 @@ export function PricingPage() {
               href="/demo"
               className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
             >
-              Tour the dashboard
+              Explore the platform
             </a>
           </div>
         </div>

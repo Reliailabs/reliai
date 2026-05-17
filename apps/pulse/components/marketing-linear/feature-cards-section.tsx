@@ -66,7 +66,7 @@ const featureCards = [
   },
   {
     title: "Take action",
-    description: "Pulse converts reliability signals into clear next steps, with guardrail posture and certification readiness visible in the same workflow.",
+    description: "Reliai converts reliability signals into clear next steps, with guardrail posture and certification readiness visible in the same workflow.",
     illustration: (
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
         <img
@@ -102,7 +102,7 @@ export function FeatureCardsSection() {
                 lineHeight: 1.1,
               }}
             >
-              Pulse capabilities in production
+              Built for production AI reliability
             </h2>
             <div className="max-w-md">
               <p className="text-zinc-400 leading-relaxed">
