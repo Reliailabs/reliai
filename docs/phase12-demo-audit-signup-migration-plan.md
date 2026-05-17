@@ -45,6 +45,10 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Define demo read-model fixtures aligned to production shapes.
 - Add schema parity tests between demo fixtures and production read models.
 - No UI expansion in this step.
+- Initial baseline landed:
+  - `apps/pulse/lib/demo-scenario-fixtures.ts`
+  - `apps/pulse/tests/demo-scenario-fixtures.test.ts`
+  - command: `pnpm --filter pulse test:phase12-demo-fixture-baseline`
 
 2. `P12.2` Demo scenario engine
 - Implement deterministic replay timeline and state controller.
