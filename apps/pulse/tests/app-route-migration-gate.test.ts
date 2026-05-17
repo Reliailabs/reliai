@@ -49,6 +49,12 @@ test("gate: /system canonicalizes to /pulse/system", () => {
   assert.match(file, /redirect\("\/pulse\/system"\)/);
 });
 
+test("gate: /signup is an explicit ownership shim route", () => {
+  const file = read("app/signup/page.tsx");
+  assert.match(file, /resolveSignupHref/);
+  assert.match(file, /redirect\(/);
+});
+
 test("gate: app-owned pages outside (app) are documented shims only", () => {
   const allowed = new Set([
     "app/(marketing)/page.tsx",
@@ -57,6 +63,7 @@ test("gate: app-owned pages outside (app) are documented shims only", () => {
     "app/(marketing)/ai-reliability-audit/page.tsx",
     "app/sign-in/page.tsx",
     "app/demo/page.tsx",
+    "app/signup/page.tsx",
   ]);
 
   const allPageFiles = [
