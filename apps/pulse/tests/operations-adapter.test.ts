@@ -472,6 +472,37 @@ test("backend lifecycle repo success: fetchById maps lifecycle payload", async (
   assert.deepEqual(repo.drainErrors(), []);
 });
 
+test("backend lifecycle repo shape parity: fetchAll item and fetchById result have identical keys", async () => {
+  const repo = new BackendProposalLifecycleRepository(TEST_TOKEN);
+  const lifecycle = makeLifecycleListResponse(1).items[0];
+
+  const listItems = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => ({ items: [lifecycle], total: 1 }),
+      }) as Response,
+    () => repo.fetchAll(),
+  );
+
+  const detailItem = await withMockedFetch(
+    async (_url, _init) =>
+      ({
+        ok: true,
+        status: 200,
+        json: async () => lifecycle,
+      }) as Response,
+    () => repo.fetchById(lifecycle.lifecycle_id),
+  );
+
+  assert.ok(detailItem);
+  assert.deepEqual(
+    Object.keys(listItems[0]).sort(),
+    Object.keys(detailItem!).sort(),
+  );
+});
+
 test("backend lifecycle repo missing record: fetchById returns null without source error", async () => {
   const repo = new BackendProposalLifecycleRepository(TEST_TOKEN);
 
