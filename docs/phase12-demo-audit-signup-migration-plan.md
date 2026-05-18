@@ -245,6 +245,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Remove pre-integrity mitigation decision/message helper API from the contract module.
 - Ensure replay transition and contract tests consume `evaluateMitigationConclusionIntegrity(...)` directly.
 - Keep `canConcludeMitigation(...)` as a compatibility wrapper projected from the integrity result.
+- Follow-up: remove `canConcludeMitigation(...)` once remaining consumers adopt full integrity-result semantics
+  (`decision_allowed`, `policy_reasons`, `confidence_level`) end-to-end.
 
 ## Acceptance criteria
 
