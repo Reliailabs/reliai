@@ -54,6 +54,21 @@ export type OperationalDecisionIntegrityResult = {
   confidence_level: "high" | "degraded" | "low";
 };
 
+export type OperationalDecisionEvidenceRequirement = {
+  id:
+    | "replay_completed"
+    | "replay_integrity_trusted"
+    | "scenario_integrity_trusted"
+    | "mitigation_evidence_present"
+    | "rollback_evidence_present"
+    | "causal_chain_complete"
+    | "severity_aligned_with_evidence"
+    | "arei_linked_to_mitigation";
+  label: string;
+  satisfied: boolean;
+  blocking: boolean;
+};
+
 export function getOperationalDecisionPolicyReasonMessage(
   reason: OperationalDecisionPolicyReason,
 ): string {
@@ -332,4 +347,59 @@ export function evaluateMitigationConclusionIntegrity(
     policy_reasons,
     confidence_level: "low",
   };
+}
+
+export function getOperationalDecisionEvidenceRequirements(
+  input: OperationalDecisionIntegrityInput,
+): OperationalDecisionEvidenceRequirement[] {
+  return [
+    {
+      id: "replay_completed",
+      label: "Replay completed",
+      satisfied: input.replay_done,
+      blocking: !input.replay_done,
+    },
+    {
+      id: "replay_integrity_trusted",
+      label: "Replay integrity trusted",
+      satisfied: input.replay_health === "healthy",
+      blocking: input.replay_health !== "healthy",
+    },
+    {
+      id: "scenario_integrity_trusted",
+      label: "Scenario integrity trusted",
+      satisfied: input.scenario_health === "healthy",
+      blocking: input.scenario_health !== "healthy",
+    },
+    {
+      id: "mitigation_evidence_present",
+      label: "Mitigation evidence present",
+      satisfied: input.mitigation_evidence_exists,
+      blocking: !input.mitigation_evidence_exists,
+    },
+    {
+      id: "rollback_evidence_present",
+      label: "Rollback evidence present",
+      satisfied: input.rollback_evidence_exists,
+      blocking: !input.rollback_evidence_exists,
+    },
+    {
+      id: "causal_chain_complete",
+      label: "Causal chain complete",
+      satisfied: input.causal_chain_complete,
+      blocking: !input.causal_chain_complete,
+    },
+    {
+      id: "severity_aligned_with_evidence",
+      label: "Severity aligned with evidence",
+      satisfied: input.severity_evidence_aligned,
+      blocking: !input.severity_evidence_aligned,
+    },
+    {
+      id: "arei_linked_to_mitigation",
+      label: "AREI linked to mitigation",
+      satisfied: input.arei_delta_linked_to_mitigation,
+      blocking: !input.arei_delta_linked_to_mitigation,
+    },
+  ];
 }
