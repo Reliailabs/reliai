@@ -50,6 +50,7 @@ Phase 9 implementation may proceed only when an item is either:
 6. Confirm the change does not violate the locked scope decision above.
 7. Complete the route contract entry required by `docs/agent-migration-contract-rules.md` for each `M7+` slice.
 8. For any `P12.x` follow-up, include the **Required PR body snippet** from `docs/phase12-demo-audit-signup-migration-plan.md`.
+9. For any `P12.x` follow-up, include a link to the successful `pulse-route-gate` run in the PR body (`ci_proof` field).
 
 ## Linked Migration Plans
 - `docs/agent-migration-contract-rules.md`

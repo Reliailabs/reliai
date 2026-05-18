@@ -107,6 +107,8 @@ Use this for any post-closure `P12.x` slice:
 - `validation`:
   - `pnpm --filter pulse test:phase12-route-ownership-gate`
   - any additional targeted tests
+- `ci_proof`:
+  - link to successful `pulse-route-gate` run for the PR
 - `risk_rollback`: concise rollback note
 
 #### Required PR body snippet
@@ -125,6 +127,8 @@ Use this for any post-closure `P12.x` slice:
 - validation:
   - pnpm --filter pulse test:phase12-route-ownership-gate
   - <additional targeted checks>
+- ci_proof:
+  - <link to successful pulse-route-gate run>
 - risk_rollback: <one line>
 ```
 
@@ -135,6 +139,7 @@ A `P12.x` follow-up is done only when all are true:
 - Scope stayed within declared boundary in PR body.
 - If routes were touched, Phase 12 invariants were explicitly reviewed and preserved.
 - `pnpm --filter pulse test:phase12-route-ownership-gate` result is attached (or CI link provided).
+- Successful `pulse-route-gate` run link is included in the PR body.
 - `docs/pulse-migration-audit-sheet.md` remains consistent with this Phase 12 source-of-truth doc.
 - PR includes explicit rollback note.
 
