@@ -2,8 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { getReplayHealthPolicy } from "@/lib/demo-replay-health-policy";
-import { getScenarioHealthPolicy } from "@/lib/demo-scenario-health-policy";
+import {
+  canConcludeMitigation,
+  getReplayHealthPolicy,
+  getScenarioHealthPolicy,
+} from "@/lib/demo-operational-integrity-contract";
 import { createDemoScenarioReplayController } from "@/lib/demo-scenario-engine";
 import { getDemoScenarioFixture } from "@/lib/demo-scenario-fixtures";
 
@@ -97,7 +100,7 @@ export function DemoScenarioSurface() {
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {frame.done && healthPolicy.allow_conclusion && scenarioPolicy.allow_conclusion
+              {frame.done && canConcludeMitigation(frame.replay_health, frame.scenario_health)
                 ? fixture.mitigation_outcome
                 : "Mitigation confidence pending replay integrity."}
             </p>

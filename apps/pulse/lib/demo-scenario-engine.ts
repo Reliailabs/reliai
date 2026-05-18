@@ -2,6 +2,10 @@ import {
   type DemoScenarioFixture,
   getDemoScenarioFixture,
 } from "./demo-scenario-fixtures";
+import {
+  deriveReplayHealth,
+  deriveScenarioHealth,
+} from "./demo-operational-integrity-contract";
 
 export type DemoScenarioReplayFrame = {
   cursor: number;
@@ -39,20 +43,8 @@ function toFrame(
   const incident_status =
     bounded >= total ? "mitigated" : fixture.incident.status;
 
-  const replay_health = fixture.replay_profile.unknown_outcome
-    ? "unknown"
-    : fixture.replay_profile.partial
-      ? "partial"
-      : fixture.replay_profile.stale
-        ? "stale"
-        : "healthy";
-  const scenario_health = fixture.scenario_profile.unknown_outcome
-    ? "unknown"
-    : fixture.scenario_profile.partial_evidence
-      ? "partial"
-      : fixture.scenario_profile.stale_mitigation
-        ? "stale"
-        : "healthy";
+  const replay_health = deriveReplayHealth(fixture.replay_profile);
+  const scenario_health = deriveScenarioHealth(fixture.scenario_profile);
 
   return {
     cursor: bounded,
