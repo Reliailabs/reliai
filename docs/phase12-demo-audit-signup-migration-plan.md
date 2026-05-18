@@ -109,6 +109,25 @@ Use this for any post-closure `P12.x` slice:
   - any additional targeted tests
 - `risk_rollback`: concise rollback note
 
+#### Required PR body snippet
+
+```md
+### Phase12 Follow-up Contract
+- slice_id: P12.x
+- scope: <contract-only | presenter-consumption-only | docs-only | ...>
+- routes_touched: < /demo | /ai-reliability-audit | /signup | none >
+- invariants_touched:
+  - deterministic replay
+  - no presenter reinterpretation
+  - contract-owned decision semantics
+  - CTA label/destination alignment
+  - no live provider runtime dependency
+- validation:
+  - pnpm --filter pulse test:phase12-route-ownership-gate
+  - <additional targeted checks>
+- risk_rollback: <one line>
+```
+
 ## Operational invariants
 
 - Demo behavior must remain deterministic and replayable.
