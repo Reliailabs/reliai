@@ -33,6 +33,8 @@ test("demo surface prioritizes replay-not-complete block reason while replay is 
 
   assert.match(html, /Operational conclusion blocked:/);
   assert.match(html, /replay not complete/);
+  assert.match(html, /Evidence requirements:\s*6\/8 satisfied/);
+  assert.match(html, /Blocking requirements:\s*2/);
 });
 
 test("demo surface shows replay-health block reason once replay is complete", () => {
@@ -44,6 +46,8 @@ test("demo surface shows replay-health block reason once replay is complete", ()
 
   assert.match(html, /Operational conclusion blocked:/);
   assert.match(html, /replay integrity untrusted/);
+  assert.match(html, /Evidence requirements:\s*7\/8 satisfied/);
+  assert.match(html, /Blocking requirements:\s*1/);
 });
 
 test("demo surface shows combined health block reason once replay is complete", () => {
@@ -55,6 +59,8 @@ test("demo surface shows combined health block reason once replay is complete", 
 
   assert.match(html, /Operational conclusion blocked:/);
   assert.match(html, /replay integrity untrusted, scenario integrity untrusted/);
+  assert.match(html, /Evidence requirements:\s*6\/8 satisfied/);
+  assert.match(html, /Blocking requirements:\s*2/);
 });
 
 test("demo surface renders mitigation outcome when replay is complete and health dimensions are trusted", () => {
@@ -68,6 +74,8 @@ test("demo surface renders mitigation outcome when replay is complete and health
   const escapedOutcome = fixture.mitigation_outcome.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   assert.match(html, new RegExp(escapedOutcome));
   assert.doesNotMatch(html, /Operational conclusion blocked:/);
+  assert.match(html, /Evidence requirements:\s*8\/8 satisfied/);
+  assert.match(html, /Blocking requirements:\s*0/);
 });
 
 test("demo surface can allow degraded conclusion path when explicitly enabled", () => {
@@ -85,6 +93,8 @@ test("demo surface can allow degraded conclusion path when explicitly enabled", 
 
   assert.match(html, /Conclusion confidence: degraded/);
   assert.doesNotMatch(html, /Operational conclusion blocked:/);
+  assert.match(html, /Evidence requirements:\s*6\/8 satisfied/);
+  assert.match(html, /Blocking requirements:\s*2/);
   const escapedOutcome = fixture.mitigation_outcome.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   assert.match(html, new RegExp(escapedOutcome));
 });

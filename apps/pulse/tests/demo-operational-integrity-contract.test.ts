@@ -433,3 +433,29 @@ test("operational decision evidence summary: healthy state has no blockers", () 
   assert.deepEqual(summary.blocking_reasons, []);
   assert.deepEqual(summary.blocking_reason_messages, []);
 });
+
+test("operational decision evidence summary: degraded allowed state preserves blocker summary deterministically", () => {
+  const summary = getOperationalDecisionEvidenceSummary({
+    replay_done: true,
+    replay_health: "stale",
+    scenario_health: "partial",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+    allow_degraded_integrity_conclusion: true,
+  });
+
+  assert.equal(summary.total_requirements, 8);
+  assert.equal(summary.satisfied_requirements, 6);
+  assert.equal(summary.blocking_requirements, 2);
+  assert.deepEqual(summary.blocking_reasons, [
+    "replay_integrity_untrusted",
+    "scenario_integrity_untrusted",
+  ]);
+  assert.deepEqual(summary.blocking_reason_messages, [
+    "replay integrity untrusted",
+    "scenario integrity untrusted",
+  ]);
+});
