@@ -49,7 +49,7 @@ Phase 9 implementation may proceed only when an item is either:
 5. Confirm no source-of-truth contradiction in `source_logic_files` and `source_api_contracts`.
 6. Confirm the change does not violate the locked scope decision above.
 7. Complete the route contract entry required by `docs/agent-migration-contract-rules.md` for each `M7+` slice.
-8. For any `P12.x` follow-up, include the follow-up slice template fields from `docs/phase12-demo-audit-signup-migration-plan.md` in the PR body.
+8. For any `P12.x` follow-up, include the **Required PR body snippet** from `docs/phase12-demo-audit-signup-migration-plan.md`.
 
 ## Linked Migration Plans
 - `docs/agent-migration-contract-rules.md`
