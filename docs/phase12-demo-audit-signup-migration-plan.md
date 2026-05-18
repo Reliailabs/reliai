@@ -44,7 +44,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.21` Operational decision evidence checklist contract | Complete (merged) | merged to `main` |
 | `P12.22` Operational decision evidence summary contract | Complete (merged) | merged to `main` |
 | `P12.23` Evidence summary presenter parity | Complete (merged) | merged to `main` |
-| `P12.24` Presenter contract-consumption cleanup | Complete (this branch) | `feat/pulse-phase12-24-presenter-contract-consumption-cleanup` |
+| `P12.24` Presenter contract-consumption cleanup | Complete (merged) | merged to `main` |
+| `P12.25` Legacy mitigation helper retirement | Complete (this branch) | `feat/pulse-phase12-25-legacy-mitigation-helper-retirement` |
 
 ## Ownership contract
 
@@ -240,6 +241,13 @@ on these routes until Phase 11 read-path controls are stable and accepted.
   projections share the exact same input object.
 - Add smoke guard against legacy local fallback wording drift.
 
+23. `P12.25` Legacy mitigation helper retirement
+- Remove pre-integrity mitigation decision/message helper API from the contract module.
+- Ensure replay transition and contract tests consume `evaluateMitigationConclusionIntegrity(...)` directly.
+- Keep `canConcludeMitigation(...)` as a compatibility wrapper projected from the integrity result.
+- Follow-up: remove `canConcludeMitigation(...)` once remaining consumers adopt full integrity-result semantics
+  (`decision_allowed`, `policy_reasons`, `confidence_level`) end-to-end.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -266,7 +274,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - `P12.21` is merged.
 - `P12.22` is merged.
 - `P12.23` is merged.
-- `P12.24` removes remaining presenter-local decision wording and input drift risk.
+- `P12.24` is merged.
+- `P12.25` removes legacy mitigation-helper API to prevent parallel decision models.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 

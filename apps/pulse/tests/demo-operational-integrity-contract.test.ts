@@ -8,11 +8,8 @@ import {
   getOperationalDecisionEvidenceRequirements,
   getOperationalDecisionEvidenceSummary,
   getOperationalDecisionOutcomeMessage,
-  getMitigationOutcomeMessage,
   getReplayHealthLabel,
   deriveScenarioHealth,
-  getMitigationConclusionDecision,
-  getOperationalConclusionBlockMessage,
   getReplayHealthPolicy,
   getScenarioHealthLabel,
   getScenarioHealthPolicy,
@@ -98,52 +95,29 @@ test("mitigation conclusions require both replay and scenario health to allow co
   assert.equal(canConcludeMitigation(false, "healthy", "healthy"), false);
 });
 
-test("mitigation conclusion decision returns deterministic block reasons", () => {
-  assert.deepEqual(getMitigationConclusionDecision(true, "healthy", "healthy"), {
-    allowed: true,
-    block_reason: "none",
-  });
-  assert.deepEqual(getMitigationConclusionDecision(true, "unknown", "healthy"), {
-    allowed: false,
-    block_reason: "replay_health_not_trustworthy",
-  });
-  assert.deepEqual(getMitigationConclusionDecision(true, "healthy", "partial"), {
-    allowed: false,
-    block_reason: "scenario_health_not_trustworthy",
-  });
-  assert.deepEqual(getMitigationConclusionDecision(true, "stale", "unknown"), {
-    allowed: false,
-    block_reason: "both_health_dimensions_not_trustworthy",
-  });
-  assert.deepEqual(getMitigationConclusionDecision(false, "healthy", "healthy"), {
-    allowed: false,
-    block_reason: "replay_not_complete",
-  });
-});
+test("canConcludeMitigation stays equivalent to decision_allowed projection", () => {
+  const cases = [
+    { replay_done: true, replay_health: "healthy", scenario_health: "healthy" },
+    { replay_done: false, replay_health: "healthy", scenario_health: "healthy" },
+    { replay_done: true, replay_health: "unknown", scenario_health: "healthy" },
+    { replay_done: true, replay_health: "healthy", scenario_health: "partial" },
+    { replay_done: true, replay_health: "stale", scenario_health: "unknown" },
+  ] as const;
 
-test("mitigation messaging helpers are deterministic by conclusion decision", () => {
-  const allowed = getMitigationConclusionDecision(true, "healthy", "healthy");
-  assert.equal(getMitigationOutcomeMessage(allowed), "Mitigation outcome available.");
-  assert.equal(getOperationalConclusionBlockMessage(allowed), null);
-
-  const notComplete = getMitigationConclusionDecision(false, "healthy", "healthy");
-  assert.equal(
-    getMitigationOutcomeMessage(notComplete),
-    "Mitigation confidence pending replay integrity.",
-  );
-  assert.equal(getOperationalConclusionBlockMessage(notComplete), "replay not complete");
-
-  const unknownReplay = getMitigationConclusionDecision(true, "unknown", "healthy");
-  assert.equal(getOperationalConclusionBlockMessage(unknownReplay), "replay health not trustworthy");
-
-  const partialScenario = getMitigationConclusionDecision(true, "healthy", "partial");
-  assert.equal(
-    getOperationalConclusionBlockMessage(partialScenario),
-    "scenario health not trustworthy",
-  );
-
-  const staleReplay = getMitigationConclusionDecision(true, "stale", "healthy");
-  assert.equal(getOperationalConclusionBlockMessage(staleReplay), "replay health not trustworthy");
+  for (const c of cases) {
+    const decision = evaluateMitigationConclusionIntegrity({
+      ...c,
+      mitigation_evidence_exists: true,
+      rollback_evidence_exists: true,
+      causal_chain_complete: true,
+      severity_evidence_aligned: true,
+      arei_delta_linked_to_mitigation: true,
+    });
+    assert.equal(
+      canConcludeMitigation(c.replay_done, c.replay_health, c.scenario_health),
+      decision.decision_allowed,
+    );
+  }
 });
 
 test("health label helpers map replay/scenario states deterministically", () => {
