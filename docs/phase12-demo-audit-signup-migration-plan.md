@@ -31,6 +31,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.8` Demo impact/outcome contract depth | Complete (merged) | merged to `main` |
 | `P12.9` Replay resilience state contract | Complete (merged) | merged to `main` |
 | `P12.10` Health-dimension split contract | Complete (merged) | merged to `main` |
+| `P12.11` Dual-health policy semantics | Complete (merged) | merged to `main` |
+| `P12.12` Integrity contract unification | Complete (this branch) | `feat/pulse-phase12-12-integrity-contract-unification` |
 
 ## Ownership contract
 
@@ -121,6 +123,19 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Enforce independent policy notes and trust levels for each dimension.
 - Gate mitigation conclusion on both policy dimensions (not replay label alone).
 
+9. `P12.11` Dual-health policy semantics
+- Ensure replay integrity and scenario trust remain separate operational dimensions.
+- Keep mitigation conclusion blocked unless both dimensions are healthy.
+- Add explicit scenario notes and labels so partial/stale/unknown outcomes are visible to operators.
+
+10. `P12.12` Integrity contract unification
+- Consolidate replay/scenario policy logic into one contract module:
+  - `apps/pulse/lib/demo-operational-integrity-contract.ts`
+- Centralize health derivation from fixture profiles and mitigation-conclusion gating.
+- Remove split policy modules to prevent policy sprawl and semantic drift.
+- Replace split policy tests with unified contract tests:
+  - `apps/pulse/tests/demo-operational-integrity-contract.test.ts`
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -140,10 +155,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
   - enforced in `.github/workflows/qa.yml` (`pulse-route-gate`)
   - includes `pnpm --filter pulse test:phase12-demo-route-ownership-contract`
 
-## Phase 12 closure note
+## Phase 12 progress note
 
-- Implementation slices `P12.1` to `P12.5` are complete.
-- Route/ownership contract tests are aggregated and CI-enforced via `P12.6`.
+- Implementation slices `P12.1` to `P12.11` are merged.
+- `P12.12` unifies integrity policy contracts and is ready for PR.
+- Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
 ## Out of scope
