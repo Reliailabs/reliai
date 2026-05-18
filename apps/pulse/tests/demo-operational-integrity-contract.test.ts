@@ -129,4 +129,13 @@ test("mitigation messaging helpers are deterministic by conclusion decision", ()
 
   const unknownReplay = getMitigationConclusionDecision(true, "unknown", "healthy");
   assert.equal(getOperationalConclusionBlockMessage(unknownReplay), "replay health not trustworthy");
+
+  const partialScenario = getMitigationConclusionDecision(true, "healthy", "partial");
+  assert.equal(
+    getOperationalConclusionBlockMessage(partialScenario),
+    "scenario health not trustworthy",
+  );
+
+  const staleReplay = getMitigationConclusionDecision(true, "stale", "healthy");
+  assert.equal(getOperationalConclusionBlockMessage(staleReplay), "replay health not trustworthy");
 });
