@@ -16,16 +16,6 @@ export type ScenarioHealthPolicy = {
   allow_conclusion: boolean;
 };
 
-export type MitigationConclusionDecision = {
-  allowed: boolean;
-  block_reason:
-    | "none"
-    | "replay_not_complete"
-    | "replay_health_not_trustworthy"
-    | "scenario_health_not_trustworthy"
-    | "both_health_dimensions_not_trustworthy";
-};
-
 export type OperationalDecisionPolicyReason =
   | "replay_not_complete"
   | "replay_integrity_untrusted"
@@ -114,13 +104,6 @@ export function getOperationalDecisionPolicyReasonMessage(
   return "arei delta unlinked to mitigation";
 }
 
-export function getMitigationOutcomeMessage(decision: MitigationConclusionDecision): string {
-  if (decision.allowed) {
-    return "Mitigation outcome available.";
-  }
-  return "Mitigation confidence pending replay integrity.";
-}
-
 export function getReplayHealthLabel(health: ReplayHealth): string {
   if (health === "healthy") {
     return "Replay health: healthy";
@@ -145,25 +128,6 @@ export function getScenarioHealthLabel(health: ScenarioHealth): string {
     return "Scenario health: partial evidence";
   }
   return "Scenario health: unknown outcome";
-}
-
-export function getOperationalConclusionBlockMessage(
-  decision: MitigationConclusionDecision,
-): string | null {
-  if (decision.allowed || decision.block_reason === "none") {
-    return null;
-  }
-
-  if (decision.block_reason === "replay_not_complete") {
-    return "replay not complete";
-  }
-  if (decision.block_reason === "replay_health_not_trustworthy") {
-    return "replay health not trustworthy";
-  }
-  if (decision.block_reason === "scenario_health_not_trustworthy") {
-    return "scenario health not trustworthy";
-  }
-  return "both replay and scenario health are not trustworthy";
 }
 
 export function deriveReplayHealth(profile: DemoScenarioFixture["replay_profile"]): ReplayHealth {
@@ -267,31 +231,16 @@ export function canConcludeMitigation(
   replayHealth: ReplayHealth,
   scenarioHealth: ScenarioHealth,
 ): boolean {
-  return getMitigationConclusionDecision(replayDone, replayHealth, scenarioHealth).allowed;
-}
-
-export function getMitigationConclusionDecision(
-  replayDone: boolean,
-  replayHealth: ReplayHealth,
-  scenarioHealth: ScenarioHealth,
-): MitigationConclusionDecision {
-  if (!replayDone) {
-    return { allowed: false, block_reason: "replay_not_complete" };
-  }
-
-  const replayAllowed = getReplayHealthPolicy(replayHealth).allow_conclusion;
-  const scenarioAllowed = getScenarioHealthPolicy(scenarioHealth).allow_conclusion;
-
-  if (replayAllowed && scenarioAllowed) {
-    return { allowed: true, block_reason: "none" };
-  }
-  if (!replayAllowed && !scenarioAllowed) {
-    return { allowed: false, block_reason: "both_health_dimensions_not_trustworthy" };
-  }
-  if (!replayAllowed) {
-    return { allowed: false, block_reason: "replay_health_not_trustworthy" };
-  }
-  return { allowed: false, block_reason: "scenario_health_not_trustworthy" };
+  return evaluateMitigationConclusionIntegrity({
+    replay_done: replayDone,
+    replay_health: replayHealth,
+    scenario_health: scenarioHealth,
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  }).decision_allowed;
 }
 
 export function evaluateMitigationConclusionIntegrity(
