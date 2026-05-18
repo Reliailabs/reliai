@@ -15,4 +15,5 @@ test("demo route renders deterministic scenario surface with contract sections",
   assert.match(html, /trace-demo-001/);
   assert.match(html, /AREI movement/);
   assert.match(html, /Mitigation outcome/);
+  assert.match(html, /Replay health: healthy/);
 });
