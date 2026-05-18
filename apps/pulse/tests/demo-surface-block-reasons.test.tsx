@@ -56,3 +56,16 @@ test("demo surface shows combined health block reason once replay is complete", 
   assert.match(html, /Operational conclusion blocked:/);
   assert.match(html, /both replay and scenario health are not trustworthy/);
 });
+
+test("demo surface renders mitigation outcome when replay is complete and health dimensions are trusted", () => {
+  const fixture = buildFixture({
+    replayUnknown: false,
+    scenarioUnknown: false,
+    completedReplay: true,
+  });
+  const html = renderToStaticMarkup(<DemoScenarioSurface fixture={fixture} />);
+
+  const escapedOutcome = fixture.mitigation_outcome.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  assert.match(html, new RegExp(escapedOutcome));
+  assert.doesNotMatch(html, /Operational conclusion blocked:/);
+});
