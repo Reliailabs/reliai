@@ -74,7 +74,19 @@ export function DemoScenarioSurface() {
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {frame.done ? "Policy staged, verified, and incident contained." : "Mitigation in progress."}
+              {frame.done ? fixture.mitigation_outcome : "Mitigation in progress."}
+            </p>
+          </article>
+
+          <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 md:col-span-2">
+            <h2 className="text-sm font-medium text-zinc-200">Business impact and counterfactual</h2>
+            <p className="mt-2 text-sm text-zinc-300">{fixture.business_impact.narrative}</p>
+            <p className="mt-2 text-xs text-zinc-400">
+              At-risk revenue: ${fixture.business_impact.at_risk_revenue_usd.toLocaleString()} · Impacted sessions:{" "}
+              {fixture.business_impact.impacted_sessions}
+            </p>
+            <p className="mt-3 text-xs text-zinc-500">
+              Without Reliai: {fixture.without_reliai_outcome}
             </p>
           </article>
         </section>

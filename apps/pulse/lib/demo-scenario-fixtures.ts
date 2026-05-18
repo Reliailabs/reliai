@@ -24,6 +24,13 @@ export type DemoScenarioFixture = {
   incident: DemoScenarioIncident;
   trace: DemoScenarioTrace;
   reliability: DemoScenarioReliability;
+  business_impact: {
+    at_risk_revenue_usd: number;
+    impacted_sessions: number;
+    narrative: string;
+  };
+  without_reliai_outcome: string;
+  mitigation_outcome: string;
   timeline: ReadonlyArray<{
     id: string;
     step: string;
@@ -51,6 +58,15 @@ const FIXTURE: DemoScenarioFixture = {
     after_score: 79,
     verification_pass_rate: 0.83,
   },
+  business_impact: {
+    at_risk_revenue_usd: 24000,
+    impacted_sessions: 127,
+    narrative: "Refund approvals above policy threshold created direct financial exposure.",
+  },
+  without_reliai_outcome:
+    "Refund policy drift remains undetected, exposure expands, and customer trust degrades before escalation.",
+  mitigation_outcome:
+    "Guardrail policy blocks out-of-threshold approvals and routes edge cases for operator review.",
   timeline: [
     {
       id: "evt-demo-001",
