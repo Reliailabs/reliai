@@ -12,10 +12,16 @@ test("phase13 error envelope includes all validation acceptance flags", async ()
   assert.equal(payload.mode, "validation_only");
   assert.equal(payload.execution_granted, false);
   assert.equal(payload.ok, false);
+  assert.equal(payload.response_class, "rejected_policy");
   assert.equal(payload.ingest_accepted, false);
   assert.equal(payload.create_accepted, false);
   assert.equal(payload.transition_accepted, false);
   assert.equal(payload.verification_write_accepted, false);
+  assert.deepEqual(payload.retry_policy, {
+    retryable: false,
+    retry_after_ms: null,
+    reason: "non_retryable_class",
+  });
 });
 
 test("phase13 error envelope preserves explicit parse errors", async () => {
@@ -24,6 +30,12 @@ test("phase13 error envelope preserves explicit parse errors", async () => {
 
   const payload = (await response.json()) as { errors?: unknown };
   assert.deepEqual(payload.errors, ["invalid JSON body"]);
+  assert.equal((payload as Record<string, unknown>).response_class, "rejected_schema");
+  assert.deepEqual((payload as Record<string, unknown>).retry_policy, {
+    retryable: false,
+    retry_after_ms: null,
+    reason: "non_retryable_class",
+  });
 });
 
 test("phase13 rejected-policy helper includes retry policy and route-specific acceptance flags", async () => {
