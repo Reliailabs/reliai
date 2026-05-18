@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 
 import {
-  canConcludeMitigation,
   getReplayHealthPolicy,
+  getMitigationConclusionDecision,
   getScenarioHealthPolicy,
 } from "@/lib/demo-operational-integrity-contract";
 import { createDemoScenarioReplayController } from "@/lib/demo-scenario-engine";
@@ -18,6 +18,10 @@ export function DemoScenarioSurface() {
   const reliabilityDelta = frame.reliability_after_score - frame.reliability_before_score;
   const healthPolicy = getReplayHealthPolicy(frame.replay_health);
   const scenarioPolicy = getScenarioHealthPolicy(frame.scenario_health);
+  const conclusionDecision = getMitigationConclusionDecision(
+    frame.replay_health,
+    frame.scenario_health,
+  );
   const healthLabel =
     frame.replay_health === "healthy"
       ? "Replay health: healthy"
@@ -100,12 +104,24 @@ export function DemoScenarioSurface() {
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {frame.done && canConcludeMitigation(frame.replay_health, frame.scenario_health)
+              {frame.done && conclusionDecision.allowed
                 ? fixture.mitigation_outcome
                 : "Mitigation confidence pending replay integrity."}
             </p>
             <p className="mt-2 text-xs text-zinc-500">{healthPolicy.mitigation_note}</p>
             <p className="mt-1 text-xs text-zinc-500">{scenarioPolicy.scenario_note}</p>
+            {!conclusionDecision.allowed ? (
+              <p className="mt-1 text-xs text-amber-300">
+                Operational conclusion blocked:{" "}
+                {conclusionDecision.block_reason === "replay_health_not_trustworthy"
+                  ? "replay health not trustworthy"
+                  : conclusionDecision.block_reason === "scenario_health_not_trustworthy"
+                    ? "scenario health not trustworthy"
+                    : conclusionDecision.block_reason === "both_health_dimensions_not_trustworthy"
+                      ? "both replay and scenario health are not trustworthy"
+                      : "none"}
+              </p>
+            ) : null}
           </article>
 
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 md:col-span-2">

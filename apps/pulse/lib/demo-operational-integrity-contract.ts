@@ -16,6 +16,15 @@ export type ScenarioHealthPolicy = {
   allow_conclusion: boolean;
 };
 
+export type MitigationConclusionDecision = {
+  allowed: boolean;
+  block_reason:
+    | "none"
+    | "replay_health_not_trustworthy"
+    | "scenario_health_not_trustworthy"
+    | "both_health_dimensions_not_trustworthy";
+};
+
 export function deriveReplayHealth(profile: DemoScenarioFixture["replay_profile"]): ReplayHealth {
   if (profile.unknown_outcome) {
     return "unknown";
@@ -116,8 +125,24 @@ export function canConcludeMitigation(
   replayHealth: ReplayHealth,
   scenarioHealth: ScenarioHealth,
 ): boolean {
-  return (
-    getReplayHealthPolicy(replayHealth).allow_conclusion &&
-    getScenarioHealthPolicy(scenarioHealth).allow_conclusion
-  );
+  return getMitigationConclusionDecision(replayHealth, scenarioHealth).allowed;
+}
+
+export function getMitigationConclusionDecision(
+  replayHealth: ReplayHealth,
+  scenarioHealth: ScenarioHealth,
+): MitigationConclusionDecision {
+  const replayAllowed = getReplayHealthPolicy(replayHealth).allow_conclusion;
+  const scenarioAllowed = getScenarioHealthPolicy(scenarioHealth).allow_conclusion;
+
+  if (replayAllowed && scenarioAllowed) {
+    return { allowed: true, block_reason: "none" };
+  }
+  if (!replayAllowed && !scenarioAllowed) {
+    return { allowed: false, block_reason: "both_health_dimensions_not_trustworthy" };
+  }
+  if (!replayAllowed) {
+    return { allowed: false, block_reason: "replay_health_not_trustworthy" };
+  }
+  return { allowed: false, block_reason: "scenario_health_not_trustworthy" };
 }

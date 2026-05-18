@@ -5,6 +5,7 @@ import {
   canConcludeMitigation,
   deriveReplayHealth,
   deriveScenarioHealth,
+  getMitigationConclusionDecision,
   getReplayHealthPolicy,
   getScenarioHealthPolicy,
 } from "../lib/demo-operational-integrity-contract";
@@ -84,4 +85,25 @@ test("mitigation conclusions require both replay and scenario health to allow co
   assert.equal(canConcludeMitigation("partial", "healthy"), false);
   assert.equal(canConcludeMitigation("healthy", "partial"), false);
   assert.equal(canConcludeMitigation("unknown", "healthy"), false);
+  assert.equal(canConcludeMitigation("healthy", "unknown"), false);
+  assert.equal(canConcludeMitigation("unknown", "unknown"), false);
+});
+
+test("mitigation conclusion decision returns deterministic block reasons", () => {
+  assert.deepEqual(getMitigationConclusionDecision("healthy", "healthy"), {
+    allowed: true,
+    block_reason: "none",
+  });
+  assert.deepEqual(getMitigationConclusionDecision("unknown", "healthy"), {
+    allowed: false,
+    block_reason: "replay_health_not_trustworthy",
+  });
+  assert.deepEqual(getMitigationConclusionDecision("healthy", "partial"), {
+    allowed: false,
+    block_reason: "scenario_health_not_trustworthy",
+  });
+  assert.deepEqual(getMitigationConclusionDecision("stale", "unknown"), {
+    allowed: false,
+    block_reason: "both_health_dimensions_not_trustworthy",
+  });
 });
