@@ -5,7 +5,7 @@ import { getOperationsIngestRepo } from "@/lib/operations-ingest-repository";
 import { validateLifecycleCreateContract } from "@/lib/operations-lifecycle-create";
 import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
-import { phase13ErrorResponse, withPhase13Envelope } from "../../../_response";
+import { phase13ErrorResponse, phase13RejectedPolicyResponse, withPhase13Envelope } from "../../../_response";
 
 export async function POST(request: Request) {
   const session = await getOperatorSession();
@@ -66,15 +66,9 @@ export async function POST(request: Request) {
       },
     });
   } catch {
-    return NextResponse.json(
-      withPhase13Envelope({
-        ok: false as const,
-        create_accepted: false as const,
-        response_class: "rejected_policy" as const,
-        errors: ["lifecycle-create persistence backend unavailable"],
-        warnings: [],
-      }),
-      { status: 503 },
+    return phase13RejectedPolicyResponse(
+      { create_accepted: false },
+      "lifecycle-create persistence backend unavailable",
     );
   }
 
