@@ -8,17 +8,28 @@ import {
   getScenarioHealthPolicy,
 } from "@/lib/demo-operational-integrity-contract";
 import { createDemoScenarioReplayController } from "@/lib/demo-scenario-engine";
-import { getDemoScenarioFixture } from "@/lib/demo-scenario-fixtures";
+import { getDemoScenarioFixture, type DemoScenarioFixture } from "@/lib/demo-scenario-fixtures";
 
-export function DemoScenarioSurface() {
-  const replay = useMemo(() => createDemoScenarioReplayController(), []);
-  const fixture = useMemo(() => getDemoScenarioFixture(), []);
+type DemoScenarioSurfaceProps = {
+  fixture?: DemoScenarioFixture;
+};
+
+export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfaceProps = {}) {
+  const fixture = useMemo(
+    () => fixtureProp ?? getDemoScenarioFixture(),
+    [fixtureProp],
+  );
+  const replay = useMemo(
+    () => createDemoScenarioReplayController(fixture),
+    [fixture],
+  );
   const [frame, setFrame] = useState(() => replay.current());
 
   const reliabilityDelta = frame.reliability_after_score - frame.reliability_before_score;
   const healthPolicy = getReplayHealthPolicy(frame.replay_health);
   const scenarioPolicy = getScenarioHealthPolicy(frame.scenario_health);
   const conclusionDecision = getMitigationConclusionDecision(
+    frame.done,
     frame.replay_health,
     frame.scenario_health,
   );
@@ -104,7 +115,7 @@ export function DemoScenarioSurface() {
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {frame.done && conclusionDecision.allowed
+              {conclusionDecision.allowed
                 ? fixture.mitigation_outcome
                 : "Mitigation confidence pending replay integrity."}
             </p>
@@ -115,6 +126,8 @@ export function DemoScenarioSurface() {
                 Operational conclusion blocked:{" "}
                 {conclusionDecision.block_reason === "replay_health_not_trustworthy"
                   ? "replay health not trustworthy"
+                  : conclusionDecision.block_reason === "replay_not_complete"
+                    ? "replay not complete"
                   : conclusionDecision.block_reason === "scenario_health_not_trustworthy"
                     ? "scenario health not trustworthy"
                     : conclusionDecision.block_reason === "both_health_dimensions_not_trustworthy"

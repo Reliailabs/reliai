@@ -81,29 +81,34 @@ test("derivers map fixture profiles to health states", () => {
 });
 
 test("mitigation conclusions require both replay and scenario health to allow conclusions", () => {
-  assert.equal(canConcludeMitigation("healthy", "healthy"), true);
-  assert.equal(canConcludeMitigation("partial", "healthy"), false);
-  assert.equal(canConcludeMitigation("healthy", "partial"), false);
-  assert.equal(canConcludeMitigation("unknown", "healthy"), false);
-  assert.equal(canConcludeMitigation("healthy", "unknown"), false);
-  assert.equal(canConcludeMitigation("unknown", "unknown"), false);
+  assert.equal(canConcludeMitigation(true, "healthy", "healthy"), true);
+  assert.equal(canConcludeMitigation(true, "partial", "healthy"), false);
+  assert.equal(canConcludeMitigation(true, "healthy", "partial"), false);
+  assert.equal(canConcludeMitigation(true, "unknown", "healthy"), false);
+  assert.equal(canConcludeMitigation(true, "healthy", "unknown"), false);
+  assert.equal(canConcludeMitigation(true, "unknown", "unknown"), false);
+  assert.equal(canConcludeMitigation(false, "healthy", "healthy"), false);
 });
 
 test("mitigation conclusion decision returns deterministic block reasons", () => {
-  assert.deepEqual(getMitigationConclusionDecision("healthy", "healthy"), {
+  assert.deepEqual(getMitigationConclusionDecision(true, "healthy", "healthy"), {
     allowed: true,
     block_reason: "none",
   });
-  assert.deepEqual(getMitigationConclusionDecision("unknown", "healthy"), {
+  assert.deepEqual(getMitigationConclusionDecision(true, "unknown", "healthy"), {
     allowed: false,
     block_reason: "replay_health_not_trustworthy",
   });
-  assert.deepEqual(getMitigationConclusionDecision("healthy", "partial"), {
+  assert.deepEqual(getMitigationConclusionDecision(true, "healthy", "partial"), {
     allowed: false,
     block_reason: "scenario_health_not_trustworthy",
   });
-  assert.deepEqual(getMitigationConclusionDecision("stale", "unknown"), {
+  assert.deepEqual(getMitigationConclusionDecision(true, "stale", "unknown"), {
     allowed: false,
     block_reason: "both_health_dimensions_not_trustworthy",
+  });
+  assert.deepEqual(getMitigationConclusionDecision(false, "healthy", "healthy"), {
+    allowed: false,
+    block_reason: "replay_not_complete",
   });
 });

@@ -17,4 +17,6 @@ test("demo route renders deterministic scenario surface with contract sections",
   assert.match(html, /Mitigation outcome/);
   assert.match(html, /Replay health: healthy/);
   assert.match(html, /Scenario health: healthy/);
+  assert.match(html, /Operational conclusion blocked:/);
+  assert.match(html, /replay not complete/);
 });
