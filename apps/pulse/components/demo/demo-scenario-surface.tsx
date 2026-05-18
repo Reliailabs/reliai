@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import {
   evaluateMitigationConclusionIntegrity,
-  getOperationalDecisionPolicyReasonMessage,
+  getOperationalDecisionEvidenceSummary,
   getReplayHealthLabel,
   getReplayHealthPolicy,
   getScenarioHealthLabel,
@@ -46,9 +46,18 @@ export function DemoScenarioSurface({
     arei_delta_linked_to_mitigation: true,
     allow_degraded_integrity_conclusion: allowDegradedIntegrityConclusion,
   });
-  const blockMessages = conclusionDecision.policy_reasons.map(
-    getOperationalDecisionPolicyReasonMessage,
-  );
+  const evidenceSummary = getOperationalDecisionEvidenceSummary({
+    replay_done: frame.done,
+    replay_health: frame.replay_health,
+    scenario_health: frame.scenario_health,
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+    allow_degraded_integrity_conclusion: allowDegradedIntegrityConclusion,
+  });
+  const blockMessages = evidenceSummary.blocking_reason_messages;
   const healthLabel = getReplayHealthLabel(frame.replay_health);
   const scenarioLabel = getScenarioHealthLabel(frame.scenario_health);
 
@@ -128,6 +137,13 @@ export function DemoScenarioSurface({
                 Operational conclusion blocked: {blockMessages.join(", ")}
               </p>
             ) : null}
+            <p className="mt-1 text-xs text-zinc-500">
+              Evidence requirements: {evidenceSummary.satisfied_requirements}/
+              {evidenceSummary.total_requirements} satisfied
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              Blocking requirements: {evidenceSummary.blocking_requirements}
+            </p>
             <p className="mt-1 text-xs text-zinc-500">
               Conclusion confidence: {conclusionDecision.confidence_level}
             </p>

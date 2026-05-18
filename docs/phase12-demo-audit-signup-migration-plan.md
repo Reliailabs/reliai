@@ -42,7 +42,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.19` Health label contract alignment | Complete (merged) | merged to `main` |
 | `P12.20` Operational decision integrity policy | Complete (merged) | merged to `main` |
 | `P12.21` Operational decision evidence checklist contract | Complete (merged) | merged to `main` |
-| `P12.22` Operational decision evidence summary contract | Complete (this branch) | `feat/pulse-phase12-22-operational-evidence-summary-contract` |
+| `P12.22` Operational decision evidence summary contract | Complete (merged) | merged to `main` |
+| `P12.23` Evidence summary presenter parity | Complete (this branch) | `feat/pulse-phase12-23-evidence-summary-presenter-parity` |
 
 ## Ownership contract
 
@@ -222,6 +223,15 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Enforce that summary reasons follow `evaluateMitigationConclusionIntegrity(...)` outputs.
 - Keep slice contract-only (no layout/marketing changes).
 
+21. `P12.23` Evidence summary presenter parity
+- Wire `/demo` presenter to render contract-owned summary fields from
+  `getOperationalDecisionEvidenceSummary(...)`:
+  - satisfied/total evidence requirements
+  - blocking requirement count
+  - deterministic blocking reason messages
+- Remove presenter-side aggregation of evidence requirement semantics.
+- Extend surface smoke coverage for summary counts in blocked/allowed/degraded paths.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -246,7 +256,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Implementation slices `P12.1` to `P12.19` are merged.
 - `P12.20` is merged.
 - `P12.21` is merged.
-- `P12.22` adds deterministic operational evidence summary outputs and tests.
+- `P12.22` is merged.
+- `P12.23` wires summary contract outputs into `/demo` presenter with smoke coverage.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
