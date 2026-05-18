@@ -42,6 +42,29 @@ type RejectedPolicyAcceptedFlags = {
   verification_write_accepted?: false;
 };
 
+type ValidationRejectionPayload = {
+  ok: false;
+  response_class:
+    | "rejected_schema"
+    | "rejected_idempotency"
+    | "rejected_policy"
+    | "rejected_timestamp"
+    | "rejected_target_mismatch"
+    | "rejected_transition";
+  errors: string[];
+  warnings: string[];
+};
+
+export function phase13ValidationRejectionResponse<T extends ValidationRejectionPayload>(payload: T, status = 422) {
+  return NextResponse.json(
+    withPhase13Envelope({
+      ...payload,
+      retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: payload.response_class }),
+    }),
+    { status },
+  );
+}
+
 export function phase13RejectedPolicyResponse(
   acceptedFlags: RejectedPolicyAcceptedFlags,
   message: string,

@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { phase13ErrorResponse, phase13RejectedPolicyResponse } from "../app/api/actions/operations/_response";
+import {
+  phase13ErrorResponse,
+  phase13RejectedPolicyResponse,
+  phase13ValidationRejectionResponse,
+} from "../app/api/actions/operations/_response";
 
 test("phase13 error envelope includes all validation acceptance flags", async () => {
   const response = phase13ErrorResponse(401, "unauthorized");
@@ -80,4 +84,28 @@ test("phase13 rejected-policy helper preserves acceptance-flag parity across val
       reason: "non_retryable_class",
     });
   }
+});
+
+test("phase13 validation-rejection helper injects deterministic retry policy", async () => {
+  const response = phase13ValidationRejectionResponse(
+    {
+      ok: false as const,
+      response_class: "rejected_timestamp" as const,
+      errors: ["occurred_at must be within 24h"],
+      warnings: [],
+    },
+    422,
+  );
+
+  assert.equal(response.status, 422);
+  const payload = (await response.json()) as Record<string, unknown>;
+  assert.equal(payload.contract_version, "phase13-v1");
+  assert.equal(payload.mode, "validation_only");
+  assert.equal(payload.execution_granted, false);
+  assert.equal(payload.response_class, "rejected_timestamp");
+  assert.deepEqual(payload.retry_policy, {
+    retryable: true,
+    retry_after_ms: 15000,
+    reason: "clock_skew_or_timing_window",
+  });
 });
