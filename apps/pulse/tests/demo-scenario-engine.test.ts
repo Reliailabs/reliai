@@ -14,6 +14,7 @@ test("demo scenario replay starts at deterministic empty frame", () => {
   assert.equal(frame.event_id, null);
   assert.equal(frame.scenario_id, "demo-inc-refund-policy-001");
   assert.equal(frame.replay_health, "healthy");
+  assert.equal(frame.scenario_health, "healthy");
 });
 
 test("demo scenario replay advances deterministically and finishes mitigated", () => {
@@ -69,6 +70,8 @@ test("demo scenario replay surfaces stale/partial/unknown health deterministical
   const unknown = createDemoScenarioReplayController({
     ...base,
     replay_profile: { stale: false, partial: false, unknown_outcome: true },
+    scenario_profile: { stale_mitigation: false, partial_evidence: false, unknown_outcome: true },
   }).current();
   assert.equal(unknown.replay_health, "unknown");
+  assert.equal(unknown.scenario_health, "unknown");
 });
