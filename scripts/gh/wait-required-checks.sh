@@ -27,6 +27,11 @@ fi
 
 echo "Watching PR #${PR_NUMBER} for required checks: ${REQUIRED_CHECKS[*]}"
 
+until gh pr checks "${PR_NUMBER}" --json name,state >/dev/null 2>&1; do
+  echo "Checks not started yet for PR #${PR_NUMBER}; retrying in 5s..."
+  sleep 5
+done
+
 gh pr checks "${PR_NUMBER}" --watch --interval 10
 
 all_green=true
