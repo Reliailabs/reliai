@@ -69,6 +69,14 @@ export type OperationalDecisionEvidenceRequirement = {
   blocking: boolean;
 };
 
+export type OperationalDecisionEvidenceSummary = {
+  total_requirements: number;
+  satisfied_requirements: number;
+  blocking_requirements: number;
+  blocking_reasons: OperationalDecisionPolicyReason[];
+  blocking_reason_messages: string[];
+};
+
 export function getOperationalDecisionPolicyReasonMessage(
   reason: OperationalDecisionPolicyReason,
 ): string {
@@ -402,4 +410,20 @@ export function getOperationalDecisionEvidenceRequirements(
       blocking: !input.arei_delta_linked_to_mitigation,
     },
   ];
+}
+
+export function getOperationalDecisionEvidenceSummary(
+  input: OperationalDecisionIntegrityInput,
+): OperationalDecisionEvidenceSummary {
+  const requirements = getOperationalDecisionEvidenceRequirements(input);
+  const integrity = evaluateMitigationConclusionIntegrity(input);
+  const blocking_reasons = integrity.policy_reasons;
+
+  return {
+    total_requirements: requirements.length,
+    satisfied_requirements: requirements.filter((item) => item.satisfied).length,
+    blocking_requirements: requirements.filter((item) => item.blocking).length,
+    blocking_reasons,
+    blocking_reason_messages: blocking_reasons.map(getOperationalDecisionPolicyReasonMessage),
+  };
 }

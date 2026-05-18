@@ -6,6 +6,7 @@ import {
   deriveReplayHealth,
   evaluateMitigationConclusionIntegrity,
   getOperationalDecisionEvidenceRequirements,
+  getOperationalDecisionEvidenceSummary,
   getMitigationOutcomeMessage,
   getReplayHealthLabel,
   deriveScenarioHealth,
@@ -378,4 +379,57 @@ test("operational decision evidence requirements: blocking checklist items map t
       `Requirement '${requirement.id}' blocking state must match policy reason presence`,
     );
   }
+});
+
+test("operational decision evidence summary: derived from policy reasons and requirement states", () => {
+  const input = {
+    replay_done: false,
+    replay_health: "unknown" as const,
+    scenario_health: "partial" as const,
+    mitigation_evidence_exists: false,
+    rollback_evidence_exists: true,
+    causal_chain_complete: false,
+    severity_evidence_aligned: false,
+    arei_delta_linked_to_mitigation: true,
+  };
+
+  const summary = getOperationalDecisionEvidenceSummary(input);
+  assert.equal(summary.total_requirements, 8);
+  assert.equal(summary.satisfied_requirements, 2);
+  assert.equal(summary.blocking_requirements, 6);
+  assert.deepEqual(summary.blocking_reasons, [
+    "replay_not_complete",
+    "replay_integrity_untrusted",
+    "scenario_integrity_untrusted",
+    "mitigation_evidence_missing",
+    "causal_chain_incomplete",
+    "severity_evidence_mismatch",
+  ]);
+  assert.deepEqual(summary.blocking_reason_messages, [
+    "replay not complete",
+    "replay integrity untrusted",
+    "scenario integrity untrusted",
+    "mitigation evidence missing",
+    "causal chain incomplete",
+    "severity evidence mismatch",
+  ]);
+});
+
+test("operational decision evidence summary: healthy state has no blockers", () => {
+  const summary = getOperationalDecisionEvidenceSummary({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  });
+
+  assert.equal(summary.total_requirements, 8);
+  assert.equal(summary.satisfied_requirements, 8);
+  assert.equal(summary.blocking_requirements, 0);
+  assert.deepEqual(summary.blocking_reasons, []);
+  assert.deepEqual(summary.blocking_reason_messages, []);
 });
