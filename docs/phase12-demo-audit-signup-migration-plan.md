@@ -36,7 +36,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.13` Operational conclusion guard reasons | Complete (merged) | merged to `main` |
 | `P12.14` Blocked-state surface proof | Complete (merged) | merged to `main` |
 | `P12.15` Conclusion completion gate | Complete (merged) | merged to `main` |
-| `P12.16` Conclusion success-path surface proof | Complete (this branch) | `feat/pulse-phase12-16-conclusion-success-surface-proof` |
+| `P12.16` Conclusion success-path surface proof | Complete (merged) | merged to `main` |
+| `P12.17` Replay conclusion transition proof | Complete (this branch) | `feat/pulse-phase12-17-replay-transition-proof` |
 
 ## Ownership contract
 
@@ -169,6 +170,12 @@ on these routes until Phase 11 read-path controls are stable and accepted.
   - scenario health is trusted
 - Verify blocked-label text is absent in this allowed-conclusion state.
 
+15. `P12.17` Replay conclusion transition proof
+- Add a deterministic transition test linking replay progression to conclusion eligibility.
+- Prove initial replay frame blocks conclusions with `replay_not_complete`.
+- Prove post-completion replay frame allows conclusions with `none` block reason when health is trusted.
+- Wire this test into the canonical `phase12-route-ownership-gate`.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -190,8 +197,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 ## Phase 12 progress note
 
-- Implementation slices `P12.1` to `P12.15` are merged.
-- `P12.16` adds success-path surface proof coverage and is ready for PR.
+- Implementation slices `P12.1` to `P12.16` are merged.
+- `P12.17` adds replay-transition conclusion proof and is ready for PR.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
