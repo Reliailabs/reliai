@@ -91,6 +91,24 @@ Primary test surfaces:
 
 - Keep this document as a contract/gate reference only; detailed execution history belongs in PRs and changelog, not inline phase logs.
 
+### Follow-up slice template
+
+Use this for any post-closure `P12.x` slice:
+
+- `slice_id`: `P12.x`
+- `scope`: one-line boundary (contract-only, presenter-consumption-only, docs-only, etc.)
+- `routes_touched`: `/demo`, `/ai-reliability-audit`, `/signup` (or `none`)
+- `invariants_touched`:
+  - deterministic replay
+  - no presenter reinterpretation
+  - contract-owned decision semantics
+  - CTA label/destination alignment
+  - no live provider runtime dependency
+- `validation`:
+  - `pnpm --filter pulse test:phase12-route-ownership-gate`
+  - any additional targeted tests
+- `risk_rollback`: concise rollback note
+
 ## Operational invariants
 
 - Demo behavior must remain deterministic and replayable.
