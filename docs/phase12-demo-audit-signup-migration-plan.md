@@ -54,7 +54,6 @@ Define migration ownership, acceptance criteria, and validation gates for:
 
 - `.github/workflows/qa.yml` via `pulse-route-gate`
 - includes `pnpm --filter pulse test:phase12-demo-route-ownership-contract`
-- includes `Validate Phase 12 PR body contract` (`scripts/ci/validate_phase12_pr_body.sh`) for `phase12` pull requests
 
 ## Manual reviewer checks
 
