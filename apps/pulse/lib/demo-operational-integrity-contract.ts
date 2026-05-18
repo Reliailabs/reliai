@@ -33,6 +33,32 @@ export function getMitigationOutcomeMessage(decision: MitigationConclusionDecisi
   return "Mitigation confidence pending replay integrity.";
 }
 
+export function getReplayHealthLabel(health: ReplayHealth): string {
+  if (health === "healthy") {
+    return "Replay health: healthy";
+  }
+  if (health === "stale") {
+    return "Replay health: stale snapshot";
+  }
+  if (health === "partial") {
+    return "Replay health: partial evidence";
+  }
+  return "Replay health: unknown outcome";
+}
+
+export function getScenarioHealthLabel(health: ScenarioHealth): string {
+  if (health === "healthy") {
+    return "Scenario health: healthy";
+  }
+  if (health === "stale") {
+    return "Scenario health: stale mitigation";
+  }
+  if (health === "partial") {
+    return "Scenario health: partial evidence";
+  }
+  return "Scenario health: unknown outcome";
+}
+
 export function getOperationalConclusionBlockMessage(
   decision: MitigationConclusionDecision,
 ): string | null {

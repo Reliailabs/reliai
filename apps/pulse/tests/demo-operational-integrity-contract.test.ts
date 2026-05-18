@@ -5,10 +5,12 @@ import {
   canConcludeMitigation,
   deriveReplayHealth,
   getMitigationOutcomeMessage,
+  getReplayHealthLabel,
   deriveScenarioHealth,
   getMitigationConclusionDecision,
   getOperationalConclusionBlockMessage,
   getReplayHealthPolicy,
+  getScenarioHealthLabel,
   getScenarioHealthPolicy,
 } from "../lib/demo-operational-integrity-contract";
 
@@ -138,4 +140,16 @@ test("mitigation messaging helpers are deterministic by conclusion decision", ()
 
   const staleReplay = getMitigationConclusionDecision(true, "stale", "healthy");
   assert.equal(getOperationalConclusionBlockMessage(staleReplay), "replay health not trustworthy");
+});
+
+test("health label helpers map replay/scenario states deterministically", () => {
+  assert.equal(getReplayHealthLabel("healthy"), "Replay health: healthy");
+  assert.equal(getReplayHealthLabel("stale"), "Replay health: stale snapshot");
+  assert.equal(getReplayHealthLabel("partial"), "Replay health: partial evidence");
+  assert.equal(getReplayHealthLabel("unknown"), "Replay health: unknown outcome");
+
+  assert.equal(getScenarioHealthLabel("healthy"), "Scenario health: healthy");
+  assert.equal(getScenarioHealthLabel("stale"), "Scenario health: stale mitigation");
+  assert.equal(getScenarioHealthLabel("partial"), "Scenario health: partial evidence");
+  assert.equal(getScenarioHealthLabel("unknown"), "Scenario health: unknown outcome");
 });

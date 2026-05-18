@@ -38,7 +38,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.15` Conclusion completion gate | Complete (merged) | merged to `main` |
 | `P12.16` Conclusion success-path surface proof | Complete (merged) | merged to `main` |
 | `P12.17` Replay conclusion transition proof | Complete (merged) | merged to `main` |
-| `P12.18` Mitigation message contract alignment | Complete (this branch) | `feat/pulse-phase12-18-mitigation-message-contract` |
+| `P12.18` Mitigation message contract alignment | Complete (merged) | merged to `main` |
+| `P12.19` Health label contract alignment | Complete (this branch) | `feat/pulse-phase12-19-health-label-contract` |
 
 ## Ownership contract
 
@@ -182,6 +183,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Remove duplicated message selection logic from the `/demo` presenter.
 - Add deterministic helper coverage to prevent future copy-to-contract drift.
 
+17. `P12.19` Health label contract alignment
+- Move replay/scenario health label mapping from presenter logic into contract helpers.
+- Ensure label semantics are contract-owned and test-enforced.
+- Eliminate ad hoc presenter-side label branching.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -203,8 +209,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 ## Phase 12 progress note
 
-- Implementation slices `P12.1` to `P12.17` are merged.
-- `P12.18` aligns mitigation/status messaging with decision contract semantics and is ready for PR.
+- Implementation slices `P12.1` to `P12.18` are merged.
+- `P12.19` aligns health label mapping with contract semantics and is ready for PR.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
