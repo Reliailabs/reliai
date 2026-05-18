@@ -14,7 +14,6 @@
     "screenshots:marketing": "pnpm exec tsx scripts/generate_screenshots.ts",
     "screenshots:marketing:core": "pnpm exec tsx scripts/generate_marketing_screenshots.ts",
     "screenshots:playground": "pnpm exec tsx scripts/generate_playground_screenshots.ts",
-    "pr:wait-required-checks": "scripts/gh/wait-required-checks.sh",
     "start": "echo 'Use Railway Config-as-Code to deploy'"
   },
   "devDependencies": {

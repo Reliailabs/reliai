@@ -6,10 +6,6 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ $# -gt 0 && "$1" == "--" ]]; then
-  shift
-fi
-
 if [[ $# -lt 1 ]]; then
   echo "usage: $0 <pr-number> [check-name ...]" >&2
   echo "example: $0 242 pulse-route-gate operator-smoke" >&2
@@ -26,11 +22,6 @@ else
 fi
 
 echo "Watching PR #${PR_NUMBER} for required checks: ${REQUIRED_CHECKS[*]}"
-
-until gh pr checks "${PR_NUMBER}" --json name,state >/dev/null 2>&1; do
-  echo "Checks not started yet for PR #${PR_NUMBER}; retrying in 5s..."
-  sleep 5
-done
 
 gh pr checks "${PR_NUMBER}" --watch --interval 10
 

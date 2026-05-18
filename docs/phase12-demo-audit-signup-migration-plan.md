@@ -111,7 +111,7 @@ Use this for any post-closure `P12.x` slice:
   - link to successful `pulse-route-gate` run for the PR
 - `check_query_evidence`:
   - output snapshot from `gh pr view <PR#> --json statusCheckRollup` or `gh pr checks <PR#> --watch`
-  - preferred command: `pnpm pr:wait-required-checks -- <PR#> pulse-route-gate operator-smoke`
+  - preferred command: `scripts/gh/wait-required-checks.sh <PR#> pulse-route-gate operator-smoke`
 - `risk_rollback`: concise rollback note
 
 #### Required PR body snippet
@@ -144,7 +144,7 @@ A `P12.x` follow-up is done only when all are true:
 - `pnpm --filter pulse test:phase12-route-ownership-gate` result is attached (or CI link provided).
 - Successful `pulse-route-gate` run link is included in the PR body.
 - Explicit check-query evidence is included before merge (not inferred from elapsed time).
-- Required checks were actively watched to completion with `pnpm pr:wait-required-checks -- <PR#> pulse-route-gate operator-smoke` or equivalent `gh pr checks --watch` evidence.
+- Required checks were actively watched to completion with `scripts/gh/wait-required-checks.sh` or equivalent `gh pr checks --watch` evidence.
 - `docs/pulse-migration-audit-sheet.md` remains consistent with this Phase 12 source-of-truth doc.
 - PR includes explicit rollback note.
 
