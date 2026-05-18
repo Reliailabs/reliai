@@ -103,6 +103,13 @@ Phase 9 implementation may proceed only when an item is either:
 - CI enforcement remains active via:
   - `pnpm --filter pulse test:phase12-route-ownership-gate`
   - wired in `.github/workflows/qa.yml` under `pulse-route-gate`.
+- Source-of-truth contract/gate reference:
+  - `docs/phase12-demo-audit-signup-migration-plan.md`
+- Manual reviewer invariants for future P12 follow-ups:
+  - deterministic and replayable demo behavior
+  - no presenter-side reinterpretation of integrity semantics
+  - CTA label/destination behavior alignment
+  - no live provider dependency in demo runtime state
 
 ## P13 Closure Note
 - Phase 13 validation-only write-path contracts are aggregated under:
