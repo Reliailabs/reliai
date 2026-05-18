@@ -226,23 +226,6 @@ export function getScenarioHealthPolicy(health: ScenarioHealth): ScenarioHealthP
   };
 }
 
-export function canConcludeMitigation(
-  replayDone: boolean,
-  replayHealth: ReplayHealth,
-  scenarioHealth: ScenarioHealth,
-): boolean {
-  return evaluateMitigationConclusionIntegrity({
-    replay_done: replayDone,
-    replay_health: replayHealth,
-    scenario_health: scenarioHealth,
-    mitigation_evidence_exists: true,
-    rollback_evidence_exists: true,
-    causal_chain_complete: true,
-    severity_evidence_aligned: true,
-    arei_delta_linked_to_mitigation: true,
-  }).decision_allowed;
-}
-
 export function evaluateMitigationConclusionIntegrity(
   input: OperationalDecisionIntegrityInput,
 ): OperationalDecisionIntegrityResult {
