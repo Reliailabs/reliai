@@ -18,6 +18,7 @@ export type DemoScenarioReplayFrame = {
   reliability_after_score: number;
   verification_pass_rate: number;
   replay_health: "healthy" | "stale" | "partial" | "unknown";
+  scenario_health: "healthy" | "stale" | "partial" | "unknown";
 };
 
 export type DemoScenarioReplayController = {
@@ -45,6 +46,13 @@ function toFrame(
       : fixture.replay_profile.stale
         ? "stale"
         : "healthy";
+  const scenario_health = fixture.scenario_profile.unknown_outcome
+    ? "unknown"
+    : fixture.scenario_profile.partial_evidence
+      ? "partial"
+      : fixture.scenario_profile.stale_mitigation
+        ? "stale"
+        : "healthy";
 
   return {
     cursor: bounded,
@@ -61,6 +69,7 @@ function toFrame(
     reliability_after_score: fixture.reliability.after_score,
     verification_pass_rate: fixture.reliability.verification_pass_rate,
     replay_health,
+    scenario_health,
   };
 }
 

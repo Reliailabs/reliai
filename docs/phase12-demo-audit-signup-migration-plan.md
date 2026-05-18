@@ -30,6 +30,7 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.7` Demo ownership drift contract | Complete (merged) | merged to `main` |
 | `P12.8` Demo impact/outcome contract depth | Complete (merged) | merged to `main` |
 | `P12.9` Replay resilience state contract | Complete (merged) | merged to `main` |
+| `P12.10` Health-dimension split contract | Complete (merged) | merged to `main` |
 
 ## Ownership contract
 
@@ -114,6 +115,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Apply operational consequences by health state:
   - downgrade mitigation confidence language for non-healthy states
   - surface explicit evidence-integrity notes for partial/stale/unknown states
+
+8. `P12.10` Health-dimension split contract
+- Separate `replay_integrity` health from `scenario` health semantics.
+- Enforce independent policy notes and trust levels for each dimension.
+- Gate mitigation conclusion on both policy dimensions (not replay label alone).
 
 ## Acceptance criteria
 

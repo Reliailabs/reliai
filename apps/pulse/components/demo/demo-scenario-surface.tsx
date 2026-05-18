@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { getReplayHealthPolicy } from "@/lib/demo-replay-health-policy";
+import { getScenarioHealthPolicy } from "@/lib/demo-scenario-health-policy";
 import { createDemoScenarioReplayController } from "@/lib/demo-scenario-engine";
 import { getDemoScenarioFixture } from "@/lib/demo-scenario-fixtures";
 
@@ -13,6 +14,7 @@ export function DemoScenarioSurface() {
 
   const reliabilityDelta = frame.reliability_after_score - frame.reliability_before_score;
   const healthPolicy = getReplayHealthPolicy(frame.replay_health);
+  const scenarioPolicy = getScenarioHealthPolicy(frame.scenario_health);
   const healthLabel =
     frame.replay_health === "healthy"
       ? "Replay health: healthy"
@@ -21,6 +23,14 @@ export function DemoScenarioSurface() {
         : frame.replay_health === "partial"
           ? "Replay health: partial evidence"
           : "Replay health: unknown outcome";
+  const scenarioLabel =
+    frame.scenario_health === "healthy"
+      ? "Scenario health: healthy"
+      : frame.scenario_health === "stale"
+        ? "Scenario health: stale mitigation"
+        : frame.scenario_health === "partial"
+          ? "Scenario health: partial evidence"
+          : "Scenario health: unknown outcome";
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -32,6 +42,7 @@ export function DemoScenarioSurface() {
             Replay state: step {frame.cursor}/{frame.total} {frame.done ? "· complete" : "· in progress"}
           </p>
           <p className="text-xs text-zinc-500">{healthLabel}</p>
+          <p className="text-xs text-zinc-500">{scenarioLabel}</p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2">
@@ -86,11 +97,12 @@ export function DemoScenarioSurface() {
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {frame.done && healthPolicy.allow_conclusion
+              {frame.done && healthPolicy.allow_conclusion && scenarioPolicy.allow_conclusion
                 ? fixture.mitigation_outcome
                 : "Mitigation confidence pending replay integrity."}
             </p>
             <p className="mt-2 text-xs text-zinc-500">{healthPolicy.mitigation_note}</p>
+            <p className="mt-1 text-xs text-zinc-500">{scenarioPolicy.scenario_note}</p>
           </article>
 
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 md:col-span-2">

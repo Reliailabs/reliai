@@ -36,6 +36,11 @@ export type DemoScenarioFixture = {
     partial: boolean;
     unknown_outcome: boolean;
   };
+  scenario_profile: {
+    stale_mitigation: boolean;
+    partial_evidence: boolean;
+    unknown_outcome: boolean;
+  };
   timeline: ReadonlyArray<{
     id: string;
     step: string;
@@ -75,6 +80,11 @@ const FIXTURE: DemoScenarioFixture = {
   replay_profile: {
     stale: false,
     partial: false,
+    unknown_outcome: false,
+  },
+  scenario_profile: {
+    stale_mitigation: false,
+    partial_evidence: false,
     unknown_outcome: false,
   },
   timeline: [
