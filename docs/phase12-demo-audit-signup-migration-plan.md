@@ -109,6 +109,8 @@ Use this for any post-closure `P12.x` slice:
   - any additional targeted tests
 - `ci_proof`:
   - link to successful `pulse-route-gate` run for the PR
+- `check_query_evidence`:
+  - output snapshot from `gh pr view <PR#> --json statusCheckRollup` or `gh pr checks <PR#> --watch`
 - `risk_rollback`: concise rollback note
 
 #### Required PR body snippet
@@ -140,6 +142,7 @@ A `P12.x` follow-up is done only when all are true:
 - If routes were touched, Phase 12 invariants were explicitly reviewed and preserved.
 - `pnpm --filter pulse test:phase12-route-ownership-gate` result is attached (or CI link provided).
 - Successful `pulse-route-gate` run link is included in the PR body.
+- Explicit check-query evidence is included before merge (not inferred from elapsed time).
 - `docs/pulse-migration-audit-sheet.md` remains consistent with this Phase 12 source-of-truth doc.
 - PR includes explicit rollback note.
 
