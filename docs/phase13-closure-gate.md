@@ -39,6 +39,16 @@ Phase 13 delivered validation-only write-path contracts for Operations events an
 ## Enforcement note
 - Phase 13 closure gate is CI-enforced in `.github/workflows/qa.yml` under `pulse-route-gate`.
 
+## Phase boundary dependency
+- Phase 13+ follow-up slices must preserve Phase 12 route ownership and demo integrity contracts for:
+  - `/demo`
+  - `/ai-reliability-audit`
+  - `/signup`
+- Source-of-truth contract/gate reference:
+  - `docs/phase12-demo-audit-signup-migration-plan.md`
+- Required baseline check before merging any Phase 13+ slice that touches those routes:
+  - `pnpm --filter pulse test:phase12-route-ownership-gate`
+
 ## Signoff checklist
 - [x] Product owner confirms Phase 13 scope boundaries. (Approved: 2026-05-12)
 - [x] Engineering confirms validation-only behavior and no execution path. (Approved: 2026-05-12)
