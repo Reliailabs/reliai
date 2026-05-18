@@ -44,16 +44,23 @@ Define migration ownership, acceptance criteria, and validation gates for:
 - `/signup` ownership and routing behavior are explicit and stable.
 - No contradictory CTA copy-to-route behavior.
 
-## Validation gate
+## Validation commands
 
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
 - `pnpm --filter pulse test:phase12-route-ownership-gate`
 
-CI enforcement:
+## CI-enforced gates
 
 - `.github/workflows/qa.yml` via `pulse-route-gate`
 - includes `pnpm --filter pulse test:phase12-demo-route-ownership-contract`
+
+## Manual reviewer checks
+
+- Verify CTA labels match actual destination behavior (`/ai-reliability-audit` -> `/demo` chain).
+- Verify presenter layers consume contract outputs directly and do not reinterpret integrity semantics.
+- Verify any new demo behavior remains deterministic under repeated reload/replay.
+- Verify no live provider dependency was introduced into demo state/rendering paths.
 
 ## Canonical artifacts
 
@@ -84,6 +91,14 @@ Primary test surfaces:
 
 - Remove `canConcludeMitigation(...)` compatibility projection once all consumers use full integrity-result semantics (`decision_allowed`, `policy_reasons`, `confidence_level`).
 - Keep this document as a contract/gate reference only; detailed execution history belongs in PRs and changelog, not inline phase logs.
+
+## Operational invariants
+
+- Demo behavior must remain deterministic and replayable.
+- Presenter layers must not reinterpret integrity policy.
+- Operational decision semantics are contract-owned.
+- CTA labels must match real route behavior.
+- Demo state must not depend on live provider availability.
 
 ## Out of scope
 
