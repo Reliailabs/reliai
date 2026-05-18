@@ -116,8 +116,6 @@ Use this for any post-closure `P12.x` slice:
 
 #### Required PR body snippet
 
-Reference: `.github/PULL_REQUEST_TEMPLATE.md` includes a `Phase12 Follow-up Contract` section.
-
 ```md
 ### Phase12 Follow-up Contract
 - slice_id: P12.x
