@@ -22,4 +22,5 @@ test("demo route renders deterministic scenario surface with contract sections",
   assert.match(html, /Evidence requirements:\s*7\/8 satisfied/);
   assert.match(html, /Blocking requirements:\s*1/);
   assert.match(html, /Conclusion confidence:\s*low/);
+  assert.doesNotMatch(html, /replay health not trustworthy/);
 });

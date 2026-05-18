@@ -77,6 +77,16 @@ export type OperationalDecisionEvidenceSummary = {
   blocking_reason_messages: string[];
 };
 
+export function getOperationalDecisionOutcomeMessage(
+  decision: OperationalDecisionIntegrityResult,
+  mitigationOutcome: string,
+): string {
+  if (decision.decision_allowed) {
+    return mitigationOutcome;
+  }
+  return "Mitigation confidence pending replay integrity.";
+}
+
 export function getOperationalDecisionPolicyReasonMessage(
   reason: OperationalDecisionPolicyReason,
 ): string {
