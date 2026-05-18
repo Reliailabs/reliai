@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 
 import {
+  getMitigationOutcomeMessage,
+  getOperationalConclusionBlockMessage,
   getReplayHealthPolicy,
   getMitigationConclusionDecision,
   getScenarioHealthPolicy,
@@ -33,6 +35,8 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
     frame.replay_health,
     frame.scenario_health,
   );
+  const outcomeMessage = getMitigationOutcomeMessage(conclusionDecision);
+  const blockMessage = getOperationalConclusionBlockMessage(conclusionDecision);
   const healthLabel =
     frame.replay_health === "healthy"
       ? "Replay health: healthy"
@@ -115,24 +119,13 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {conclusionDecision.allowed
-                ? fixture.mitigation_outcome
-                : "Mitigation confidence pending replay integrity."}
+              {conclusionDecision.allowed ? fixture.mitigation_outcome : outcomeMessage}
             </p>
             <p className="mt-2 text-xs text-zinc-500">{healthPolicy.mitigation_note}</p>
             <p className="mt-1 text-xs text-zinc-500">{scenarioPolicy.scenario_note}</p>
-            {!conclusionDecision.allowed ? (
+            {blockMessage ? (
               <p className="mt-1 text-xs text-amber-300">
-                Operational conclusion blocked:{" "}
-                {conclusionDecision.block_reason === "replay_health_not_trustworthy"
-                  ? "replay health not trustworthy"
-                  : conclusionDecision.block_reason === "replay_not_complete"
-                    ? "replay not complete"
-                  : conclusionDecision.block_reason === "scenario_health_not_trustworthy"
-                    ? "scenario health not trustworthy"
-                    : conclusionDecision.block_reason === "both_health_dimensions_not_trustworthy"
-                      ? "both replay and scenario health are not trustworthy"
-                      : "none"}
+                Operational conclusion blocked: {blockMessage}
               </p>
             ) : null}
           </article>

@@ -37,7 +37,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.14` Blocked-state surface proof | Complete (merged) | merged to `main` |
 | `P12.15` Conclusion completion gate | Complete (merged) | merged to `main` |
 | `P12.16` Conclusion success-path surface proof | Complete (merged) | merged to `main` |
-| `P12.17` Replay conclusion transition proof | Complete (this branch) | `feat/pulse-phase12-17-replay-transition-proof` |
+| `P12.17` Replay conclusion transition proof | Complete (merged) | merged to `main` |
+| `P12.18` Mitigation message contract alignment | Complete (this branch) | `feat/pulse-phase12-18-mitigation-message-contract` |
 
 ## Ownership contract
 
@@ -176,6 +177,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Prove post-completion replay frame allows conclusions with `none` block reason when health is trusted.
 - Wire this test into the canonical `phase12-route-ownership-gate`.
 
+16. `P12.18` Mitigation message contract alignment
+- Centralize mitigation pending/success and block reason message mapping in contract helpers.
+- Remove duplicated message selection logic from the `/demo` presenter.
+- Add deterministic helper coverage to prevent future copy-to-contract drift.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -197,8 +203,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 ## Phase 12 progress note
 
-- Implementation slices `P12.1` to `P12.16` are merged.
-- `P12.17` adds replay-transition conclusion proof and is ready for PR.
+- Implementation slices `P12.1` to `P12.17` are merged.
+- `P12.18` aligns mitigation/status messaging with decision contract semantics and is ready for PR.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 

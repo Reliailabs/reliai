@@ -4,8 +4,10 @@ import test from "node:test";
 import {
   canConcludeMitigation,
   deriveReplayHealth,
+  getMitigationOutcomeMessage,
   deriveScenarioHealth,
   getMitigationConclusionDecision,
+  getOperationalConclusionBlockMessage,
   getReplayHealthPolicy,
   getScenarioHealthPolicy,
 } from "../lib/demo-operational-integrity-contract";
@@ -111,4 +113,20 @@ test("mitigation conclusion decision returns deterministic block reasons", () =>
     allowed: false,
     block_reason: "replay_not_complete",
   });
+});
+
+test("mitigation messaging helpers are deterministic by conclusion decision", () => {
+  const allowed = getMitigationConclusionDecision(true, "healthy", "healthy");
+  assert.equal(getMitigationOutcomeMessage(allowed), "Mitigation outcome available.");
+  assert.equal(getOperationalConclusionBlockMessage(allowed), null);
+
+  const notComplete = getMitigationConclusionDecision(false, "healthy", "healthy");
+  assert.equal(
+    getMitigationOutcomeMessage(notComplete),
+    "Mitigation confidence pending replay integrity.",
+  );
+  assert.equal(getOperationalConclusionBlockMessage(notComplete), "replay not complete");
+
+  const unknownReplay = getMitigationConclusionDecision(true, "unknown", "healthy");
+  assert.equal(getOperationalConclusionBlockMessage(unknownReplay), "replay health not trustworthy");
 });
