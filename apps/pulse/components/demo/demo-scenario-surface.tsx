@@ -3,12 +3,11 @@
 import { useMemo, useState } from "react";
 
 import {
-  getMitigationOutcomeMessage,
-  getOperationalConclusionBlockMessage,
+  evaluateMitigationConclusionIntegrity,
+  getOperationalDecisionPolicyReasonMessage,
   getReplayHealthLabel,
   getReplayHealthPolicy,
   getScenarioHealthLabel,
-  getMitigationConclusionDecision,
   getScenarioHealthPolicy,
 } from "@/lib/demo-operational-integrity-contract";
 import { createDemoScenarioReplayController } from "@/lib/demo-scenario-engine";
@@ -16,9 +15,13 @@ import { getDemoScenarioFixture, type DemoScenarioFixture } from "@/lib/demo-sce
 
 type DemoScenarioSurfaceProps = {
   fixture?: DemoScenarioFixture;
+  allowDegradedIntegrityConclusion?: boolean;
 };
 
-export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfaceProps = {}) {
+export function DemoScenarioSurface({
+  fixture: fixtureProp,
+  allowDegradedIntegrityConclusion = false,
+}: DemoScenarioSurfaceProps = {}) {
   const fixture = useMemo(
     () => fixtureProp ?? getDemoScenarioFixture(),
     [fixtureProp],
@@ -32,13 +35,20 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
   const reliabilityDelta = frame.reliability_after_score - frame.reliability_before_score;
   const healthPolicy = getReplayHealthPolicy(frame.replay_health);
   const scenarioPolicy = getScenarioHealthPolicy(frame.scenario_health);
-  const conclusionDecision = getMitigationConclusionDecision(
-    frame.done,
-    frame.replay_health,
-    frame.scenario_health,
+  const conclusionDecision = evaluateMitigationConclusionIntegrity({
+    replay_done: frame.done,
+    replay_health: frame.replay_health,
+    scenario_health: frame.scenario_health,
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+    allow_degraded_integrity_conclusion: allowDegradedIntegrityConclusion,
+  });
+  const blockMessages = conclusionDecision.policy_reasons.map(
+    getOperationalDecisionPolicyReasonMessage,
   );
-  const outcomeMessage = getMitigationOutcomeMessage(conclusionDecision);
-  const blockMessage = getOperationalConclusionBlockMessage(conclusionDecision);
   const healthLabel = getReplayHealthLabel(frame.replay_health);
   const scenarioLabel = getScenarioHealthLabel(frame.scenario_health);
 
@@ -107,15 +117,20 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {conclusionDecision.allowed ? fixture.mitigation_outcome : outcomeMessage}
+              {conclusionDecision.decision_allowed
+                ? fixture.mitigation_outcome
+                : "Mitigation confidence pending replay integrity."}
             </p>
             <p className="mt-2 text-xs text-zinc-500">{healthPolicy.mitigation_note}</p>
             <p className="mt-1 text-xs text-zinc-500">{scenarioPolicy.scenario_note}</p>
-            {blockMessage ? (
+            {!conclusionDecision.decision_allowed ? (
               <p className="mt-1 text-xs text-amber-300">
-                Operational conclusion blocked: {blockMessage}
+                Operational conclusion blocked: {blockMessages.join(", ")}
               </p>
             ) : null}
+            <p className="mt-1 text-xs text-zinc-500">
+              Conclusion confidence: {conclusionDecision.confidence_level}
+            </p>
           </article>
 
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 md:col-span-2">

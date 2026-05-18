@@ -43,7 +43,7 @@ test("demo surface shows replay-health block reason once replay is complete", ()
   );
 
   assert.match(html, /Operational conclusion blocked:/);
-  assert.match(html, /replay health not trustworthy/);
+  assert.match(html, /replay integrity untrusted/);
 });
 
 test("demo surface shows combined health block reason once replay is complete", () => {
@@ -54,7 +54,7 @@ test("demo surface shows combined health block reason once replay is complete", 
   );
 
   assert.match(html, /Operational conclusion blocked:/);
-  assert.match(html, /both replay and scenario health are not trustworthy/);
+  assert.match(html, /replay integrity untrusted, scenario integrity untrusted/);
 });
 
 test("demo surface renders mitigation outcome when replay is complete and health dimensions are trusted", () => {
@@ -68,4 +68,23 @@ test("demo surface renders mitigation outcome when replay is complete and health
   const escapedOutcome = fixture.mitigation_outcome.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   assert.match(html, new RegExp(escapedOutcome));
   assert.doesNotMatch(html, /Operational conclusion blocked:/);
+});
+
+test("demo surface can allow degraded conclusion path when explicitly enabled", () => {
+  const fixture = buildFixture({
+    replayUnknown: false,
+    scenarioUnknown: false,
+    completedReplay: true,
+  });
+  fixture.replay_profile.stale = true;
+  fixture.scenario_profile.stale_mitigation = true;
+
+  const html = renderToStaticMarkup(
+    <DemoScenarioSurface fixture={fixture} allowDegradedIntegrityConclusion />,
+  );
+
+  assert.match(html, /Conclusion confidence: degraded/);
+  assert.doesNotMatch(html, /Operational conclusion blocked:/);
+  const escapedOutcome = fixture.mitigation_outcome.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  assert.match(html, new RegExp(escapedOutcome));
 });

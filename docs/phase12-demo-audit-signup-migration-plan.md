@@ -39,7 +39,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.16` Conclusion success-path surface proof | Complete (merged) | merged to `main` |
 | `P12.17` Replay conclusion transition proof | Complete (merged) | merged to `main` |
 | `P12.18` Mitigation message contract alignment | Complete (merged) | merged to `main` |
-| `P12.19` Health label contract alignment | Complete (this branch) | `feat/pulse-phase12-19-health-label-contract` |
+| `P12.19` Health label contract alignment | Complete (merged) | merged to `main` |
+| `P12.20` Operational decision integrity policy | Complete (this branch) | `feat/pulse-phase12-20-operational-decision-integrity` |
 
 ## Ownership contract
 
@@ -188,6 +189,18 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Ensure label semantics are contract-owned and test-enforced.
 - Eliminate ad hoc presenter-side label branching.
 
+18. `P12.20` Operational decision integrity policy
+- Add contract-layer operational decision integrity evaluator:
+  - evidence presence requirements
+  - causal chain requirement
+  - severity/evidence alignment
+  - AREI linkage requirement
+- Return plural deterministic policy reasons (`policy_reasons`) without short-circuiting.
+- Enforce confidence coupling:
+  - disallowed conclusions => `low`
+  - allowed with complete trusted evidence => `high`
+  - allowed degraded integrity (explicitly configured) => `degraded`
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -209,8 +222,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 ## Phase 12 progress note
 
-- Implementation slices `P12.1` to `P12.18` are merged.
-- `P12.19` aligns health label mapping with contract semantics and is ready for PR.
+- Implementation slices `P12.1` to `P12.19` are merged.
+- `P12.20` adds operational decision integrity policy enforcement and is ready for PR.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
