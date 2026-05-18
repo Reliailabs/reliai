@@ -72,6 +72,12 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Phase 12 PR body contract
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/ci/validate_phase12_pr_body.sh
+
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
