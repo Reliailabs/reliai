@@ -103,3 +103,8 @@ Phase 9 implementation may proceed only when an item is either:
 - CI enforcement added in `P12.6` via:
   - `pnpm --filter pulse test:phase12-route-ownership-gate`
   - wired in `.github/workflows/qa.yml` under `pulse-route-gate`.
+
+## P13 Closure Note
+- Phase 13 validation-only write-path contracts are aggregated under:
+  - `pnpm --filter pulse test:phase13-closure-gate`
+- CI enforcement is wired in `.github/workflows/qa.yml` under `pulse-route-gate`.

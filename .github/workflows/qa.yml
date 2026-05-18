@@ -220,6 +220,9 @@ jobs:
       - name: Run Pulse Phase 11 read-path gate
         run: pnpm --filter pulse test:phase11-readpath-gate
 
+      - name: Run Pulse Phase 13 closure gate
+        run: pnpm --filter pulse test:phase13-closure-gate
+
       - name: Run Pulse operations reliability presenter smoke
         run: pnpm --filter pulse test:operations-reliability-presenter-smoke
 
