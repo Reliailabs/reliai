@@ -26,6 +26,34 @@ export type MitigationConclusionDecision = {
     | "both_health_dimensions_not_trustworthy";
 };
 
+export type OperationalDecisionPolicyReason =
+  | "replay_not_complete"
+  | "replay_integrity_untrusted"
+  | "scenario_integrity_untrusted"
+  | "mitigation_evidence_missing"
+  | "rollback_evidence_missing"
+  | "causal_chain_incomplete"
+  | "severity_evidence_mismatch"
+  | "arei_delta_unlinked_to_mitigation";
+
+export type OperationalDecisionIntegrityInput = {
+  replay_done: boolean;
+  replay_health: ReplayHealth;
+  scenario_health: ScenarioHealth;
+  mitigation_evidence_exists: boolean;
+  rollback_evidence_exists: boolean;
+  causal_chain_complete: boolean;
+  severity_evidence_aligned: boolean;
+  arei_delta_linked_to_mitigation: boolean;
+  allow_degraded_integrity_conclusion?: boolean;
+};
+
+export type OperationalDecisionIntegrityResult = {
+  decision_allowed: boolean;
+  policy_reasons: OperationalDecisionPolicyReason[];
+  confidence_level: "high" | "degraded" | "low";
+};
+
 export function getMitigationOutcomeMessage(decision: MitigationConclusionDecision): string {
   if (decision.allowed) {
     return "Mitigation outcome available.";
@@ -204,4 +232,77 @@ export function getMitigationConclusionDecision(
     return { allowed: false, block_reason: "replay_health_not_trustworthy" };
   }
   return { allowed: false, block_reason: "scenario_health_not_trustworthy" };
+}
+
+export function evaluateMitigationConclusionIntegrity(
+  input: OperationalDecisionIntegrityInput,
+): OperationalDecisionIntegrityResult {
+  const policy_reasons: OperationalDecisionPolicyReason[] = [];
+
+  if (!input.replay_done) {
+    policy_reasons.push("replay_not_complete");
+  }
+  if (input.replay_health !== "healthy") {
+    policy_reasons.push("replay_integrity_untrusted");
+  }
+  if (input.scenario_health !== "healthy") {
+    policy_reasons.push("scenario_integrity_untrusted");
+  }
+  if (!input.mitigation_evidence_exists) {
+    policy_reasons.push("mitigation_evidence_missing");
+  }
+  if (!input.rollback_evidence_exists) {
+    policy_reasons.push("rollback_evidence_missing");
+  }
+  if (!input.causal_chain_complete) {
+    policy_reasons.push("causal_chain_incomplete");
+  }
+  if (!input.severity_evidence_aligned) {
+    policy_reasons.push("severity_evidence_mismatch");
+  }
+  if (!input.arei_delta_linked_to_mitigation) {
+    policy_reasons.push("arei_delta_unlinked_to_mitigation");
+  }
+
+  const hasNonHealthReason = policy_reasons.some(
+    (reason) =>
+      reason !== "replay_integrity_untrusted" &&
+      reason !== "scenario_integrity_untrusted",
+  );
+  const hasUnknownHealth =
+    input.replay_health === "unknown" || input.scenario_health === "unknown";
+  const healthOnlyReasons =
+    policy_reasons.length > 0 &&
+    !hasNonHealthReason &&
+    policy_reasons.every(
+      (reason) =>
+        reason === "replay_integrity_untrusted" ||
+        reason === "scenario_integrity_untrusted",
+    );
+
+  if (policy_reasons.length === 0) {
+    return {
+      decision_allowed: true,
+      policy_reasons,
+      confidence_level: "high",
+    };
+  }
+
+  if (
+    input.allow_degraded_integrity_conclusion === true &&
+    healthOnlyReasons &&
+    !hasUnknownHealth
+  ) {
+    return {
+      decision_allowed: true,
+      policy_reasons,
+      confidence_level: "degraded",
+    };
+  }
+
+  return {
+    decision_allowed: false,
+    policy_reasons,
+    confidence_level: "low",
+  };
 }

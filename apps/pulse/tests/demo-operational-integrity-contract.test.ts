@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   canConcludeMitigation,
   deriveReplayHealth,
+  evaluateMitigationConclusionIntegrity,
   getMitigationOutcomeMessage,
   getReplayHealthLabel,
   deriveScenarioHealth,
@@ -152,4 +153,149 @@ test("health label helpers map replay/scenario states deterministically", () => 
   assert.equal(getScenarioHealthLabel("stale"), "Scenario health: stale mitigation");
   assert.equal(getScenarioHealthLabel("partial"), "Scenario health: partial evidence");
   assert.equal(getScenarioHealthLabel("unknown"), "Scenario health: unknown outcome");
+});
+
+test("operational decision integrity: healthy + complete evidence allows high-confidence conclusion", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  });
+
+  assert.deepEqual(result, {
+    decision_allowed: true,
+    policy_reasons: [],
+    confidence_level: "high",
+  });
+});
+
+test("operational decision integrity: missing mitigation evidence blocks conclusion", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: false,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  });
+  assert.equal(result.decision_allowed, false);
+  assert.equal(result.confidence_level, "low");
+  assert.deepEqual(result.policy_reasons, ["mitigation_evidence_missing"]);
+});
+
+test("operational decision integrity: missing rollback evidence blocks conclusion", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: false,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  });
+  assert.equal(result.decision_allowed, false);
+  assert.equal(result.confidence_level, "low");
+  assert.deepEqual(result.policy_reasons, ["rollback_evidence_missing"]);
+});
+
+test("operational decision integrity: incomplete causal chain blocks conclusion", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: false,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  });
+  assert.equal(result.decision_allowed, false);
+  assert.equal(result.confidence_level, "low");
+  assert.deepEqual(result.policy_reasons, ["causal_chain_incomplete"]);
+});
+
+test("operational decision integrity: severity/evidence mismatch blocks conclusion", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: false,
+    arei_delta_linked_to_mitigation: true,
+  });
+  assert.equal(result.decision_allowed, false);
+  assert.equal(result.confidence_level, "low");
+  assert.deepEqual(result.policy_reasons, ["severity_evidence_mismatch"]);
+});
+
+test("operational decision integrity: unlinked AREI delta blocks conclusion", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: false,
+  });
+  assert.equal(result.decision_allowed, false);
+  assert.equal(result.confidence_level, "low");
+  assert.deepEqual(result.policy_reasons, ["arei_delta_unlinked_to_mitigation"]);
+});
+
+test("operational decision integrity: degraded health can be allowed with degraded confidence when configured", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "stale",
+    scenario_health: "partial",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+    allow_degraded_integrity_conclusion: true,
+  });
+
+  assert.deepEqual(result, {
+    decision_allowed: true,
+    policy_reasons: ["replay_integrity_untrusted", "scenario_integrity_untrusted"],
+    confidence_level: "degraded",
+  });
+});
+
+test("operational decision integrity: multiple failures return all reasons deterministically", () => {
+  const result = evaluateMitigationConclusionIntegrity({
+    replay_done: false,
+    replay_health: "unknown",
+    scenario_health: "partial",
+    mitigation_evidence_exists: false,
+    rollback_evidence_exists: false,
+    causal_chain_complete: false,
+    severity_evidence_aligned: false,
+    arei_delta_linked_to_mitigation: false,
+  });
+
+  assert.equal(result.decision_allowed, false);
+  assert.equal(result.confidence_level, "low");
+  assert.deepEqual(result.policy_reasons, [
+    "replay_not_complete",
+    "replay_integrity_untrusted",
+    "scenario_integrity_untrusted",
+    "mitigation_evidence_missing",
+    "rollback_evidence_missing",
+    "causal_chain_incomplete",
+    "severity_evidence_mismatch",
+    "arei_delta_unlinked_to_mitigation",
+  ]);
 });
