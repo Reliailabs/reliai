@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  canConcludeMitigation,
   deriveReplayHealth,
   evaluateMitigationConclusionIntegrity,
   getOperationalDecisionEvidenceRequirements,
@@ -86,37 +85,28 @@ test("derivers map fixture profiles to health states", () => {
 });
 
 test("mitigation conclusions require both replay and scenario health to allow conclusions", () => {
-  assert.equal(canConcludeMitigation(true, "healthy", "healthy"), true);
-  assert.equal(canConcludeMitigation(true, "partial", "healthy"), false);
-  assert.equal(canConcludeMitigation(true, "healthy", "partial"), false);
-  assert.equal(canConcludeMitigation(true, "unknown", "healthy"), false);
-  assert.equal(canConcludeMitigation(true, "healthy", "unknown"), false);
-  assert.equal(canConcludeMitigation(true, "unknown", "unknown"), false);
-  assert.equal(canConcludeMitigation(false, "healthy", "healthy"), false);
-});
-
-test("canConcludeMitigation stays equivalent to decision_allowed projection", () => {
   const cases = [
-    { replay_done: true, replay_health: "healthy", scenario_health: "healthy" },
-    { replay_done: false, replay_health: "healthy", scenario_health: "healthy" },
-    { replay_done: true, replay_health: "unknown", scenario_health: "healthy" },
-    { replay_done: true, replay_health: "healthy", scenario_health: "partial" },
-    { replay_done: true, replay_health: "stale", scenario_health: "unknown" },
+    { replay_done: true, replay_health: "healthy", scenario_health: "healthy", expected: true },
+    { replay_done: true, replay_health: "partial", scenario_health: "healthy", expected: false },
+    { replay_done: true, replay_health: "healthy", scenario_health: "partial", expected: false },
+    { replay_done: true, replay_health: "unknown", scenario_health: "healthy", expected: false },
+    { replay_done: true, replay_health: "healthy", scenario_health: "unknown", expected: false },
+    { replay_done: true, replay_health: "unknown", scenario_health: "unknown", expected: false },
+    { replay_done: false, replay_health: "healthy", scenario_health: "healthy", expected: false },
   ] as const;
 
   for (const c of cases) {
-    const decision = evaluateMitigationConclusionIntegrity({
-      ...c,
+    const result = evaluateMitigationConclusionIntegrity({
+      replay_done: c.replay_done,
+      replay_health: c.replay_health,
+      scenario_health: c.scenario_health,
       mitigation_evidence_exists: true,
       rollback_evidence_exists: true,
       causal_chain_complete: true,
       severity_evidence_aligned: true,
       arei_delta_linked_to_mitigation: true,
     });
-    assert.equal(
-      canConcludeMitigation(c.replay_done, c.replay_health, c.scenario_health),
-      decision.decision_allowed,
-    );
+    assert.equal(result.decision_allowed, c.expected);
   }
 });
 

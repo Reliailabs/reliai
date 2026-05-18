@@ -11,6 +11,7 @@ Define migration ownership, acceptance criteria, and validation gates for:
 ## Status
 
 - Phase 12 execution slices `P12.1` to `P12.25`: **Complete and merged**.
+- `P12.26` (retire `canConcludeMitigation(...)` compatibility projection): **Complete on this branch**.
 - Phase 12 route/ownership gate: **active in CI** (`pulse-route-gate`).
 - Remaining work: **follow-up hardening only** (no unresolved route ownership decisions).
 
@@ -89,7 +90,6 @@ Primary test surfaces:
 
 ## Follow-ups
 
-- Remove `canConcludeMitigation(...)` compatibility projection once all consumers use full integrity-result semantics (`decision_allowed`, `policy_reasons`, `confidence_level`).
 - Keep this document as a contract/gate reference only; detailed execution history belongs in PRs and changelog, not inline phase logs.
 
 ## Operational invariants
