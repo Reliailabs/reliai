@@ -32,17 +32,12 @@ Phase 13 delivered validation-only write-path contracts for Operations events an
 - No background agent authority.
 
 ## Validation matrix
-- `node --import tsx --test apps/pulse/tests/operations-event-ingest-contract.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-ingest-dedup.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-ingest-repository.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-write-audit-envelope.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-lifecycle-create-contract.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-lifecycle-transition-intent-contract.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-verification-write-contract.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-retry-policy.test.ts`
-- `node --import tsx --test apps/pulse/tests/operations-write-path-integration-contract.test.ts`
+- `pnpm --filter pulse test:phase13-closure-gate`
 - `pnpm --filter pulse lint`
 - `pnpm --filter pulse build`
+
+## Enforcement note
+- Phase 13 closure gate is CI-enforced in `.github/workflows/qa.yml` under `pulse-route-gate`.
 
 ## Signoff checklist
 - [x] Product owner confirms Phase 13 scope boundaries. (Approved: 2026-05-12)
