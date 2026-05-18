@@ -5,7 +5,9 @@ import { useMemo, useState } from "react";
 import {
   getMitigationOutcomeMessage,
   getOperationalConclusionBlockMessage,
+  getReplayHealthLabel,
   getReplayHealthPolicy,
+  getScenarioHealthLabel,
   getMitigationConclusionDecision,
   getScenarioHealthPolicy,
 } from "@/lib/demo-operational-integrity-contract";
@@ -37,22 +39,8 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
   );
   const outcomeMessage = getMitigationOutcomeMessage(conclusionDecision);
   const blockMessage = getOperationalConclusionBlockMessage(conclusionDecision);
-  const healthLabel =
-    frame.replay_health === "healthy"
-      ? "Replay health: healthy"
-      : frame.replay_health === "stale"
-        ? "Replay health: stale snapshot"
-        : frame.replay_health === "partial"
-          ? "Replay health: partial evidence"
-          : "Replay health: unknown outcome";
-  const scenarioLabel =
-    frame.scenario_health === "healthy"
-      ? "Scenario health: healthy"
-      : frame.scenario_health === "stale"
-        ? "Scenario health: stale mitigation"
-        : frame.scenario_health === "partial"
-          ? "Scenario health: partial evidence"
-          : "Scenario health: unknown outcome";
+  const healthLabel = getReplayHealthLabel(frame.replay_health);
+  const scenarioLabel = getScenarioHealthLabel(frame.scenario_health);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
