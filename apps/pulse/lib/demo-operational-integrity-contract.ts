@@ -20,6 +20,7 @@ export type MitigationConclusionDecision = {
   allowed: boolean;
   block_reason:
     | "none"
+    | "replay_not_complete"
     | "replay_health_not_trustworthy"
     | "scenario_health_not_trustworthy"
     | "both_health_dimensions_not_trustworthy";
@@ -122,16 +123,22 @@ export function getScenarioHealthPolicy(health: ScenarioHealth): ScenarioHealthP
 }
 
 export function canConcludeMitigation(
+  replayDone: boolean,
   replayHealth: ReplayHealth,
   scenarioHealth: ScenarioHealth,
 ): boolean {
-  return getMitigationConclusionDecision(replayHealth, scenarioHealth).allowed;
+  return getMitigationConclusionDecision(replayDone, replayHealth, scenarioHealth).allowed;
 }
 
 export function getMitigationConclusionDecision(
+  replayDone: boolean,
   replayHealth: ReplayHealth,
   scenarioHealth: ScenarioHealth,
 ): MitigationConclusionDecision {
+  if (!replayDone) {
+    return { allowed: false, block_reason: "replay_not_complete" };
+  }
+
   const replayAllowed = getReplayHealthPolicy(replayHealth).allow_conclusion;
   const scenarioAllowed = getScenarioHealthPolicy(scenarioHealth).allow_conclusion;
 

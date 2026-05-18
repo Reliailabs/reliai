@@ -34,7 +34,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.11` Dual-health policy semantics | Complete (merged) | merged to `main` |
 | `P12.12` Integrity contract unification | Complete (merged) | merged to `main` |
 | `P12.13` Operational conclusion guard reasons | Complete (merged) | merged to `main` |
-| `P12.14` Blocked-state surface proof | Complete (this branch) | `feat/pulse-phase12-14-demo-blocked-state-smoke` |
+| `P12.14` Blocked-state surface proof | Complete (separate branch) | `feat/pulse-phase12-14-demo-blocked-state-smoke` |
+| `P12.15` Conclusion completion gate | Complete (this branch) | `feat/pulse-phase12-15-conclusion-completion-gate` |
 
 ## Ownership contract
 
@@ -153,6 +154,12 @@ on these routes until Phase 11 read-path controls are stable and accepted.
   - replay unknown + scenario unknown
 - Add test-only fixture injection path on `DemoScenarioSurface` to avoid introducing runtime behavior drift.
 
+13. `P12.15` Conclusion completion gate
+- Treat replay completion status as a first-class conclusion precondition.
+- Block mitigation conclusions with explicit reason when replay is not complete.
+- Keep health policy checks intact after completion precondition is satisfied.
+- Extend surface smoke coverage to verify pre-completion blocked-state rendering.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -176,6 +183,7 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 - Implementation slices `P12.1` to `P12.13` are merged.
 - `P12.14` adds blocked-state surface proof coverage and is ready for PR.
+- `P12.15` adds completion-aware mitigation conclusion gating and is ready for PR.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 

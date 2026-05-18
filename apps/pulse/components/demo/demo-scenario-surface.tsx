@@ -29,6 +29,7 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
   const healthPolicy = getReplayHealthPolicy(frame.replay_health);
   const scenarioPolicy = getScenarioHealthPolicy(frame.scenario_health);
   const conclusionDecision = getMitigationConclusionDecision(
+    frame.done,
     frame.replay_health,
     frame.scenario_health,
   );
@@ -114,7 +115,7 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {frame.done && conclusionDecision.allowed
+              {conclusionDecision.allowed
                 ? fixture.mitigation_outcome
                 : "Mitigation confidence pending replay integrity."}
             </p>
@@ -125,6 +126,8 @@ export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfac
                 Operational conclusion blocked:{" "}
                 {conclusionDecision.block_reason === "replay_health_not_trustworthy"
                   ? "replay health not trustworthy"
+                  : conclusionDecision.block_reason === "replay_not_complete"
+                    ? "replay not complete"
                   : conclusionDecision.block_reason === "scenario_health_not_trustworthy"
                     ? "scenario health not trustworthy"
                     : conclusionDecision.block_reason === "both_health_dimensions_not_trustworthy"
