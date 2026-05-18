@@ -8,11 +8,21 @@ import {
   getScenarioHealthPolicy,
 } from "@/lib/demo-operational-integrity-contract";
 import { createDemoScenarioReplayController } from "@/lib/demo-scenario-engine";
-import { getDemoScenarioFixture } from "@/lib/demo-scenario-fixtures";
+import { getDemoScenarioFixture, type DemoScenarioFixture } from "@/lib/demo-scenario-fixtures";
 
-export function DemoScenarioSurface() {
-  const replay = useMemo(() => createDemoScenarioReplayController(), []);
-  const fixture = useMemo(() => getDemoScenarioFixture(), []);
+type DemoScenarioSurfaceProps = {
+  fixture?: DemoScenarioFixture;
+};
+
+export function DemoScenarioSurface({ fixture: fixtureProp }: DemoScenarioSurfaceProps = {}) {
+  const fixture = useMemo(
+    () => fixtureProp ?? getDemoScenarioFixture(),
+    [fixtureProp],
+  );
+  const replay = useMemo(
+    () => createDemoScenarioReplayController(fixture),
+    [fixture],
+  );
   const [frame, setFrame] = useState(() => replay.current());
 
   const reliabilityDelta = frame.reliability_after_score - frame.reliability_before_score;

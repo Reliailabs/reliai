@@ -33,7 +33,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.10` Health-dimension split contract | Complete (merged) | merged to `main` |
 | `P12.11` Dual-health policy semantics | Complete (merged) | merged to `main` |
 | `P12.12` Integrity contract unification | Complete (merged) | merged to `main` |
-| `P12.13` Operational conclusion guard reasons | Complete (this branch) | `feat/pulse-phase12-13-operational-conclusion-guard` |
+| `P12.13` Operational conclusion guard reasons | Complete (merged) | merged to `main` |
+| `P12.14` Blocked-state surface proof | Complete (this branch) | `feat/pulse-phase12-14-demo-blocked-state-smoke` |
 
 ## Ownership contract
 
@@ -145,6 +146,13 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Surface block reason text in `/demo` when conclusions are not trustworthy.
 - Add contract tests for `unknown` replay/scenario combinations and reason mapping.
 
+12. `P12.14` Blocked-state surface proof
+- Add deterministic render coverage for non-healthy replay/scenario outcomes on `/demo`.
+- Prove operational block reasons render correctly for:
+  - replay unknown + scenario healthy
+  - replay unknown + scenario unknown
+- Add test-only fixture injection path on `DemoScenarioSurface` to avoid introducing runtime behavior drift.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -166,8 +174,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 ## Phase 12 progress note
 
-- Implementation slices `P12.1` to `P12.12` are merged.
-- `P12.13` adds explicit operational conclusion block reasons and is ready for PR.
+- Implementation slices `P12.1` to `P12.13` are merged.
+- `P12.14` adds blocked-state surface proof coverage and is ready for PR.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
