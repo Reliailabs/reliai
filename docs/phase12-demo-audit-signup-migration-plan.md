@@ -43,7 +43,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.20` Operational decision integrity policy | Complete (merged) | merged to `main` |
 | `P12.21` Operational decision evidence checklist contract | Complete (merged) | merged to `main` |
 | `P12.22` Operational decision evidence summary contract | Complete (merged) | merged to `main` |
-| `P12.23` Evidence summary presenter parity | Complete (this branch) | `feat/pulse-phase12-23-evidence-summary-presenter-parity` |
+| `P12.23` Evidence summary presenter parity | Complete (merged) | merged to `main` |
+| `P12.24` Presenter contract-consumption cleanup | Complete (this branch) | `feat/pulse-phase12-24-presenter-contract-consumption-cleanup` |
 
 ## Ownership contract
 
@@ -232,6 +233,13 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Remove presenter-side aggregation of evidence requirement semantics.
 - Extend surface smoke coverage for summary counts in blocked/allowed/degraded paths.
 
+22. `P12.24` Presenter contract-consumption cleanup
+- Remove remaining presenter-local decision wording by using contract-owned
+  outcome message helper.
+- Eliminate duplicated integrity input construction so summary and decision
+  projections share the exact same input object.
+- Add smoke guard against legacy local fallback wording drift.
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -257,7 +265,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - `P12.20` is merged.
 - `P12.21` is merged.
 - `P12.22` is merged.
-- `P12.23` wires summary contract outputs into `/demo` presenter with smoke coverage.
+- `P12.23` is merged.
+- `P12.24` removes remaining presenter-local decision wording and input drift risk.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   evaluateMitigationConclusionIntegrity,
   getOperationalDecisionEvidenceSummary,
+  getOperationalDecisionOutcomeMessage,
   getReplayHealthLabel,
   getReplayHealthPolicy,
   getScenarioHealthLabel,
@@ -35,7 +36,7 @@ export function DemoScenarioSurface({
   const reliabilityDelta = frame.reliability_after_score - frame.reliability_before_score;
   const healthPolicy = getReplayHealthPolicy(frame.replay_health);
   const scenarioPolicy = getScenarioHealthPolicy(frame.scenario_health);
-  const conclusionDecision = evaluateMitigationConclusionIntegrity({
+  const integrityInput = {
     replay_done: frame.done,
     replay_health: frame.replay_health,
     scenario_health: frame.scenario_health,
@@ -45,18 +46,9 @@ export function DemoScenarioSurface({
     severity_evidence_aligned: true,
     arei_delta_linked_to_mitigation: true,
     allow_degraded_integrity_conclusion: allowDegradedIntegrityConclusion,
-  });
-  const evidenceSummary = getOperationalDecisionEvidenceSummary({
-    replay_done: frame.done,
-    replay_health: frame.replay_health,
-    scenario_health: frame.scenario_health,
-    mitigation_evidence_exists: true,
-    rollback_evidence_exists: true,
-    causal_chain_complete: true,
-    severity_evidence_aligned: true,
-    arei_delta_linked_to_mitigation: true,
-    allow_degraded_integrity_conclusion: allowDegradedIntegrityConclusion,
-  });
+  };
+  const conclusionDecision = evaluateMitigationConclusionIntegrity(integrityInput);
+  const evidenceSummary = getOperationalDecisionEvidenceSummary(integrityInput);
   const blockMessages = evidenceSummary.blocking_reason_messages;
   const healthLabel = getReplayHealthLabel(frame.replay_health);
   const scenarioLabel = getScenarioHealthLabel(frame.scenario_health);
@@ -126,9 +118,7 @@ export function DemoScenarioSurface({
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
             <h2 className="text-sm font-medium text-zinc-200">Mitigation outcome</h2>
             <p className="mt-2 text-sm text-zinc-300">
-              {conclusionDecision.decision_allowed
-                ? fixture.mitigation_outcome
-                : "Mitigation confidence pending replay integrity."}
+              {getOperationalDecisionOutcomeMessage(conclusionDecision, fixture.mitigation_outcome)}
             </p>
             <p className="mt-2 text-xs text-zinc-500">{healthPolicy.mitigation_note}</p>
             <p className="mt-1 text-xs text-zinc-500">{scenarioPolicy.scenario_note}</p>

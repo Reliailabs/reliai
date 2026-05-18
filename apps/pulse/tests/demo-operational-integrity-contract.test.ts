@@ -7,6 +7,7 @@ import {
   evaluateMitigationConclusionIntegrity,
   getOperationalDecisionEvidenceRequirements,
   getOperationalDecisionEvidenceSummary,
+  getOperationalDecisionOutcomeMessage,
   getMitigationOutcomeMessage,
   getReplayHealthLabel,
   deriveScenarioHealth,
@@ -458,4 +459,36 @@ test("operational decision evidence summary: degraded allowed state preserves bl
     "replay integrity untrusted",
     "scenario integrity untrusted",
   ]);
+});
+
+test("operational decision outcome message: uses contract decision state only", () => {
+  const allowed = evaluateMitigationConclusionIntegrity({
+    replay_done: true,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  });
+  assert.equal(
+    getOperationalDecisionOutcomeMessage(allowed, "custom mitigation outcome"),
+    "custom mitigation outcome",
+  );
+
+  const blocked = evaluateMitigationConclusionIntegrity({
+    replay_done: false,
+    replay_health: "healthy",
+    scenario_health: "healthy",
+    mitigation_evidence_exists: true,
+    rollback_evidence_exists: true,
+    causal_chain_complete: true,
+    severity_evidence_aligned: true,
+    arei_delta_linked_to_mitigation: true,
+  });
+  assert.equal(
+    getOperationalDecisionOutcomeMessage(blocked, "custom mitigation outcome"),
+    "Mitigation confidence pending replay integrity.",
+  );
 });
