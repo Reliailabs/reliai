@@ -6,7 +6,7 @@ import { checkOperationsEventDuplicate, recordOperationsEventFingerprint } from 
 import { getOperationsIngestRepo } from "@/lib/operations-ingest-repository";
 import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
-import { phase13ErrorResponse, withPhase13Envelope } from "../../_response";
+import { phase13ErrorResponse, phase13RejectedPolicyResponse, withPhase13Envelope } from "../../_response";
 
 export async function POST(request: Request) {
   const session = await getOperatorSession();
@@ -91,16 +91,7 @@ export async function POST(request: Request) {
       event: result.request,
     });
   } catch {
-    return NextResponse.json(
-      withPhase13Envelope({
-        ok: false as const,
-        ingest_accepted: false as const,
-        response_class: "rejected_policy" as const,
-        errors: ["ingest persistence backend unavailable"],
-        warnings: [],
-      }),
-      { status: 503 },
-    );
+    return phase13RejectedPolicyResponse({ ingest_accepted: false }, "ingest persistence backend unavailable");
   }
 
   const audit = buildOperationsWriteAuditEnvelope({
