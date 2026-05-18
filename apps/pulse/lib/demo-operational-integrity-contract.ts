@@ -54,6 +54,33 @@ export type OperationalDecisionIntegrityResult = {
   confidence_level: "high" | "degraded" | "low";
 };
 
+export function getOperationalDecisionPolicyReasonMessage(
+  reason: OperationalDecisionPolicyReason,
+): string {
+  if (reason === "replay_not_complete") {
+    return "replay not complete";
+  }
+  if (reason === "replay_integrity_untrusted") {
+    return "replay integrity untrusted";
+  }
+  if (reason === "scenario_integrity_untrusted") {
+    return "scenario integrity untrusted";
+  }
+  if (reason === "mitigation_evidence_missing") {
+    return "mitigation evidence missing";
+  }
+  if (reason === "rollback_evidence_missing") {
+    return "rollback evidence missing";
+  }
+  if (reason === "causal_chain_incomplete") {
+    return "causal chain incomplete";
+  }
+  if (reason === "severity_evidence_mismatch") {
+    return "severity evidence mismatch";
+  }
+  return "arei delta unlinked to mitigation";
+}
+
 export function getMitigationOutcomeMessage(decision: MitigationConclusionDecision): string {
   if (decision.allowed) {
     return "Mitigation outcome available.";
