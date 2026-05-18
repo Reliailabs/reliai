@@ -18,6 +18,7 @@ export function withPhase13Envelope<T extends object>(payload: T): Result<T> {
 }
 
 export function phase13ErrorResponse(status: 400 | 401, message: string) {
+  const responseClass = status === 400 ? "rejected_schema" : "rejected_policy";
   return NextResponse.json(
     withPhase13Envelope({
       ok: false as const,
@@ -25,8 +26,10 @@ export function phase13ErrorResponse(status: 400 | 401, message: string) {
       create_accepted: false as const,
       transition_accepted: false as const,
       verification_write_accepted: false as const,
+      response_class: responseClass,
       errors: [message],
       warnings: [],
+      retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass }),
     }),
     { status },
   );
