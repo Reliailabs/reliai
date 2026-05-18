@@ -111,6 +111,9 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Add deterministic replay-health semantics for stale/partial/unknown states.
 - Ensure `/demo` renders explicit fallback state labels without live dependencies.
 - Add replay resilience test coverage to prevent silent state-handling drift.
+- Apply operational consequences by health state:
+  - downgrade mitigation confidence language for non-healthy states
+  - surface explicit evidence-integrity notes for partial/stale/unknown states
 
 ## Acceptance criteria
 
