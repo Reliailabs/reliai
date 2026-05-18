@@ -51,6 +51,7 @@ Phase 9 implementation may proceed only when an item is either:
 7. Complete the route contract entry required by `docs/agent-migration-contract-rules.md` for each `M7+` slice.
 8. For any `P12.x` follow-up, include the **Required PR body snippet** from `docs/phase12-demo-audit-signup-migration-plan.md`.
 9. For any `P12.x` follow-up, include a link to the successful `pulse-route-gate` run in the PR body (`ci_proof` field).
+10. Before merging any `P12.x` follow-up PR, record explicit check-query evidence from `gh pr view ... statusCheckRollup` or `gh pr checks --watch`.
 
 ## Linked Migration Plans
 - `docs/agent-migration-contract-rules.md`
