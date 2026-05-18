@@ -342,3 +342,40 @@ test("operational decision evidence requirements: deterministic checklist order 
     true,
   );
 });
+
+test("operational decision evidence requirements: blocking checklist items map to policy reasons", () => {
+  const input = {
+    replay_done: false,
+    replay_health: "partial" as const,
+    scenario_health: "stale" as const,
+    mitigation_evidence_exists: false,
+    rollback_evidence_exists: false,
+    causal_chain_complete: false,
+    severity_evidence_aligned: false,
+    arei_delta_linked_to_mitigation: false,
+  };
+
+  const requirements = getOperationalDecisionEvidenceRequirements(input);
+  const result = evaluateMitigationConclusionIntegrity(input);
+
+  const requirementToReason = {
+    replay_completed: "replay_not_complete",
+    replay_integrity_trusted: "replay_integrity_untrusted",
+    scenario_integrity_trusted: "scenario_integrity_untrusted",
+    mitigation_evidence_present: "mitigation_evidence_missing",
+    rollback_evidence_present: "rollback_evidence_missing",
+    causal_chain_complete: "causal_chain_incomplete",
+    severity_aligned_with_evidence: "severity_evidence_mismatch",
+    arei_linked_to_mitigation: "arei_delta_unlinked_to_mitigation",
+  } as const;
+
+  for (const requirement of requirements) {
+    const expectedReason = requirementToReason[requirement.id];
+    const hasReason = result.policy_reasons.includes(expectedReason);
+    assert.equal(
+      hasReason,
+      requirement.blocking,
+      `Requirement '${requirement.id}' blocking state must match policy reason presence`,
+    );
+  }
+});
