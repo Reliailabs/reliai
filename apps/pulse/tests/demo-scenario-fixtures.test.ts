@@ -33,3 +33,13 @@ test("demo fixture reliability fields are bounded for replay safety", () => {
   assert.ok(after_score >= 0 && after_score <= 100);
   assert.ok(verification_pass_rate >= 0 && verification_pass_rate <= 1);
 });
+
+test("demo fixture includes deterministic business impact and mitigation outcome fields", () => {
+  const fixture = getDemoScenarioFixture();
+
+  assert.ok(fixture.business_impact.at_risk_revenue_usd > 0);
+  assert.ok(fixture.business_impact.impacted_sessions > 0);
+  assert.match(fixture.business_impact.narrative, /exposure/i);
+  assert.match(fixture.without_reliai_outcome, /undetected|exposure/i);
+  assert.match(fixture.mitigation_outcome, /Guardrail policy/i);
+});

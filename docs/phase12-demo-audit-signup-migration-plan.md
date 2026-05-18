@@ -28,6 +28,7 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.5` Signup ownership decision | Complete (merged) | merged to `main` |
 | `P12.6` Closure gate enforcement | Complete (merged) | merged to `main` |
 | `P12.7` Demo ownership drift contract | Complete (merged) | merged to `main` |
+| `P12.8` Demo impact/outcome contract depth | Complete (merged) | merged to `main` |
 
 ## Ownership contract
 
@@ -99,6 +100,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
   - `apps/pulse/lib/signup-link.ts`
   - `apps/pulse/tests/signup-link.test.ts`
   - command: `pnpm --filter pulse test:phase12-signup-ownership-contract`
+
+6. `P12.8` Demo impact/outcome contract depth
+- Add deterministic business-impact and mitigation-outcome fields to scenario fixture.
+- Surface business impact and counterfactual text in the Pulse `/demo` experience.
+- Keep implementation offline deterministic and fixture-backed.
 
 ## Acceptance criteria
 
