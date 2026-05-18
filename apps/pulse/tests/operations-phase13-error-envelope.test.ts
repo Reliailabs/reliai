@@ -47,3 +47,25 @@ test("phase13 rejected-policy helper includes retry policy and route-specific ac
     reason: "non_retryable_class",
   });
 });
+
+test("phase13 rejected-policy helper preserves acceptance-flag parity across validator types", async () => {
+  const cases = [
+    { flags: { ingest_accepted: false as const }, key: "ingest_accepted" },
+    { flags: { create_accepted: false as const }, key: "create_accepted" },
+    { flags: { transition_accepted: false as const }, key: "transition_accepted" },
+    { flags: { verification_write_accepted: false as const }, key: "verification_write_accepted" },
+  ] as const;
+
+  for (const c of cases) {
+    const response = phase13RejectedPolicyResponse(c.flags, "persistence backend unavailable");
+    assert.equal(response.status, 503);
+    const payload = (await response.json()) as Record<string, unknown>;
+    assert.equal(payload[c.key], false, `${c.key} must be false in rejected-policy envelope`);
+    assert.equal(payload.response_class, "rejected_policy");
+    assert.deepEqual(payload.retry_policy, {
+      retryable: false,
+      retry_after_ms: null,
+      reason: "non_retryable_class",
+    });
+  }
+});
