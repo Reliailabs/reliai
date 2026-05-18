@@ -5,6 +5,7 @@ import {
   canConcludeMitigation,
   deriveReplayHealth,
   evaluateMitigationConclusionIntegrity,
+  getOperationalDecisionEvidenceRequirements,
   getMitigationOutcomeMessage,
   getReplayHealthLabel,
   deriveScenarioHealth,
@@ -298,4 +299,46 @@ test("operational decision integrity: multiple failures return all reasons deter
     "severity_evidence_mismatch",
     "arei_delta_unlinked_to_mitigation",
   ]);
+});
+
+test("operational decision evidence requirements: deterministic checklist order and blocking flags", () => {
+  const requirements = getOperationalDecisionEvidenceRequirements({
+    replay_done: false,
+    replay_health: "unknown",
+    scenario_health: "partial",
+    mitigation_evidence_exists: false,
+    rollback_evidence_exists: true,
+    causal_chain_complete: false,
+    severity_evidence_aligned: false,
+    arei_delta_linked_to_mitigation: true,
+  });
+
+  assert.deepEqual(
+    requirements.map((item) => item.id),
+    [
+      "replay_completed",
+      "replay_integrity_trusted",
+      "scenario_integrity_trusted",
+      "mitigation_evidence_present",
+      "rollback_evidence_present",
+      "causal_chain_complete",
+      "severity_aligned_with_evidence",
+      "arei_linked_to_mitigation",
+    ],
+  );
+  assert.deepEqual(
+    requirements.filter((item) => item.blocking).map((item) => item.id),
+    [
+      "replay_completed",
+      "replay_integrity_trusted",
+      "scenario_integrity_trusted",
+      "mitigation_evidence_present",
+      "causal_chain_complete",
+      "severity_aligned_with_evidence",
+    ],
+  );
+  assert.equal(
+    requirements.find((item) => item.id === "rollback_evidence_present")?.satisfied,
+    true,
+  );
 });

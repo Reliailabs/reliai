@@ -40,7 +40,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.17` Replay conclusion transition proof | Complete (merged) | merged to `main` |
 | `P12.18` Mitigation message contract alignment | Complete (merged) | merged to `main` |
 | `P12.19` Health label contract alignment | Complete (merged) | merged to `main` |
-| `P12.20` Operational decision integrity policy | Complete (this branch) | `feat/pulse-phase12-20-operational-decision-integrity` |
+| `P12.20` Operational decision integrity policy | Complete (merged) | merged to `main` |
+| `P12.21` Operational decision evidence checklist contract | Complete (this branch) | `feat/pulse-phase12-21-operational-reasoning-evidence-contract` |
 
 ## Ownership contract
 
@@ -201,6 +202,17 @@ on these routes until Phase 11 read-path controls are stable and accepted.
   - allowed with complete trusted evidence => `high`
   - allowed degraded integrity (explicitly configured) => `degraded`
 
+19. `P12.21` Operational decision evidence checklist contract
+- Add contract-owned deterministic evidence checklist output for operator reasoning:
+  - replay completion
+  - replay/scenario integrity trust
+  - mitigation/rollback evidence presence
+  - causal chain completeness
+  - severity/evidence alignment
+  - AREI linkage to mitigation
+- Preserve fixed ordering and explicit blocking flags per requirement.
+- Keep slice contract-only (no layout/marketing changes).
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -223,7 +235,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 ## Phase 12 progress note
 
 - Implementation slices `P12.1` to `P12.19` are merged.
-- `P12.20` adds operational decision integrity policy enforcement and is ready for PR.
+- `P12.20` is merged.
+- `P12.21` adds deterministic operational evidence checklist outputs and tests.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
