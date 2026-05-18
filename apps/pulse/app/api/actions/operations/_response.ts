@@ -22,6 +22,8 @@ export function phase13ErrorResponse(status: 400 | 401, message: string) {
       ok: false as const,
       ingest_accepted: false as const,
       create_accepted: false as const,
+      transition_accepted: false as const,
+      verification_write_accepted: false as const,
       errors: [message],
       warnings: [],
     }),

@@ -13,6 +13,7 @@ Phase 13 delivered validation-only write-path contracts for Operations events an
 - 13.7 Write-path audit envelope standardization
 - 13.8 Retry semantics for validation contracts
 - 13.9 Cross-contract integration invariant coverage
+- 13.10 Error-envelope parity for all validation endpoints
 
 ## Global invariants (must remain true)
 - `contract_version` is explicit and stable on all Phase 13 responses.
