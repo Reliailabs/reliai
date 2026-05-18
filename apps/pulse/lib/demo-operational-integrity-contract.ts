@@ -26,6 +26,32 @@ export type MitigationConclusionDecision = {
     | "both_health_dimensions_not_trustworthy";
 };
 
+export function getMitigationOutcomeMessage(decision: MitigationConclusionDecision): string {
+  if (decision.allowed) {
+    return "Mitigation outcome available.";
+  }
+  return "Mitigation confidence pending replay integrity.";
+}
+
+export function getOperationalConclusionBlockMessage(
+  decision: MitigationConclusionDecision,
+): string | null {
+  if (decision.allowed || decision.block_reason === "none") {
+    return null;
+  }
+
+  if (decision.block_reason === "replay_not_complete") {
+    return "replay not complete";
+  }
+  if (decision.block_reason === "replay_health_not_trustworthy") {
+    return "replay health not trustworthy";
+  }
+  if (decision.block_reason === "scenario_health_not_trustworthy") {
+    return "scenario health not trustworthy";
+  }
+  return "both replay and scenario health are not trustworthy";
+}
+
 export function deriveReplayHealth(profile: DemoScenarioFixture["replay_profile"]): ReplayHealth {
   if (profile.unknown_outcome) {
     return "unknown";
