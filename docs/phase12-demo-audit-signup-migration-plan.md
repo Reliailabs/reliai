@@ -41,7 +41,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.18` Mitigation message contract alignment | Complete (merged) | merged to `main` |
 | `P12.19` Health label contract alignment | Complete (merged) | merged to `main` |
 | `P12.20` Operational decision integrity policy | Complete (merged) | merged to `main` |
-| `P12.21` Operational decision evidence checklist contract | Complete (this branch) | `feat/pulse-phase12-21-operational-reasoning-evidence-contract` |
+| `P12.21` Operational decision evidence checklist contract | Complete (merged) | merged to `main` |
+| `P12.22` Operational decision evidence summary contract | Complete (this branch) | `feat/pulse-phase12-22-operational-evidence-summary-contract` |
 
 ## Ownership contract
 
@@ -213,6 +214,14 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Preserve fixed ordering and explicit blocking flags per requirement.
 - Keep slice contract-only (no layout/marketing changes).
 
+20. `P12.22` Operational decision evidence summary contract
+- Add contract-owned summary projection derived from the same integrity input:
+  - total/satisfied/blocking requirement counts
+  - deterministic blocking reasons
+  - deterministic blocking reason messages
+- Enforce that summary reasons follow `evaluateMitigationConclusionIntegrity(...)` outputs.
+- Keep slice contract-only (no layout/marketing changes).
+
 ## Acceptance criteria
 
 - `/demo` is deterministic and replayable.
@@ -236,7 +245,8 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 
 - Implementation slices `P12.1` to `P12.19` are merged.
 - `P12.20` is merged.
-- `P12.21` adds deterministic operational evidence checklist outputs and tests.
+- `P12.21` is merged.
+- `P12.22` adds deterministic operational evidence summary outputs and tests.
 - Route/ownership contract tests remain aggregated and CI-enforced via `P12.6`.
 - Remaining work for `/demo` depth is iterative product enhancement, not unresolved ownership ambiguity.
 
