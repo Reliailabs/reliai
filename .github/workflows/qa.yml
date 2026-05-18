@@ -72,6 +72,9 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Test Phase 12 PR body validator
+        run: bash scripts/ci/validate_phase12_pr_body.test.sh
+
       - name: Validate Phase 12 PR body contract
         if: ${{ github.event_name == 'pull_request' }}
         env:
