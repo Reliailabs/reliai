@@ -65,6 +65,26 @@ export function phase13ValidationRejectionResponse<T extends ValidationRejection
   );
 }
 
+export function phase13RejectedIdempotencyResponse(params: {
+  message: string;
+  duplicateOfEventId: string;
+  eventFingerprint: string;
+}) {
+  return NextResponse.json(
+    withPhase13Envelope({
+      ok: false as const,
+      ingest_accepted: false as const,
+      response_class: "rejected_idempotency" as const,
+      errors: [params.message],
+      warnings: [],
+      duplicate_of_event_id: params.duplicateOfEventId,
+      event_fingerprint: params.eventFingerprint,
+      retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: "rejected_idempotency" }),
+    }),
+    { status: 409 },
+  );
+}
+
 export function phase13RejectedPolicyResponse(
   acceptedFlags: RejectedPolicyAcceptedFlags,
   message: string,
