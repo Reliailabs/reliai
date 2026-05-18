@@ -99,8 +99,8 @@ Phase 9 implementation may proceed only when an item is either:
 - Phase 9 work may proceed only for explicitly approved `Net-new` slices per this sheet’s classification and approval rules.
 
 ## P12 Closure Note
-- Phase 12 route ownership slices (`/demo`, `/ai-reliability-audit`, `/signup`) are implemented and merged through `P12.1`-`P12.5`.
-- CI enforcement added in `P12.6` via:
+- Phase 12 route ownership, deterministic demo integrity, and contract-consumption slices are implemented and merged through `P12.26`.
+- CI enforcement remains active via:
   - `pnpm --filter pulse test:phase12-route-ownership-gate`
   - wired in `.github/workflows/qa.yml` under `pulse-route-gate`.
 
