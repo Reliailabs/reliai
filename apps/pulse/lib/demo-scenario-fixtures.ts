@@ -31,6 +31,11 @@ export type DemoScenarioFixture = {
   };
   without_reliai_outcome: string;
   mitigation_outcome: string;
+  replay_profile: {
+    stale: boolean;
+    partial: boolean;
+    unknown_outcome: boolean;
+  };
   timeline: ReadonlyArray<{
     id: string;
     step: string;
@@ -67,6 +72,11 @@ const FIXTURE: DemoScenarioFixture = {
     "Refund policy drift remains undetected, exposure expands, and customer trust degrades before escalation.",
   mitigation_outcome:
     "Guardrail policy blocks out-of-threshold approvals and routes edge cases for operator review.",
+  replay_profile: {
+    stale: false,
+    partial: false,
+    unknown_outcome: false,
+  },
   timeline: [
     {
       id: "evt-demo-001",

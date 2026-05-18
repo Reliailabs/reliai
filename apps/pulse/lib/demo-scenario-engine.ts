@@ -17,6 +17,7 @@ export type DemoScenarioReplayFrame = {
   reliability_before_score: number;
   reliability_after_score: number;
   verification_pass_rate: number;
+  replay_health: "healthy" | "stale" | "partial" | "unknown";
 };
 
 export type DemoScenarioReplayController = {
@@ -37,6 +38,14 @@ function toFrame(
   const incident_status =
     bounded >= total ? "mitigated" : fixture.incident.status;
 
+  const replay_health = fixture.replay_profile.unknown_outcome
+    ? "unknown"
+    : fixture.replay_profile.partial
+      ? "partial"
+      : fixture.replay_profile.stale
+        ? "stale"
+        : "healthy";
+
   return {
     cursor: bounded,
     total,
@@ -51,6 +60,7 @@ function toFrame(
     reliability_before_score: fixture.reliability.before_score,
     reliability_after_score: fixture.reliability.after_score,
     verification_pass_rate: fixture.reliability.verification_pass_rate,
+    replay_health,
   };
 }
 

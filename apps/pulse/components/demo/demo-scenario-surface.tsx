@@ -11,6 +11,14 @@ export function DemoScenarioSurface() {
   const [frame, setFrame] = useState(() => replay.current());
 
   const reliabilityDelta = frame.reliability_after_score - frame.reliability_before_score;
+  const healthLabel =
+    frame.replay_health === "healthy"
+      ? "Replay health: healthy"
+      : frame.replay_health === "stale"
+        ? "Replay health: stale snapshot"
+        : frame.replay_health === "partial"
+          ? "Replay health: partial evidence"
+          : "Replay health: unknown outcome";
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -21,6 +29,7 @@ export function DemoScenarioSurface() {
           <p className="text-sm text-zinc-300">
             Replay state: step {frame.cursor}/{frame.total} {frame.done ? "· complete" : "· in progress"}
           </p>
+          <p className="text-xs text-zinc-500">{healthLabel}</p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2">

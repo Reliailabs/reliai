@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createDemoScenarioReplayController } from "../lib/demo-scenario-engine";
+import { getDemoScenarioFixture } from "../lib/demo-scenario-fixtures";
 
 test("demo scenario replay starts at deterministic empty frame", () => {
   const replay = createDemoScenarioReplayController();
@@ -12,6 +13,7 @@ test("demo scenario replay starts at deterministic empty frame", () => {
   assert.equal(frame.done, false);
   assert.equal(frame.event_id, null);
   assert.equal(frame.scenario_id, "demo-inc-refund-policy-001");
+  assert.equal(frame.replay_health, "healthy");
 });
 
 test("demo scenario replay advances deterministically and finishes mitigated", () => {
@@ -47,4 +49,26 @@ test("demo scenario replay seek/reset are bounded and stable", () => {
   const reset = replay.reset();
   assert.equal(reset.cursor, 0);
   assert.equal(reset.done, false);
+});
+
+test("demo scenario replay surfaces stale/partial/unknown health deterministically", () => {
+  const base = getDemoScenarioFixture();
+
+  const stale = createDemoScenarioReplayController({
+    ...base,
+    replay_profile: { stale: true, partial: false, unknown_outcome: false },
+  }).current();
+  assert.equal(stale.replay_health, "stale");
+
+  const partial = createDemoScenarioReplayController({
+    ...base,
+    replay_profile: { stale: false, partial: true, unknown_outcome: false },
+  }).current();
+  assert.equal(partial.replay_health, "partial");
+
+  const unknown = createDemoScenarioReplayController({
+    ...base,
+    replay_profile: { stale: false, partial: false, unknown_outcome: true },
+  }).current();
+  assert.equal(unknown.replay_health, "unknown");
 });

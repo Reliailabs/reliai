@@ -29,6 +29,7 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 | `P12.6` Closure gate enforcement | Complete (merged) | merged to `main` |
 | `P12.7` Demo ownership drift contract | Complete (merged) | merged to `main` |
 | `P12.8` Demo impact/outcome contract depth | Complete (merged) | merged to `main` |
+| `P12.9` Replay resilience state contract | Complete (merged) | merged to `main` |
 
 ## Ownership contract
 
@@ -105,6 +106,11 @@ on these routes until Phase 11 read-path controls are stable and accepted.
 - Add deterministic business-impact and mitigation-outcome fields to scenario fixture.
 - Surface business impact and counterfactual text in the Pulse `/demo` experience.
 - Keep implementation offline deterministic and fixture-backed.
+
+7. `P12.9` Replay resilience state contract
+- Add deterministic replay-health semantics for stale/partial/unknown states.
+- Ensure `/demo` renders explicit fallback state labels without live dependencies.
+- Add replay resilience test coverage to prevent silent state-handling drift.
 
 ## Acceptance criteria
 
