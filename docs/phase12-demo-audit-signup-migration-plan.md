@@ -128,6 +128,16 @@ Use this for any post-closure `P12.x` slice:
 - risk_rollback: <one line>
 ```
 
+### Follow-up definition of done
+
+A `P12.x` follow-up is done only when all are true:
+
+- Scope stayed within declared boundary in PR body.
+- If routes were touched, Phase 12 invariants were explicitly reviewed and preserved.
+- `pnpm --filter pulse test:phase12-route-ownership-gate` result is attached (or CI link provided).
+- `docs/pulse-migration-audit-sheet.md` remains consistent with this Phase 12 source-of-truth doc.
+- PR includes explicit rollback note.
+
 ## Operational invariants
 
 - Demo behavior must remain deterministic and replayable.
