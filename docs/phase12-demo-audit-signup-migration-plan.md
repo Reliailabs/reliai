@@ -16,6 +16,11 @@ Define migration ownership, acceptance criteria, and validation gates for:
 
 ## Ownership contracts
 
+### `/onboarding` (ownership dependency)
+
+- Owner: Pulse (`apps/pulse/app/(app)/onboarding/page.tsx`).
+- Dependency note: while `/onboarding` is outside the core Phase 12 route set, onboarding-facing copy changes must follow `docs/marketing-copy-language-enforcement-rules.md` to avoid naming/CTA drift across owned Pulse entry flows.
+
 ### `/demo`
 
 - Owner: Pulse (`apps/pulse`).
@@ -58,6 +63,7 @@ Define migration ownership, acceptance criteria, and validation gates for:
 ## Manual reviewer checks
 
 - Verify CTA labels match actual destination behavior (`/ai-reliability-audit` -> `/demo` chain).
+- Verify marketing/onboarding copy updates comply with `docs/marketing-copy-language-enforcement-rules.md`.
 - Verify presenter layers consume contract outputs directly and do not reinterpret integrity semantics.
 - Verify any new demo behavior remains deterministic under repeated reload/replay.
 - Verify no live provider dependency was introduced into demo state/rendering paths.

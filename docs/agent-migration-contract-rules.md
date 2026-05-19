@@ -13,6 +13,16 @@ Current state:
 - `Phase 9` unblock condition is satisfied as of `M9.3` migration-gate closure.
 - This contract remains mandatory for any additional migration slices and for all approved `Net-new` work that depends on migrated surfaces.
 
+## Language Enforcement Dependency
+Required for any migration slice touching public marketing or onboarding-facing copy:
+- `docs/marketing-copy-language-enforcement-rules.md`
+
+Mandatory checks:
+- banned generic SaaS nouns are absent from changed copy
+- CTA labels match actual destination behavior
+- "Reliai" vs "Pulse" naming follows contract rules
+- `/onboarding` copy remains Pulse-owned and aligned with app-shell/auth ownership constraints
+
 ## Proxy Route Exception Policy
 Default:
 - proxy routes are required for client/API action parity slices

@@ -12,6 +12,7 @@ Phase 9 implementation may proceed only when an item is either:
 - Keep in `apps/web` for now: `/docs`, `/docs-marketing`, `/pricing`, `/signup` (Pulse now provides explicit `/signup` compatibility shim redirect in `P12.5`).
 - Required in `apps/pulse` before readiness: `/projects/[projectId]/reliability`, `/projects/[projectId]/regressions`, `/projects/[projectId]/timeline`, `/projects/[projectId]/ingestion`, `/projects/[projectId]/processors`, `/projects/[projectId]/settings`, `/playground`.
 - Conditional ownership routes explicitly retained in `apps/web` for this migration gate: `/settings/billing`, `/billing/success` (`/onboarding` moved to Pulse in `M8.1`).
+- Onboarding ownership is Pulse-owned: `/onboarding` is implemented in `apps/pulse/app/(app)/onboarding/page.tsx` and governed by Pulse app-shell/auth contracts.
 - Migration gate closure achieved in `M9.3`; Phase 9 is unblocked for explicitly approved `Net-new` slices.
 
 ## Status Vocabulary
@@ -51,6 +52,7 @@ Phase 9 implementation may proceed only when an item is either:
 7. Complete the route contract entry required by `docs/agent-migration-contract-rules.md` for each `M7+` slice.
 8. For any `P12.x` follow-up, include the **Required PR body snippet** from `docs/phase12-demo-audit-signup-migration-plan.md`.
 9. For any `P12.x` follow-up, include a link to the successful `pulse-route-gate` run in the PR body (`ci_proof` field).
+10. For any PR touching public marketing copy (`apps/pulse/app/(marketing)/`, `apps/pulse/components/marketing-linear/`) or onboarding-facing copy (`/onboarding` flows), apply `docs/marketing-copy-language-enforcement-rules.md` and include explicit compliance in review notes.
 
 ## Linked Migration Plans
 - `docs/agent-migration-contract-rules.md`
@@ -65,6 +67,7 @@ Phase 9 implementation may proceed only when an item is either:
 - `docs/pulse-m5-4-project-parity-closure-audit.md`
 - `docs/pulse-project-scoped-parity-plan.md`
 - `docs/pulse-remaining-migration-docs-plan.md`
+- `docs/marketing-copy-language-enforcement-rules.md`
 
 ## Queued Follow-Up Slices (Deferred Write-Parity Register)
 - `M7.4b` — Ingestion write parity (`/projects/[projectId]/ingestion`)
