@@ -14,6 +14,17 @@ Entrypoints in scope:
 - `/ai-reliability-audit`
 - `/signup`
 
+## Review Hypotheses
+
+H1. The public triad journey is operationally coherent:
+- every entrypoint exposes at least one valid next step into another in-scope entrypoint.
+
+H2. Continuity integrity is stable under current contracts:
+- transition graph remains strongly connected and route ownership remains explicit.
+
+H3. No additional instrumentation is required for continuity decisions:
+- existing events and guards are enough to detect route-level journey breakage.
+
 ## Inputs Used (Existing Evidence Only)
 
 1. Contract tests already in repo:
@@ -30,6 +41,20 @@ Entrypoints in scope:
 - merged `#286` (`pulse-route-gate` includes dead-end probe)
 
 No new telemetry sources, runtime dashboards, or additional event types were introduced for this review.
+
+## Measurable Review Criteria
+
+C1. Dead-end criterion:
+- fail if any in-scope entrypoint has zero outgoing links to in-scope entrypoints.
+
+C2. Connectivity criterion:
+- fail if strong connectivity across `/`, `/demo`, `/ai-reliability-audit`, `/signup` is broken.
+
+C3. Ownership criterion:
+- fail if `/signup` reverts to silent redirect behavior or `/demo` ownership contract regresses.
+
+C4. Contract criterion:
+- fail if continuity behavior diverges from entrypoint analytics route/transition allowlists.
 
 ## Findings
 
@@ -80,6 +105,20 @@ What remains intentionally unclaimed:
 - Conversion effectiveness (requires production analytics consumption, out of scope).
 - Qualitative copy effectiveness (requires user research/revenue data, out of scope).
 
+## Decision Thresholds
+
+Revive 14.1 hierarchy hardening only when at least one threshold is hit:
+- T1: dead-end criterion fails in CI.
+- T2: connectivity criterion fails in CI.
+- T3: ownership criterion fails in CI or route-contract review.
+- T4: a continuity regression is reproduced in probe/tests and mapped to CTA hierarchy confusion.
+
+Keep 14.1 deferred when all criteria pass:
+- no dead-end failures
+- no connectivity failures
+- no ownership regressions
+- no continuity regression repro tied to hierarchy
+
 ## Decisions
 
 1. Close Phase 14 as complete (`14.2`, `14.2b`, `14.3` landed).
@@ -89,6 +128,10 @@ What remains intentionally unclaimed:
 - continuity graph coverage
 - query-preserving conversion path behavior
 - entrypoint analytics contract compatibility
+
+5. Changes that alter CTA prominence, CTA count, or entrypoint transition intent are blocked unless:
+- they include evidence tied to one of the Phase 15 failure thresholds
+- they include updated continuity/contract tests where behavior changes
 
 ## Allowed Next Work After This Review
 
@@ -101,7 +144,22 @@ Requires a new spec before implementation:
 - analytics dashboards/reporting layer
 - hierarchy redesign or visual prominence retuning
 
+## Intentionally Ignored Signals (This Phase)
+
+- aggregate conversion rate movement
+- campaign/source attribution optimization
+- marketing copy A/B performance
+- dashboard-level funnel analytics
+
+These are intentionally excluded to prevent speculative optimization before continuity integrity decisions.
+
+## Prohibited Changes Without New Evidence
+
+- adding new top-level public CTAs that modify transition intent
+- increasing cross-link density between entrypoints without documented confusion evidence
+- hierarchy/prominence retuning framed as “polish” without threshold-trigger evidence
+- adding new analytics events for entrypoints without a proven continuity evidence gap
+
 ## Validation
 
 Document-only slice. No code path changes.
-
