@@ -19,6 +19,9 @@ test("demo route renders deterministic scenario surface with contract sections",
   assert.match(html, /Scenario health: healthy/);
   assert.match(html, /Operational conclusion blocked:/);
   assert.match(html, /replay not complete/);
+  assert.match(html, /Review audit path/);
+  assert.match(html, /Start with Reliai/);
+  assert.match(html, /Back to product/);
   assert.match(html, /Evidence requirements:\s*7\/8 satisfied/);
   assert.match(html, /Blocking requirements:\s*1/);
   assert.match(html, /Conclusion confidence:\s*low/);

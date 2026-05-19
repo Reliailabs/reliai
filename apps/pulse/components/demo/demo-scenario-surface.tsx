@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -64,6 +65,26 @@ export function DemoScenarioSurface({
           </p>
           <p className="text-xs text-zinc-500">{healthLabel}</p>
           <p className="text-xs text-zinc-500">{scenarioLabel}</p>
+          <div className="pt-3 flex flex-wrap items-center gap-3">
+            <Link
+              href="/ai-reliability-audit"
+              className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-100 transition-colors hover:bg-zinc-800"
+            >
+              Review audit path
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded-md border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-900"
+            >
+              Start with Reliai
+            </Link>
+            <Link
+              href="/"
+              className="rounded-md border border-zinc-800 px-3 py-2 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-zinc-200"
+            >
+              Back to product
+            </Link>
+          </div>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2">
