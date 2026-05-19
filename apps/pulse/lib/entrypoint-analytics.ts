@@ -59,6 +59,15 @@ const localAdapter: EntrypointAnalyticsAdapter = {
 };
 
 let adapter: EntrypointAnalyticsAdapter = typeof window === "undefined" ? noopAdapter : localAdapter;
+const seenPageViews = new Set<string>();
+
+function safeTrack(event: EntrypointAnalyticsEvent) {
+  try {
+    adapter.track(event);
+  } catch {
+    // Analytics failures must never break navigation or UI flows.
+  }
+}
 
 export function setEntrypointAnalyticsAdapter(nextAdapter: EntrypointAnalyticsAdapter) {
   adapter = nextAdapter;
@@ -96,7 +105,16 @@ export function extractEntrypointAttribution(searchParams?: URLSearchParams): En
 }
 
 export function trackEntrypointPageViewed(route: EntrypointRoute, sourceAttribution?: EntrypointSourceAttribution) {
-  adapter.track({ event: "entrypoint_page_viewed", route, source_attribution: sourceAttribution });
+  const key = JSON.stringify({
+    route,
+    source_route: sourceAttribution?.source_route ?? null,
+    utm_source: sourceAttribution?.utm_source ?? null,
+    utm_medium: sourceAttribution?.utm_medium ?? null,
+    utm_campaign: sourceAttribution?.utm_campaign ?? null,
+  });
+  if (seenPageViews.has(key)) return;
+  seenPageViews.add(key);
+  safeTrack({ event: "entrypoint_page_viewed", route, source_attribution: sourceAttribution });
 }
 
 export function trackEntrypointPrimaryCtaClicked(input: {
@@ -105,7 +123,7 @@ export function trackEntrypointPrimaryCtaClicked(input: {
   destination: string;
   sourceAttribution?: EntrypointSourceAttribution;
 }) {
-  adapter.track({
+  safeTrack({
     event: "entrypoint_primary_cta_clicked",
     route: input.route,
     cta_id: input.ctaId,
@@ -120,11 +138,15 @@ export function trackEntrypointContinuityTransitionExecuted(input: {
   sourceAttribution?: EntrypointSourceAttribution;
 }) {
   if (!isAllowedEntrypointTransition(input.fromRoute, input.toRoute)) return;
-  adapter.track({
+  safeTrack({
     event: "entrypoint_continuity_transition_executed",
     from_route: input.fromRoute,
     to_route: input.toRoute,
     trigger: "cta_click",
     source_attribution: input.sourceAttribution,
   });
+}
+
+export function resetEntrypointAnalyticsStateForTests() {
+  seenPageViews.clear();
 }
