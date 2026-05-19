@@ -170,6 +170,7 @@ test("phase13 accepted-duplicate helper keeps deterministic 200 envelope", async
     immutable_fields: ["idempotency_key"],
     reason: "duplicate replay accepted",
   });
+  assert.equal(payload.retry_policy, undefined);
 });
 
 test("phase13 accepted-validation helper keeps deterministic 200 envelope", async () => {
@@ -208,4 +209,5 @@ test("phase13 accepted-validation helper keeps deterministic 200 envelope", asyn
     immutable_fields: ["idempotency_key"],
     reason: "accepted in validation-only mode",
   });
+  assert.equal(payload.retry_policy, undefined);
 });
