@@ -147,7 +147,7 @@ export function AuditPage() {
                 href="/demo"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm w-fit"
               >
-                View demo
+                Run demo scenario
               </a>
               <div className="border border-zinc-800 rounded-lg px-4 py-3 text-zinc-400 text-sm max-w-sm">
                 If we don&apos;t find at least 3 real issues or meaningful risks, you don&apos;t
