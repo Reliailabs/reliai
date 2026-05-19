@@ -8,12 +8,13 @@ import {
   phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
   phase13ValidationRejectionResponse,
+  PHASE13_HTTP_STATUS,
   PHASE13_RESPONSE_CLASS,
 } from "../app/api/actions/operations/_response";
 
 test("phase13 error envelope includes all validation acceptance flags", async () => {
   const response = phase13ErrorResponse(401, "unauthorized");
-  assert.equal(response.status, 401);
+  assert.equal(response.status, PHASE13_HTTP_STATUS.unauthorized);
 
   const payload = (await response.json()) as Record<string, unknown>;
   assert.equal(payload.contract_version, "phase13-v1");
@@ -34,7 +35,7 @@ test("phase13 error envelope includes all validation acceptance flags", async ()
 
 test("phase13 error envelope preserves explicit parse errors", async () => {
   const response = phase13ErrorResponse(400, "invalid JSON body");
-  assert.equal(response.status, 400);
+  assert.equal(response.status, PHASE13_HTTP_STATUS.invalidRequest);
 
   const payload = (await response.json()) as { errors?: unknown };
   assert.deepEqual(payload.errors, ["invalid JSON body"]);
@@ -51,7 +52,7 @@ test("phase13 rejected-policy helper includes retry policy and route-specific ac
     { transition_accepted: false },
     "lifecycle-transition persistence backend unavailable",
   );
-  assert.equal(response.status, 503);
+  assert.equal(response.status, PHASE13_HTTP_STATUS.policyRejected);
 
   const payload = (await response.json()) as Record<string, unknown>;
   assert.equal(payload.contract_version, "phase13-v1");
@@ -78,7 +79,7 @@ test("phase13 rejected-policy helper preserves acceptance-flag parity across val
 
   for (const c of cases) {
     const response = phase13RejectedPolicyResponse(c.flags, "persistence backend unavailable");
-    assert.equal(response.status, 503);
+    assert.equal(response.status, PHASE13_HTTP_STATUS.policyRejected);
     const payload = (await response.json()) as Record<string, unknown>;
     assert.equal(payload[c.key], false, `${c.key} must be false in rejected-policy envelope`);
     assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.rejectedPolicy);
@@ -101,7 +102,7 @@ test("phase13 validation-rejection helper injects deterministic retry policy", a
     422,
   );
 
-  assert.equal(response.status, 422);
+  assert.equal(response.status, PHASE13_HTTP_STATUS.validationRejected);
   const payload = (await response.json()) as Record<string, unknown>;
   assert.equal(payload.contract_version, "phase13-v1");
   assert.equal(payload.mode, "validation_only");
@@ -121,7 +122,7 @@ test("phase13 rejected-idempotency helper keeps deterministic 409 envelope", asy
     eventFingerprint: "opsevt-abc",
   });
 
-  assert.equal(response.status, 409);
+  assert.equal(response.status, PHASE13_HTTP_STATUS.idempotencyRejected);
   const payload = (await response.json()) as Record<string, unknown>;
   assert.equal(payload.contract_version, "phase13-v1");
   assert.equal(payload.mode, "validation_only");
@@ -153,7 +154,7 @@ test("phase13 accepted-duplicate helper keeps deterministic 200 envelope", async
     },
   });
 
-  assert.equal(response.status, 200);
+  assert.equal(response.status, PHASE13_HTTP_STATUS.accepted);
   const payload = (await response.json()) as Record<string, unknown>;
   assert.equal(payload.contract_version, "phase13-v1");
   assert.equal(payload.mode, "validation_only");
@@ -193,7 +194,7 @@ test("phase13 accepted-validation helper keeps deterministic 200 envelope", asyn
     },
   );
 
-  assert.equal(response.status, 200);
+  assert.equal(response.status, PHASE13_HTTP_STATUS.accepted);
   const payload = (await response.json()) as Record<string, unknown>;
   assert.equal(payload.contract_version, "phase13-v1");
   assert.equal(payload.mode, "validation_only");

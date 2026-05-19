@@ -12,6 +12,15 @@ export const PHASE13_RESPONSE_CLASS = {
   rejectedTransition: "rejected_transition",
 } as const;
 
+export const PHASE13_HTTP_STATUS = {
+  accepted: 200,
+  validationRejected: 422,
+  idempotencyRejected: 409,
+  unauthorized: 401,
+  invalidRequest: 400,
+  policyRejected: 503,
+} as const;
+
 export const PHASE13_INGEST_CONTRACT = {
   contract_version: "phase13-v1",
   mode: "validation_only",
@@ -100,7 +109,7 @@ export function phase13AcceptedDuplicateResponse(params: AcceptedDuplicateRespon
       request_shape_hash: params.requestShapeHash,
       audit_receipt: params.auditReceipt,
     },
-    200,
+    PHASE13_HTTP_STATUS.accepted,
   );
 }
 
@@ -110,7 +119,7 @@ export function phase13AcceptedValidationResponse<T extends { ok: true }>(result
       ...result,
       audit_receipt: auditReceipt,
     },
-    200,
+    PHASE13_HTTP_STATUS.accepted,
   );
 }
 
@@ -130,14 +139,14 @@ export function phase13RejectedIdempotencyResponse(params: {
       event_fingerprint: params.eventFingerprint,
       retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: PHASE13_RESPONSE_CLASS.rejectedIdempotency }),
     },
-    409,
+    PHASE13_HTTP_STATUS.idempotencyRejected,
   );
 }
 
 export function phase13RejectedPolicyResponse(
   acceptedFlags: RejectedPolicyAcceptedFlags,
   message: string,
-  status = 503,
+  status = PHASE13_HTTP_STATUS.policyRejected,
 ) {
   return buildPhase13JsonResponse(
     {
