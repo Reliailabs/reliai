@@ -110,6 +110,7 @@ Phase 16 closes when:
 ## Cycle Artifacts
 
 - Cycle 0 decision record: `docs/phase16-entrypoint-evidence-review-cycle0.md`
+- Evidence collection protocol: `docs/phase16-entrypoint-evidence-collection-protocol.md`
 
 ## Validation
 
