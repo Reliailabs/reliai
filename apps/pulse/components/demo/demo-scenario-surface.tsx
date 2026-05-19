@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
+import { EntrypointLink } from "@/components/entrypoints/entrypoint-link";
 
 import {
   evaluateMitigationConclusionIntegrity,
@@ -66,24 +66,28 @@ export function DemoScenarioSurface({
           <p className="text-xs text-zinc-500">{healthLabel}</p>
           <p className="text-xs text-zinc-500">{scenarioLabel}</p>
           <div className="pt-3 flex flex-wrap items-center gap-3">
-            <Link
+            <EntrypointLink
               href="/ai-reliability-audit"
+              currentRoute="/demo"
+              ctaId="demo_header_primary_audit"
               className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-medium text-zinc-100 transition-colors hover:bg-zinc-800"
             >
               Review audit path
-            </Link>
-            <Link
+            </EntrypointLink>
+            <EntrypointLink
               href="/signup"
+              currentRoute="/demo"
               className="rounded-md border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-900"
             >
               Start with Reliai
-            </Link>
-            <Link
+            </EntrypointLink>
+            <EntrypointLink
               href="/"
+              currentRoute="/demo"
               className="rounded-md border border-zinc-800 px-3 py-2 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-zinc-200"
             >
               Back to product
-            </Link>
+            </EntrypointLink>
           </div>
         </header>
 

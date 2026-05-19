@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { ChevronRight } from "lucide-react"
 import { MarketingSection } from "./marketing-section"
+import { EntrypointLink } from "@/components/entrypoints/entrypoint-link";
 
 const auditStages = [
   {
@@ -143,12 +144,14 @@ export function AuditPage() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex flex-col gap-4"
             >
-              <a
+              <EntrypointLink
                 href="/demo"
+                currentRoute="/ai-reliability-audit"
+                ctaId="audit_hero_primary_demo"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm w-fit"
               >
                 Run demo scenario
-              </a>
+              </EntrypointLink>
               <div className="border border-zinc-800 rounded-lg px-4 py-3 text-zinc-400 text-sm max-w-sm">
                 If we don&apos;t find at least 3 real issues or meaningful risks, you don&apos;t
                 pay.
@@ -482,24 +485,27 @@ export function AuditPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
-            <a
+            <EntrypointLink
               href="/demo"
+              currentRoute="/ai-reliability-audit"
               className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
             >
               Open demo scenario
-            </a>
-            <a
+            </EntrypointLink>
+            <EntrypointLink
               href="/signup"
+              currentRoute="/ai-reliability-audit"
               className="px-5 py-2.5 border border-zinc-700 text-zinc-100 font-medium rounded-lg hover:bg-zinc-900 transition-colors text-sm"
             >
               Start with Reliai
-            </a>
-            <a
+            </EntrypointLink>
+            <EntrypointLink
               href="/"
+              currentRoute="/ai-reliability-audit"
               className="px-5 py-2.5 border border-zinc-800 text-zinc-400 font-medium rounded-lg hover:bg-zinc-900 hover:text-zinc-200 transition-colors text-sm"
             >
               Back to product
-            </a>
+            </EntrypointLink>
           </div>
         </div>
       </MarketingSection>
