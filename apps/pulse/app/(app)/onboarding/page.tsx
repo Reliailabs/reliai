@@ -46,7 +46,7 @@ export default async function OnboardingPage({
       <div className="mx-auto max-w-[980px] px-6 py-8 space-y-6">
         <Card className="p-6">
           <h1 className="text-3xl font-semibold text-primary">See your first AI incident in minutes</h1>
-          <p className="mt-3 text-sm text-secondary">Run guided onboarding from Pulse and preserve sign-in return path continuity.</p>
+          <p className="mt-3 text-sm text-secondary">Run guided onboarding from Reliai and preserve sign-in return path continuity.</p>
           <div className="mt-6 flex gap-2">
             <Button asChild><Link href={signInHref}>Start guided simulation</Link></Button>
             <Button asChild variant="outline"><Link href="/sign-in">Sign in</Link></Button>
@@ -132,7 +132,7 @@ export default async function OnboardingPage({
       <OnboardingPathTracker path={selectedPath} />
       <Card className="p-6">
         <p className="text-xs uppercase tracking-[0.24em] text-secondary">Quick start</p>
-        <h1 className="mt-3 text-3xl font-semibold text-primary">Onboarding ownership in Pulse</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-primary">Onboarding ownership in Reliai</h1>
         <div className="mt-5 flex flex-wrap gap-2">
           <Button asChild size="sm" variant={selectedPath === "choose" ? "default" : "outline"}><Link href="/onboarding">Choose path</Link></Button>
           <Button asChild size="sm" variant={selectedPath === "sdk" ? "default" : "outline"}><Link href="/onboarding?path=sdk">Connect SDK</Link></Button>
@@ -142,7 +142,7 @@ export default async function OnboardingPage({
       </Card>
 
       {selectedPath === "simulation" ? (
-        <OnboardingSimulationRunner defaultProjectName={primaryProject?.name ?? "Pulse Onboarding"} autoStart={autoStartSimulation} />
+        <OnboardingSimulationRunner defaultProjectName={primaryProject?.name ?? "Reliability Onboarding"} autoStart={autoStartSimulation} />
       ) : null}
 
       {selectedPath !== "simulation" ? (

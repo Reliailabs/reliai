@@ -79,7 +79,7 @@ export function HeroSection() {
                 href="/demo"
                 className="text-zinc-300 font-medium hover:text-white transition-colors flex items-center gap-2 text-sm"
               >
-                Explore the platform <span aria-hidden="true">→</span>
+                Replay a production failure <span aria-hidden="true">→</span>
               </a>
             </motion.div>
           </div>
@@ -89,7 +89,7 @@ export function HeroSection() {
         <div className="w-full flex justify-center px-6 mt-8">
           <div className="flex items-center gap-2">
             <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-300">
-              Operational demo preview
+              Production failure simulation
             </span>
             <span className="rounded-full border border-zinc-700 bg-zinc-900/80 px-3 py-1 text-xs text-zinc-500">
               AREI · Incidents · Actions
