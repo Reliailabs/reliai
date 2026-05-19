@@ -17,10 +17,14 @@ export function withPhase13Envelope<T extends object>(payload: T): Result<T> {
   };
 }
 
+function buildPhase13JsonResponse<T extends object>(payload: T, status: number) {
+  return NextResponse.json(withPhase13Envelope(payload), { status });
+}
+
 export function phase13ErrorResponse(status: 400 | 401, message: string) {
   const responseClass = status === 400 ? "rejected_schema" : "rejected_policy";
-  return NextResponse.json(
-    withPhase13Envelope({
+  return buildPhase13JsonResponse(
+    {
       ok: false as const,
       ingest_accepted: false as const,
       create_accepted: false as const,
@@ -30,8 +34,8 @@ export function phase13ErrorResponse(status: 400 | 401, message: string) {
       errors: [message],
       warnings: [],
       retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass }),
-    }),
-    { status },
+    },
+    status,
   );
 }
 
@@ -64,18 +68,18 @@ type AcceptedDuplicateResponseParams = {
 };
 
 export function phase13ValidationRejectionResponse<T extends ValidationRejectionPayload>(payload: T, status = 422) {
-  return NextResponse.json(
-    withPhase13Envelope({
+  return buildPhase13JsonResponse(
+    {
       ...payload,
       retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: payload.response_class }),
-    }),
-    { status },
+    },
+    status,
   );
 }
 
 export function phase13AcceptedDuplicateResponse(params: AcceptedDuplicateResponseParams) {
-  return NextResponse.json(
-    withPhase13Envelope({
+  return buildPhase13JsonResponse(
+    {
       ok: true as const,
       ingest_accepted: true as const,
       response_class: "accepted_duplicate" as const,
@@ -84,18 +88,18 @@ export function phase13AcceptedDuplicateResponse(params: AcceptedDuplicateRespon
       event_fingerprint: params.eventFingerprint,
       request_shape_hash: params.requestShapeHash,
       audit_receipt: params.auditReceipt,
-    }),
-    { status: 200 },
+    },
+    200,
   );
 }
 
 export function phase13AcceptedValidationResponse<T extends { ok: true }>(result: T, auditReceipt: object) {
-  return NextResponse.json(
-    withPhase13Envelope({
+  return buildPhase13JsonResponse(
+    {
       ...result,
       audit_receipt: auditReceipt,
-    }),
-    { status: 200 },
+    },
+    200,
   );
 }
 
@@ -104,8 +108,8 @@ export function phase13RejectedIdempotencyResponse(params: {
   duplicateOfEventId: string;
   eventFingerprint: string;
 }) {
-  return NextResponse.json(
-    withPhase13Envelope({
+  return buildPhase13JsonResponse(
+    {
       ok: false as const,
       ingest_accepted: false as const,
       response_class: "rejected_idempotency" as const,
@@ -114,8 +118,8 @@ export function phase13RejectedIdempotencyResponse(params: {
       duplicate_of_event_id: params.duplicateOfEventId,
       event_fingerprint: params.eventFingerprint,
       retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: "rejected_idempotency" }),
-    }),
-    { status: 409 },
+    },
+    409,
   );
 }
 
@@ -124,15 +128,15 @@ export function phase13RejectedPolicyResponse(
   message: string,
   status = 503,
 ) {
-  return NextResponse.json(
-    withPhase13Envelope({
+  return buildPhase13JsonResponse(
+    {
       ok: false as const,
       response_class: "rejected_policy" as const,
       errors: [message],
       warnings: [],
       retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: "rejected_policy" }),
       ...acceptedFlags,
-    }),
-    { status },
+    },
+    status,
   );
 }
