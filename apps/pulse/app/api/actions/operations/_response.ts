@@ -55,6 +55,14 @@ type ValidationRejectionPayload = {
   warnings: string[];
 };
 
+type AcceptedDuplicateResponseParams = {
+  warningMessage: string;
+  duplicateOfEventId: string;
+  eventFingerprint: string;
+  requestShapeHash: string;
+  auditReceipt: object;
+};
+
 export function phase13ValidationRejectionResponse<T extends ValidationRejectionPayload>(payload: T, status = 422) {
   return NextResponse.json(
     withPhase13Envelope({
@@ -62,6 +70,22 @@ export function phase13ValidationRejectionResponse<T extends ValidationRejection
       retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: payload.response_class }),
     }),
     { status },
+  );
+}
+
+export function phase13AcceptedDuplicateResponse(params: AcceptedDuplicateResponseParams) {
+  return NextResponse.json(
+    withPhase13Envelope({
+      ok: true as const,
+      ingest_accepted: true as const,
+      response_class: "accepted_duplicate" as const,
+      warnings: [params.warningMessage],
+      duplicate_of_event_id: params.duplicateOfEventId,
+      event_fingerprint: params.eventFingerprint,
+      request_shape_hash: params.requestShapeHash,
+      audit_receipt: params.auditReceipt,
+    }),
+    { status: 200 },
   );
 }
 

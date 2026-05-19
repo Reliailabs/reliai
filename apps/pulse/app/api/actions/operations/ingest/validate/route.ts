@@ -7,6 +7,7 @@ import { getOperationsIngestRepo } from "@/lib/operations-ingest-repository";
 import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
 import {
+  phase13AcceptedDuplicateResponse,
   phase13ErrorResponse,
   phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
@@ -44,19 +45,13 @@ export async function POST(request: Request) {
       requestShapeHash: result.request_shape_hash,
       reason: "duplicate replay accepted",
     });
-    return NextResponse.json(
-      withPhase13Envelope({
-        ok: true as const,
-        ingest_accepted: true as const,
-        response_class: "accepted_duplicate" as const,
-        warnings: ["duplicate replay accepted"],
-        duplicate_of_event_id: dedup.record.eventId,
-        event_fingerprint: result.event_fingerprint,
-        request_shape_hash: result.request_shape_hash,
-        audit_receipt: audit,
-      }),
-      { status: 200 },
-    );
+    return phase13AcceptedDuplicateResponse({
+      warningMessage: "duplicate replay accepted",
+      duplicateOfEventId: dedup.record.eventId,
+      eventFingerprint: result.event_fingerprint,
+      requestShapeHash: result.request_shape_hash,
+      auditReceipt: audit,
+    });
   }
   if (dedup.status === "rejected_idempotency") {
     return phase13RejectedIdempotencyResponse({
