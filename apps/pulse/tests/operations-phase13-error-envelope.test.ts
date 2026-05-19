@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   phase13AcceptedDuplicateResponse,
+  phase13AcceptedValidationResponse,
   phase13ErrorResponse,
   phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
@@ -168,5 +169,43 @@ test("phase13 accepted-duplicate helper keeps deterministic 200 envelope", async
     issued_at: "2026-05-18T22:00:00.000Z",
     immutable_fields: ["idempotency_key"],
     reason: "duplicate replay accepted",
+  });
+});
+
+test("phase13 accepted-validation helper keeps deterministic 200 envelope", async () => {
+  const response = phase13AcceptedValidationResponse(
+    {
+      ok: true as const,
+      ingest_accepted: true as const,
+      response_class: "accepted_validation" as const,
+      event_fingerprint: "opsevt-xyz",
+      request_shape_hash: "shape-xyz",
+      immutable_fields: ["idempotency_key"],
+      warnings: [],
+    },
+    {
+      event_id: "evt-ok-1",
+      issued_at: "2026-05-18T22:30:00.000Z",
+      immutable_fields: ["idempotency_key"],
+      reason: "accepted in validation-only mode",
+    },
+  );
+
+  assert.equal(response.status, 200);
+  const payload = (await response.json()) as Record<string, unknown>;
+  assert.equal(payload.contract_version, "phase13-v1");
+  assert.equal(payload.mode, "validation_only");
+  assert.equal(payload.execution_granted, false);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.ingest_accepted, true);
+  assert.equal(payload.response_class, "accepted_validation");
+  assert.equal(payload.event_fingerprint, "opsevt-xyz");
+  assert.equal(payload.request_shape_hash, "shape-xyz");
+  assert.deepEqual(payload.immutable_fields, ["idempotency_key"]);
+  assert.deepEqual(payload.audit_receipt, {
+    event_id: "evt-ok-1",
+    issued_at: "2026-05-18T22:30:00.000Z",
+    immutable_fields: ["idempotency_key"],
+    reason: "accepted in validation-only mode",
   });
 });

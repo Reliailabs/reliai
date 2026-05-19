@@ -1,14 +1,12 @@
-import { NextResponse } from "next/server";
-
 import { getOperatorSession } from "@/lib/auth";
 import { getOperationsIngestRepo } from "@/lib/operations-ingest-repository";
 import { validateVerificationWriteContract } from "@/lib/operations-verification-write";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
 import {
+  phase13AcceptedValidationResponse,
   phase13ErrorResponse,
   phase13RejectedPolicyResponse,
   phase13ValidationRejectionResponse,
-  withPhase13Envelope,
 } from "../../../_response";
 
 export async function POST(request: Request) {
@@ -100,5 +98,5 @@ export async function POST(request: Request) {
     reason: "verification write intent validated in non-executing mode",
   });
 
-  return NextResponse.json(withPhase13Envelope({ ...result, audit_receipt: audit }), { status: 200 });
+  return phase13AcceptedValidationResponse(result, audit);
 }

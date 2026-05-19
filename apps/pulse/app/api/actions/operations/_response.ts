@@ -89,6 +89,16 @@ export function phase13AcceptedDuplicateResponse(params: AcceptedDuplicateRespon
   );
 }
 
+export function phase13AcceptedValidationResponse<T extends { ok: true }>(result: T, auditReceipt: object) {
+  return NextResponse.json(
+    withPhase13Envelope({
+      ...result,
+      audit_receipt: auditReceipt,
+    }),
+    { status: 200 },
+  );
+}
+
 export function phase13RejectedIdempotencyResponse(params: {
   message: string;
   duplicateOfEventId: string;
