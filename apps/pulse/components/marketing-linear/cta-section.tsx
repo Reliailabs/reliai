@@ -8,8 +8,8 @@ export function CTASection() {
               Start with an audit or live operational demo.
             </h2>
             <p className="text-zinc-400 text-base leading-relaxed">
-              Run an AI reliability audit to get certification posture, or review the platform to see how
-              Reliai turns production reliability signals into action.
+              Run an AI reliability audit to get certification posture, or replay a production
+              failure to see how Reliai turns reliability evidence into mitigation decisions.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -17,7 +17,7 @@ export function CTASection() {
               href="/demo"
               className="px-5 py-2.5 border border-zinc-700 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors text-sm"
             >
-              Explore the platform
+              Replay a production failure
             </a>
             <a
               href="/ai-reliability-audit"
