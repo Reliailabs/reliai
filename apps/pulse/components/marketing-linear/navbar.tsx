@@ -27,6 +27,9 @@ export function Navbar() {
             </a>
           </div>
           <div className="flex items-center gap-4">
+            <a href="/signup" className="text-sm text-zinc-400 hover:text-white transition-colors">
+              Get started
+            </a>
             <a href="/sign-in?return_to=%2Fpulse" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Sign in
             </a>
