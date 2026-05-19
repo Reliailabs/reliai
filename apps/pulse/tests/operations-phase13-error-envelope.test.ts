@@ -213,3 +213,19 @@ test("phase13 accepted-validation helper keeps deterministic 200 envelope", asyn
   });
   assert.equal(payload.retry_policy, undefined);
 });
+
+test("phase13 validation-rejection helper rejects accepted response classes", () => {
+  assert.throws(
+    () =>
+      phase13ValidationRejectionResponse(
+        {
+          ok: false as const,
+          response_class: PHASE13_RESPONSE_CLASS.acceptedValidation as unknown as never,
+          errors: ["bad payload"],
+          warnings: [],
+        },
+        PHASE13_HTTP_STATUS.validationRejected,
+      ),
+    /Invalid rejection response_class/,
+  );
+});
