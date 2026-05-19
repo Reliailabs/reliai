@@ -317,16 +317,23 @@ export function IncidentsContent({
                 {incident.title}
               </p>
               <div className="mb-2">
-                <button
-                  type="button"
+                <span
+                  role="link"
+                  tabIndex={0}
                   onClick={(event) => {
+                    event.stopPropagation();
+                    router.push(`/operations/incidents/${incident.id}`);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
                     event.stopPropagation();
                     router.push(`/operations/incidents/${incident.id}`);
                   }}
                   className="text-[11px] font-medium text-primary hover:underline"
                 >
                   Open in Operations
-                </button>
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className={cn(
