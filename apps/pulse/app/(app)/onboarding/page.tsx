@@ -47,9 +47,9 @@ function errorMessageForCode(errorCode: string | undefined): string | null {
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ path?: string; autostart?: string; api_key?: string; error?: string }>;
+  searchParams: Promise<{ path?: string; autostart?: string; api_key?: string; project_id?: string; error?: string }>;
 }) {
-  const { path, autostart, api_key: apiKeyParam, error } = await searchParams;
+  const { path, autostart, api_key: apiKeyParam, project_id: projectIdParam, error } = await searchParams;
   const selectedPath = normalizePath(path);
   const autoStartSimulation = autostart === "1" || autostart === "true";
   const apiKeyValue = typeof apiKeyParam === "string" && apiKeyParam.length > 0 ? apiKeyParam : null;
@@ -80,14 +80,20 @@ export default async function OnboardingPage({
   const defaultName = defaultOrgName(session.operator.email);
   const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
   const projects = organizationId ? await listProjects(organizationId).catch(() => null) : null;
-  const primaryProjectId = projects?.items[0]?.id ?? null;
-  const primaryProject = projects?.items[0] ?? null;
+  const selectedProject =
+    projects?.items.find((project) => project.id === projectIdParam) ??
+    projects?.items
+      .slice()
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0] ??
+    null;
+  const primaryProjectId = selectedProject?.id ?? null;
+  const primaryProject = selectedProject;
   const traceList = primaryProjectId ? await listProjectTraces(primaryProjectId).catch(() => null) : null;
 
   const hasOrganization = Boolean(organizationId);
   const hasProject = Boolean(primaryProjectId);
   const hasTrace = Boolean(traceList?.items?.length);
-  const apiKeyCreated = Boolean(apiKeyValue) || hasTrace;
+  const apiKeyCreated = Boolean(apiKeyValue);
 
   async function createOrganizationAction(formData: FormData) {
     "use server";
@@ -122,22 +128,25 @@ export default async function OnboardingPage({
     if (!orgId) return;
 
     const nameInput = String(formData.get("project_name") ?? "").trim();
-    const environmentInput = String(formData.get("environment") ?? "prod").trim();
-    const environment = environmentInput === "staging" || environmentInput === "dev" ? environmentInput : "prod";
+    const environmentInput = String(formData.get("environment") ?? "production").trim();
+    const environment =
+      environmentInput === "staging" || environmentInput === "development" ? environmentInput : "production";
     const finalName = nameInput || "Production";
 
+    let createdProjectId = "";
     try {
-      await createProject(orgId, {
+      const createdProject = await createProject(orgId, {
         name: finalName,
         slug: slugify(finalName),
         environment,
         description: "Onboarding project",
       });
+      createdProjectId = createdProject.id;
     } catch {
       redirect(toErrorRedirect("sdk", "project_create_failed"));
     }
 
-    redirect("/onboarding?path=sdk");
+    redirect(`/onboarding?path=sdk&project_id=${encodeURIComponent(createdProjectId)}`);
   }
 
   async function createApiKeyAction() {
@@ -146,8 +155,14 @@ export default async function OnboardingPage({
     const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
     if (!orgId) return;
 
+    const preferredProjectId = projectIdParam ?? null;
     const projectList = await listProjects(orgId).catch(() => null);
-    const projectId = projectList?.items[0]?.id ?? null;
+    const projectId =
+      projectList?.items.find((project) => project.id === preferredProjectId)?.id ??
+      projectList?.items
+        .slice()
+        .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0]?.id ??
+      null;
     if (!projectId) return;
 
     let apiKey = "";
@@ -156,7 +171,7 @@ export default async function OnboardingPage({
     } catch {
       redirect(toErrorRedirect("sdk", "api_key_create_failed"));
     }
-    redirect(`/onboarding?path=sdk&api_key=${encodeURIComponent(apiKey)}`);
+    redirect(`/onboarding?path=sdk&project_id=${encodeURIComponent(projectId)}&api_key=${encodeURIComponent(apiKey)}`);
   }
 
   return (
@@ -198,9 +213,9 @@ export default async function OnboardingPage({
               <form action={createProjectAction} className="space-y-2">
                 <input name="project_name" defaultValue="Production" className="h-10 w-full rounded-md border border-border px-3 text-sm" />
                 <select name="environment" className="h-10 w-full rounded-md border border-border px-3 text-sm">
-                  <option value="prod">prod</option>
+                  <option value="production">production</option>
                   <option value="staging">staging</option>
-                  <option value="dev">dev</option>
+                  <option value="development">development</option>
                 </select>
                 <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">Create project</button>
               </form>
@@ -225,6 +240,9 @@ export default async function OnboardingPage({
             <p>Project: <span className="text-foreground">{hasProject ? "ready" : "pending"}</span></p>
             <p>API key: <span className="text-foreground">{apiKeyCreated ? "ready" : "pending"}</span></p>
             <p>First trace: <span className="text-foreground">{hasTrace ? "ready" : "pending"}</span></p>
+            {primaryProject ? (
+              <p>Selected project: <span className="text-foreground">{primaryProject.name}</span></p>
+            ) : null}
           </article>
         </section>
       ) : null}

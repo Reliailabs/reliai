@@ -60,7 +60,7 @@ export async function createProject(
   payload: {
     name: string;
     slug: string;
-    environment: "prod" | "staging" | "dev";
+    environment: "production" | "staging" | "development";
     description?: string | null;
   },
 ) {
@@ -80,7 +80,7 @@ export async function createApiKey(projectId: string, payload: { label: string }
 }
 
 export async function listProjects(organizationId: string) {
-  return apiRequest<{ items: ProjectRead[] }>(`/api/v1/organizations/${organizationId}/projects?limit=1`);
+  return apiRequest<{ items: ProjectRead[] }>(`/api/v1/organizations/${organizationId}/projects?limit=50`);
 }
 
 export async function listProjectTraces(projectId: string) {
