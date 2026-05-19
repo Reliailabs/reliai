@@ -107,7 +107,10 @@ Phase 16 closes when:
 - a decision artifact is published with explicit keep/change/remove outcomes
 - any proposed follow-up changes are threshold-linked and narrowly scoped
 
+## Cycle Artifacts
+
+- Cycle 0 decision record: `docs/phase16-entrypoint-evidence-review-cycle0.md`
+
 ## Validation
 
 Document-only spec slice.
-
