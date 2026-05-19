@@ -78,9 +78,17 @@ type RejectedPolicyAcceptedFlags = {
   verification_write_accepted?: false;
 };
 
+type Phase13RejectedResponseClass =
+  | typeof PHASE13_RESPONSE_CLASS.rejectedSchema
+  | typeof PHASE13_RESPONSE_CLASS.rejectedIdempotency
+  | typeof PHASE13_RESPONSE_CLASS.rejectedPolicy
+  | typeof PHASE13_RESPONSE_CLASS.rejectedTimestamp
+  | typeof PHASE13_RESPONSE_CLASS.rejectedTargetMismatch
+  | typeof PHASE13_RESPONSE_CLASS.rejectedTransition;
+
 type ValidationRejectionPayload = {
   ok: false;
-  response_class: Phase13ResponseClass;
+  response_class: Phase13RejectedResponseClass;
   errors: string[];
   warnings: string[];
 };
@@ -94,6 +102,9 @@ type AcceptedDuplicateResponseParams = {
 };
 
 export function phase13ValidationRejectionResponse<T extends ValidationRejectionPayload>(payload: T, status = 422) {
+  if (!payload.response_class.startsWith("rejected_")) {
+    throw new Error(`Invalid rejection response_class: ${payload.response_class}`);
+  }
   return buildPhase13JsonResponse(
     withRetryPolicy(payload),
     status,
