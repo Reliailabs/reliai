@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3005",
+    "export:entrypoint-events": "TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx scripts/export-entrypoint-events.ts",
     "lint": "eslint .",
     "start": "next start -p 3005",
     "test:app-route-gate": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/app-route-migration-gate.test.ts",
@@ -37,7 +38,8 @@
     "test:trace-forensics-mapper": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/trace-forensics-mapper.test.ts",
     "test:trace-forensics-presenter-smoke": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/trace-forensics-presenter-smoke.test.tsx",
     "test:e2e:app-route-gate": "playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts",
-    "test:e2e:app-route-gate:ci": "PW_REQUIRE_AUTH_E2E=1 playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts"
+    "test:e2e:app-route-gate:ci": "PW_REQUIRE_AUTH_E2E=1 playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts",
+    "test:entrypoint-evidence-export": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/entrypoint-evidence-export.test.ts tests/entrypoint-evidence-store.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
