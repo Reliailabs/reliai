@@ -1,18 +1,15 @@
-import { NextResponse } from "next/server";
-
 import { getOperatorSession } from "@/lib/auth";
 import { validateOperationsEventIngest } from "@/lib/operations-ingest";
 import { checkOperationsEventDuplicate, recordOperationsEventFingerprint } from "@/lib/operations-ingest-dedup";
 import { getOperationsIngestRepo } from "@/lib/operations-ingest-repository";
-import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
 import {
+  phase13AcceptedValidationResponse,
   phase13AcceptedDuplicateResponse,
   phase13ErrorResponse,
   phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
   phase13ValidationRejectionResponse,
-  withPhase13Envelope,
 } from "../../_response";
 
 export async function POST(request: Request) {
@@ -88,5 +85,5 @@ export async function POST(request: Request) {
     reason: "ingest event accepted in validation-only mode",
   });
 
-  return NextResponse.json(withPhase13Envelope({ ...result, audit_receipt: audit }), { status: 200 });
+  return phase13AcceptedValidationResponse(result, audit);
 }
