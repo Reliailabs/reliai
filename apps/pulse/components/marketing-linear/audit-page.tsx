@@ -143,12 +143,20 @@ export function AuditPage() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex flex-col gap-4"
             >
-              <a
-                href="/demo"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm w-fit"
-              >
-                Run demo scenario
-              </a>
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href="/demo"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm w-fit"
+                >
+                  Run demo scenario
+                </a>
+                <a
+                  href="/signup"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-zinc-700 text-zinc-100 font-medium rounded-lg hover:bg-zinc-900 transition-colors text-sm w-fit"
+                >
+                  Start with Reliai
+                </a>
+              </div>
               <div className="border border-zinc-800 rounded-lg px-4 py-3 text-zinc-400 text-sm max-w-sm">
                 If we don&apos;t find at least 3 real issues or meaningful risks, you don&apos;t
                 pay.
@@ -487,6 +495,12 @@ export function AuditPage() {
               className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
             >
               Open demo scenario
+            </a>
+            <a
+              href="/signup"
+              className="px-5 py-2.5 border border-zinc-700 text-zinc-100 font-medium rounded-lg hover:bg-zinc-900 transition-colors text-sm"
+            >
+              Start with Reliai
             </a>
           </div>
         </div>
