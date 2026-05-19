@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   phase13ErrorResponse,
+  phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
   phase13ValidationRejectionResponse,
 } from "../app/api/actions/operations/_response";
@@ -107,5 +108,30 @@ test("phase13 validation-rejection helper injects deterministic retry policy", a
     retryable: true,
     retry_after_ms: 15000,
     reason: "clock_skew_or_timing_window",
+  });
+});
+
+test("phase13 rejected-idempotency helper keeps deterministic 409 envelope", async () => {
+  const response = phase13RejectedIdempotencyResponse({
+    message: "idempotency key replay with changed event semantics",
+    duplicateOfEventId: "evt-001",
+    eventFingerprint: "opsevt-abc",
+  });
+
+  assert.equal(response.status, 409);
+  const payload = (await response.json()) as Record<string, unknown>;
+  assert.equal(payload.contract_version, "phase13-v1");
+  assert.equal(payload.mode, "validation_only");
+  assert.equal(payload.execution_granted, false);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.ingest_accepted, false);
+  assert.equal(payload.response_class, "rejected_idempotency");
+  assert.equal(payload.duplicate_of_event_id, "evt-001");
+  assert.equal(payload.event_fingerprint, "opsevt-abc");
+  assert.deepEqual(payload.errors, ["idempotency key replay with changed event semantics"]);
+  assert.deepEqual(payload.retry_policy, {
+    retryable: false,
+    retry_after_ms: null,
+    reason: "non_retryable_class",
   });
 });

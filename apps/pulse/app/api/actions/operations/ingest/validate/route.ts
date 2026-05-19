@@ -8,6 +8,7 @@ import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
 import { buildOperationsWriteAuditEnvelope } from "@/lib/operations-write-audit-envelope";
 import {
   phase13ErrorResponse,
+  phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
   phase13ValidationRejectionResponse,
   withPhase13Envelope,
@@ -58,19 +59,11 @@ export async function POST(request: Request) {
     );
   }
   if (dedup.status === "rejected_idempotency") {
-    return NextResponse.json(
-      withPhase13Envelope({
-        ok: false as const,
-        ingest_accepted: false as const,
-        response_class: "rejected_idempotency" as const,
-        errors: ["idempotency key replay with changed event semantics"],
-        warnings: [],
-        duplicate_of_event_id: dedup.record.eventId,
-        event_fingerprint: result.event_fingerprint,
-        retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: "rejected_idempotency" }),
-      }),
-      { status: 409 },
-    );
+    return phase13RejectedIdempotencyResponse({
+      message: "idempotency key replay with changed event semantics",
+      duplicateOfEventId: dedup.record.eventId,
+      eventFingerprint: result.event_fingerprint,
+    });
   }
 
   recordOperationsEventFingerprint(
