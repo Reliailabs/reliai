@@ -13,6 +13,8 @@ export const PHASE13_RESPONSE_CLASS = {
   rejectedTransition: "rejected_transition",
 } as const;
 
+type Phase13ResponseClass = (typeof PHASE13_RESPONSE_CLASS)[keyof typeof PHASE13_RESPONSE_CLASS];
+
 export const PHASE13_HTTP_STATUS = {
   accepted: 200,
   validationRejected: 422,
@@ -42,10 +44,13 @@ function buildPhase13JsonResponse<T extends object>(payload: T, status: number) 
   return NextResponse.json(withPhase13Envelope(payload), { status });
 }
 
-function withRetryPolicy<T extends { response_class: RetryEvaluationInput["responseClass"] }>(payload: T, attempt = 1) {
+function withRetryPolicy<T extends { response_class: Phase13ResponseClass }>(payload: T, attempt = 1) {
   return {
     ...payload,
-    retry_policy: evaluateRetryPolicy({ attempt, responseClass: payload.response_class }),
+    retry_policy: evaluateRetryPolicy({
+      attempt,
+      responseClass: payload.response_class as RetryEvaluationInput["responseClass"],
+    }),
   };
 }
 
@@ -75,13 +80,7 @@ type RejectedPolicyAcceptedFlags = {
 
 type ValidationRejectionPayload = {
   ok: false;
-  response_class:
-    | typeof PHASE13_RESPONSE_CLASS.rejectedSchema
-    | typeof PHASE13_RESPONSE_CLASS.rejectedIdempotency
-    | typeof PHASE13_RESPONSE_CLASS.rejectedPolicy
-    | typeof PHASE13_RESPONSE_CLASS.rejectedTimestamp
-    | typeof PHASE13_RESPONSE_CLASS.rejectedTargetMismatch
-    | typeof PHASE13_RESPONSE_CLASS.rejectedTransition;
+  response_class: Phase13ResponseClass;
   errors: string[];
   warnings: string[];
 };
