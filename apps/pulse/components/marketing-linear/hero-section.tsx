@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { DashboardMockup } from "./dashboard-mockup"
+import { EntrypointLink } from "@/components/entrypoints/entrypoint-link";
 
 export function HeroSection() {
   const [yOffset, setYOffset] = useState(0)
@@ -69,18 +70,21 @@ export function HeroSection() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-8 flex items-center gap-6"
             >
-              <a
+              <EntrypointLink
                 href="/ai-reliability-audit"
+                currentRoute="/"
+                ctaId="home_hero_primary_audit"
                 className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
               >
                 Run reliability audit
-              </a>
-              <a
+              </EntrypointLink>
+              <EntrypointLink
                 href="/demo"
+                currentRoute="/"
                 className="text-zinc-300 font-medium hover:text-white transition-colors flex items-center gap-2 text-sm"
               >
                 Replay a production failure <span aria-hidden="true">→</span>
-              </a>
+              </EntrypointLink>
             </motion.div>
           </div>
         </div>

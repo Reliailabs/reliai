@@ -6,10 +6,12 @@ import { AISection } from "@/components/marketing-linear/ai-section"
 import { ProductDirectionSection } from "@/components/marketing-linear/product-direction-section"
 import { WorkflowsSection } from "@/components/marketing-linear/workflows-section"
 import { CTASection } from "@/components/marketing-linear/cta-section"
+import { EntrypointPageViewTracker } from "@/components/entrypoints/entrypoint-page-view-tracker";
 
 export default function MarketingPage() {
   return (
     <>
+      <EntrypointPageViewTracker route="/" />
       <HeroSection />
       <LogoCloud />
       <FeatureCardsSection />
