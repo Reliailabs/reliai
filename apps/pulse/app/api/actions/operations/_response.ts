@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { evaluateRetryPolicy } from "@/lib/operations-retry-policy";
+import type { RetryEvaluationInput } from "@/lib/operations-retry-policy";
 
 export const PHASE13_RESPONSE_CLASS = {
   acceptedValidation: "accepted_validation",
@@ -41,10 +42,17 @@ function buildPhase13JsonResponse<T extends object>(payload: T, status: number) 
   return NextResponse.json(withPhase13Envelope(payload), { status });
 }
 
+function withRetryPolicy<T extends { response_class: RetryEvaluationInput["responseClass"] }>(payload: T, attempt = 1) {
+  return {
+    ...payload,
+    retry_policy: evaluateRetryPolicy({ attempt, responseClass: payload.response_class }),
+  };
+}
+
 export function phase13ErrorResponse(status: 400 | 401, message: string) {
   const responseClass = status === 400 ? PHASE13_RESPONSE_CLASS.rejectedSchema : PHASE13_RESPONSE_CLASS.rejectedPolicy;
   return buildPhase13JsonResponse(
-    {
+    withRetryPolicy({
       ok: false as const,
       ingest_accepted: false as const,
       create_accepted: false as const,
@@ -53,8 +61,7 @@ export function phase13ErrorResponse(status: 400 | 401, message: string) {
       response_class: responseClass,
       errors: [message],
       warnings: [],
-      retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass }),
-    },
+    }),
     status,
   );
 }
@@ -89,10 +96,7 @@ type AcceptedDuplicateResponseParams = {
 
 export function phase13ValidationRejectionResponse<T extends ValidationRejectionPayload>(payload: T, status = 422) {
   return buildPhase13JsonResponse(
-    {
-      ...payload,
-      retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: payload.response_class }),
-    },
+    withRetryPolicy(payload),
     status,
   );
 }
@@ -129,7 +133,7 @@ export function phase13RejectedIdempotencyResponse(params: {
   eventFingerprint: string;
 }) {
   return buildPhase13JsonResponse(
-    {
+    withRetryPolicy({
       ok: false as const,
       ingest_accepted: false as const,
       response_class: PHASE13_RESPONSE_CLASS.rejectedIdempotency,
@@ -137,8 +141,7 @@ export function phase13RejectedIdempotencyResponse(params: {
       warnings: [],
       duplicate_of_event_id: params.duplicateOfEventId,
       event_fingerprint: params.eventFingerprint,
-      retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: PHASE13_RESPONSE_CLASS.rejectedIdempotency }),
-    },
+    }),
     PHASE13_HTTP_STATUS.idempotencyRejected,
   );
 }
@@ -149,14 +152,13 @@ export function phase13RejectedPolicyResponse(
   status = PHASE13_HTTP_STATUS.policyRejected,
 ) {
   return buildPhase13JsonResponse(
-    {
+    withRetryPolicy({
       ok: false as const,
       response_class: PHASE13_RESPONSE_CLASS.rejectedPolicy,
       errors: [message],
       warnings: [],
-      retry_policy: evaluateRetryPolicy({ attempt: 1, responseClass: PHASE13_RESPONSE_CLASS.rejectedPolicy }),
       ...acceptedFlags,
-    },
+    }),
     status,
   );
 }
