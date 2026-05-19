@@ -19,21 +19,41 @@ import {
 } from "@/lib/onboarding-data";
 
 type OnboardingPath = "choose" | "sdk" | "simulation";
+type OnboardingErrorCode = "org_create_failed" | "project_create_failed" | "api_key_create_failed";
 
 function normalizePath(value: string | undefined): OnboardingPath {
   if (value === "sdk" || value === "simulation") return value;
   return "choose";
 }
 
+function toErrorRedirect(path: OnboardingPath, error: OnboardingErrorCode): Route {
+  return `/onboarding?path=${path}&error=${error}` as Route;
+}
+
+function errorMessageForCode(errorCode: string | undefined): string | null {
+  if (!errorCode) return null;
+  switch (errorCode) {
+    case "org_create_failed":
+      return "Unable to create organization. Retry or adjust name/slug.";
+    case "project_create_failed":
+      return "Unable to create project. Retry or adjust project name.";
+    case "api_key_create_failed":
+      return "Unable to create API key. Retry in a moment.";
+    default:
+      return null;
+  }
+}
+
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ path?: string; autostart?: string; api_key?: string }>;
+  searchParams: Promise<{ path?: string; autostart?: string; api_key?: string; error?: string }>;
 }) {
-  const { path, autostart, api_key: apiKeyParam } = await searchParams;
+  const { path, autostart, api_key: apiKeyParam, error } = await searchParams;
   const selectedPath = normalizePath(path);
   const autoStartSimulation = autostart === "1" || autostart === "true";
   const apiKeyValue = typeof apiKeyParam === "string" && apiKeyParam.length > 0 ? apiKeyParam : null;
+  const onboardingError = errorMessageForCode(error);
 
   const maybeSession = await getOperatorSession();
   const returnTo = "/onboarding?path=simulation&autostart=1";
@@ -79,14 +99,18 @@ export default async function OnboardingPage({
     const finalSlug = slugify(slugInput || finalName);
     if (!finalName || !finalSlug) return;
 
-    const createdOrganization = await createOrganization({
-      name: finalName,
-      slug: finalSlug,
-      plan: "free",
-      owner_auth_user_id: session.operator.id,
-      owner_role: "owner",
-    });
-    await switchOrganization(createdOrganization.id);
+    try {
+      const createdOrganization = await createOrganization({
+        name: finalName,
+        slug: finalSlug,
+        plan: "free",
+        owner_auth_user_id: session.operator.id,
+        owner_role: "owner",
+      });
+      await switchOrganization(createdOrganization.id);
+    } catch {
+      redirect(toErrorRedirect("sdk", "org_create_failed"));
+    }
 
     redirect("/onboarding?path=sdk");
   }
@@ -102,12 +126,16 @@ export default async function OnboardingPage({
     const environment = environmentInput === "staging" || environmentInput === "dev" ? environmentInput : "prod";
     const finalName = nameInput || "Production";
 
-    await createProject(orgId, {
-      name: finalName,
-      slug: slugify(finalName),
-      environment,
-      description: "Onboarding project",
-    });
+    try {
+      await createProject(orgId, {
+        name: finalName,
+        slug: slugify(finalName),
+        environment,
+        description: "Onboarding project",
+      });
+    } catch {
+      redirect(toErrorRedirect("sdk", "project_create_failed"));
+    }
 
     redirect("/onboarding?path=sdk");
   }
@@ -122,7 +150,12 @@ export default async function OnboardingPage({
     const projectId = projectList?.items[0]?.id ?? null;
     if (!projectId) return;
 
-    const apiKey = (await createApiKey(projectId, { label: "Onboarding ingest" })).api_key;
+    let apiKey = "";
+    try {
+      apiKey = (await createApiKey(projectId, { label: "Onboarding ingest" })).api_key;
+    } catch {
+      redirect(toErrorRedirect("sdk", "api_key_create_failed"));
+    }
     redirect(`/onboarding?path=sdk&api_key=${encodeURIComponent(apiKey)}`);
   }
 
@@ -140,6 +173,12 @@ export default async function OnboardingPage({
           <Button asChild size="sm" variant="subtle"><Link href="/pulse">Skip for now</Link></Button>
         </div>
       </Card>
+
+      {onboardingError ? (
+        <Card className="border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {onboardingError}
+        </Card>
+      ) : null}
 
       {selectedPath === "simulation" ? (
         <OnboardingSimulationRunner defaultProjectName={primaryProject?.name ?? "Reliability Onboarding"} autoStart={autoStartSimulation} />
