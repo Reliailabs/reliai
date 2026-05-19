@@ -55,6 +55,17 @@ const localAdapter: EntrypointAnalyticsAdapter = {
   track: (event) => {
     if (typeof window === "undefined") return;
     console.info("[pulse-entrypoint-analytics]", event);
+    void fetch("/api/analytics/entrypoint-events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        event,
+        event_time_utc: new Date().toISOString(),
+      }),
+      keepalive: true,
+    }).catch(() => {
+      // Persistence failures are non-fatal for user flows.
+    });
   },
 };
 
