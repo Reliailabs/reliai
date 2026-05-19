@@ -62,7 +62,7 @@ const favorites: NavItem[] = [
 ];
 
 const mainMenu: NavItem[] = [
-  { id: "overview", label: "Pulse", icon: LayoutDashboard },
+  { id: "overview", label: "Reliai", icon: LayoutDashboard },
   { id: "incidents", label: "Incidents", icon: AlertTriangle, badge: 3, badgeColor: "red" },
   { id: "oncall", label: "On-Call", icon: Phone },
   { id: "deployments", label: "Deployments", icon: Rocket, badge: 8 },
