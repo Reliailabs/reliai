@@ -44,3 +44,36 @@ test("signup link rejects invalid or ambiguous configured values", () => {
     assert.equal(resolveSignupHref(), "/sign-in");
   });
 });
+
+test("signup link preserves query params for external owner URL", () => {
+  withEnv("https://app.reliai.com/signup", () => {
+    assert.equal(
+      resolveSignupHref(new URLSearchParams("utm_source=pulse&campaign=phase12")),
+      "https://app.reliai.com/signup?utm_source=pulse&campaign=phase12",
+    );
+  });
+});
+
+test("signup link preserves query params for fallback targets", () => {
+  withEnv("/signup", () => {
+    assert.equal(resolveSignupHref(new URLSearchParams("next=%2Fpulse")), "/sign-in?next=%2Fpulse");
+  });
+});
+
+test("signup link does not overwrite existing external query params", () => {
+  withEnv("https://app.reliai.com/signup?utm_source=web", () => {
+    assert.equal(
+      resolveSignupHref(new URLSearchParams("utm_source=pulse&campaign=phase12")),
+      "https://app.reliai.com/signup?utm_source=web&campaign=phase12",
+    );
+  });
+});
+
+test("signup link preserves and extends existing fallback query params", () => {
+  withEnv("/sign-in?entry=signup", () => {
+    assert.equal(
+      resolveSignupHref(new URLSearchParams("return_to=%2Fonboarding")),
+      "/sign-in?entry=signup&return_to=%2Fonboarding",
+    );
+  });
+});

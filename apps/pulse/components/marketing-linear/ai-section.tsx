@@ -47,7 +47,7 @@ export function AISection() {
             href="/demo"
             className="px-5 py-2.5 bg-zinc-800 text-zinc-300 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors text-sm inline-flex items-center gap-2 mb-16"
           >
-            Explore operational workflows
+            Explore reliability evidence
             <ChevronRight className="w-4 h-4" />
           </a>
 
