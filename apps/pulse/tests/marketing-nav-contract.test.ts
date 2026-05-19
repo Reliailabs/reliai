@@ -11,5 +11,6 @@ test("marketing navbar keeps Product and Demo as separate routes", () => {
 
   assert.match(source, /<a href="\/"[^>]*>\s*Product\s*<\/a>/);
   assert.match(source, /<a href="\/demo"[^>]*>\s*Demo\s*<\/a>/);
+  assert.match(source, /<a href="\/signup"[^>]*>\s*Get started\s*<\/a>/);
   assert.doesNotMatch(source, /<a href="\/demo"[^>]*>\s*Product\s*<\/a>/);
 });
