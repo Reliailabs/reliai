@@ -6,6 +6,7 @@ import {
   getEntrypointPathname,
   isAllowedEntrypointTransition,
   isEntrypointRoute,
+  resetEntrypointAnalyticsStateForTests,
   setEntrypointAnalyticsAdapter,
   trackEntrypointContinuityTransitionExecuted,
   trackEntrypointPageViewed,
@@ -29,6 +30,7 @@ test("entrypoint transition graph allows only configured continuity edges", () =
 });
 
 test("entrypoint analytics emits page view, primary CTA, and continuity transition events", () => {
+  resetEntrypointAnalyticsStateForTests();
   const events: EntrypointAnalyticsEvent[] = [];
   setEntrypointAnalyticsAdapter({
     track: (event) => events.push(event),
@@ -52,6 +54,7 @@ test("entrypoint analytics emits page view, primary CTA, and continuity transiti
 });
 
 test("entrypoint continuity transition ignores disallowed edges", () => {
+  resetEntrypointAnalyticsStateForTests();
   const events: EntrypointAnalyticsEvent[] = [];
   setEntrypointAnalyticsAdapter({
     track: (event) => events.push(event),
@@ -62,6 +65,44 @@ test("entrypoint continuity transition ignores disallowed edges", () => {
     toRoute: "/",
   });
   assert.equal(events.length, 0);
+});
+
+test("entrypoint page view tracking is idempotent for duplicate route/attribution emits", () => {
+  resetEntrypointAnalyticsStateForTests();
+  const events: EntrypointAnalyticsEvent[] = [];
+  setEntrypointAnalyticsAdapter({
+    track: (event) => events.push(event),
+  });
+
+  trackEntrypointPageViewed("/", { utm_source: "pulse" });
+  trackEntrypointPageViewed("/", { utm_source: "pulse" });
+  trackEntrypointPageViewed("/", { utm_source: "pulse", utm_campaign: "x" });
+
+  assert.equal(events.length, 2);
+  assert.equal(events[0]?.event, "entrypoint_page_viewed");
+  assert.equal(events[1]?.event, "entrypoint_page_viewed");
+});
+
+test("entrypoint analytics adapter failures are suppressed and do not throw", () => {
+  resetEntrypointAnalyticsStateForTests();
+  setEntrypointAnalyticsAdapter({
+    track: () => {
+      throw new Error("adapter-failure");
+    },
+  });
+
+  assert.doesNotThrow(() => {
+    trackEntrypointPageViewed("/demo");
+    trackEntrypointPrimaryCtaClicked({
+      route: "/demo",
+      ctaId: "demo_header_primary_audit",
+      destination: "/ai-reliability-audit",
+    });
+    trackEntrypointContinuityTransitionExecuted({
+      fromRoute: "/demo",
+      toRoute: "/signup",
+    });
+  });
 });
 
 test("entrypoint helper parses pathnames and preserves attribution keys", () => {
