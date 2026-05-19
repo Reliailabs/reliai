@@ -53,7 +53,7 @@ test("sidebar route transitions avoid hydration/runtime errors", async ({ page }
   await expect(page).toHaveURL(/\/onboarding/);
   await page.getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL(/\/settings/);
-  await page.getByRole("button", { name: "Pulse" }).click();
+  await page.getByRole("button", { name: /Reliai|Pulse/ }).click();
   await expect(page).toHaveURL(/\/pulse/);
 
   const filtered = issues.filter((issue) => !/favicon|Failed to load resource/i.test(issue));
