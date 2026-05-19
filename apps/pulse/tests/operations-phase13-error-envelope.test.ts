@@ -8,6 +8,7 @@ import {
   phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
   phase13ValidationRejectionResponse,
+  PHASE13_RESPONSE_CLASS,
 } from "../app/api/actions/operations/_response";
 
 test("phase13 error envelope includes all validation acceptance flags", async () => {
@@ -19,7 +20,7 @@ test("phase13 error envelope includes all validation acceptance flags", async ()
   assert.equal(payload.mode, "validation_only");
   assert.equal(payload.execution_granted, false);
   assert.equal(payload.ok, false);
-  assert.equal(payload.response_class, "rejected_policy");
+  assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.rejectedPolicy);
   assert.equal(payload.ingest_accepted, false);
   assert.equal(payload.create_accepted, false);
   assert.equal(payload.transition_accepted, false);
@@ -37,7 +38,7 @@ test("phase13 error envelope preserves explicit parse errors", async () => {
 
   const payload = (await response.json()) as { errors?: unknown };
   assert.deepEqual(payload.errors, ["invalid JSON body"]);
-  assert.equal((payload as Record<string, unknown>).response_class, "rejected_schema");
+  assert.equal((payload as Record<string, unknown>).response_class, PHASE13_RESPONSE_CLASS.rejectedSchema);
   assert.deepEqual((payload as Record<string, unknown>).retry_policy, {
     retryable: false,
     retry_after_ms: null,
@@ -57,7 +58,7 @@ test("phase13 rejected-policy helper includes retry policy and route-specific ac
   assert.equal(payload.mode, "validation_only");
   assert.equal(payload.execution_granted, false);
   assert.equal(payload.ok, false);
-  assert.equal(payload.response_class, "rejected_policy");
+  assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.rejectedPolicy);
   assert.equal(payload.transition_accepted, false);
   assert.deepEqual(payload.errors, ["lifecycle-transition persistence backend unavailable"]);
   assert.deepEqual(payload.retry_policy, {
@@ -80,7 +81,7 @@ test("phase13 rejected-policy helper preserves acceptance-flag parity across val
     assert.equal(response.status, 503);
     const payload = (await response.json()) as Record<string, unknown>;
     assert.equal(payload[c.key], false, `${c.key} must be false in rejected-policy envelope`);
-    assert.equal(payload.response_class, "rejected_policy");
+    assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.rejectedPolicy);
     assert.deepEqual(payload.retry_policy, {
       retryable: false,
       retry_after_ms: null,
@@ -93,7 +94,7 @@ test("phase13 validation-rejection helper injects deterministic retry policy", a
   const response = phase13ValidationRejectionResponse(
     {
       ok: false as const,
-      response_class: "rejected_timestamp" as const,
+      response_class: PHASE13_RESPONSE_CLASS.rejectedTimestamp,
       errors: ["occurred_at must be within 24h"],
       warnings: [],
     },
@@ -105,7 +106,7 @@ test("phase13 validation-rejection helper injects deterministic retry policy", a
   assert.equal(payload.contract_version, "phase13-v1");
   assert.equal(payload.mode, "validation_only");
   assert.equal(payload.execution_granted, false);
-  assert.equal(payload.response_class, "rejected_timestamp");
+  assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.rejectedTimestamp);
   assert.deepEqual(payload.retry_policy, {
     retryable: true,
     retry_after_ms: 15000,
@@ -127,7 +128,7 @@ test("phase13 rejected-idempotency helper keeps deterministic 409 envelope", asy
   assert.equal(payload.execution_granted, false);
   assert.equal(payload.ok, false);
   assert.equal(payload.ingest_accepted, false);
-  assert.equal(payload.response_class, "rejected_idempotency");
+  assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.rejectedIdempotency);
   assert.equal(payload.duplicate_of_event_id, "evt-001");
   assert.equal(payload.event_fingerprint, "opsevt-abc");
   assert.deepEqual(payload.errors, ["idempotency key replay with changed event semantics"]);
@@ -159,7 +160,7 @@ test("phase13 accepted-duplicate helper keeps deterministic 200 envelope", async
   assert.equal(payload.execution_granted, false);
   assert.equal(payload.ok, true);
   assert.equal(payload.ingest_accepted, true);
-  assert.equal(payload.response_class, "accepted_duplicate");
+  assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.acceptedDuplicate);
   assert.deepEqual(payload.warnings, ["duplicate replay accepted"]);
   assert.equal(payload.duplicate_of_event_id, "evt-001");
   assert.equal(payload.event_fingerprint, "opsevt-abc");
@@ -178,7 +179,7 @@ test("phase13 accepted-validation helper keeps deterministic 200 envelope", asyn
     {
       ok: true as const,
       ingest_accepted: true as const,
-      response_class: "accepted_validation" as const,
+      response_class: PHASE13_RESPONSE_CLASS.acceptedValidation,
       event_fingerprint: "opsevt-xyz",
       request_shape_hash: "shape-xyz",
       immutable_fields: ["idempotency_key"],
@@ -199,7 +200,7 @@ test("phase13 accepted-validation helper keeps deterministic 200 envelope", asyn
   assert.equal(payload.execution_granted, false);
   assert.equal(payload.ok, true);
   assert.equal(payload.ingest_accepted, true);
-  assert.equal(payload.response_class, "accepted_validation");
+  assert.equal(payload.response_class, PHASE13_RESPONSE_CLASS.acceptedValidation);
   assert.equal(payload.event_fingerprint, "opsevt-xyz");
   assert.equal(payload.request_shape_hash, "shape-xyz");
   assert.deepEqual(payload.immutable_fields, ["idempotency_key"]);
