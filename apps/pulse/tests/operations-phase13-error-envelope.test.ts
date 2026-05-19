@@ -229,3 +229,27 @@ test("phase13 validation-rejection helper rejects accepted response classes", ()
     /Invalid rejection response_class/,
   );
 });
+
+test("phase13 accepted-validation helper rejects rejected response classes", () => {
+  assert.throws(
+    () =>
+      phase13AcceptedValidationResponse(
+        {
+          ok: true as const,
+          ingest_accepted: true as const,
+          response_class: PHASE13_RESPONSE_CLASS.rejectedPolicy as unknown as never,
+          event_fingerprint: "opsevt-xyz",
+          request_shape_hash: "shape-xyz",
+          immutable_fields: ["idempotency_key"],
+          warnings: [],
+        },
+        {
+          event_id: "evt-ok-1",
+          issued_at: "2026-05-18T22:30:00.000Z",
+          immutable_fields: ["idempotency_key"],
+          reason: "accepted in validation-only mode",
+        },
+      ),
+    /Invalid accepted response_class/,
+  );
+});

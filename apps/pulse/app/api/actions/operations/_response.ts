@@ -86,6 +86,10 @@ type Phase13RejectedResponseClass =
   | typeof PHASE13_RESPONSE_CLASS.rejectedTargetMismatch
   | typeof PHASE13_RESPONSE_CLASS.rejectedTransition;
 
+type Phase13AcceptedResponseClass =
+  | typeof PHASE13_RESPONSE_CLASS.acceptedValidation
+  | typeof PHASE13_RESPONSE_CLASS.acceptedDuplicate;
+
 type ValidationRejectionPayload = {
   ok: false;
   response_class: Phase13RejectedResponseClass;
@@ -127,7 +131,14 @@ export function phase13AcceptedDuplicateResponse(params: AcceptedDuplicateRespon
   );
 }
 
-export function phase13AcceptedValidationResponse<T extends { ok: true }>(result: T, auditReceipt: object) {
+export function phase13AcceptedValidationResponse<T extends { ok: true; response_class: Phase13AcceptedResponseClass }>(
+  result: T,
+  auditReceipt: object,
+) {
+  const responseClass = result.response_class;
+  if (!responseClass.startsWith("accepted_")) {
+    throw new Error(`Invalid accepted response_class: ${responseClass}`);
+  }
   return buildPhase13JsonResponse(
     {
       ...result,
