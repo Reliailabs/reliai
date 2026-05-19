@@ -481,12 +481,24 @@ export function AuditPage() {
               scoped 7-day reliability audit.
             </p>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
             <a
               href="/demo"
               className="px-5 py-2.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-100 transition-colors text-sm"
             >
               Open demo scenario
+            </a>
+            <a
+              href="/signup"
+              className="px-5 py-2.5 border border-zinc-700 text-zinc-100 font-medium rounded-lg hover:bg-zinc-900 transition-colors text-sm"
+            >
+              Start with Reliai
+            </a>
+            <a
+              href="/"
+              className="px-5 py-2.5 border border-zinc-800 text-zinc-400 font-medium rounded-lg hover:bg-zinc-900 hover:text-zinc-200 transition-colors text-sm"
+            >
+              Back to product
             </a>
           </div>
         </div>
