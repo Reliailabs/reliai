@@ -47,6 +47,18 @@ export default function SignupShimPage({ searchParams }: SignupShimPageProps) {
             >
               Continue
             </a>
+            <Link
+              href="/demo"
+              className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
+            >
+              Review demo scenario
+            </Link>
+            <Link
+              href="/ai-reliability-audit"
+              className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
+            >
+              Review audit path
+            </Link>
             <Link href="/" className="text-sm text-zinc-400 transition-colors hover:text-zinc-200">
               Back to product
             </Link>
