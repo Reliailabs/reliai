@@ -61,6 +61,7 @@ Phase 9 implementation may proceed only when an item is either:
 - `docs/pulse-m7-8-conditional-ownership-decision.md`
 - `docs/pulse-m8-1-onboarding-ownership-transfer.md`
 - `docs/phase12-demo-audit-signup-migration-plan.md`
+- `docs/phase12-surface-entrypoint-map.md`
 - `docs/pulse-m6-oncall-response-team-implementation-plan.md`
 - `docs/pulse-m6-oncall-response-team-sidebar-integration-plan.md`
 - `docs/pulse-m6-portability-classification-audit.md`

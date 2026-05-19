@@ -72,6 +72,7 @@ Define migration ownership, acceptance criteria, and validation gates for:
 
 Primary implementation and contract boundaries:
 
+- `docs/phase12-surface-entrypoint-map.md`
 - `apps/pulse/lib/demo-scenario-fixtures.ts`
 - `apps/pulse/lib/demo-scenario-engine.ts`
 - `apps/pulse/lib/demo-operational-integrity-contract.ts`
