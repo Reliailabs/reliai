@@ -10,8 +10,11 @@ export function Navbar() {
             <span className="text-white font-semibold">Reliai</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/demo" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            <a href="/" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Product
+            </a>
+            <a href="/demo" className="text-sm text-zinc-400 hover:text-white transition-colors">
+              Demo
             </a>
             <a href="/docs" className="text-sm text-zinc-400 hover:text-white transition-colors">
               Docs
