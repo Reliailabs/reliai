@@ -1,13 +1,12 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import {
   filterEntrypointEvidenceByDays,
-  getEntrypointEvidenceStorePath,
-  parseEntrypointEvidenceLine,
   toCSV,
   toJSONL,
 } from "@/lib/entrypoint-evidence";
+import { getEntrypointEvidenceStoreAdapter } from "@/lib/entrypoint-evidence-store";
 
 function parseDaysArg(argv: string[]): number {
   const daysArg = argv.find((arg) => arg.startsWith("--days="));
@@ -34,29 +33,14 @@ function parseOutputArg(argv: string[]): string | null {
   return outputArg ? outputArg.slice("--out=".length) : null;
 }
 
-function main() {
+async function main() {
   const argv = process.argv.slice(2);
   const days = parseDaysArg(argv);
   const format = parseFormatArg(argv);
   const outputArg = parseOutputArg(argv);
 
-  const storePath = getEntrypointEvidenceStorePath();
-  let raw = "";
-  try {
-    raw = readFileSync(storePath, "utf8");
-  } catch {
-    throw new Error(`missing_store:${storePath}`);
-  }
-  const lines = raw.split("\n").map((line) => line.trim()).filter(Boolean);
-
-  const parsed = lines.map((line, index) => {
-    try {
-      return parseEntrypointEvidenceLine(line);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "invalid_line";
-      throw new Error(`invalid_record_at_line_${index + 1}:${message}`);
-    }
-  });
+  const store = getEntrypointEvidenceStoreAdapter();
+  const parsed = await store.readAll();
 
   const filtered = filterEntrypointEvidenceByDays(parsed, days);
 
@@ -73,7 +57,7 @@ function main() {
   process.stdout.write(
     JSON.stringify({
       ok: true,
-      input: storePath,
+      input: "entrypoint_evidence_store_adapter",
       output: outputPath,
       format,
       days,
@@ -82,4 +66,8 @@ function main() {
   );
 }
 
-main();
+Promise.resolve(main()).catch((error) => {
+  const message = error instanceof Error ? error.message : "export_failed";
+  process.stderr.write(`${message}\n`);
+  process.exit(1);
+});

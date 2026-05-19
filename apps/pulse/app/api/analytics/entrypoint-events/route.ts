@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import type { EntrypointAnalyticsEvent } from "@/lib/entrypoint-analytics";
-import { appendEntrypointEvidenceRecord, normalizeEntrypointEvent } from "@/lib/entrypoint-evidence";
+import { normalizeEntrypointEvent } from "@/lib/entrypoint-evidence";
+import { getEntrypointEvidenceStoreAdapter } from "@/lib/entrypoint-evidence-store";
 
 type RequestBody = {
   event?: EntrypointAnalyticsEvent;
@@ -23,10 +24,13 @@ export async function POST(request: Request) {
   try {
     const eventTimeUTC = body.event_time_utc ?? new Date().toISOString();
     const normalized = normalizeEntrypointEvent(body.event, eventTimeUTC);
-    appendEntrypointEvidenceRecord(normalized);
+    const store = getEntrypointEvidenceStoreAdapter();
+    await store.append(normalized);
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "invalid_event";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    const isClientError =
+      message.startsWith("unknown_event:") || message.startsWith("unknown_route:") || message === "invalid_event_time_utc";
+    return NextResponse.json({ ok: false, error: message }, { status: isClientError ? 400 : 503 });
   }
 }
