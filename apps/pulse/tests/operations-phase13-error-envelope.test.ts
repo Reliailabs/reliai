@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  phase13AcceptedDuplicateResponse,
   phase13ErrorResponse,
   phase13RejectedIdempotencyResponse,
   phase13RejectedPolicyResponse,
@@ -133,5 +134,39 @@ test("phase13 rejected-idempotency helper keeps deterministic 409 envelope", asy
     retryable: false,
     retry_after_ms: null,
     reason: "non_retryable_class",
+  });
+});
+
+test("phase13 accepted-duplicate helper keeps deterministic 200 envelope", async () => {
+  const response = phase13AcceptedDuplicateResponse({
+    warningMessage: "duplicate replay accepted",
+    duplicateOfEventId: "evt-001",
+    eventFingerprint: "opsevt-abc",
+    requestShapeHash: "shape-123",
+    auditReceipt: {
+      event_id: "evt-dup-1",
+      issued_at: "2026-05-18T22:00:00.000Z",
+      immutable_fields: ["idempotency_key"],
+      reason: "duplicate replay accepted",
+    },
+  });
+
+  assert.equal(response.status, 200);
+  const payload = (await response.json()) as Record<string, unknown>;
+  assert.equal(payload.contract_version, "phase13-v1");
+  assert.equal(payload.mode, "validation_only");
+  assert.equal(payload.execution_granted, false);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.ingest_accepted, true);
+  assert.equal(payload.response_class, "accepted_duplicate");
+  assert.deepEqual(payload.warnings, ["duplicate replay accepted"]);
+  assert.equal(payload.duplicate_of_event_id, "evt-001");
+  assert.equal(payload.event_fingerprint, "opsevt-abc");
+  assert.equal(payload.request_shape_hash, "shape-123");
+  assert.deepEqual(payload.audit_receipt, {
+    event_id: "evt-dup-1",
+    issued_at: "2026-05-18T22:00:00.000Z",
+    immutable_fields: ["idempotency_key"],
+    reason: "duplicate replay accepted",
   });
 });
