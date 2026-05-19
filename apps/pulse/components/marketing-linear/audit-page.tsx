@@ -149,6 +149,14 @@ export function AuditPage() {
               >
                 Run demo scenario
               </a>
+              <div className="border border-zinc-800 rounded-lg px-4 py-3 text-zinc-400 text-sm max-w-md">
+                <p className="text-zinc-200 font-medium mb-2">What the demo proves</p>
+                <ul className="space-y-1.5 list-disc pl-5">
+                  <li>Where the incident started and why it propagated</li>
+                  <li>How evidence changes mitigation confidence</li>
+                  <li>How AREI shifts after containment and verification</li>
+                </ul>
+              </div>
               <div className="border border-zinc-800 rounded-lg px-4 py-3 text-zinc-400 text-sm max-w-sm">
                 If we don&apos;t find at least 3 real issues or meaningful risks, you don&apos;t
                 pay.

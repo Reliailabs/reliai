@@ -11,6 +11,8 @@ test("ai-reliability-audit CTA contract aligns copy with /demo behavior", () => 
   assert.match(html, /Run the demo scenario to preview the audit path\./);
   assert.match(html, /Run demo scenario/);
   assert.match(html, /Open demo scenario/);
+  assert.match(html, /What the demo proves/);
+  assert.match(html, /How evidence changes mitigation confidence/);
   assert.doesNotMatch(html, /Book a 20-minute call/);
 
   const demoHrefMatches = html.match(/href=\"\/demo\"/g) ?? [];
