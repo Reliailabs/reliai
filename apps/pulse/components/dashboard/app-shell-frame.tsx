@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { RightPanel } from "@/components/dashboard/right-panel";
@@ -33,7 +33,15 @@ export function AppShellFrame({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [section, setSection] = useState<Section>(activeSection);
+  const scopedProjectId = searchParams.get("project_id");
+
+  function withScopedProject(path: string): string {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -42,7 +50,7 @@ export function AppShellFrame({
         onSectionChange={(nextSection) => {
           setSection(nextSection);
           const route = routeBySection[nextSection];
-          if (route) router.push(route);
+          if (route) router.push(withScopedProject(route));
         }}
       />
       <main className="flex-1 overflow-y-auto">{children}</main>

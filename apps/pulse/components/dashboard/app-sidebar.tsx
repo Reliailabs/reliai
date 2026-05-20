@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import type { Section } from "@/components/dashboard/sections";
@@ -94,6 +94,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   });
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -144,11 +145,18 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
     postmortems: "/postmortems",
   };
 
+  const scopedProjectId = searchParams.get("project_id");
+  const withScopedProject = (path: string): string => {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  };
+
   const handleSectionChange = (section: Section) => {
     const route = routeBySection[section];
     if (route) {
       onSectionChange(section);
-      router.push(route);
+      router.push(withScopedProject(route));
       return;
     }
     onSectionChange(section);
