@@ -26,6 +26,27 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function apiRequestOrNull<T>(path: string, init?: RequestInit): Promise<T | null> {
+  const token = await getApiAccessToken();
+  if (!token) throw new Error("unauthorized");
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`onboarding request failed: ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 export function slugify(value: string) {
   return value
     .toLowerCase()
@@ -81,6 +102,10 @@ export async function createApiKey(projectId: string, payload: { label: string }
 
 export async function listProjects(organizationId: string) {
   return apiRequest<{ items: ProjectRead[] }>(`/api/v1/organizations/${organizationId}/projects?limit=50`);
+}
+
+export async function getProject(projectId: string) {
+  return apiRequestOrNull<ProjectRead>(`/api/v1/projects/${projectId}`);
 }
 
 export async function listProjectTraces(projectId: string) {

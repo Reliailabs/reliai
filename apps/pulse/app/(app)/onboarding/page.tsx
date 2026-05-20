@@ -13,6 +13,7 @@ import {
   createOrganization,
   createProject,
   defaultOrgName,
+  getProject,
   listProjects,
   listProjectTraces,
   slugify,
@@ -89,7 +90,10 @@ export default async function OnboardingPage({
   const defaultName = defaultOrgName(session.operator.email);
   const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
   const projects = organizationId ? await listProjects(organizationId).catch(() => null) : null;
+  const explicitProject =
+    projectIdParam && projectIdParam.length > 0 ? await getProject(projectIdParam).catch(() => null) : null;
   const selectedProject =
+    explicitProject ??
     projects?.items.find((project) => project.id === projectIdParam) ??
     projects?.items
       .slice()
@@ -173,8 +177,13 @@ export default async function OnboardingPage({
     }
 
     const preferredProjectId = String(formData.get("project_id") ?? "").trim() || projectIdParam || null;
+    const explicitProject =
+      preferredProjectId && preferredProjectId.length > 0
+        ? await getProject(preferredProjectId).catch(() => null)
+        : null;
     const projectList = await listProjects(orgId).catch(() => null);
     const projectId =
+      explicitProject?.id ??
       projectList?.items.find((project) => project.id === preferredProjectId)?.id ??
       projectList?.items
         .slice()
