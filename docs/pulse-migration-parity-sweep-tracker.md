@@ -73,7 +73,8 @@ Each item also needs:
 4. Add regression tests that fail on first-project implicit regression.
 
 Pending:
-- Validate FastAPI `/api/v1/operations/timeline` handling of `project_id` end-to-end in live mode and add explicit API contract tests.
+- `resolved in code`: FastAPI `/api/v1/operations/timeline` now accepts `project_id` and is covered by explicit API contract tests in `apps/api/tests/test_operations.py`.
+- `next`: add an end-to-end probe against live Pulse+API runtime to verify scoped operations timeline rendering from query param.
 
 ## Sweep Execution Plan
 
