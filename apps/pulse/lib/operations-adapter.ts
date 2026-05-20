@@ -206,6 +206,7 @@ export class BackendOperationsTimelineRepository
   async fetchAll(filter?: OperationsTimelineFilter): Promise<OperationsTimelineEntry[]> {
     const params = new URLSearchParams();
     if (filter?.kind) params.set("kind", filter.kind);
+    if (filter?.project_id !== undefined) params.set("project_id", filter.project_id);
     if (filter?.severity) params.set("severity", filter.severity);
     if (filter?.actor_type) params.set("actor_type", filter.actor_type);
     if (filter?.lifecycle_state) params.set("lifecycle_state", filter.lifecycle_state);

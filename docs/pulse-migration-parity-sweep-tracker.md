@@ -69,7 +69,7 @@ Each item also needs:
 4. Add regression tests that fail on first-project implicit regression.
 
 Pending:
-- `/operations` project filter parity is blocked on backend adapter contract; `getOperationsSurfaceData` does not yet accept/propagate `project_id` filter.
+- Validate FastAPI `/api/v1/operations/timeline` handling of `project_id` end-to-end in live mode and add explicit contract tests.
 
 ## Sweep Execution Plan
 

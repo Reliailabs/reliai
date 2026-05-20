@@ -332,14 +332,33 @@ function getIntentProjectionTimelineEntries(): OperationsTimelineEntry[] {
   );
 }
 
+function applyTimelineFilter(
+  entries: OperationsTimelineEntry[],
+  filter?: OperationsTimelineFilter,
+): OperationsTimelineEntry[] {
+  if (!filter) return entries;
+  return entries.filter((e) => {
+    if (filter.kind && e.kind !== filter.kind) return false;
+    if (filter.project_id !== undefined && e.project_id !== filter.project_id) return false;
+    if (filter.incident_id !== undefined && e.incident_id !== filter.incident_id) return false;
+    if (filter.proposal_id !== undefined && e.proposal_id !== filter.proposal_id) return false;
+    if (filter.severity !== undefined && e.severity !== filter.severity) return false;
+    if (filter.lifecycle_state !== undefined && e.lifecycle_state !== filter.lifecycle_state) return false;
+    if (filter.actor_type && e.actor_type !== filter.actor_type) return false;
+    return true;
+  });
+}
+
 // ── Public surface data function ──────────────────────────────────────────────
 
 export async function getOperationsSurfaceData(
   repo: OperationsTimelineRepository = defaultRepository,
   deps?: {
+    filter?: OperationsTimelineFilter;
     getReliabilitySnapshot?: () => OperationsSurfaceData["reliabilitySnapshot"];
   },
 ): Promise<OperationsSurfaceData> {
+  const filter = deps?.filter;
   const readReliabilitySnapshot =
     deps?.getReliabilitySnapshot ?? (() => getReliabilityScore());
   const reliabilitySnapshot = (() => {
@@ -353,29 +372,31 @@ export async function getOperationsSurfaceData(
   // The sync findAll() stub on BackendOperationsTimelineRepository always
   // returns [] — only fetchAll() reaches the FastAPI endpoint.
   if (isAsyncTimelineRepo(repo)) {
-    const entries = await repo.fetchAll();
+    const entries = await repo.fetchAll(filter);
     const sourceErrors = repo.drainErrors();
     const intentEntries = getIntentProjectionTimelineEntries();
     const mergedEntries = mergeTimelineEntriesWithIntentProjections(
       entries,
       intentEntries,
     );
+    const filteredEntries = applyTimelineFilter(mergedEntries, filter);
     return {
-      entries: mergedEntries,
+      entries: filteredEntries,
       reliabilitySnapshot,
       sourceErrors,
       dataMode: "live",
     };
   }
 
-  const entries = repo.findAll();
+  const entries = repo.findAll(filter);
   const intentEntries = getIntentProjectionTimelineEntries();
   const mergedEntries = mergeTimelineEntriesWithIntentProjections(
     entries,
     intentEntries,
   );
+  const filteredEntries = applyTimelineFilter(mergedEntries, filter);
   return {
-    entries: mergedEntries,
+    entries: filteredEntries,
     reliabilitySnapshot,
     sourceErrors: [],
     dataMode: "demo",
