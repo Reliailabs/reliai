@@ -135,3 +135,19 @@ test("operations incident and graph routes preserve explicit project scope", () 
   assert.match(regressionOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(incidentOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\) \?\? data\.projectId/);
 });
+
+test("simulation handoff and reliability/trace evidence links preserve project scope", () => {
+  const runner = read("components/onboarding/onboarding-simulation-runner.tsx");
+  const reliability = read("app/(app)/projects/[projectId]/reliability/page.tsx");
+  const tracesData = read("lib/traces-data.ts");
+  const incidentsData = read("lib/incidents-data.ts");
+
+  assert.match(runner, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(runner, /router\.push\(`\/incidents\/\$\{simulationStatus\.incident_id\}\/command\$\{scopeQuery\}`\)/);
+  assert.match(reliability, /href=\{`\/incidents\/\$\{incident\.id\}\?project_id=\$\{encodeURIComponent\(projectId\)\}`\}/);
+  assert.match(tracesData, /comparePath: `\/traces\/\$\{trace\.id\}\/compare\$\{scopeQuery\}`/);
+  assert.match(tracesData, /graphPath: `\/traces\/\$\{trace\.id\}\/graph\$\{scopeQuery\}`/);
+  assert.match(incidentsData, /const scopeQuery = projectId \? `\?project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
+  assert.match(incidentsData, /href: `\/traces\$\{scopeQuery\}`/);
+  assert.match(incidentsData, /href: `\/deployments\$\{scopeQuery\}#\$\{deploymentId\}`/);
+});

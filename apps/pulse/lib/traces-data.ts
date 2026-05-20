@@ -60,6 +60,7 @@ function percentile(sorted: number[], p: number): number {
 
 export async function getTracesSurfaceData(projectId?: string | null): Promise<TracesSurfaceData> {
   const sourceErrors: string[] = [];
+  const scopeQuery = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
   const projectFilter = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
   const [tracesResult, projectsResult, incidentsResult] = await Promise.all([
     safeFetch(apiRequest<{ items: TraceRead[] }>(`/api/v1/traces?limit=250${projectFilter}`)),
@@ -203,8 +204,8 @@ export async function getTracesSurfaceData(projectId?: string | null): Promise<T
     traceRefs: traces.slice(0, 8).map((trace) => ({
       id: trace.id,
       requestId: trace.id,
-      comparePath: `/traces/${trace.id}/compare`,
-      graphPath: `/traces/${trace.id}/graph`,
+      comparePath: `/traces/${trace.id}/compare${scopeQuery}`,
+      graphPath: `/traces/${trace.id}/graph${scopeQuery}`,
     })),
     sourceErrors: Array.from(new Set(sourceErrors)),
     hasTraceData: traces.length > 0,
