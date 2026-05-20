@@ -83,6 +83,7 @@ Pending:
 1. Build executable web->pulse route + behavior inventory.
 2. Classify every gap with the model above.
 3. Add migration gate check so unresolved high-impact gaps block closure.
+   - implemented as `docs/pulse-migration-parity-gaps.json` + `apps/pulse/tests/migration-parity-closure-gate.test.ts` and wired into `pnpm --filter pulse test:migration-scope-parity-gate`.
 4. Execute blockers by user impact priority:
    - onboarding/project scope/incidents first
    - then route ownership and read/write parity gaps

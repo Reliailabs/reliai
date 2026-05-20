@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "scope-onboarding-explicit-project",
+      "classification": "read-only delta",
+      "impact": "high",
+      "status": "resolved",
+      "source": "apps/web onboarding explicit project scope",
+      "pulse": "apps/pulse onboarding project_id query + deterministic fallback"
+    },
+    {
+      "id": "scope-incidents-traces-continuity",
+      "classification": "ownership shift",
+      "impact": "high",
+      "status": "resolved",
+      "source": "apps/web incident/trace deep-link project continuity",
+      "pulse": "apps/pulse incidents/traces preserve project_id across list/detail/actions"
+    },
+    {
+      "id": "operations-timeline-project-filter",
+      "classification": "missing",
+      "impact": "high",
+      "status": "resolved",
+      "source": "apps/web scoped operations timeline reads",
+      "pulse": "apps/api + apps/pulse project_id timeline filtering and continuity"
+    },
+    {
+      "id": "legacy-route-ownership-shims",
+      "classification": "ownership shift",
+      "impact": "medium",
+      "status": "resolved",
+      "source": "apps/web legacy deep links",
+      "pulse": "apps/pulse ownership shims for control/org-settings/model/prompt/regression-compare"
+    }
+  ]
+}
