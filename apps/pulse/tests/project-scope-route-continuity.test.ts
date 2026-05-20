@@ -143,11 +143,15 @@ test("onboarding route preserves explicit project scope for path transitions and
 
 test("on-call route uses canonical project_id scope query and shared selector behavior", () => {
   const file = read("app/(app)/on-call/page.tsx");
+  const responseTeamRoute = read("app/api/oncall/response-team/route.ts");
+  const rightPanel = read("components/dashboard/right-panel.tsx");
   assert.match(file, /searchParams: Promise<\{ project_id\?: string; projectId\?: string \}>/);
   assert.match(file, /const projectIdParam = params\.project_id \?\? params\.projectId \?\? null/);
   assert.match(file, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\) \?\? ""/);
   assert.match(file, /redirect\(`\/on-call\?project_id=\$\{encodeURIComponent\(selectedProjectId\)\}`\)/);
   assert.match(file, /<ProjectScopeSelector projects=\{projects\} selectedProjectId=\{selectedProjectId\} \/>/);
+  assert.match(responseTeamRoute, /const projectId = searchParams\.get\("project_id"\) \?\? searchParams\.get\("projectId"\)/);
+  assert.match(rightPanel, /\/api\/oncall\/response-team\?project_id=\$\{encodeURIComponent\(projectId\)\}/);
 });
 
 test("project-scoped routes pass projectId into data loaders", () => {
