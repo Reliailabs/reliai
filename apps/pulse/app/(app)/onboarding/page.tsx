@@ -132,12 +132,16 @@ export default async function OnboardingPage({
     const environment =
       environmentInput === "staging" || environmentInput === "development" ? environmentInput : "production";
     const finalName = nameInput || "Production";
+    const baseSlug = slugify(finalName) || "project";
+    const existingProjects = await listProjects(orgId).catch(() => null);
+    const existingSlugs = new Set(existingProjects?.items.map((project) => project.slug) ?? []);
+    const uniqueSlug = existingSlugs.has(baseSlug) ? `${baseSlug}-${Date.now().toString().slice(-6)}` : baseSlug;
 
     let createdProjectId = "";
     try {
       const createdProject = await createProject(orgId, {
         name: finalName,
-        slug: slugify(finalName),
+        slug: uniqueSlug,
         environment,
         description: "Onboarding project",
       });
