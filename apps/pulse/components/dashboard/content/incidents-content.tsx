@@ -295,10 +295,19 @@ export function IncidentsContent({
 
         <div className="flex-1 overflow-y-auto space-y-3">
           {filteredIncidents.map((incident) => (
-            <button
+            <div
               key={incident.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => {
+                setSelectedIncident(incident);
+                if (pathname?.startsWith("/incidents")) {
+                  router.push(withScopedProject(`/incidents/${incident.id}`));
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
                 setSelectedIncident(incident);
                 if (pathname?.startsWith("/incidents")) {
                   router.push(withScopedProject(`/incidents/${incident.id}`));
@@ -325,23 +334,16 @@ export function IncidentsContent({
                 {incident.title}
               </p>
               <div className="mb-2">
-                <span
-                  role="link"
-                  tabIndex={0}
+                <button
+                  type="button"
                   onClick={(event) => {
-                    event.stopPropagation();
-                    router.push(withScopedProject(`/operations/incidents/${incident.id}`));
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== "Enter" && event.key !== " ") return;
-                    event.preventDefault();
                     event.stopPropagation();
                     router.push(withScopedProject(`/operations/incidents/${incident.id}`));
                   }}
                   className="text-[11px] font-medium text-primary hover:underline"
                 >
                   Open in Operations
-                </span>
+                </button>
               </div>
               <div className="flex items-center justify-between">
                 <span className={cn(
@@ -355,7 +357,7 @@ export function IncidentsContent({
                   {incident.duration}
                 </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
