@@ -53,3 +53,12 @@ test("incident navigation actions preserve project_id query context", () => {
   assert.match(file, /router\.push\(withScopedProject\(`\/operations\/incidents\/\$\{incident\.id\}`\)\)/);
   assert.match(file, /router\.push\(withScopedProject\(`\/operations\/incidents\/\$\{selectedIncident\.id\}`\)\)/);
 });
+
+test("operations route preserves project scope and forwards filter to operations data loader", () => {
+  const file = read("app/(app)/operations/page.tsx");
+  assert.match(file, /searchParams: Promise<\{ project_id\?: string \}>/);
+  assert.match(file, /resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(file, /getOperationsSurfaceData\(undefined, \{/);
+  assert.match(file, /filter: selectedProjectId \? \{ project_id: selectedProjectId \} : undefined/);
+  assert.match(file, /projectScope=\{\{ projects, selectedProjectId \}\}/);
+});
