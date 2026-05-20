@@ -33,6 +33,13 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = resolveTab(searchParams.get("tab"));
+  const scopedProjectId = searchParams.get("project_id");
+  const scopeQuery = scopedProjectId ? `?project_id=${encodeURIComponent(scopedProjectId)}` : "";
+  const withScopedProject = (path: string): string => {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  };
 
   const setTab = (tab: RegressionOperationsTab) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -49,11 +56,11 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
               <ArrowLeft className="h-4 w-4" />
               Operations center
             </Link>
-            <Link href={`/regressions/${data.regressionId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link href={withScopedProject(`/regressions/${data.regressionId}`)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Legacy regression view
             </Link>
-            <Link href={`/operations/graph/${data.regressionId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link href={`/operations/graph/${data.regressionId}${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Open graph
             </Link>
@@ -104,7 +111,7 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
         {activeTab === "compare" ? (
           <div className="space-y-3">
             {data.compareLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm hover:bg-muted">
+              <Link key={link.href} href={withScopedProject(link.href)} className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm hover:bg-muted">
                 <GitCompare className="h-4 w-4 text-primary" />
                 {link.label}
               </Link>
@@ -137,7 +144,7 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
               </div>
             ) : (
               data.relatedIncidents.map((incident) => (
-                <Link key={incident.id} href={`/incidents/${incident.id}`} className="block rounded-xl border border-border bg-card p-4 hover:bg-muted">
+                <Link key={incident.id} href={withScopedProject(`/incidents/${incident.id}`)} className="block rounded-xl border border-border bg-card p-4 hover:bg-muted">
                   <p className="text-sm font-medium">{incident.title}</p>
                   <p className="text-xs text-muted-foreground">{incident.id} • {incident.severity} • {incident.status}</p>
                 </Link>

@@ -39,6 +39,7 @@ export type IncidentOperationsRollbackRecord = {
 
 export type IncidentOperationsSurfaceData = {
   incidentId: string;
+  projectId: string | null;
   incident: IncidentSurfaceItem | null;
   timelineEntries: OperationsTimelineEntry[];
   proposals: ProposalLifecycle[];
@@ -126,12 +127,14 @@ function buildFallbackIncident(
 export async function getIncidentOperationsSurfaceData(
   incidentId: string,
   deps?: {
+    projectId?: string | null;
     lifecycleRepo?: ProposalLifecycleRepository;
     timelineRepo?: OperationsTimelineRepository;
     getReliabilitySnapshot?: () => OperationsSurfaceData["reliabilitySnapshot"];
   },
 ): Promise<IncidentOperationsSurfaceData> {
   const sourceErrors: string[] = [];
+  const projectId = deps?.projectId ?? null;
   const lifecycleRepo =
     deps?.lifecycleRepo ??
     createLifecycleRepo(getOperationsAdapterMode(), new InMemoryProposalLifecycleRepository());
@@ -141,8 +144,11 @@ export async function getIncidentOperationsSurfaceData(
     : undefined;
 
   const [incidentsData, operationsData, lifecycleRead] = await Promise.all([
-    getIncidentsSurfaceData(),
-    getOperationsSurfaceData(timelineRepo, reliabilitySnapshotDeps),
+    getIncidentsSurfaceData(projectId ?? undefined),
+    getOperationsSurfaceData(
+      timelineRepo,
+      { ...reliabilitySnapshotDeps, filter: projectId ? { project_id: projectId } : undefined },
+    ),
     readLifecycles(lifecycleRepo),
   ]);
 
@@ -209,6 +215,7 @@ export async function getIncidentOperationsSurfaceData(
 
   return {
     incidentId,
+    projectId,
     incident,
     timelineEntries,
     proposals,

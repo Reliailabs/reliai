@@ -28,17 +28,19 @@ export type OperationsGraphEdge = {
 
 export type OperationsGraphSurfaceData = {
   entityId: string;
+  projectId: string | null;
   nodes: OperationsGraphNode[];
   edges: OperationsGraphEdge[];
   sourceErrors: string[];
 };
 
-export async function getOperationsGraphSurfaceData(entityId: string): Promise<OperationsGraphSurfaceData> {
+export async function getOperationsGraphSurfaceData(entityId: string, projectId?: string | null): Promise<OperationsGraphSurfaceData> {
   const sourceErrors: string[] = [];
+  const scopeQuery = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
   const [timelineData, incidentsData, regressionsData] = await Promise.all([
-    getOperationsSurfaceData(),
-    getIncidentsSurfaceData(),
-    getRegressionsSurfaceData(),
+    getOperationsSurfaceData(undefined, { filter: projectId ? { project_id: projectId } : undefined }),
+    getIncidentsSurfaceData(projectId ?? undefined),
+    getRegressionsSurfaceData(projectId ?? undefined),
   ]);
   sourceErrors.push(...timelineData.sourceErrors, ...incidentsData.sourceErrors, ...regressionsData.sourceErrors);
 
@@ -52,7 +54,7 @@ export async function getOperationsGraphSurfaceData(entityId: string): Promise<O
       id: `regression:${regression.id}`,
       type: "regression",
       label: regression.id,
-      href: `/operations/regressions/${regression.id}`,
+      href: `/operations/regressions/${regression.id}${scopeQuery}`,
       summary: regression.summary,
     });
   }
@@ -63,7 +65,7 @@ export async function getOperationsGraphSurfaceData(entityId: string): Promise<O
       id: `incident:${incident.id}`,
       type: "incident",
       label: incident.id,
-      href: `/operations/incidents/${incident.id}`,
+      href: `/operations/incidents/${incident.id}${scopeQuery}`,
       summary: incident.title,
     });
   }
@@ -79,7 +81,7 @@ export async function getOperationsGraphSurfaceData(entityId: string): Promise<O
         id: proposalNodeId,
         type: "proposal",
         label: lifecycle.proposal_id,
-        href: `/operations?proposal=${lifecycle.proposal_id}`,
+        href: `/operations${scopeQuery ? `${scopeQuery}&proposal=${encodeURIComponent(lifecycle.proposal_id)}` : `?proposal=${encodeURIComponent(lifecycle.proposal_id)}`}`,
         summary: `${lifecycle.action_type} • ${lifecycle.state}`,
       });
       if (lifecycle.verification_result_id) {
@@ -88,7 +90,7 @@ export async function getOperationsGraphSurfaceData(entityId: string): Promise<O
           id: verificationId,
           type: "verification",
           label: lifecycle.verification_result_id,
-          href: `/operations/incidents/${lifecycle.target_id}?tab=verification`,
+          href: `/operations/incidents/${lifecycle.target_id}${scopeQuery ? `${scopeQuery}&tab=verification` : "?tab=verification"}`,
           summary: "Verification result record",
         });
         edges.push({ from: proposalNodeId, to: verificationId, relation: "verified_by" });
@@ -108,7 +110,7 @@ export async function getOperationsGraphSurfaceData(entityId: string): Promise<O
         id: `proposal:${entry.proposal_id}`,
         type: "proposal",
         label: entry.proposal_id,
-        href: `/operations?proposal=${entry.proposal_id}`,
+        href: `/operations${scopeQuery ? `${scopeQuery}&proposal=${encodeURIComponent(entry.proposal_id)}` : `?proposal=${encodeURIComponent(entry.proposal_id)}`}`,
         summary: entry.title,
       });
     }
@@ -117,7 +119,7 @@ export async function getOperationsGraphSurfaceData(entityId: string): Promise<O
         id: `incident:${entry.incident_id}`,
         type: "incident",
         label: entry.incident_id,
-        href: `/operations/incidents/${entry.incident_id}`,
+        href: `/operations/incidents/${entry.incident_id}${scopeQuery}`,
         summary: entry.summary,
       });
     }
@@ -128,5 +130,5 @@ export async function getOperationsGraphSurfaceData(entityId: string): Promise<O
 
   const dedupNodes = Array.from(new Map(nodes.map((n) => [n.id, n])).values());
   const dedupEdges = Array.from(new Map(edges.map((e) => [`${e.from}|${e.to}|${e.relation}`, e])).values());
-  return { entityId, nodes: dedupNodes, edges: dedupEdges, sourceErrors: Array.from(new Set(sourceErrors)) };
+  return { entityId, projectId: projectId ?? null, nodes: dedupNodes, edges: dedupEdges, sourceErrors: Array.from(new Set(sourceErrors)) };
 }
