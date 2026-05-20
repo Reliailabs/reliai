@@ -4,6 +4,7 @@ import type { Route } from "next";
 
 import { OnboardingPathTracker } from "@/components/onboarding/onboarding-path-tracker";
 import { OnboardingSimulationRunner } from "@/components/onboarding/onboarding-simulation-runner";
+import { OnboardingProjectScopeSelector } from "@/components/onboarding/onboarding-project-scope-selector";
 import { AppShellFrame } from "@/components/dashboard/app-shell-frame";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -272,32 +273,19 @@ export default async function OnboardingPage({
             {primaryProject ? (
               <p>Selected project: <span className="text-foreground">{primaryProject.name}</span></p>
             ) : null}
-            {projects?.items && projects.items.length > 1 ? (
-              <form method="get" className="space-y-1 pt-2">
-                <label htmlFor="onboarding-project-scope" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  Project scope
-                </label>
-                <input type="hidden" name="path" value={selectedPath} />
-                <select
-                  id="onboarding-project-scope"
-                  name="project_id"
-                  defaultValue={primaryProjectId ?? ""}
-                  className="h-9 w-full rounded-md border border-border px-2 text-sm text-foreground"
-                >
-                  {projects.items
-                    .slice()
+            <div className="space-y-1 pt-2">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Project scope</p>
+              <OnboardingProjectScopeSelector
+                selectedPath={selectedPath}
+                selectedProjectId={primaryProjectId}
+                projects={
+                  projects?.items
+                    ?.slice()
                     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
-                    .map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                </select>
-                <button type="submit" className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">
-                  Switch project
-                </button>
-              </form>
-            ) : null}
+                    .map((project) => ({ id: project.id, name: project.name })) ?? []
+                }
+              />
+            </div>
           </article>
         </section>
       ) : null}

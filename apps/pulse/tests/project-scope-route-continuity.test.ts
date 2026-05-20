@@ -125,6 +125,7 @@ test("operations route preserves project scope and forwards filter to operations
 
 test("onboarding route preserves explicit project scope for path transitions and api key generation", () => {
   const file = read("app/(app)/onboarding/page.tsx");
+  const selector = read("components/onboarding/onboarding-project-scope-selector.tsx");
   assert.match(file, /searchParams: Promise<\{ path\?: string; autostart\?: string; api_key\?: string; project_id\?: string; error\?: string \}>/);
   assert.match(file, /const projectScopeQuery = primaryProjectId \? `&project_id=\$\{encodeURIComponent\(primaryProjectId\)\}` : \"\"/);
   assert.match(file, /const preferredProjectId = String\(formData\.get\("project_id"\) \?\? ""\)\.trim\(\) \|\| projectIdParam \|\| null/);
@@ -133,7 +134,11 @@ test("onboarding route preserves explicit project scope for path transitions and
   assert.match(file, /await getProject\(preferredProjectId\)/);
   assert.match(file, /const returnTo = `\/onboarding\?path=simulation&autostart=1\$\{projectIdParam \? `&project_id=\$\{encodeURIComponent\(projectIdParam\)\}` : ""\}`/);
   assert.match(file, /<input type="hidden" name="project_id" value=\{primaryProjectId\} \/>/);
-  assert.match(file, /<select[\s\S]*name="project_id"/);
+  assert.match(file, /<OnboardingProjectScopeSelector/);
+  assert.match(selector, /const params = new URLSearchParams\(searchParams\.toString\(\)\)/);
+  assert.match(selector, /params\.set\("path", selectedPath\)/);
+  assert.match(selector, /params\.set\("project_id", nextProjectId\)/);
+  assert.match(selector, /router\.replace\(`\$\{pathname\}\?\$\{params\.toString\(\)\}`\)/);
 });
 
 test("project-scoped routes pass projectId into data loaders", () => {
