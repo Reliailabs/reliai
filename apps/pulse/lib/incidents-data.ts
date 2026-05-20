@@ -89,9 +89,10 @@ function buildFallbackTimeline(item: IncidentRead) {
   ];
 }
 
-export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
+export async function getIncidentsSurfaceData(projectId?: string | null): Promise<IncidentsSurfaceData> {
   const sourceErrors: string[] = [];
-  const incidentsResult = await safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=25"));
+  const filterQuery = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
+  const incidentsResult = await safeFetch(apiRequest<{ items: IncidentRead[] }>(`/api/v1/incidents?limit=25${filterQuery}`));
   if (incidentsResult.error) sourceErrors.push("incidents");
 
   const incidents = incidentsResult.data?.items ?? [];

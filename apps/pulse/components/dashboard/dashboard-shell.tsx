@@ -26,6 +26,7 @@ import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types"
 import type { ProjectRouteContext } from "@/components/dashboard/pulse-types";
 import type { ProjectControlParityData } from "@/components/dashboard/pulse-types";
 import type { OperationsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { ProjectScopeSelectorOption } from "@/components/dashboard/project-scope-selector";
 
 interface DashboardShellProps {
   initialSection: Section;
@@ -49,6 +50,11 @@ interface DashboardShellProps {
   projectContext?: ProjectRouteContext;
   projectControlData?: ProjectControlParityData;
   operationsData?: OperationsSurfaceData;
+  projectScope?: {
+    selectedProjectId: string | null;
+    projects: ProjectScopeSelectorOption[];
+    queryKey?: string;
+  };
 }
 
 export function DashboardShell({
@@ -73,6 +79,7 @@ export function DashboardShell({
   projectContext,
   projectControlData,
   operationsData,
+  projectScope,
 }: DashboardShellProps) {
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
 
@@ -101,6 +108,7 @@ export function DashboardShell({
         projectContext={projectContext}
         projectControlData={projectControlData}
         operationsData={operationsData}
+        projectScope={projectScope}
       />
       <RightPanel pulseOverviewData={pulseOverviewData} />
     </div>
