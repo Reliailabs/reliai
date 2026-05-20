@@ -63,3 +63,18 @@ test("non-project list content preserves project_id on cross-route links", () =>
     assert.match(file, /function withScopedProject\(path: string\): string/);
   }
 });
+
+test("shared shell navigation preserves project_id across sidebar section changes", () => {
+  const appSidebar = read("components/dashboard/app-sidebar.tsx");
+  const appShellFrame = read("components/dashboard/app-shell-frame.tsx");
+
+  assert.match(appSidebar, /const searchParams = useSearchParams\(\)/);
+  assert.match(appSidebar, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(appSidebar, /const withScopedProject = \(path: string\): string =>/);
+  assert.match(appSidebar, /router\.push\(withScopedProject\(route\)\)/);
+
+  assert.match(appShellFrame, /const searchParams = useSearchParams\(\)/);
+  assert.match(appShellFrame, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(appShellFrame, /function withScopedProject\(path: string\): string/);
+  assert.match(appShellFrame, /router\.push\(withScopedProject\(route\)\)/);
+});
