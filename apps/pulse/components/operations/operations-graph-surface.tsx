@@ -15,10 +15,14 @@ export function OperationsGraphSurface({
     selectedProjectId: string | null;
   };
 }) {
+  const scopeQuery = projectScope?.selectedProjectId
+    ? `?project_id=${encodeURIComponent(projectScope.selectedProjectId)}`
+    : "";
+
   return (
     <div className="mx-auto w-full max-w-[1200px] px-6 py-6">
       <div className="space-y-1">
-        <Link href="/operations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link href={`/operations${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Operations center
         </Link>

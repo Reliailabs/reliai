@@ -135,6 +135,8 @@ test("operations incident and graph routes preserve explicit project scope", () 
   assert.match(operationsGraph, /getOperationsGraphSurfaceData\(entityId, projectIdParam\)/);
   assert.match(operationsGraph, /projectScope=\{\{ projects, selectedProjectId \}\}/);
   assert.match(operationsGraphSurface, /<ProjectScopeSelector/);
+  assert.match(operationsGraphSurface, /const scopeQuery = projectScope\?\.selectedProjectId/);
+  assert.match(operationsGraphSurface, /href=\{`\/operations\$\{scopeQuery\}`\}/);
   assert.match(graphData, /const scopeQuery = projectId \? `\?project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
   assert.match(regressionOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(incidentOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\) \?\? data\.projectId/);
