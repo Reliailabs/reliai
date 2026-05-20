@@ -73,6 +73,8 @@ def list_timeline_events(
         stmt = stmt.where(OperationsTimelineEvent.incident_id == query.incident_id)
     if query.proposal_id is not None:
         stmt = stmt.where(OperationsTimelineEvent.proposal_id == query.proposal_id)
+    if query.project_id is not None:
+        stmt = stmt.where(OperationsTimelineEvent.project_id == query.project_id)
 
     # Count before applying limit so the caller knows the full result set size.
     total: int = db.scalar(

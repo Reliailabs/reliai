@@ -72,7 +72,7 @@ export default async function ProjectReliabilityPage({ params }: ProjectReliabil
               data.recentIncidents.map((incident) => (
                 <Link
                   key={incident.id}
-                  href={`/incidents/${incident.id}`}
+                  href={`/incidents/${incident.id}?project_id=${encodeURIComponent(projectId)}`}
                   className="block rounded-lg border border-border p-3 hover:bg-muted/40"
                 >
                   <p className="text-sm font-medium text-foreground">{incident.title}</p>

@@ -27,6 +27,7 @@ from app.models.proposal_lifecycle_record import ProposalLifecycleRecord
 from .test_api import (
     auth_headers,
     create_operator,
+    create_project,
     create_organization,
     sign_in,
 )
@@ -47,6 +48,7 @@ def _make_event(
     entry_id: str = "",
     kind: str = "incident_detected",
     occurred_at: datetime | None = None,
+    project_id: UUID | None = None,
     incident_id: str | None = None,
     proposal_id: str | None = None,
     lifecycle_id: str | None = None,
@@ -61,7 +63,7 @@ def _make_event(
         kind=kind,
         occurred_at=occurred_at or datetime.now(timezone.utc),
         organization_id=_org_uuid(organization_id),
-        project_id=None,
+        project_id=project_id,
         lifecycle_id=lifecycle_id,
         proposal_id=proposal_id,
         incident_id=incident_id,
@@ -307,6 +309,39 @@ def test_timeline_filter_by_proposal_id(client, db_session):
     body = response.json()
     assert body["total"] == 1
     assert body["items"][0]["proposal_id"] == "phase9-inc-aaa"
+
+
+def test_timeline_filter_by_project_id(client, db_session):
+    session, org_id = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+    project_a = create_project(client, session, org_id, name="Alpha Project")
+    project_b = create_project(client, session, org_id, name="Beta Project")
+
+    _make_event(
+        db_session,
+        organization_id=org_id,
+        project_id=UUID(project_a["id"]),
+        incident_id="inc-a",
+    )
+    _make_event(
+        db_session,
+        organization_id=org_id,
+        project_id=UUID(project_b["id"]),
+        incident_id="inc-b",
+    )
+    db_session.commit()
+
+    response = client.get(
+        "/api/v1/operations/timeline",
+        headers=auth_headers(session),
+        params={"project_id": project_a["id"]},
+    )
+    body = response.json()
+    assert response.status_code == 200
+    assert body["total"] == 1
+    assert body["items"][0]["project_id"] == project_a["id"]
+    assert body["items"][0]["incident_id"] == "inc-a"
 
 
 def test_timeline_limit_is_respected(client, db_session):

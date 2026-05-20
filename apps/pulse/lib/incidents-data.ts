@@ -89,9 +89,11 @@ function buildFallbackTimeline(item: IncidentRead) {
   ];
 }
 
-export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
+export async function getIncidentsSurfaceData(projectId?: string | null): Promise<IncidentsSurfaceData> {
   const sourceErrors: string[] = [];
-  const incidentsResult = await safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=25"));
+  const filterQuery = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
+  const scopeQuery = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+  const incidentsResult = await safeFetch(apiRequest<{ items: IncidentRead[] }>(`/api/v1/incidents?limit=25${filterQuery}`));
   if (incidentsResult.error) sourceErrors.push("incidents");
 
   const incidents = incidentsResult.data?.items ?? [];
@@ -134,6 +136,10 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
     const detailTraceCount = detail?.traces.length ?? 0;
     const deploymentId = detail?.deployment_context?.deployment.id ?? null;
     const comparePath = detail?.compare?.trace_compare_path ?? null;
+    const scopedComparePath =
+      comparePath && projectId
+        ? `${comparePath}${comparePath.includes("?") ? "&" : "?"}project_id=${encodeURIComponent(projectId)}`
+        : comparePath;
     const traceErrorSignals = (detail?.traces ?? []).filter((trace) => trace.processor_result_id).length;
     const contributingFactors: string[] = [];
     if (regressionCount > 0) {
@@ -153,17 +159,17 @@ export async function getIncidentsSurfaceData(): Promise<IncidentsSurfaceData> {
     }
 
     const evidenceLinks: Array<{ label: string; href: string }> = [];
-    if (comparePath) {
-      evidenceLinks.push({ label: "Trace compare", href: comparePath });
+    if (scopedComparePath) {
+      evidenceLinks.push({ label: "Trace compare", href: scopedComparePath });
     }
     if (deploymentId) {
       evidenceLinks.push({
         label: "Linked deployment",
-        href: `/deployments#${deploymentId}`,
+        href: `/deployments${scopeQuery}#${deploymentId}`,
       });
     }
     if (sampleTraceIds.length > 0 || detailTraceCount > 0) {
-      evidenceLinks.push({ label: "Trace samples", href: "/traces" });
+      evidenceLinks.push({ label: "Trace samples", href: `/traces${scopeQuery}` });
     }
     if (traceErrorSignals > 0) {
       evidenceLinks.push({ label: "Related errors", href: "/errors" });

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle, XCircle, Clock, GitBranch, MoreHorizontal, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -172,6 +173,13 @@ export function DeploymentsContent({
   deploymentsData?: DeploymentsSurfaceData;
   deploymentContext?: DeploymentRouteContext;
 }) {
+  const searchParams = useSearchParams();
+  const scopedProjectId = searchParams.get("project_id");
+  function withScopedProject(path: string): string {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  }
   const deploymentFrequency =
     deploymentsData?.deploymentFrequency?.length ? deploymentsData.deploymentFrequency : defaultDeploymentFrequency;
   const deployments = deploymentsData?.deployments?.length ? deploymentsData.deployments : defaultDeployments;
@@ -381,7 +389,7 @@ export function DeploymentsContent({
                   </div>
                   <span className="text-muted-foreground w-24 text-right">{deploy.timestamp}</span>
                   <div className="flex items-center gap-2">
-                    <Link href={`/deployments/${deploy.id}`} className="text-xs text-primary hover:underline">
+                    <Link href={withScopedProject(`/deployments/${deploy.id}`)} className="text-xs text-primary hover:underline">
                       Detail
                     </Link>
                     <button type="button" className="p-1 hover:bg-muted rounded-lg">

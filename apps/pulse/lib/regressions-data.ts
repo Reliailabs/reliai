@@ -2,6 +2,7 @@ import "server-only";
 
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 import { mapRegressionListItem, type RegressionListItem, type RegressionRead } from "@/lib/regression-list-mapper";
 
 type FetchResult<T> = { data: T | null; error: boolean };
@@ -31,13 +32,15 @@ async function safeFetch<T>(promise: Promise<T>): Promise<FetchResult<T>> {
   }
 }
 
+type ProjectRead = { id: string; name: string; created_at: string };
+
 export async function getRegressionsSurfaceData(projectId?: string): Promise<RegressionsSurfaceData> {
   const sourceErrors: string[] = [];
   let resolvedProjectId: string | null = projectId ?? null;
   if (!resolvedProjectId) {
-    const projectsResult = await safeFetch(apiRequest<ListResponse<{ id: string }>>("/api/v1/projects"));
+    const projectsResult = await safeFetch(apiRequest<ListResponse<ProjectRead>>("/api/v1/projects"));
     if (projectsResult.error) sourceErrors.push("projects");
-    resolvedProjectId = projectsResult.data?.items?.[0]?.id ?? null;
+    resolvedProjectId = resolveScopedProjectId(projectsResult.data?.items ?? []);
     if (!resolvedProjectId) {
       return { items: [], sourceErrors };
     }

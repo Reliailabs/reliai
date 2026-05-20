@@ -19,7 +19,12 @@ import {
 } from "@/lib/onboarding-data";
 
 type OnboardingPath = "choose" | "sdk" | "simulation";
-type OnboardingErrorCode = "org_create_failed" | "project_create_failed" | "api_key_create_failed";
+type OnboardingErrorCode =
+  | "org_create_failed"
+  | "project_create_failed"
+  | "api_key_create_failed"
+  | "org_context_missing"
+  | "project_context_missing";
 
 function normalizePath(value: string | undefined): OnboardingPath {
   if (value === "sdk" || value === "simulation") return value;
@@ -39,6 +44,10 @@ function errorMessageForCode(errorCode: string | undefined): string | null {
       return "Unable to create project. Retry or adjust project name.";
     case "api_key_create_failed":
       return "Unable to create API key. Retry in a moment.";
+    case "org_context_missing":
+      return "Active organization context is missing. Re-select an organization and retry onboarding.";
+    case "project_context_missing":
+      return "No project is available for API key creation. Create/select a project and retry.";
     default:
       return null;
   }
@@ -56,7 +65,7 @@ export default async function OnboardingPage({
   const onboardingError = errorMessageForCode(error);
 
   const maybeSession = await getOperatorSession();
-  const returnTo = "/onboarding?path=simulation&autostart=1";
+  const returnTo = `/onboarding?path=simulation&autostart=1${projectIdParam ? `&project_id=${encodeURIComponent(projectIdParam)}` : ""}`;
   const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
 
   if (!maybeSession && autoStartSimulation) redirect(signInHref);
@@ -94,6 +103,7 @@ export default async function OnboardingPage({
   const hasProject = Boolean(primaryProjectId);
   const hasTrace = Boolean(traceList?.items?.length);
   const apiKeyCreated = Boolean(apiKeyValue);
+  const projectScopeQuery = primaryProjectId ? `&project_id=${encodeURIComponent(primaryProjectId)}` : "";
 
   async function createOrganizationAction(formData: FormData) {
     "use server";
@@ -125,19 +135,24 @@ export default async function OnboardingPage({
     "use server";
     const session = await requireOperatorSession("/onboarding");
     const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
-    if (!orgId) return;
+    if (!orgId) {
+      redirect(toErrorRedirect("sdk", "org_context_missing"));
+    }
 
     const nameInput = String(formData.get("project_name") ?? "").trim();
-    const environmentInput = String(formData.get("environment") ?? "production").trim();
-    const environment =
-      environmentInput === "staging" || environmentInput === "development" ? environmentInput : "production";
+    const environmentInput = String(formData.get("environment") ?? "prod").trim();
+    const environment = environmentInput === "staging" || environmentInput === "dev" ? environmentInput : "prod";
     const finalName = nameInput || "Production";
+    const baseSlug = slugify(finalName) || "project";
+    const existingProjects = await listProjects(orgId).catch(() => null);
+    const existingSlugs = new Set(existingProjects?.items.map((project) => project.slug) ?? []);
+    const uniqueSlug = existingSlugs.has(baseSlug) ? `${baseSlug}-${Date.now().toString().slice(-6)}` : baseSlug;
 
     let createdProjectId = "";
     try {
       const createdProject = await createProject(orgId, {
         name: finalName,
-        slug: slugify(finalName),
+        slug: uniqueSlug,
         environment,
         description: "Onboarding project",
       });
@@ -149,13 +164,15 @@ export default async function OnboardingPage({
     redirect(`/onboarding?path=sdk&project_id=${encodeURIComponent(createdProjectId)}`);
   }
 
-  async function createApiKeyAction() {
+  async function createApiKeyAction(formData: FormData) {
     "use server";
     const session = await requireOperatorSession("/onboarding");
     const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
-    if (!orgId) return;
+    if (!orgId) {
+      redirect(toErrorRedirect("sdk", "org_context_missing"));
+    }
 
-    const preferredProjectId = projectIdParam ?? null;
+    const preferredProjectId = String(formData.get("project_id") ?? "").trim() || projectIdParam || null;
     const projectList = await listProjects(orgId).catch(() => null);
     const projectId =
       projectList?.items.find((project) => project.id === preferredProjectId)?.id ??
@@ -163,7 +180,9 @@ export default async function OnboardingPage({
         .slice()
         .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0]?.id ??
       null;
-    if (!projectId) return;
+    if (!projectId) {
+      redirect(toErrorRedirect("sdk", "project_context_missing"));
+    }
 
     let apiKey = "";
     try {
@@ -182,9 +201,9 @@ export default async function OnboardingPage({
         <p className="text-xs uppercase tracking-[0.24em] text-secondary">Quick start</p>
         <h1 className="mt-3 text-3xl font-semibold text-primary">Onboarding ownership in Reliai</h1>
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button asChild size="sm" variant={selectedPath === "choose" ? "default" : "outline"}><Link href="/onboarding">Choose path</Link></Button>
-          <Button asChild size="sm" variant={selectedPath === "sdk" ? "default" : "outline"}><Link href="/onboarding?path=sdk">Connect SDK</Link></Button>
-          <Button asChild size="sm" variant={selectedPath === "simulation" ? "default" : "outline"}><Link href="/onboarding?path=simulation">Start simulation</Link></Button>
+          <Button asChild size="sm" variant={selectedPath === "choose" ? "default" : "outline"}><Link href={`/onboarding${primaryProjectId ? `?project_id=${encodeURIComponent(primaryProjectId)}` : ""}`}>Choose path</Link></Button>
+          <Button asChild size="sm" variant={selectedPath === "sdk" ? "default" : "outline"}><Link href={`/onboarding?path=sdk${projectScopeQuery}`}>Connect SDK</Link></Button>
+          <Button asChild size="sm" variant={selectedPath === "simulation" ? "default" : "outline"}><Link href={`/onboarding?path=simulation${projectScopeQuery}`}>Start simulation</Link></Button>
           <Button asChild size="sm" variant="subtle"><Link href="/pulse">Skip for now</Link></Button>
         </div>
       </Card>
@@ -213,14 +232,15 @@ export default async function OnboardingPage({
               <form action={createProjectAction} className="space-y-2">
                 <input name="project_name" defaultValue="Production" className="h-10 w-full rounded-md border border-border px-3 text-sm" />
                 <select name="environment" className="h-10 w-full rounded-md border border-border px-3 text-sm">
-                  <option value="production">production</option>
+                  <option value="prod">production</option>
                   <option value="staging">staging</option>
-                  <option value="development">development</option>
+                  <option value="dev">development</option>
                 </select>
                 <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">Create project</button>
               </form>
             ) : !apiKeyCreated ? (
               <form action={createApiKeyAction}>
+                {primaryProjectId ? <input type="hidden" name="project_id" value={primaryProjectId} /> : null}
                 <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">Generate API key</button>
               </form>
             ) : (
@@ -242,6 +262,32 @@ export default async function OnboardingPage({
             <p>First trace: <span className="text-foreground">{hasTrace ? "ready" : "pending"}</span></p>
             {primaryProject ? (
               <p>Selected project: <span className="text-foreground">{primaryProject.name}</span></p>
+            ) : null}
+            {projects?.items && projects.items.length > 1 ? (
+              <form method="get" className="space-y-1 pt-2">
+                <label htmlFor="onboarding-project-scope" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  Project scope
+                </label>
+                <input type="hidden" name="path" value={selectedPath} />
+                <select
+                  id="onboarding-project-scope"
+                  name="project_id"
+                  defaultValue={primaryProjectId ?? ""}
+                  className="h-9 w-full rounded-md border border-border px-2 text-sm text-foreground"
+                >
+                  {projects.items
+                    .slice()
+                    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+                    .map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                </select>
+                <button type="submit" className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">
+                  Switch project
+                </button>
+              </form>
             ) : null}
           </article>
         </section>

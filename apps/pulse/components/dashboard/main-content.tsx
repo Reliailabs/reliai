@@ -49,6 +49,7 @@ import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types"
 import type { ProjectRouteContext } from "@/components/dashboard/pulse-types";
 import type { ProjectControlParityData } from "@/components/dashboard/pulse-types";
 import type { OperationsSurfaceData } from "@/components/dashboard/pulse-types";
+import { ProjectScopeSelector, type ProjectScopeSelectorOption } from "@/components/dashboard/project-scope-selector";
 import { OperationsTimelineView } from "@/components/operations/operations-timeline-view";
 
 interface MainContentProps {
@@ -73,6 +74,11 @@ interface MainContentProps {
   projectContext?: ProjectRouteContext;
   projectControlData?: ProjectControlParityData;
   operationsData?: OperationsSurfaceData;
+  projectScope?: {
+    selectedProjectId: string | null;
+    projects: ProjectScopeSelectorOption[];
+    queryKey?: string;
+  };
 }
 
 const TIME_RANGES = [
@@ -182,6 +188,7 @@ export function MainContent({
   projectContext,
   projectControlData,
   operationsData,
+  projectScope,
 }: MainContentProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -279,6 +286,14 @@ export function MainContent({
         </div>
 
         <div className="flex items-center gap-3">
+          {projectScope ? (
+            <ProjectScopeSelector
+              projects={projectScope.projects}
+              selectedProjectId={projectScope.selectedProjectId}
+              queryKey={projectScope.queryKey}
+            />
+          ) : null}
+
           {/* Time Range */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

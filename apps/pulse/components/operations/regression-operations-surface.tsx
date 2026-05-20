@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, GitCompare, XCircle } from "luc
 
 import { cn } from "@/lib/utils";
 import type { RegressionOperationsSurfaceData, RegressionOperationsTab } from "@/lib/regression-operations-data";
+import { ProjectScopeSelector, type ProjectScopeSelectorOption } from "@/components/dashboard/project-scope-selector";
 
 const TABS: Array<{ id: RegressionOperationsTab; label: string }> = [
   { id: "overview", label: "Overview" },
@@ -28,11 +29,27 @@ function time(v: string | null): string {
   return parsed.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-export function RegressionOperationsSurface({ data }: { data: RegressionOperationsSurfaceData }) {
+export function RegressionOperationsSurface({
+  data,
+  projectScope,
+}: {
+  data: RegressionOperationsSurfaceData;
+  projectScope?: {
+    projects: ProjectScopeSelectorOption[];
+    selectedProjectId: string | null;
+  };
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = resolveTab(searchParams.get("tab"));
+  const scopedProjectId = searchParams.get("project_id") ?? data.projectId;
+  const scopeQuery = scopedProjectId ? `?project_id=${encodeURIComponent(scopedProjectId)}` : "";
+  const withScopedProject = (path: string): string => {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  };
 
   const setTab = (tab: RegressionOperationsTab) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -45,15 +62,15 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-6 py-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <Link href="/operations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link href={`/operations${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Operations center
             </Link>
-            <Link href={`/regressions/${data.regressionId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link href={withScopedProject(`/regressions/${data.regressionId}`)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Legacy regression view
             </Link>
-            <Link href={`/operations/graph/${data.regressionId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link href={`/operations/graph/${data.regressionId}${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Open graph
             </Link>
@@ -61,6 +78,14 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
           <h1 className="text-2xl font-semibold">Regression Operations — {data.regressionId}</h1>
           <p className="text-sm text-muted-foreground">Read-only regression workflow surface. Requires operator review.</p>
         </div>
+        {projectScope ? (
+          <div className="flex items-center justify-end">
+            <ProjectScopeSelector
+              projects={projectScope.projects}
+              selectedProjectId={projectScope.selectedProjectId}
+            />
+          </div>
+        ) : null}
 
         {data.sourceErrors.length > 0 ? (
           <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
@@ -104,7 +129,7 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
         {activeTab === "compare" ? (
           <div className="space-y-3">
             {data.compareLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm hover:bg-muted">
+              <Link key={link.href} href={withScopedProject(link.href)} className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm hover:bg-muted">
                 <GitCompare className="h-4 w-4 text-primary" />
                 {link.label}
               </Link>
@@ -137,7 +162,7 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
               </div>
             ) : (
               data.relatedIncidents.map((incident) => (
-                <Link key={incident.id} href={`/incidents/${incident.id}`} className="block rounded-xl border border-border bg-card p-4 hover:bg-muted">
+                <Link key={incident.id} href={withScopedProject(`/incidents/${incident.id}`)} className="block rounded-xl border border-border bg-card p-4 hover:bg-muted">
                   <p className="text-sm font-medium">{incident.title}</p>
                   <p className="text-xs text-muted-foreground">{incident.id} • {incident.severity} • {incident.status}</p>
                 </Link>

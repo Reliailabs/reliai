@@ -13,7 +13,7 @@ type DeploymentRead = { id: string; created_at: string; commit_hash?: string | n
 type TraceRead = { id: string; created_at: string; success: boolean };
 type RegressionRead = { id: string; detected_at?: string | null; created_at?: string | null };
 
-type Input = { demoMode: boolean; organizationId: string | null };
+type Input = { demoMode: boolean; organizationId: string | null; projectId?: string | null };
 
 function toDate(value?: string | null): Date | null {
   if (!value) return null;
@@ -69,20 +69,23 @@ function demoData(): AttributionSuggestionData {
   };
 }
 
-export async function getAttributionSuggestionsData({ demoMode, organizationId }: Input): Promise<AttributionSuggestionData> {
+export async function getAttributionSuggestionsData({ demoMode, organizationId, projectId }: Input): Promise<AttributionSuggestionData> {
   if (demoMode) return demoData();
 
   const sourceErrors: string[] = [];
   const projectResult = await safeFetch(apiRequest<ListResponse<ProjectRead>>("/api/v1/projects"));
   if (projectResult.error) sourceErrors.push("projects");
-  const projectId = projectResult.data?.items?.[0]?.id;
-  if (!organizationId || !projectId) return { items: [], sourceErrors, dataMode: "live" };
+  const scopedProjectId = projectId
+    ? projectResult.data?.items?.find((item) => item.id === projectId)?.id ?? null
+    : projectResult.data?.items?.[0]?.id ?? null;
+  if (!organizationId || !scopedProjectId) return { items: [], sourceErrors, dataMode: "live" };
+  const projectScopeFilter = `&project_id=${encodeURIComponent(scopedProjectId)}`;
 
   const [deploymentsResult, incidentsResult, tracesResult, regressionsResult] = await Promise.all([
-    safeFetch(apiRequest<ListResponse<DeploymentRead>>(`/api/v1/projects/${projectId}/deployments`)),
-    safeFetch(apiRequest<ListResponse<IncidentRead>>("/api/v1/incidents?limit=25")),
-    safeFetch(apiRequest<ListResponse<TraceRead>>("/api/v1/traces?limit=120")),
-    safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${projectId}/regressions?limit=50`)),
+    safeFetch(apiRequest<ListResponse<DeploymentRead>>(`/api/v1/projects/${scopedProjectId}/deployments`)),
+    safeFetch(apiRequest<ListResponse<IncidentRead>>(`/api/v1/incidents?limit=25${projectScopeFilter}`)),
+    safeFetch(apiRequest<ListResponse<TraceRead>>(`/api/v1/traces?limit=120${projectScopeFilter}`)),
+    safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${scopedProjectId}/regressions?limit=50`)),
   ]);
   if (deploymentsResult.error) sourceErrors.push("deployments");
   if (incidentsResult.error) sourceErrors.push("incidents");

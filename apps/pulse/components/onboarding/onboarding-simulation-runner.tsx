@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,6 +33,7 @@ const POLL_INTERVAL_MS = 2500;
 
 export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: OnboardingSimulationRunnerProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<RunnerState>("idle");
   const [simulationId, setSimulationId] = useState<string | null>(null);
   const [status, setStatus] = useState<SimulationStatusResponse | null>(null);
@@ -95,7 +96,9 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
             });
             hasNavigatedRef.current = true;
             setState("handoff");
-            window.setTimeout(() => router.push(`/incidents/${simulationStatus.incident_id}/command`), 1500);
+            const scopedProjectId = searchParams.get("project_id");
+            const scopeQuery = scopedProjectId ? `?project_id=${encodeURIComponent(scopedProjectId)}` : "";
+            window.setTimeout(() => router.push(`/incidents/${simulationStatus.incident_id}/command${scopeQuery}`), 1500);
             inFlight = false;
             return;
           }
@@ -127,7 +130,7 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
       cancelled = true;
       stopPolling();
     };
-  }, [simulationId, state, router]);
+  }, [simulationId, state, router, searchParams]);
 
   const startSimulation = useCallback(async () => {
     if (state === "creating" || state === "running") return;

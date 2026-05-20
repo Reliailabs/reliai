@@ -4,12 +4,13 @@ import { formatDistanceToNowStrict } from "date-fns";
 
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 import type { ErrorIntelligenceSnippet, ErrorsSurfaceData } from "@/components/dashboard/pulse-types";
 import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 type FetchResult<T> = { data: T | null; error: boolean };
 
-type ProjectRead = { id: string; name: string };
+type ProjectRead = { id: string; name: string; created_at: string };
 type IncidentRead = {
   id: string;
   title: string;
@@ -81,9 +82,9 @@ export async function getErrorsSurfaceData(projectId?: string): Promise<ErrorsSu
     ? incidentsRaw.filter((incident) => (scopedProjectName ? incident.project_name === scopedProjectName : true))
     : incidentsRaw;
 
-  const firstProjectId = projectId ?? projects[0]?.id;
-  const regressionsResult = firstProjectId
-    ? await safeFetch(apiRequest<{ items: Array<{ id: string }> }>(`/api/v1/projects/${firstProjectId}/regressions?limit=25`))
+  const resolvedProjectId = resolveScopedProjectId(projects, projectId ?? null);
+  const regressionsResult = resolvedProjectId
+    ? await safeFetch(apiRequest<{ items: Array<{ id: string }> }>(`/api/v1/projects/${resolvedProjectId}/regressions?limit=25`))
     : ({ data: { items: [] }, error: false } as FetchResult<{ items: Array<{ id: string }> }>);
   if (regressionsResult.error) sourceErrors.push("regressions");
   const regressions = regressionsResult.data?.items ?? [];

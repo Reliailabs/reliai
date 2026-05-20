@@ -3,18 +3,40 @@
 import Link from "next/link";
 import { ArrowLeft, Network, AlertTriangle } from "lucide-react";
 import type { OperationsGraphSurfaceData } from "@/lib/operations-graph-data";
+import { ProjectScopeSelector, type ProjectScopeSelectorOption } from "@/components/dashboard/project-scope-selector";
 
-export function OperationsGraphSurface({ data }: { data: OperationsGraphSurfaceData }) {
+export function OperationsGraphSurface({
+  data,
+  projectScope,
+}: {
+  data: OperationsGraphSurfaceData;
+  projectScope?: {
+    projects: ProjectScopeSelectorOption[];
+    selectedProjectId: string | null;
+  };
+}) {
+  const scopeQuery = projectScope?.selectedProjectId
+    ? `?project_id=${encodeURIComponent(projectScope.selectedProjectId)}`
+    : "";
+
   return (
     <div className="mx-auto w-full max-w-[1200px] px-6 py-6">
       <div className="space-y-1">
-        <Link href="/operations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link href={`/operations${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Operations center
         </Link>
         <h1 className="text-2xl font-semibold text-foreground">Operations Graph — {data.entityId}</h1>
         <p className="text-sm text-muted-foreground">Read-only operational graph: deployment → regression → incident → proposal → verification.</p>
       </div>
+      {projectScope ? (
+        <div className="mt-3 flex items-center justify-end">
+          <ProjectScopeSelector
+            projects={projectScope.projects}
+            selectedProjectId={projectScope.selectedProjectId}
+          />
+        </div>
+      ) : null}
 
       {data.sourceErrors.length > 0 ? (
         <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">

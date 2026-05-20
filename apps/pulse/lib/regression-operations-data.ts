@@ -3,6 +3,7 @@ import "server-only";
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
 import { getOperationsSurfaceData } from "@/lib/operations-timeline";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 import { listLifecycles, type ProposalLifecycle } from "@/lib/proposal-lifecycle";
 import { getVerificationResults } from "@/lib/operations-verification-results";
 import type { OperationsTimelineEntry } from "@/components/dashboard/pulse-types";
@@ -38,6 +39,7 @@ type FetchResult<T> = { data: T | null; error: boolean };
 
 export type RegressionOperationsSurfaceData = {
   regressionId: string;
+  projectId: string | null;
   regression: {
     id: string;
     detectedAt: string | null;
@@ -72,20 +74,21 @@ async function safeFetch<T>(promise: Promise<T>): Promise<FetchResult<T>> {
   }
 }
 
-export async function getRegressionOperationsSurfaceData(regressionId: string): Promise<RegressionOperationsSurfaceData> {
+export async function getRegressionOperationsSurfaceData(regressionId: string, projectId?: string | null): Promise<RegressionOperationsSurfaceData> {
   const sourceErrors: string[] = [];
+  const incidentProjectFilter = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
   const [projectsResult, incidentsResult, operationsData] = await Promise.all([
-    safeFetch(apiRequest<ListResponse<{ id: string }>>("/api/v1/projects")),
-    safeFetch(apiRequest<ListResponse<IncidentRead>>("/api/v1/incidents?limit=25")),
-    getOperationsSurfaceData(),
+    safeFetch(apiRequest<ListResponse<{ id: string; name: string; created_at: string }>>("/api/v1/projects")),
+    safeFetch(apiRequest<ListResponse<IncidentRead>>(`/api/v1/incidents?limit=25${incidentProjectFilter}`)),
+    getOperationsSurfaceData(undefined, { filter: projectId ? { project_id: projectId } : undefined }),
   ]);
   if (projectsResult.error) sourceErrors.push("projects");
   if (incidentsResult.error) sourceErrors.push("incidents");
   sourceErrors.push(...operationsData.sourceErrors);
 
-  const firstProjectId = projectsResult.data?.items?.[0]?.id ?? null;
-  const regressionsResult = firstProjectId
-    ? await safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${firstProjectId}/regressions?limit=50`))
+  const resolvedProjectId = resolveScopedProjectId(projectsResult.data?.items ?? [], projectId ?? null);
+  const regressionsResult = resolvedProjectId
+    ? await safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${resolvedProjectId}/regressions?limit=50`))
     : { data: null, error: true };
   if (regressionsResult.error) sourceErrors.push("regressions");
 
@@ -121,14 +124,16 @@ export async function getRegressionOperationsSurfaceData(regressionId: string): 
       updatedAt: record.verified_at,
     }));
 
+  const scopeQuery = resolvedProjectId ? `?project_id=${encodeURIComponent(resolvedProjectId)}` : "";
   const compareLinks = [
-    { label: "Trace compare", href: "/traces" },
-    { label: "Related deployments", href: "/deployments" },
+    { label: "Trace compare", href: `/traces${scopeQuery}` },
+    { label: "Related deployments", href: `/deployments${scopeQuery}` },
   ];
 
   if (!regression) {
     return {
       regressionId,
+      projectId: resolvedProjectId,
       regression: null,
       compareLinks,
       timelineEntries,
@@ -142,6 +147,7 @@ export async function getRegressionOperationsSurfaceData(regressionId: string): 
 
   return {
     regressionId,
+    projectId: resolvedProjectId,
     regression: {
       id: regression.id,
       detectedAt: regression.detected_at ?? regression.created_at ?? null,

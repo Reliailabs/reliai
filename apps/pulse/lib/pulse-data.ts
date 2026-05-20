@@ -36,6 +36,7 @@ type ListResponse<T> = {
 type PulseDataInput = {
   demoMode: boolean;
   organizationId: string | null;
+  projectId?: string | null;
 };
 
 function relTime(value: string): string {
@@ -118,15 +119,17 @@ function demoOverviewData(): PulseOverviewData {
   };
 }
 
-export async function getPulseOverviewData({ demoMode, organizationId }: PulseDataInput): Promise<PulseOverviewData> {
+export async function getPulseOverviewData({ demoMode, organizationId, projectId }: PulseDataInput): Promise<PulseOverviewData> {
   if (demoMode) {
     return demoOverviewData();
   }
 
+  const explicitProjectFilter = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
+  const explicitProjectAuditFilter = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
   const [incidentsResult, tracesResult, auditsResult, projectsResult] = await Promise.all([
-    safeFetch(apiRequest<ListResponse<IncidentRead>>("/api/v1/incidents?limit=20")),
-    safeFetch(apiRequest<ListResponse<TraceRead>>("/api/v1/traces?limit=20")),
-    safeFetch(apiRequest<{ items: Array<{ latest_run?: { status?: string | null } | null }> }>("/api/v1/audits")),
+    safeFetch(apiRequest<ListResponse<IncidentRead>>(`/api/v1/incidents?limit=20${explicitProjectFilter}`)),
+    safeFetch(apiRequest<ListResponse<TraceRead>>(`/api/v1/traces?limit=20${explicitProjectFilter}`)),
+    safeFetch(apiRequest<{ items: Array<{ latest_run?: { status?: string | null } | null }> }>(`/api/v1/audits${explicitProjectAuditFilter}`)),
     safeFetch(apiRequest<{ items: Array<{ id: string }> }>("/api/v1/projects")),
   ]);
 
@@ -140,14 +143,15 @@ export async function getPulseOverviewData({ demoMode, organizationId }: PulseDa
   const traces = tracesResult.data?.items ?? [];
   const audits = auditsResult.data?.items ?? [];
   const firstProjectId = projectsResult.data?.items?.[0]?.id;
+  const scopedProjectId = projectId ?? firstProjectId;
 
   const regressionsResult =
-    organizationId && firstProjectId
-      ? await safeFetch(apiRequest<{ items: Array<{ id: string }> }>(`/api/v1/projects/${firstProjectId}/regressions?limit=20`))
+    organizationId && scopedProjectId
+      ? await safeFetch(apiRequest<{ items: Array<{ id: string }> }>(`/api/v1/projects/${scopedProjectId}/regressions?limit=20`))
       : ({ data: { items: [] }, error: false } as FetchResult<{ items: Array<{ id: string }> }>);
   const deploymentsResult =
-    organizationId && firstProjectId
-      ? await safeFetch(apiRequest<ListResponse<DeploymentRead>>(`/api/v1/projects/${firstProjectId}/deployments`))
+    organizationId && scopedProjectId
+      ? await safeFetch(apiRequest<ListResponse<DeploymentRead>>(`/api/v1/projects/${scopedProjectId}/deployments`))
       : ({ data: { items: [] }, error: false } as FetchResult<ListResponse<DeploymentRead>>);
 
   if (regressionsResult.error) sourceErrors.push("regressions");

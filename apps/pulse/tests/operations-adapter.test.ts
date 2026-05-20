@@ -263,11 +263,12 @@ test("backend mode success: fetchAll passes filter params as query string", asyn
         json: async () => ({ items: [], total: 0 }),
       } as Response;
     },
-    () => repo.fetchAll({ kind: "approval_recorded", incident_id: "inc-001" }),
+    () => repo.fetchAll({ kind: "approval_recorded", incident_id: "inc-001", project_id: "proj-123" }),
   );
 
   assert.ok(capturedUrl.includes("kind=approval_recorded"), `URL missing kind param: ${capturedUrl}`);
   assert.ok(capturedUrl.includes("incident_id=inc-001"), `URL missing incident_id param: ${capturedUrl}`);
+  assert.ok(capturedUrl.includes("project_id=proj-123"), `URL missing project_id param: ${capturedUrl}`);
 });
 
 // ── Backend mode: failure fallback ────────────────────────────────────────────

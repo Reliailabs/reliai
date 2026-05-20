@@ -33,6 +33,7 @@ class TimelineListQuery(BaseModel):
     lifecycle_state: str | None = None
     incident_id: str | None = None
     proposal_id: str | None = None
+    project_id: UUID | None = None
     limit: int = Field(default=50, ge=1, le=200)
 
 

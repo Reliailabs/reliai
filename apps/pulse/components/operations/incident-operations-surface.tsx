@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { IncidentOperationsSurfaceData, IncidentOperationsTab } from "@/lib/incident-operations-data";
 import { OperationsReliabilitySummaryPanel } from "@/components/operations/operations-reliability-summary-panel";
 import { resolveIncidentOperationsTab } from "@/lib/incident-operations-tabs";
+import { ProjectScopeSelector, type ProjectScopeSelectorOption } from "@/components/dashboard/project-scope-selector";
 
 const TAB_ORDER: Array<{ id: IncidentOperationsTab; label: string }> = [
   { id: "overview", label: "Overview" },
@@ -56,13 +57,29 @@ function EmptyState({ title, description }: { title: string; description: string
   );
 }
 
-export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSurfaceData }) {
+export function IncidentOperationsSurface({
+  data,
+  projectScope,
+}: {
+  data: IncidentOperationsSurfaceData;
+  projectScope?: {
+    projects: ProjectScopeSelectorOption[];
+    selectedProjectId: string | null;
+  };
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const tabParam = searchParams.get("tab");
   const activeTab = resolveIncidentOperationsTab(tabParam) as IncidentOperationsTab;
+  const scopedProjectId = searchParams.get("project_id") ?? data.projectId;
+  const scopeQuery = scopedProjectId ? `?project_id=${encodeURIComponent(scopedProjectId)}` : "";
+  const withScopedProject = (path: string): string => {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  };
 
   const setTab = (tab: IncidentOperationsTab) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -88,15 +105,15 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <Link href="/operations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <Link href={`/operations${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
                 Operations center
               </Link>
-              <Link href={`/incidents/${data.incidentId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <Link href={`${withScopedProject(`/incidents/${data.incidentId}`)}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
                 Legacy incident view
               </Link>
-              <Link href={`/operations/graph/${data.incidentId}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <Link href={`/operations/graph/${data.incidentId}${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
                 Open graph
               </Link>
@@ -108,6 +125,14 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
           </div>
           <DataModePill dataMode={data.dataMode} />
         </div>
+        {projectScope ? (
+          <div className="flex items-center justify-end">
+            <ProjectScopeSelector
+              projects={projectScope.projects}
+              selectedProjectId={projectScope.selectedProjectId}
+            />
+          </div>
+        ) : null}
 
         {data.sourceErrors.length > 0 ? (
           <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
@@ -185,7 +210,7 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
                 <p className="text-sm font-medium">Evidence references</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {incident.intelligence.evidenceLinks.map((link) => (
-                    <Link key={`${link.href}-${link.label}`} href={link.href} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
+                    <Link key={`${link.href}-${link.label}`} href={withScopedProject(link.href)} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
                       {link.label}
                     </Link>
                   ))}
@@ -199,7 +224,7 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
           <div className="space-y-3">
             {data.compareLinks.length > 0 ? (
               data.compareLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm hover:bg-muted">
+                <Link key={link.href} href={withScopedProject(link.href)} className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm hover:bg-muted">
                   <GitCompare className="h-4 w-4 text-primary" />
                   {link.label}
                 </Link>

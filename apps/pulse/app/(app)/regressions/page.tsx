@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { listProjectScopeOptions } from "@/lib/project-scope-data";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 
 import { getRegressionsSurfaceData } from "@/lib/regressions-data";
 
@@ -9,8 +11,16 @@ function time(v: string | null): string {
   return parsed.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-export default async function RegressionsPage() {
-  const data = await getRegressionsSurfaceData();
+type RegressionsPageProps = {
+  searchParams: Promise<{ project_id?: string }>;
+};
+
+export default async function RegressionsPage({ searchParams }: RegressionsPageProps) {
+  const { project_id: projectIdParam } = await searchParams;
+  const projects = await listProjectScopeOptions();
+  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam);
+  const data = await getRegressionsSurfaceData(selectedProjectId ?? undefined);
+  const scopeQuery = selectedProjectId ? `?project_id=${encodeURIComponent(selectedProjectId)}` : "";
   return (
     <div className="mx-auto w-full max-w-[1200px] px-6 py-6">
       <h1 className="text-2xl font-semibold text-foreground">Regressions</h1>
@@ -24,10 +34,10 @@ export default async function RegressionsPage() {
               <p className="text-sm font-medium text-foreground">{item.summary}</p>
               <p className="mt-1 text-xs text-muted-foreground">{item.id} • {item.status} • {time(item.detectedAt)}</p>
               <div className="mt-3 flex gap-2">
-                <Link href={`/regressions/${item.id}`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted">
+                <Link href={`/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted">
                   Open legacy detail
                 </Link>
-                <Link href={`/operations/regressions/${item.id}`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted">
+                <Link href={`/operations/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted">
                   Open in Operations
                 </Link>
               </div>

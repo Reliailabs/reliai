@@ -2,6 +2,7 @@ import "server-only";
 
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 import type { TraceIntelligenceSnippet, TracesSurfaceData } from "@/components/dashboard/pulse-types";
 import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
@@ -18,6 +19,7 @@ type TraceRead = {
 type ProjectRead = {
   id: string;
   name: string;
+  created_at: string;
 };
 
 type IncidentRead = {
@@ -56,12 +58,14 @@ function percentile(sorted: number[], p: number): number {
   return sorted[idx] ?? 0;
 }
 
-export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
+export async function getTracesSurfaceData(projectId?: string | null): Promise<TracesSurfaceData> {
   const sourceErrors: string[] = [];
+  const scopeQuery = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+  const projectFilter = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
   const [tracesResult, projectsResult, incidentsResult] = await Promise.all([
-    safeFetch(apiRequest<{ items: TraceRead[] }>("/api/v1/traces?limit=250")),
+    safeFetch(apiRequest<{ items: TraceRead[] }>(`/api/v1/traces?limit=250${projectFilter}`)),
     safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects")),
-    safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=25")),
+    safeFetch(apiRequest<{ items: IncidentRead[] }>(`/api/v1/incidents?limit=25${projectFilter}`)),
   ]);
 
   if (tracesResult.error) sourceErrors.push("traces");
@@ -127,9 +131,9 @@ export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
     };
   });
 
-  const firstProjectId = projects[0]?.id ?? null;
-  const deploymentsResult = firstProjectId
-    ? await safeFetch(apiRequest<{ items: DeploymentRead[] }>(`/api/v1/projects/${firstProjectId}/deployments?limit=12`))
+  const resolvedProjectId = resolveScopedProjectId(projects, projectId ?? null);
+  const deploymentsResult = resolvedProjectId
+    ? await safeFetch(apiRequest<{ items: DeploymentRead[] }>(`/api/v1/projects/${resolvedProjectId}/deployments?limit=12`))
     : ({ data: { items: [] }, error: false } as FetchResult<{ items: DeploymentRead[] }>);
   if (deploymentsResult.error) sourceErrors.push("deployments");
   const deployments = deploymentsResult.data?.items ?? [];
@@ -200,8 +204,8 @@ export async function getTracesSurfaceData(): Promise<TracesSurfaceData> {
     traceRefs: traces.slice(0, 8).map((trace) => ({
       id: trace.id,
       requestId: trace.id,
-      comparePath: `/traces/${trace.id}/compare`,
-      graphPath: `/traces/${trace.id}/graph`,
+      comparePath: `/traces/${trace.id}/compare${scopeQuery}`,
+      graphPath: `/traces/${trace.id}/graph${scopeQuery}`,
     })),
     sourceErrors: Array.from(new Set(sourceErrors)),
     hasTraceData: traces.length > 0,

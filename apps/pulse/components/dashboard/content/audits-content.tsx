@@ -3,6 +3,7 @@
 import { Clock, User, TrendingDown, AlertTriangle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,6 +86,13 @@ export function AuditsContent({
   auditsData?: AuditsSurfaceData;
   auditContext?: AuditRouteContext;
 }) {
+  const searchParams = useSearchParams();
+  const scopedProjectId = searchParams.get("project_id");
+  function withScopedProject(path: string): string {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  }
   const responseTimeData = auditsData?.responseTimeData?.length
     ? auditsData.responseTimeData
     : defaultResponseTimeData;
@@ -246,7 +254,7 @@ export function AuditsContent({
             <Button size="sm" variant="ghost" disabled={isSubmittingAction} onClick={() => void refreshAuditDetail()}>
               Refresh
             </Button>
-            <Link href={`/audits/${selectedAuditId}/results`} className="text-xs text-primary hover:underline">
+            <Link href={withScopedProject(`/audits/${selectedAuditId}/results`)} className="text-xs text-primary hover:underline">
               View Results
             </Link>
           </div>
@@ -371,10 +379,10 @@ export function AuditsContent({
                   {page.resolved ? "Resolved" : "In Progress"}
                 </p>
                 <div className="mt-1 flex justify-end gap-2 text-xs">
-                  <Link href={`/audits/${page.id}`} className="text-primary hover:underline">
+                  <Link href={withScopedProject(`/audits/${page.id}`)} className="text-primary hover:underline">
                     Detail
                   </Link>
-                  <Link href={`/audits/${page.id}/results`} className="text-primary hover:underline">
+                  <Link href={withScopedProject(`/audits/${page.id}/results`)} className="text-primary hover:underline">
                     Results
                   </Link>
                 </div>

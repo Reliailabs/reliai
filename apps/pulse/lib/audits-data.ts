@@ -59,9 +59,10 @@ function toSeverity(status?: string | null, cert?: string | null): "critical" | 
   return "low";
 }
 
-export async function getAuditsSurfaceData(): Promise<AuditsSurfaceData> {
+export async function getAuditsSurfaceData(projectId?: string | null): Promise<AuditsSurfaceData> {
   const sourceErrors: string[] = [];
-  const auditsResult = await safeFetch(apiRequest<{ items: AuditListItem[] }>("/api/v1/audits"));
+  const filterQuery = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+  const auditsResult = await safeFetch(apiRequest<{ items: AuditListItem[] }>(`/api/v1/audits${filterQuery}`));
   if (auditsResult.error) sourceErrors.push("audits");
 
   const items = auditsResult.data?.items ?? [];

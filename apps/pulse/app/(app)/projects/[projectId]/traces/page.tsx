@@ -7,7 +7,7 @@ type ProjectTracesPageProps = {
 
 export default async function ProjectTracesPage({ params }: ProjectTracesPageProps) {
   const { projectId } = await params;
-  const tracesData = await getTracesSurfaceData();
+  const tracesData = await getTracesSurfaceData(projectId);
 
   return (
     <DashboardShell
