@@ -73,15 +73,25 @@ function statusFromReliability(detail: ProjectReliabilityRead): ServiceCard["sta
   return "healthy";
 }
 
-export async function getServicesSurfaceData(): Promise<ServicesSurfaceData> {
+export async function getServicesSurfaceData(projectId?: string): Promise<ServicesSurfaceData> {
   const sourceErrors: string[] = [];
-  const projectsResult = await safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects"));
-  if (projectsResult.error) {
-    sourceErrors.push("projects");
+  const selected: ProjectRead[] = [];
+  if (projectId) {
+    const scopedProjectResult = await safeFetch(apiRequest<ProjectRead>(`/api/v1/projects/${projectId}`));
+    if (scopedProjectResult.error) {
+      sourceErrors.push("projects");
+    } else if (scopedProjectResult.data) {
+      selected.push(scopedProjectResult.data);
+    }
+  } else {
+    const projectsResult = await safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects"));
+    if (projectsResult.error) {
+      sourceErrors.push("projects");
+    } else {
+      selected.push(...(projectsResult.data?.items ?? []).slice(0, 8));
+    }
   }
 
-  const projects = projectsResult.data?.items ?? [];
-  const selected = projects.slice(0, 8);
   const details = await Promise.all(
     selected.map(async (project) => {
       const result = await safeFetch(apiRequest<ProjectReliabilityRead>(`/api/v1/projects/${project.id}/reliability`));

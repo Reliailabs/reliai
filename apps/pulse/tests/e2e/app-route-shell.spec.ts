@@ -165,3 +165,45 @@ test("operations detail and graph navigation preserve scoped project query", asy
   await page.getByRole("link", { name: "Operations center" }).click();
   await expect(page).toHaveURL(/\/operations/);
 });
+
+test("project scope selector continuity across incidents → operations → traces", async ({ page }) => {
+  await ensureSignedIn(page, "/incidents");
+  await expect(page).toHaveURL(/\/incidents/);
+
+  const selector = page.getByRole("combobox", { name: "Select project scope" });
+  if ((await selector.count()) === 0) {
+    test.skip(true, "SKIPPED_SCOPE_SWITCH: project scope selector unavailable.");
+  }
+
+  await selector.click();
+  const options = page.getByRole("option");
+  const optionCount = await options.count();
+  if (optionCount < 2) {
+    test.skip(true, "SKIPPED_SCOPE_SWITCH: fewer than two project scope options.");
+  }
+
+  const beforeValue = new URL(page.url()).searchParams.get("project_id");
+  await options.nth(1).click();
+  await expect(page).toHaveURL(/\/incidents\?project_id=/);
+  const projectId = new URL(page.url()).searchParams.get("project_id");
+  expect(projectId).toBeTruthy();
+  if (beforeValue) {
+    expect(projectId).not.toBe(beforeValue);
+  }
+
+  const operationsLink = page.locator('a[href*="/operations/incidents/"]').first();
+  if ((await operationsLink.count()) === 0) {
+    test.skip(true, "SKIPPED_SCOPE_SWITCH: no operations incident link available from incidents list.");
+  }
+  await operationsLink.click();
+  await expect(page).toHaveURL(new RegExp(`/operations/incidents/.+\\?project_id=${projectId}`));
+
+  await page.goto(`/traces?project_id=${encodeURIComponent(projectId!)}`);
+  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${projectId}`));
+
+  const traceDetailLink = page.locator('a[href*="/traces/"]').filter({ hasText: /View|Compare|Graph/i }).first();
+  if ((await traceDetailLink.count()) > 0) {
+    await traceDetailLink.click();
+    await expect(page).toHaveURL(new RegExp(`/traces/.+project_id=${projectId}`));
+  }
+});
