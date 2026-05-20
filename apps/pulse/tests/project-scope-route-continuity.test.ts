@@ -220,6 +220,8 @@ test("simulation handoff and reliability/trace evidence links preserve project s
   const incidentsData = read("lib/incidents-data.ts");
 
   assert.match(runner, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(runner, /const withScopedProject = useCallback\(/);
+  assert.match(runner, /<Link href=\{withScopedProject\("\/onboarding\?path=sdk"\)\}>Connect SDK instead<\/Link>/);
   assert.match(runner, /router\.push\(`\/incidents\/\$\{simulationStatus\.incident_id\}\/command\$\{scopeQuery\}`\)/);
   assert.match(incidentCommandCompat, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(incidentCommandCompat, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
