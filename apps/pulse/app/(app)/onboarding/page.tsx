@@ -56,7 +56,7 @@ export default async function OnboardingPage({
   const onboardingError = errorMessageForCode(error);
 
   const maybeSession = await getOperatorSession();
-  const returnTo = "/onboarding?path=simulation&autostart=1";
+  const returnTo = `/onboarding?path=simulation&autostart=1${projectIdParam ? `&project_id=${encodeURIComponent(projectIdParam)}` : ""}`;
   const signInHref = `/sign-in?return_to=${encodeURIComponent(returnTo)}` as Route;
 
   if (!maybeSession && autoStartSimulation) redirect(signInHref);
