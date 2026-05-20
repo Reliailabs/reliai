@@ -61,8 +61,10 @@ test("incident investigate/compare aliases preserve project scope query", () => 
 
   assert.match(investigateAlias, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(compareAlias, /searchParams: Promise<\{ project_id\?: string \}>/);
-  assert.match(investigateAlias, /toIncidentOperationsAliasPath\(incidentId, "investigate", projectIdParam\)/);
-  assert.match(compareAlias, /toIncidentOperationsAliasPath\(incidentId, "compare", projectIdParam\)/);
+  assert.match(investigateAlias, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(compareAlias, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(investigateAlias, /toIncidentOperationsAliasPath\(incidentId, "investigate", selectedProjectId\)/);
+  assert.match(compareAlias, /toIncidentOperationsAliasPath\(incidentId, "compare", selectedProjectId\)/);
   assert.match(aliasLib, /scopeQuery = projectId \? `&project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
 });
 
@@ -129,7 +131,8 @@ test("regression navigation links and compare shim preserve project scope query"
 
   assert.match(regressionsList, /href=\{`\/operations\/regressions\/\$\{item\.id\}\$\{scopeQuery\}`\}/);
   assert.match(projectRegressions, /href=\{`\/operations\/regressions\/\$\{item\.id\}\?project_id=\$\{encodeURIComponent\(projectId\)\}`\}/);
-  assert.match(compareShim, /const scopeQuery = projectIdParam \? `\?project_id=\$\{encodeURIComponent\(projectIdParam\)\}` : ""/);
+  assert.match(compareShim, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(compareShim, /const scopeQuery = selectedProjectId \? `\?project_id=\$\{encodeURIComponent\(selectedProjectId\)\}` : ""/);
   assert.match(compareShim, /redirect\(`\/operations\/regressions\/\$\{regressionId\}\$\{scopeQuery\}`\)/);
 });
 
@@ -170,7 +173,8 @@ test("simulation handoff and reliability/trace evidence links preserve project s
   assert.match(runner, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(runner, /router\.push\(`\/incidents\/\$\{simulationStatus\.incident_id\}\/command\$\{scopeQuery\}`\)/);
   assert.match(incidentCommandCompat, /searchParams: Promise<\{ project_id\?: string \}>/);
-  assert.match(incidentCommandCompat, /const scopeQuery = projectIdParam \? `\?project_id=\$\{encodeURIComponent\(projectIdParam\)\}` : ""/);
+  assert.match(incidentCommandCompat, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(incidentCommandCompat, /const scopeQuery = selectedProjectId \? `\?project_id=\$\{encodeURIComponent\(selectedProjectId\)\}` : ""/);
   assert.match(incidentCommandCompat, /redirect\(`\/incidents\/\$\{incidentId\}\$\{scopeQuery\}`\)/);
   assert.match(reliability, /href=\{`\/incidents\/\$\{incident\.id\}\?project_id=\$\{encodeURIComponent\(projectId\)\}`\}/);
   assert.match(tracesData, /comparePath: `\/traces\/\$\{trace\.id\}\/compare\$\{scopeQuery\}`/);

@@ -30,7 +30,8 @@ test("model and prompt version routes are owned by Pulse and bridge to scoped tr
 
 test("regression compare route is owned by Pulse and redirects to operations regression detail", () => {
   const file = read("app/(app)/regressions/[regressionId]/compare/page.tsx");
-  assert.match(file, /const scopeQuery = projectIdParam \? `\?project_id=\$\{encodeURIComponent\(projectIdParam\)\}` : ""/);
+  assert.match(file, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(file, /const scopeQuery = selectedProjectId \? `\?project_id=\$\{encodeURIComponent\(selectedProjectId\)\}` : ""/);
   assert.match(file, /redirect\(`\/operations\/regressions\/\$\{regressionId\}\$\{scopeQuery\}`\)/);
 });
 
