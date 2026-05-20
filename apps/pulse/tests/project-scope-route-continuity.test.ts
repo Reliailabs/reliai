@@ -193,10 +193,15 @@ test("regression operations detail route preserves explicit project scope", () =
 
 test("regression navigation links and compare shim preserve project scope query", () => {
   const regressionsList = read("app/(app)/regressions/page.tsx");
+  const regressionDetail = read("app/(app)/regressions/[regressionId]/page.tsx");
   const projectRegressions = read("app/(app)/projects/[projectId]/regressions/page.tsx");
   const compareShim = read("app/(app)/regressions/[regressionId]/compare/page.tsx");
 
   assert.match(regressionsList, /href=\{`\/operations\/regressions\/\$\{item\.id\}\$\{scopeQuery\}`\}/);
+  assert.match(regressionDetail, /searchParams: Promise<\{ project_id\?: string \}>/);
+  assert.match(regressionDetail, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(regressionDetail, /<ProjectScopeSelector projects=\{projects\} selectedProjectId=\{selectedProjectId \?\? null\} \/>/);
+  assert.match(regressionDetail, /href=\{`\/operations\/regressions\/\$\{item\.id\}\$\{scopeQuery\}`\}/);
   assert.match(projectRegressions, /href=\{`\/operations\/regressions\/\$\{item\.id\}\?project_id=\$\{encodeURIComponent\(projectId\)\}`\}/);
   assert.match(compareShim, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
   assert.match(compareShim, /const scopeQuery = selectedProjectId \? `\?project_id=\$\{encodeURIComponent\(selectedProjectId\)\}` : ""/);
