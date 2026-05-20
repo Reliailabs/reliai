@@ -129,9 +129,8 @@ export default async function OnboardingPage({
     if (!orgId) return;
 
     const nameInput = String(formData.get("project_name") ?? "").trim();
-    const environmentInput = String(formData.get("environment") ?? "production").trim();
-    const environment =
-      environmentInput === "staging" || environmentInput === "development" ? environmentInput : "production";
+    const environmentInput = String(formData.get("environment") ?? "prod").trim();
+    const environment = environmentInput === "staging" || environmentInput === "dev" ? environmentInput : "prod";
     const finalName = nameInput || "Production";
     const baseSlug = slugify(finalName) || "project";
     const existingProjects = await listProjects(orgId).catch(() => null);
@@ -218,9 +217,9 @@ export default async function OnboardingPage({
               <form action={createProjectAction} className="space-y-2">
                 <input name="project_name" defaultValue="Production" className="h-10 w-full rounded-md border border-border px-3 text-sm" />
                 <select name="environment" className="h-10 w-full rounded-md border border-border px-3 text-sm">
-                  <option value="production">production</option>
+                  <option value="prod">production</option>
                   <option value="staging">staging</option>
-                  <option value="development">development</option>
+                  <option value="dev">development</option>
                 </select>
                 <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">Create project</button>
               </form>

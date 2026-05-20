@@ -60,7 +60,7 @@ export async function createProject(
   payload: {
     name: string;
     slug: string;
-    environment: "production" | "staging" | "development";
+    environment: "prod" | "staging" | "dev";
     description?: string | null;
   },
 ) {
