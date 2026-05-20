@@ -42,6 +42,15 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
   const [modelName, setModelName] = useState("gpt-4.1-mini");
   const [promptType, setPromptType] = useState("support_triage");
   const hasNavigatedRef = useRef(false);
+  const scopedProjectId = searchParams.get("project_id");
+  const withScopedProject = useCallback(
+    (path: string) => {
+      if (!scopedProjectId) return path;
+      const separator = path.includes("?") ? "&" : "?";
+      return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+    },
+    [scopedProjectId],
+  );
 
   const statusLabel = useMemo(() => {
     if (!status) return "Queued";
@@ -96,7 +105,6 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
             });
             hasNavigatedRef.current = true;
             setState("handoff");
-            const scopedProjectId = searchParams.get("project_id");
             const scopeQuery = scopedProjectId ? `?project_id=${encodeURIComponent(scopedProjectId)}` : "";
             window.setTimeout(() => router.push(`/incidents/${simulationStatus.incident_id}/command${scopeQuery}`), 1500);
             inFlight = false;
@@ -130,7 +138,7 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
       cancelled = true;
       stopPolling();
     };
-  }, [simulationId, state, router, searchParams]);
+  }, [simulationId, state, router, scopedProjectId]);
 
   const startSimulation = useCallback(async () => {
     if (state === "creating" || state === "running") return;
@@ -181,7 +189,7 @@ export function OnboardingSimulationRunner({ defaultProjectName, autoStart }: On
           <Button onClick={startSimulation} disabled={!projectName.trim() || !modelName.trim() || !promptType.trim() || state === "creating" || state === "running"}>
             {state === "creating" ? "Creating simulation..." : state === "running" ? "Simulation running..." : "Start guided simulation"}
           </Button>
-          <Button asChild variant="outline"><Link href="/onboarding?path=sdk">Connect SDK instead</Link></Button>
+          <Button asChild variant="outline"><Link href={withScopedProject("/onboarding?path=sdk")}>Connect SDK instead</Link></Button>
         </div>
         {error ? <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
       </Card>
