@@ -54,6 +54,18 @@ test("incident navigation actions preserve project_id query context", () => {
   assert.match(file, /router\.push\(withScopedProject\(`\/operations\/incidents\/\$\{selectedIncident\.id\}`\)\)/);
 });
 
+test("incident investigate/compare aliases preserve project scope query", () => {
+  const investigateAlias = read("app/(app)/incidents/[incidentId]/investigate/page.tsx");
+  const compareAlias = read("app/(app)/incidents/[incidentId]/compare/page.tsx");
+  const aliasLib = read("lib/incident-deeplink-alias.ts");
+
+  assert.match(investigateAlias, /searchParams: Promise<\{ project_id\?: string \}>/);
+  assert.match(compareAlias, /searchParams: Promise<\{ project_id\?: string \}>/);
+  assert.match(investigateAlias, /toIncidentOperationsAliasPath\(incidentId, "investigate", projectIdParam\)/);
+  assert.match(compareAlias, /toIncidentOperationsAliasPath\(incidentId, "compare", projectIdParam\)/);
+  assert.match(aliasLib, /scopeQuery = projectId \? `&project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
+});
+
 test("operations route preserves project scope and forwards filter to operations data loader", () => {
   const file = read("app/(app)/operations/page.tsx");
   assert.match(file, /searchParams: Promise<\{ project_id\?: string \}>/);

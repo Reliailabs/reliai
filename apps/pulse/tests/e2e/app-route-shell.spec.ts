@@ -92,6 +92,18 @@ test("auth return continuity preserves incident alias deep links", async ({ page
   await expect(page).toHaveURL(/\/operations\/incidents\/inc_123\?tab=compare/);
 });
 
+test("incident alias deep links preserve project scope query on redirect", async ({ page }) => {
+  await ensureSignedIn(page, "/incidents/inc_123/investigate?project_id=proj_scope");
+  await expect(page).toHaveURL(
+    /\/operations\/incidents\/inc_123\?tab=investigation&project_id=proj_scope/,
+  );
+
+  await page.goto("/incidents/inc_123/compare?project_id=proj_scope");
+  await expect(page).toHaveURL(
+    /\/operations\/incidents\/inc_123\?tab=compare&project_id=proj_scope/,
+  );
+});
+
 test("operations project scope runtime probe preserves query continuity and accepts project_id timeline filter", async ({ page }) => {
   await ensureSignedIn(page, "/operations");
 
