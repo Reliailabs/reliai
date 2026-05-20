@@ -233,6 +233,17 @@ test("simulation handoff and reliability/trace evidence links preserve project s
   assert.match(incidentsData, /href: `\/deployments\$\{scopeQuery\}#\$\{deploymentId\}`/);
 });
 
+<<<<<<< HEAD
+test("performance trace links and evidence references preserve project scope", () => {
+  const performanceContent = read("components/dashboard/content/performance-content.tsx");
+  assert.match(performanceContent, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(performanceContent, /function withScopedProject\(path: string\): string/);
+  assert.match(performanceContent, /href=\{withScopedProject\(`\/traces\/\$\{trace\.id\}`\)\}/);
+  assert.match(performanceContent, /href=\{withScopedProject\(`\/traces\/\$\{selectedTraceRef\.id\}\/compare`\)\}/);
+  assert.match(performanceContent, /href=\{withScopedProject\(`\/traces\/\$\{selectedTraceRef\.id\}\/graph`\)\}/);
+  assert.match(performanceContent, /href=\{withScopedProject\(ref\.href\)\}/);
+});
+
 test("overview advisory links preserve project scope query", () => {
   const overviewContent = read("components/dashboard/content/overview-content.tsx");
   assert.match(overviewContent, /const scopedProjectId = searchParams\.get\("project_id"\)/);
