@@ -104,6 +104,11 @@ test("incident alias deep links preserve project scope query on redirect", async
   );
 });
 
+test("incident command compat redirect preserves project scope query", async ({ page }) => {
+  await ensureSignedIn(page, "/incidents/inc_123/command?project_id=proj_scope");
+  await expect(page).toHaveURL(/\/incidents\/inc_123\?project_id=proj_scope/);
+});
+
 test("operations project scope runtime probe preserves query continuity and accepts project_id timeline filter", async ({ page }) => {
   await ensureSignedIn(page, "/operations");
 
