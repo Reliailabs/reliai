@@ -51,7 +51,11 @@ Each item also needs:
 1. Add shared `ProjectScopeSelector` component in Pulse.
 2. Persist scope via `project_id` query on non-project routes:
    - `/incidents`
+   - `/incidents/[incidentId]`
    - `/traces`
+   - `/traces/[traceId]`
+   - `/traces/[traceId]/compare`
+   - `/traces/[traceId]/graph`
    - `/audits/new`
    - `/onboarding`
    - `/audits`
@@ -69,7 +73,7 @@ Each item also needs:
 4. Add regression tests that fail on first-project implicit regression.
 
 Pending:
-- Validate FastAPI `/api/v1/operations/timeline` handling of `project_id` end-to-end in live mode and add explicit contract tests.
+- Validate FastAPI `/api/v1/operations/timeline` handling of `project_id` end-to-end in live mode and add explicit API contract tests.
 
 ## Sweep Execution Plan
 

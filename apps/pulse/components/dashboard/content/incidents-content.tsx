@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, Search, Filter, ChevronDown, UserX } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,6 +137,8 @@ export function IncidentsContent({
   const incidents = incidentsData?.incidents?.length ? incidentsData.incidents : defaultIncidents;
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const scopedProjectId = searchParams.get("project_id");
   const [incidentItems, setIncidentItems] = useState(incidents);
   const initialSelectedIncident =
     incidentItems.find((incident) => incident.id === incidentContext?.selectedIncidentId) ?? incidentItems[0];
@@ -145,6 +147,12 @@ export function IncidentsContent({
   const [members, setMembers] = useState<IncidentMember[]>([]);
   const [isAssigning, setIsAssigning] = useState(false);
   const [isMutatingStatus, setIsMutatingStatus] = useState(false);
+
+  function withScopedProject(path: string): string {
+    if (!scopedProjectId) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  }
 
   function patchIncident(
     incidentId: string,
@@ -293,7 +301,7 @@ export function IncidentsContent({
               onClick={() => {
                 setSelectedIncident(incident);
                 if (pathname?.startsWith("/incidents")) {
-                  router.push(`/incidents/${incident.id}`);
+                  router.push(withScopedProject(`/incidents/${incident.id}`));
                 }
               }}
               className={cn(
@@ -322,13 +330,13 @@ export function IncidentsContent({
                   tabIndex={0}
                   onClick={(event) => {
                     event.stopPropagation();
-                    router.push(`/operations/incidents/${incident.id}`);
+                    router.push(withScopedProject(`/operations/incidents/${incident.id}`));
                   }}
                   onKeyDown={(event) => {
                     if (event.key !== "Enter" && event.key !== " ") return;
                     event.preventDefault();
                     event.stopPropagation();
-                    router.push(`/operations/incidents/${incident.id}`);
+                    router.push(withScopedProject(`/operations/incidents/${incident.id}`));
                   }}
                   className="text-[11px] font-medium text-primary hover:underline"
                 >
@@ -414,7 +422,7 @@ export function IncidentsContent({
               <Button
                 variant="outline"
                 className="gap-2 bg-transparent"
-                onClick={() => router.push(`/operations/incidents/${selectedIncident.id}`)}
+                onClick={() => router.push(withScopedProject(`/operations/incidents/${selectedIncident.id}`))}
               >
                 <ExternalLink className="w-4 h-4" />
                 Open in Operations

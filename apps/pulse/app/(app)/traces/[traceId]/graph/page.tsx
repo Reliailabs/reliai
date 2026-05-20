@@ -1,19 +1,26 @@
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { getTracesSurfaceData } from "@/lib/traces-data";
+import { listProjectScopeOptions } from "@/lib/project-scope-data";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 
 type TraceGraphPageProps = {
   params: Promise<{ traceId: string }>;
+  searchParams: Promise<{ project_id?: string }>;
 };
 
-export default async function TraceGraphPage({ params }: TraceGraphPageProps) {
+export default async function TraceGraphPage({ params, searchParams }: TraceGraphPageProps) {
   const { traceId } = await params;
-  const tracesData = await getTracesSurfaceData();
+  const { project_id: projectIdParam } = await searchParams;
+  const projects = await listProjectScopeOptions();
+  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam);
+  const tracesData = await getTracesSurfaceData(selectedProjectId);
 
   return (
     <DashboardShell
       initialSection="traces"
       tracesData={tracesData}
       traceContext={{ selectedTraceId: traceId, mode: "graph" }}
+      projectScope={{ projects, selectedProjectId }}
     />
   );
 }
