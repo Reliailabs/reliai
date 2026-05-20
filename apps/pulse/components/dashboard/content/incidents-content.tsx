@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AlertTriangle, Clock, User, ExternalLink, CheckCircle, Search, Filter, ChevronDown, UserX } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -334,16 +335,15 @@ export function IncidentsContent({
                 {incident.title}
               </p>
               <div className="mb-2">
-                <button
-                  type="button"
+                <Link
+                  href={withScopedProject(`/operations/incidents/${incident.id}`)}
                   onClick={(event) => {
                     event.stopPropagation();
-                    router.push(withScopedProject(`/operations/incidents/${incident.id}`));
                   }}
                   className="text-[11px] font-medium text-primary hover:underline"
                 >
                   Open in Operations
-                </button>
+                </Link>
               </div>
               <div className="flex items-center justify-between">
                 <span className={cn(
