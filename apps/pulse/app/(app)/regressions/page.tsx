@@ -37,7 +37,7 @@ export default async function RegressionsPage({ searchParams }: RegressionsPageP
                 <Link href={`/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted">
                   Open legacy detail
                 </Link>
-                <Link href={`/operations/regressions/${item.id}`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted">
+                <Link href={`/operations/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted">
                   Open in Operations
                 </Link>
               </div>

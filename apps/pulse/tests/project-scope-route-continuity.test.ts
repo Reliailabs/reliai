@@ -101,3 +101,21 @@ test("scoped loaders avoid implicit first-project fallback", () => {
     assert.match(file, /resolveScopedProjectId\(/);
   }
 });
+
+test("regression operations detail route preserves explicit project scope", () => {
+  const file = read("app/(app)/operations/regressions/[regressionId]/page.tsx");
+  assert.match(file, /searchParams: Promise<\{ project_id\?: string \}>/);
+  assert.match(file, /const \{ project_id: projectIdParam \} = await searchParams/);
+  assert.match(file, /getRegressionOperationsSurfaceData\(regressionId, projectIdParam\)/);
+});
+
+test("regression navigation links and compare shim preserve project scope query", () => {
+  const regressionsList = read("app/(app)/regressions/page.tsx");
+  const projectRegressions = read("app/(app)/projects/[projectId]/regressions/page.tsx");
+  const compareShim = read("app/(app)/regressions/[regressionId]/compare/page.tsx");
+
+  assert.match(regressionsList, /href=\{`\/operations\/regressions\/\$\{item\.id\}\$\{scopeQuery\}`\}/);
+  assert.match(projectRegressions, /href=\{`\/operations\/regressions\/\$\{item\.id\}\?project_id=\$\{encodeURIComponent\(projectId\)\}`\}/);
+  assert.match(compareShim, /const scopeQuery = projectIdParam \? `\?project_id=\$\{encodeURIComponent\(projectIdParam\)\}` : ""/);
+  assert.match(compareShim, /redirect\(`\/operations\/regressions\/\$\{regressionId\}\$\{scopeQuery\}`\)/);
+});

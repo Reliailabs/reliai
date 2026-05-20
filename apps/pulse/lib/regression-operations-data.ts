@@ -73,18 +73,19 @@ async function safeFetch<T>(promise: Promise<T>): Promise<FetchResult<T>> {
   }
 }
 
-export async function getRegressionOperationsSurfaceData(regressionId: string): Promise<RegressionOperationsSurfaceData> {
+export async function getRegressionOperationsSurfaceData(regressionId: string, projectId?: string | null): Promise<RegressionOperationsSurfaceData> {
   const sourceErrors: string[] = [];
+  const incidentProjectFilter = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
   const [projectsResult, incidentsResult, operationsData] = await Promise.all([
     safeFetch(apiRequest<ListResponse<{ id: string; name: string; created_at: string }>>("/api/v1/projects")),
-    safeFetch(apiRequest<ListResponse<IncidentRead>>("/api/v1/incidents?limit=25")),
-    getOperationsSurfaceData(),
+    safeFetch(apiRequest<ListResponse<IncidentRead>>(`/api/v1/incidents?limit=25${incidentProjectFilter}`)),
+    getOperationsSurfaceData(undefined, { filter: projectId ? { project_id: projectId } : undefined }),
   ]);
   if (projectsResult.error) sourceErrors.push("projects");
   if (incidentsResult.error) sourceErrors.push("incidents");
   sourceErrors.push(...operationsData.sourceErrors);
 
-  const resolvedProjectId = resolveScopedProjectId(projectsResult.data?.items ?? []);
+  const resolvedProjectId = resolveScopedProjectId(projectsResult.data?.items ?? [], projectId ?? null);
   const regressionsResult = resolvedProjectId
     ? await safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${resolvedProjectId}/regressions?limit=50`))
     : { data: null, error: true };
@@ -122,9 +123,10 @@ export async function getRegressionOperationsSurfaceData(regressionId: string): 
       updatedAt: record.verified_at,
     }));
 
+  const scopeQuery = resolvedProjectId ? `?project_id=${encodeURIComponent(resolvedProjectId)}` : "";
   const compareLinks = [
-    { label: "Trace compare", href: "/traces" },
-    { label: "Related deployments", href: "/deployments" },
+    { label: "Trace compare", href: `/traces${scopeQuery}` },
+    { label: "Related deployments", href: `/deployments${scopeQuery}` },
   ];
 
   if (!regression) {

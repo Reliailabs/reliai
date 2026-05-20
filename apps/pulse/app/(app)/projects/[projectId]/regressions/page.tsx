@@ -60,7 +60,7 @@ export default async function ProjectRegressionsPage({ params }: ProjectRegressi
               </p>
               <div className="mt-3 flex gap-2">
                 <Link
-                  href={`/regressions/${item.id}`}
+                  href={`/regressions/${item.id}?project_id=${encodeURIComponent(projectId)}`}
                   className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted"
                 >
                   Open legacy detail
@@ -74,7 +74,7 @@ export default async function ProjectRegressionsPage({ params }: ProjectRegressi
                   </Link>
                 ) : null}
                 <Link
-                  href={`/operations/regressions/${item.id}`}
+                  href={`/operations/regressions/${item.id}?project_id=${encodeURIComponent(projectId)}`}
                   className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted"
                 >
                   Open in Operations
