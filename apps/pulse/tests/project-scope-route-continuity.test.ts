@@ -62,3 +62,12 @@ test("operations route preserves project scope and forwards filter to operations
   assert.match(file, /filter: selectedProjectId \? \{ project_id: selectedProjectId \} : undefined/);
   assert.match(file, /projectScope=\{\{ projects, selectedProjectId \}\}/);
 });
+
+test("onboarding route preserves explicit project scope for path transitions and api key generation", () => {
+  const file = read("app/(app)/onboarding/page.tsx");
+  assert.match(file, /searchParams: Promise<\{ path\?: string; autostart\?: string; api_key\?: string; project_id\?: string; error\?: string \}>/);
+  assert.match(file, /const projectScopeQuery = primaryProjectId \? `&project_id=\$\{encodeURIComponent\(primaryProjectId\)\}` : \"\"/);
+  assert.match(file, /const preferredProjectId = String\(formData\.get\("project_id"\) \?\? ""\)\.trim\(\) \|\| projectIdParam \|\| null/);
+  assert.match(file, /<input type="hidden" name="project_id" value=\{primaryProjectId\} \/>/);
+  assert.match(file, /<select[\s\S]*name="project_id"/);
+});

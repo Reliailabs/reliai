@@ -94,6 +94,7 @@ export default async function OnboardingPage({
   const hasProject = Boolean(primaryProjectId);
   const hasTrace = Boolean(traceList?.items?.length);
   const apiKeyCreated = Boolean(apiKeyValue);
+  const projectScopeQuery = primaryProjectId ? `&project_id=${encodeURIComponent(primaryProjectId)}` : "";
 
   async function createOrganizationAction(formData: FormData) {
     "use server";
@@ -153,13 +154,13 @@ export default async function OnboardingPage({
     redirect(`/onboarding?path=sdk&project_id=${encodeURIComponent(createdProjectId)}`);
   }
 
-  async function createApiKeyAction() {
+  async function createApiKeyAction(formData: FormData) {
     "use server";
     const session = await requireOperatorSession("/onboarding");
     const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
     if (!orgId) return;
 
-    const preferredProjectId = projectIdParam ?? null;
+    const preferredProjectId = String(formData.get("project_id") ?? "").trim() || projectIdParam || null;
     const projectList = await listProjects(orgId).catch(() => null);
     const projectId =
       projectList?.items.find((project) => project.id === preferredProjectId)?.id ??
@@ -186,9 +187,9 @@ export default async function OnboardingPage({
         <p className="text-xs uppercase tracking-[0.24em] text-secondary">Quick start</p>
         <h1 className="mt-3 text-3xl font-semibold text-primary">Onboarding ownership in Reliai</h1>
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button asChild size="sm" variant={selectedPath === "choose" ? "default" : "outline"}><Link href="/onboarding">Choose path</Link></Button>
-          <Button asChild size="sm" variant={selectedPath === "sdk" ? "default" : "outline"}><Link href="/onboarding?path=sdk">Connect SDK</Link></Button>
-          <Button asChild size="sm" variant={selectedPath === "simulation" ? "default" : "outline"}><Link href="/onboarding?path=simulation">Start simulation</Link></Button>
+          <Button asChild size="sm" variant={selectedPath === "choose" ? "default" : "outline"}><Link href={`/onboarding${primaryProjectId ? `?project_id=${encodeURIComponent(primaryProjectId)}` : ""}`}>Choose path</Link></Button>
+          <Button asChild size="sm" variant={selectedPath === "sdk" ? "default" : "outline"}><Link href={`/onboarding?path=sdk${projectScopeQuery}`}>Connect SDK</Link></Button>
+          <Button asChild size="sm" variant={selectedPath === "simulation" ? "default" : "outline"}><Link href={`/onboarding?path=simulation${projectScopeQuery}`}>Start simulation</Link></Button>
           <Button asChild size="sm" variant="subtle"><Link href="/pulse">Skip for now</Link></Button>
         </div>
       </Card>
@@ -225,6 +226,7 @@ export default async function OnboardingPage({
               </form>
             ) : !apiKeyCreated ? (
               <form action={createApiKeyAction}>
+                {primaryProjectId ? <input type="hidden" name="project_id" value={primaryProjectId} /> : null}
                 <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">Generate API key</button>
               </form>
             ) : (
@@ -246,6 +248,32 @@ export default async function OnboardingPage({
             <p>First trace: <span className="text-foreground">{hasTrace ? "ready" : "pending"}</span></p>
             {primaryProject ? (
               <p>Selected project: <span className="text-foreground">{primaryProject.name}</span></p>
+            ) : null}
+            {projects?.items && projects.items.length > 1 ? (
+              <form method="get" className="space-y-1 pt-2">
+                <label htmlFor="onboarding-project-scope" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  Project scope
+                </label>
+                <input type="hidden" name="path" value={selectedPath} />
+                <select
+                  id="onboarding-project-scope"
+                  name="project_id"
+                  defaultValue={primaryProjectId ?? ""}
+                  className="h-9 w-full rounded-md border border-border px-2 text-sm text-foreground"
+                >
+                  {projects.items
+                    .slice()
+                    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+                    .map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                </select>
+                <button type="submit" className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">
+                  Switch project
+                </button>
+              </form>
             ) : null}
           </article>
         </section>
