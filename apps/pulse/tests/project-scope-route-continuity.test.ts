@@ -89,3 +89,15 @@ test("project overview route passes projectId through all overview presenters", 
   assert.match(file, /getCausalityEvidenceData\(\{ demoMode: false, organizationId, projectId \}\)/);
   assert.match(file, /getAttributionSuggestionsData\(\{ demoMode: false, organizationId, projectId \}\)/);
 });
+
+test("scoped loaders avoid implicit first-project fallback", () => {
+  const tracesData = read("lib/traces-data.ts");
+  const regressionsData = read("lib/regressions-data.ts");
+  const regressionOps = read("lib/regression-operations-data.ts");
+  const errorsData = read("lib/errors-data.ts");
+
+  for (const file of [tracesData, regressionsData, regressionOps, errorsData]) {
+    assert.doesNotMatch(file, /items\?\.\[0\]/);
+    assert.match(file, /resolveScopedProjectId\(/);
+  }
+});

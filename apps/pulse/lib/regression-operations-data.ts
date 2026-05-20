@@ -3,6 +3,7 @@ import "server-only";
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
 import { getOperationsSurfaceData } from "@/lib/operations-timeline";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 import { listLifecycles, type ProposalLifecycle } from "@/lib/proposal-lifecycle";
 import { getVerificationResults } from "@/lib/operations-verification-results";
 import type { OperationsTimelineEntry } from "@/components/dashboard/pulse-types";
@@ -75,7 +76,7 @@ async function safeFetch<T>(promise: Promise<T>): Promise<FetchResult<T>> {
 export async function getRegressionOperationsSurfaceData(regressionId: string): Promise<RegressionOperationsSurfaceData> {
   const sourceErrors: string[] = [];
   const [projectsResult, incidentsResult, operationsData] = await Promise.all([
-    safeFetch(apiRequest<ListResponse<{ id: string }>>("/api/v1/projects")),
+    safeFetch(apiRequest<ListResponse<{ id: string; name: string; created_at: string }>>("/api/v1/projects")),
     safeFetch(apiRequest<ListResponse<IncidentRead>>("/api/v1/incidents?limit=25")),
     getOperationsSurfaceData(),
   ]);
@@ -83,9 +84,9 @@ export async function getRegressionOperationsSurfaceData(regressionId: string): 
   if (incidentsResult.error) sourceErrors.push("incidents");
   sourceErrors.push(...operationsData.sourceErrors);
 
-  const firstProjectId = projectsResult.data?.items?.[0]?.id ?? null;
-  const regressionsResult = firstProjectId
-    ? await safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${firstProjectId}/regressions?limit=50`))
+  const resolvedProjectId = resolveScopedProjectId(projectsResult.data?.items ?? []);
+  const regressionsResult = resolvedProjectId
+    ? await safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${resolvedProjectId}/regressions?limit=50`))
     : { data: null, error: true };
   if (regressionsResult.error) sourceErrors.push("regressions");
 

@@ -2,6 +2,7 @@ import "server-only";
 
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken } from "@/lib/auth";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 import type { TraceIntelligenceSnippet, TracesSurfaceData } from "@/components/dashboard/pulse-types";
 import { confidenceFromEvidenceCount, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
@@ -18,6 +19,7 @@ type TraceRead = {
 type ProjectRead = {
   id: string;
   name: string;
+  created_at: string;
 };
 
 type IncidentRead = {
@@ -128,9 +130,9 @@ export async function getTracesSurfaceData(projectId?: string | null): Promise<T
     };
   });
 
-  const firstProjectId = projects[0]?.id ?? null;
-  const deploymentsResult = firstProjectId
-    ? await safeFetch(apiRequest<{ items: DeploymentRead[] }>(`/api/v1/projects/${firstProjectId}/deployments?limit=12`))
+  const resolvedProjectId = resolveScopedProjectId(projects, projectId ?? null);
+  const deploymentsResult = resolvedProjectId
+    ? await safeFetch(apiRequest<{ items: DeploymentRead[] }>(`/api/v1/projects/${resolvedProjectId}/deployments?limit=12`))
     : ({ data: { items: [] }, error: false } as FetchResult<{ items: DeploymentRead[] }>);
   if (deploymentsResult.error) sourceErrors.push("deployments");
   const deployments = deploymentsResult.data?.items ?? [];
