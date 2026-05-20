@@ -45,6 +45,20 @@ test("audit and deployment routes preserve project scope on list and detail surf
   }
 });
 
+test("errors and metrics routes preserve project scope via resolved loader inputs", () => {
+  const errors = read("app/(app)/errors/page.tsx");
+  const metrics = read("app/(app)/metrics/page.tsx");
+
+  for (const file of [errors, metrics]) {
+    assert.match(file, /searchParams: Promise<\{ project_id\?: string \}>/);
+    assert.match(file, /resolveScopedProjectId\(projects, projectIdParam\)/);
+    assert.match(file, /projectScope=\{\{ projects, selectedProjectId \}\}/);
+  }
+
+  assert.match(errors, /getErrorsSurfaceData\(selectedProjectId \?\? undefined\)/);
+  assert.match(metrics, /getMetricsSurfaceData\(selectedProjectId\)/);
+});
+
 test("audit and deployment content links preserve project scope query", () => {
   const auditsContent = read("components/dashboard/content/audits-content.tsx");
   const deploymentsContent = read("components/dashboard/content/deployments-content.tsx");
