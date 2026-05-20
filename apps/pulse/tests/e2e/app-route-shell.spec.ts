@@ -115,3 +115,33 @@ test("operations project scope runtime probe preserves query continuity and acce
   await page.goto(`/operations?project_id=${encodeURIComponent(projectId)}`);
   await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
 });
+
+test("operations detail and graph navigation preserve scoped project query", async ({ page }) => {
+  await ensureSignedIn(page, "/operations");
+
+  const projectsResponse = await page.request.get("/api/v1/projects?limit=100");
+  expect(projectsResponse.ok()).toBeTruthy();
+  const projectsPayload = (await projectsResponse.json()) as { items?: Array<{ id: string }> };
+  const projectId = projectsPayload.items?.[0]?.id ?? null;
+  if (!projectId) {
+    test.skip(true, "SKIPPED_OPS_SCOPE_NAV: no projects available for scoped navigation probe.");
+  }
+
+  await page.goto(`/operations?project_id=${encodeURIComponent(projectId)}`);
+  await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
+
+  const incidentLink = page.locator('a[href*="/operations/incidents/"]').first();
+  if ((await incidentLink.count()) === 0) {
+    test.skip(true, "SKIPPED_OPS_SCOPE_NAV: no operations incident links available for runtime probe.");
+  }
+
+  await incidentLink.click();
+  await expect(page).toHaveURL(new RegExp(`/operations/incidents/.+\\?project_id=${projectId}`));
+
+  const openGraphLink = page.getByRole("link", { name: "Open graph" });
+  await openGraphLink.click();
+  await expect(page).toHaveURL(new RegExp(`/operations/graph/.+\\?project_id=${projectId}`));
+
+  await page.getByRole("link", { name: "Operations center" }).click();
+  await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
+});
