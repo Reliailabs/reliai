@@ -32,3 +32,10 @@ test("regression compare route is owned by Pulse and redirects to operations reg
   const file = read("app/(app)/regressions/[regressionId]/compare/page.tsx");
   assert.match(file, /redirect\(`\/operations\/regressions\/\$\{regressionId\}`\)/);
 });
+
+test("projects index route is owned by Pulse with explicit project listing surface", () => {
+  const file = read("app/(app)/projects/page.tsx");
+  assert.match(file, /AppShellFrame/);
+  assert.match(file, /listProjectScopeOptions\(\)/);
+  assert.match(file, /href=\{`\/projects\/\$\{project\.id\}`\}/);
+});

@@ -19,7 +19,7 @@ Impact:
 ### Route ownership gaps (web -> pulse)
 
 Current ownership status:
-- `missing`: `/projects` index
+- `implemented`: `/projects` index -> Pulse project listing at `/projects`
 - `ownership shift`: `/projects/[projectId]/control` -> `/projects/[projectId]/reliability`
 - `ownership shift`: `/organization/settings` -> `/settings`
 - `ownership shift`: `/model-versions/[id]` -> `/traces?project_id=...&model_version_id=...`
