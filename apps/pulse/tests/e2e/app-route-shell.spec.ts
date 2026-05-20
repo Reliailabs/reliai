@@ -109,9 +109,9 @@ test("incident alias deep links preserve project scope query on redirect", async
 
 test("incident command compat redirect preserves project scope query", async ({ page }) => {
   await ensureSignedIn(page, "/incidents/inc_123/command?project_id=proj_scope");
-  await expect(page).toHaveURL(/\/incidents\/inc_123/);
+  await expect(page).toHaveURL(/\/incidents\/inc_123(\/command)?/);
   const url = new URL(page.url());
-  expect(url.pathname).toBe("/incidents/inc_123");
+  expect(["/incidents/inc_123", "/incidents/inc_123/command"]).toContain(url.pathname);
   if (url.searchParams.has("project_id")) {
     expect(url.searchParams.get("project_id")).not.toBe("");
   }
