@@ -13,9 +13,9 @@ type OperationsGraphPageProps = {
 export default async function OperationsGraphPage({ params, searchParams }: OperationsGraphPageProps) {
   const { entityId } = await params;
   const { project_id: projectIdParam } = await searchParams;
-  const data = await getOperationsGraphSurfaceData(entityId, projectIdParam);
   const projects = await listProjectScopeOptions();
   const selectedProjectId = resolveScopedProjectId(projects, projectIdParam);
+  const data = await getOperationsGraphSurfaceData(entityId, selectedProjectId);
   if (data.nodes.length === 0 && data.edges.length === 0) {
     notFound();
   }

@@ -39,6 +39,7 @@ type FetchResult<T> = { data: T | null; error: boolean };
 
 export type RegressionOperationsSurfaceData = {
   regressionId: string;
+  projectId: string | null;
   regression: {
     id: string;
     detectedAt: string | null;
@@ -132,6 +133,7 @@ export async function getRegressionOperationsSurfaceData(regressionId: string, p
   if (!regression) {
     return {
       regressionId,
+      projectId: resolvedProjectId,
       regression: null,
       compareLinks,
       timelineEntries,
@@ -145,6 +147,7 @@ export async function getRegressionOperationsSurfaceData(regressionId: string, p
 
   return {
     regressionId,
+    projectId: resolvedProjectId,
     regression: {
       id: regression.id,
       detectedAt: regression.detected_at ?? regression.created_at ?? null,

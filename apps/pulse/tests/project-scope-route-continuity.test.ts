@@ -144,7 +144,7 @@ test("operations incident and graph routes preserve explicit project scope", () 
   assert.match(operationsIncident, /getIncidentOperationsSurfaceData\(incidentId, \{ projectId: projectIdParam \}\)/);
   assert.match(operationsIncident, /projectScope=\{\{ projects, selectedProjectId \}\}/);
   assert.match(operationsGraph, /searchParams: Promise<\{ project_id\?: string \}>/);
-  assert.match(operationsGraph, /getOperationsGraphSurfaceData\(entityId, projectIdParam\)/);
+  assert.match(operationsGraph, /getOperationsGraphSurfaceData\(entityId, selectedProjectId\)/);
   assert.match(operationsGraph, /projectScope=\{\{ projects, selectedProjectId \}\}/);
   assert.match(operationsGraphSurface, /<ProjectScopeSelector/);
   assert.match(operationsGraphSurface, /const scopeQuery = projectScope\?\.selectedProjectId/);
@@ -152,7 +152,7 @@ test("operations incident and graph routes preserve explicit project scope", () 
   assert.match(graphData, /const scopeQuery = projectId \? `\?project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
   assert.match(incidentOpsSurface, /href=\{`\/operations\$\{scopeQuery\}`\}/);
   assert.match(regressionOpsSurface, /href=\{`\/operations\$\{scopeQuery\}`\}/);
-  assert.match(regressionOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(regressionOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\) \?\? data\.projectId/);
   assert.match(incidentOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\) \?\? data\.projectId/);
   assert.match(regressionOpsSurface, /<ProjectScopeSelector/);
   assert.match(incidentOpsSurface, /<ProjectScopeSelector/);

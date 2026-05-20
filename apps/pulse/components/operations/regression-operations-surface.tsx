@@ -43,7 +43,7 @@ export function RegressionOperationsSurface({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = resolveTab(searchParams.get("tab"));
-  const scopedProjectId = searchParams.get("project_id");
+  const scopedProjectId = searchParams.get("project_id") ?? data.projectId;
   const scopeQuery = scopedProjectId ? `?project_id=${encodeURIComponent(scopedProjectId)}` : "";
   const withScopedProject = (path: string): string => {
     if (!scopedProjectId) return path;
