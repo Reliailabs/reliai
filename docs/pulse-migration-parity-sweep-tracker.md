@@ -18,13 +18,13 @@ Impact:
 
 ### Route ownership gaps (web -> pulse)
 
-Missing/shifted route ownership still requiring explicit migration decisions:
-- `/projects` index
-- `/projects/[projectId]/control`
-- `/organization/settings`
-- `/model-versions/[id]`
-- `/prompt-versions/[id]`
-- `/regressions/[regressionId]/compare`
+Current ownership status:
+- `missing`: `/projects` index
+- `ownership shift`: `/projects/[projectId]/control` -> `/projects/[projectId]/reliability`
+- `ownership shift`: `/organization/settings` -> `/settings`
+- `ownership shift`: `/model-versions/[id]` -> `/traces?project_id=...&model_version_id=...`
+- `ownership shift`: `/prompt-versions/[id]` -> `/traces?project_id=...&prompt_version=...`
+- `ownership shift`: `/regressions/[regressionId]/compare` -> `/operations/regressions/[regressionId]`
 
 ### Functional delta gaps
 
