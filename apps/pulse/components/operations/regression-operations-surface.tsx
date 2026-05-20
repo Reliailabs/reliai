@@ -62,7 +62,7 @@ export function RegressionOperationsSurface({
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-6 py-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <Link href="/operations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link href={`/operations${scopeQuery}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" />
               Operations center
             </Link>

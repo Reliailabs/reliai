@@ -138,6 +138,8 @@ test("operations incident and graph routes preserve explicit project scope", () 
   assert.match(operationsGraphSurface, /const scopeQuery = projectScope\?\.selectedProjectId/);
   assert.match(operationsGraphSurface, /href=\{`\/operations\$\{scopeQuery\}`\}/);
   assert.match(graphData, /const scopeQuery = projectId \? `\?project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
+  assert.match(incidentOpsSurface, /href=\{`\/operations\$\{scopeQuery\}`\}/);
+  assert.match(regressionOpsSurface, /href=\{`\/operations\$\{scopeQuery\}`\}/);
   assert.match(regressionOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(incidentOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\) \?\? data\.projectId/);
   assert.match(regressionOpsSurface, /<ProjectScopeSelector/);
