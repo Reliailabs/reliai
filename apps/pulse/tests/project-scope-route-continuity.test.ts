@@ -123,6 +123,7 @@ test("regression navigation links and compare shim preserve project scope query"
 test("operations incident and graph routes preserve explicit project scope", () => {
   const operationsIncident = read("app/(app)/operations/incidents/[incidentId]/page.tsx");
   const operationsGraph = read("app/(app)/operations/graph/[entityId]/page.tsx");
+  const operationsGraphSurface = read("components/operations/operations-graph-surface.tsx");
   const regressionOpsSurface = read("components/operations/regression-operations-surface.tsx");
   const incidentOpsSurface = read("components/operations/incident-operations-surface.tsx");
   const graphData = read("lib/operations-graph-data.ts");
@@ -132,6 +133,8 @@ test("operations incident and graph routes preserve explicit project scope", () 
   assert.match(operationsIncident, /projectScope=\{\{ projects, selectedProjectId \}\}/);
   assert.match(operationsGraph, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(operationsGraph, /getOperationsGraphSurfaceData\(entityId, projectIdParam\)/);
+  assert.match(operationsGraph, /projectScope=\{\{ projects, selectedProjectId \}\}/);
+  assert.match(operationsGraphSurface, /<ProjectScopeSelector/);
   assert.match(graphData, /const scopeQuery = projectId \? `\?project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
   assert.match(regressionOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(incidentOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\) \?\? data\.projectId/);
