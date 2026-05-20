@@ -42,7 +42,7 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get("projectId");
+    const projectId = searchParams.get("project_id") ?? searchParams.get("projectId");
     if (!projectId) {
       return NextResponse.json({ items: [] } satisfies ResponseTeamPayload, { status: 200 });
     }

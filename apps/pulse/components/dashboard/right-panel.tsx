@@ -91,7 +91,7 @@ export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOve
     const projectMatch = pathname.match(/^\/projects\/([^/]+)/);
     const projectId = projectMatch?.[1];
     const endpoint = projectId
-      ? `/api/oncall/response-team?projectId=${encodeURIComponent(projectId)}`
+      ? `/api/oncall/response-team?project_id=${encodeURIComponent(projectId)}`
       : "/api/oncall/response-team";
 
     void fetch(endpoint, { cache: "no-store" })
