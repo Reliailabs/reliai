@@ -7,11 +7,23 @@ const ROOT = path.join(process.cwd(), "app/api/actions/operations");
 
 type RouteExpectation = {
   route: string;
-  acceptedFlag: "create_accepted" | "transition_accepted" | "verification_write_accepted";
-  policyMessage: string;
+  acceptedFlag: "ingest_accepted" | "create_accepted" | "transition_accepted" | "verification_write_accepted";
+  policyMessage?: string;
+  extraPatterns?: RegExp[];
 };
 
 const ROUTES: RouteExpectation[] = [
+  {
+    route: "ingest/validate/route.ts",
+    acceptedFlag: "ingest_accepted",
+    policyMessage: "ingest persistence backend unavailable",
+    extraPatterns: [
+      /phase13AcceptedDuplicateResponse/,
+      /phase13RejectedIdempotencyResponse/,
+      /checkOperationsEventDuplicate/,
+      /recordOperationsEventFingerprint/,
+    ],
+  },
   {
     route: "lifecycle/create/validate/route.ts",
     acceptedFlag: "create_accepted",
@@ -34,9 +46,14 @@ for (const entry of ROUTES) {
     const file = readFileSync(path.join(ROOT, entry.route), "utf8");
     assert.match(file, /phase13AcceptedValidationResponse/);
     assert.match(file, /phase13ValidationRejectionResponse/);
-    assert.match(file, /phase13RejectedPolicyResponse/);
-    assert.match(file, new RegExp(`\\{\\s*${entry.acceptedFlag}:\\s*false\\s*\\}`));
-    assert.match(file, new RegExp(entry.policyMessage.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")));
+    if (entry.policyMessage) {
+      assert.match(file, /phase13RejectedPolicyResponse/);
+      assert.match(file, new RegExp(`\\{\\s*${entry.acceptedFlag}:\\s*false\\s*\\}`));
+      assert.match(file, new RegExp(entry.policyMessage.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")));
+    }
+    for (const pattern of entry.extraPatterns ?? []) {
+      assert.match(file, pattern);
+    }
 
     // Route envelope responses must be helper-owned, not hand-crafted status/json payloads.
     assert.doesNotMatch(file, /NextResponse\.json\(/);
