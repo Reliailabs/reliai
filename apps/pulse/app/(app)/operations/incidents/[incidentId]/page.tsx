@@ -1,5 +1,7 @@
 import { IncidentOperationsSurface } from "@/components/operations/incident-operations-surface";
 import { getIncidentOperationsSurfaceData } from "@/lib/incident-operations-data";
+import { listProjectScopeOptions } from "@/lib/project-scope-data";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 import { notFound } from "next/navigation";
 
 type IncidentOperationsDetailPageProps = {
@@ -11,8 +13,15 @@ export default async function IncidentOperationsDetailPage({ params, searchParam
   const { incidentId } = await params;
   const { project_id: projectIdParam } = await searchParams;
   const data = await getIncidentOperationsSurfaceData(incidentId, { projectId: projectIdParam });
+  const projects = await listProjectScopeOptions();
+  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam ?? data.projectId ?? null);
   if (!data.incident && data.timelineEntries.length === 0 && data.proposals.length === 0) {
     notFound();
   }
-  return <IncidentOperationsSurface data={data} />;
+  return (
+    <IncidentOperationsSurface
+      data={data}
+      projectScope={{ projects, selectedProjectId }}
+    />
+  );
 }

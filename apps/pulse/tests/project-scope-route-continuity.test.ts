@@ -50,7 +50,7 @@ test("incident navigation actions preserve project_id query context", () => {
   assert.match(file, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(file, /function withScopedProject\(path: string\): string/);
   assert.match(file, /router\.push\(withScopedProject\(`\/incidents\/\$\{incident\.id\}`\)\)/);
-  assert.match(file, /router\.push\(withScopedProject\(`\/operations\/incidents\/\$\{incident\.id\}`\)\)/);
+  assert.match(file, /href=\{withScopedProject\(`\/operations\/incidents\/\$\{incident\.id\}`\)\}/);
   assert.match(file, /router\.push\(withScopedProject\(`\/operations\/incidents\/\$\{selectedIncident\.id\}`\)\)/);
 });
 
@@ -129,11 +129,14 @@ test("operations incident and graph routes preserve explicit project scope", () 
 
   assert.match(operationsIncident, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(operationsIncident, /getIncidentOperationsSurfaceData\(incidentId, \{ projectId: projectIdParam \}\)/);
+  assert.match(operationsIncident, /projectScope=\{\{ projects, selectedProjectId \}\}/);
   assert.match(operationsGraph, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(operationsGraph, /getOperationsGraphSurfaceData\(entityId, projectIdParam\)/);
   assert.match(graphData, /const scopeQuery = projectId \? `\?project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
   assert.match(regressionOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(incidentOpsSurface, /const scopedProjectId = searchParams\.get\("project_id"\) \?\? data\.projectId/);
+  assert.match(regressionOpsSurface, /<ProjectScopeSelector/);
+  assert.match(incidentOpsSurface, /<ProjectScopeSelector/);
 });
 
 test("simulation handoff and reliability/trace evidence links preserve project scope", () => {

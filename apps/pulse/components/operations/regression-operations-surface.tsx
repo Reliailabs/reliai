@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, GitCompare, XCircle } from "luc
 
 import { cn } from "@/lib/utils";
 import type { RegressionOperationsSurfaceData, RegressionOperationsTab } from "@/lib/regression-operations-data";
+import { ProjectScopeSelector, type ProjectScopeSelectorOption } from "@/components/dashboard/project-scope-selector";
 
 const TABS: Array<{ id: RegressionOperationsTab; label: string }> = [
   { id: "overview", label: "Overview" },
@@ -28,7 +29,16 @@ function time(v: string | null): string {
   return parsed.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-export function RegressionOperationsSurface({ data }: { data: RegressionOperationsSurfaceData }) {
+export function RegressionOperationsSurface({
+  data,
+  projectScope,
+}: {
+  data: RegressionOperationsSurfaceData;
+  projectScope?: {
+    projects: ProjectScopeSelectorOption[];
+    selectedProjectId: string | null;
+  };
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -68,6 +78,14 @@ export function RegressionOperationsSurface({ data }: { data: RegressionOperatio
           <h1 className="text-2xl font-semibold">Regression Operations — {data.regressionId}</h1>
           <p className="text-sm text-muted-foreground">Read-only regression workflow surface. Requires operator review.</p>
         </div>
+        {projectScope ? (
+          <div className="flex items-center justify-end">
+            <ProjectScopeSelector
+              projects={projectScope.projects}
+              selectedProjectId={projectScope.selectedProjectId}
+            />
+          </div>
+        ) : null}
 
         {data.sourceErrors.length > 0 ? (
           <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { IncidentOperationsSurfaceData, IncidentOperationsTab } from "@/lib/incident-operations-data";
 import { OperationsReliabilitySummaryPanel } from "@/components/operations/operations-reliability-summary-panel";
 import { resolveIncidentOperationsTab } from "@/lib/incident-operations-tabs";
+import { ProjectScopeSelector, type ProjectScopeSelectorOption } from "@/components/dashboard/project-scope-selector";
 
 const TAB_ORDER: Array<{ id: IncidentOperationsTab; label: string }> = [
   { id: "overview", label: "Overview" },
@@ -56,7 +57,16 @@ function EmptyState({ title, description }: { title: string; description: string
   );
 }
 
-export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSurfaceData }) {
+export function IncidentOperationsSurface({
+  data,
+  projectScope,
+}: {
+  data: IncidentOperationsSurfaceData;
+  projectScope?: {
+    projects: ProjectScopeSelectorOption[];
+    selectedProjectId: string | null;
+  };
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -115,6 +125,14 @@ export function IncidentOperationsSurface({ data }: { data: IncidentOperationsSu
           </div>
           <DataModePill dataMode={data.dataMode} />
         </div>
+        {projectScope ? (
+          <div className="flex items-center justify-end">
+            <ProjectScopeSelector
+              projects={projectScope.projects}
+              selectedProjectId={projectScope.selectedProjectId}
+            />
+          </div>
+        ) : null}
 
         {data.sourceErrors.length > 0 ? (
           <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
