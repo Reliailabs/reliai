@@ -3,16 +3,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { AppShellFrame } from "@/components/dashboard/app-shell-frame";
+import { ProjectScopeSelector } from "@/components/dashboard/project-scope-selector";
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken, requireOperatorSession } from "@/lib/auth";
+import { listProjectScopeOptions } from "@/lib/project-scope-data";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 
-type ProjectRead = {
+type ProjectDetailRead = {
   id: string;
   name: string;
   slug: string;
-};
-
-type ProjectDetailRead = ProjectRead & {
   organization_id: string;
 };
 
@@ -46,7 +46,7 @@ type TeamMember = {
 };
 
 type OnCallPageProps = {
-  searchParams: Promise<{ projectId?: string }>;
+  searchParams: Promise<{ project_id?: string; projectId?: string }>;
 };
 
 async function apiRequest<T>(path: string): Promise<T | null> {
@@ -71,11 +71,13 @@ function byStep(steps: ProjectOncallPolicyStep[], step: number): ProjectOncallPo
 export default async function OnCallPage({ searchParams }: OnCallPageProps) {
   await requireOperatorSession();
   const params = await searchParams;
+  const projectIdParam = params.project_id ?? params.projectId ?? null;
 
-  const projects = (await apiRequest<{ items: ProjectRead[] }>("/api/v1/projects"))?.items ?? [];
-  const selectedProjectId = params.projectId && projects.some((p) => p.id === params.projectId)
-    ? params.projectId
-    : (projects[0]?.id ?? "");
+  const projects = await listProjectScopeOptions();
+  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam) ?? "";
+  if (params.projectId && !params.project_id && selectedProjectId) {
+    redirect(`/on-call?project_id=${encodeURIComponent(selectedProjectId)}`);
+  }
 
   const selectedProjectDetail = selectedProjectId
     ? await apiRequest<ProjectDetailRead>(`/api/v1/projects/${selectedProjectId}`)
@@ -93,13 +95,6 @@ export default async function OnCallPage({ searchParams }: OnCallPageProps) {
   const members = memberData?.items ?? [];
   const assignments = oncallData?.assignments ?? [];
   const policy = oncallData?.escalation_policy ?? [];
-
-  async function selectProjectAction(formData: FormData) {
-    "use server";
-    const projectId = String(formData.get("project_id") ?? "").trim();
-    if (!projectId) return;
-    redirect(`/on-call?projectId=${encodeURIComponent(projectId)}`);
-  }
 
   async function saveAssignmentsAction(formData: FormData) {
     "use server";
@@ -122,7 +117,7 @@ export default async function OnCallPage({ searchParams }: OnCallPageProps) {
     if (!response.ok) return;
     revalidatePath("/on-call");
     revalidatePath(`/projects/${projectId}/on-call`);
-    redirect(`/on-call?projectId=${encodeURIComponent(projectId)}`);
+    redirect(`/on-call?project_id=${encodeURIComponent(projectId)}`);
   }
 
   async function saveEscalationPolicyAction(formData: FormData) {
@@ -150,7 +145,7 @@ export default async function OnCallPage({ searchParams }: OnCallPageProps) {
     if (!response.ok) return;
     revalidatePath("/on-call");
     revalidatePath(`/projects/${projectId}/on-call`);
-    redirect(`/on-call?projectId=${encodeURIComponent(projectId)}`);
+    redirect(`/on-call?project_id=${encodeURIComponent(projectId)}`);
   }
 
   return (
@@ -165,30 +160,17 @@ export default async function OnCallPage({ searchParams }: OnCallPageProps) {
       </header>
 
       <section className="rounded-xl border border-border bg-card p-5">
-        <form action={selectProjectAction} className="flex items-end gap-3">
-          <label className="block text-xs text-muted-foreground">
-            Project
-            <select
-              name="project_id"
-              defaultValue={selectedProjectId}
-              className="mt-1 min-w-[320px] rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-            >
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit" className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
-            Load
-          </button>
+        <div className="flex items-end gap-3">
+          <div className="space-y-1">
+            <p className="block text-xs text-muted-foreground">Project</p>
+            <ProjectScopeSelector projects={projects} selectedProjectId={selectedProjectId} />
+          </div>
           {selectedProjectId ? (
             <Link href={`/projects/${selectedProjectId}/on-call`} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
               Open project route
             </Link>
           ) : null}
-        </form>
+        </div>
       </section>
 
       {!selectedProjectId ? (
