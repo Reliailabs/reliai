@@ -45,6 +45,21 @@ test("audit and deployment routes preserve project scope on list and detail surf
   }
 });
 
+test("audit and deployment content links preserve project scope query", () => {
+  const auditsContent = read("components/dashboard/content/audits-content.tsx");
+  const deploymentsContent = read("components/dashboard/content/deployments-content.tsx");
+
+  assert.match(auditsContent, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(auditsContent, /function withScopedProject\(path: string\): string/);
+  assert.match(auditsContent, /href=\{withScopedProject\(`\/audits\/\$\{selectedAuditId\}\/results`\)\}/);
+  assert.match(auditsContent, /href=\{withScopedProject\(`\/audits\/\$\{page\.id\}`\)\}/);
+  assert.match(auditsContent, /href=\{withScopedProject\(`\/audits\/\$\{page\.id\}\/results`\)\}/);
+
+  assert.match(deploymentsContent, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(deploymentsContent, /function withScopedProject\(path: string\): string/);
+  assert.match(deploymentsContent, /href=\{withScopedProject\(`\/deployments\/\$\{deploy\.id\}`\)\}/);
+});
+
 test("incident navigation actions preserve project_id query context", () => {
   const file = read("components/dashboard/content/incidents-content.tsx");
   assert.match(file, /const scopedProjectId = searchParams\.get\("project_id"\)/);
