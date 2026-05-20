@@ -76,7 +76,7 @@ Pending:
 - `resolved in code`: FastAPI `/api/v1/operations/timeline` now accepts `project_id` and is covered by explicit API contract tests in `apps/api/tests/test_operations.py`.
 - `resolved in route contract`: `/operations` now forwards `project_id` into `getOperationsSurfaceData` filter and is covered by route continuity tests in `apps/pulse/tests/project-scope-route-continuity.test.ts`.
 - `resolved as executable Pulse gate`: `pnpm --filter pulse test:migration-scope-parity-gate` covers route ownership shims + scope continuity + adapter query propagation.
-- `next`: add an end-to-end probe against live Pulse+API runtime to verify scoped operations timeline rendering from query param.
+- `resolved as authenticated runtime probe`: Playwright test `operations project scope runtime probe` in `apps/pulse/tests/e2e/app-route-shell.spec.ts` validates `/api/v1/projects`, `/api/v1/operations/timeline?project_id=...`, and `/operations?project_id=...` continuity.
 
 ## Sweep Execution Plan
 

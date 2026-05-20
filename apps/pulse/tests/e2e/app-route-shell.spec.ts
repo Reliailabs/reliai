@@ -91,3 +91,27 @@ test("auth return continuity preserves incident alias deep links", async ({ page
   await page.goto("/incidents/inc_123/compare");
   await expect(page).toHaveURL(/\/operations\/incidents\/inc_123\?tab=compare/);
 });
+
+test("operations project scope runtime probe preserves query continuity and accepts project_id timeline filter", async ({ page }) => {
+  await ensureSignedIn(page, "/operations");
+
+  const projectsResponse = await page.request.get("/api/v1/projects?limit=100");
+  expect(projectsResponse.ok()).toBeTruthy();
+  const projectsPayload = (await projectsResponse.json()) as { items?: Array<{ id: string }> };
+  const projectId = projectsPayload.items?.[0]?.id ?? null;
+  if (!projectId) {
+    test.skip(true, "SKIPPED_OPS_SCOPE_PROBE: no projects available for scoped runtime probe.");
+  }
+
+  const timelineResponse = await page.request.get(
+    `/api/v1/operations/timeline?project_id=${encodeURIComponent(projectId)}&limit=1`,
+  );
+  expect(timelineResponse.ok()).toBeTruthy();
+  const timelinePayload = (await timelineResponse.json()) as { items?: Array<{ project_id: string | null }> };
+  for (const item of timelinePayload.items ?? []) {
+    expect(item.project_id === null || item.project_id === projectId).toBeTruthy();
+  }
+
+  await page.goto(`/operations?project_id=${encodeURIComponent(projectId)}`);
+  await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
+});
