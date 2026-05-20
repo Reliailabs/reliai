@@ -19,7 +19,12 @@ import {
 } from "@/lib/onboarding-data";
 
 type OnboardingPath = "choose" | "sdk" | "simulation";
-type OnboardingErrorCode = "org_create_failed" | "project_create_failed" | "api_key_create_failed";
+type OnboardingErrorCode =
+  | "org_create_failed"
+  | "project_create_failed"
+  | "api_key_create_failed"
+  | "org_context_missing"
+  | "project_context_missing";
 
 function normalizePath(value: string | undefined): OnboardingPath {
   if (value === "sdk" || value === "simulation") return value;
@@ -39,6 +44,10 @@ function errorMessageForCode(errorCode: string | undefined): string | null {
       return "Unable to create project. Retry or adjust project name.";
     case "api_key_create_failed":
       return "Unable to create API key. Retry in a moment.";
+    case "org_context_missing":
+      return "Active organization context is missing. Re-select an organization and retry onboarding.";
+    case "project_context_missing":
+      return "No project is available for API key creation. Create/select a project and retry.";
     default:
       return null;
   }
@@ -126,7 +135,9 @@ export default async function OnboardingPage({
     "use server";
     const session = await requireOperatorSession("/onboarding");
     const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
-    if (!orgId) return;
+    if (!orgId) {
+      redirect(toErrorRedirect("sdk", "org_context_missing"));
+    }
 
     const nameInput = String(formData.get("project_name") ?? "").trim();
     const environmentInput = String(formData.get("environment") ?? "prod").trim();
@@ -157,7 +168,9 @@ export default async function OnboardingPage({
     "use server";
     const session = await requireOperatorSession("/onboarding");
     const orgId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
-    if (!orgId) return;
+    if (!orgId) {
+      redirect(toErrorRedirect("sdk", "org_context_missing"));
+    }
 
     const preferredProjectId = String(formData.get("project_id") ?? "").trim() || projectIdParam || null;
     const projectList = await listProjects(orgId).catch(() => null);
@@ -167,7 +180,9 @@ export default async function OnboardingPage({
         .slice()
         .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0]?.id ??
       null;
-    if (!projectId) return;
+    if (!projectId) {
+      redirect(toErrorRedirect("sdk", "project_context_missing"));
+    }
 
     let apiKey = "";
     try {
