@@ -1,6 +1,17 @@
 import Link from "next/link";
 
-export default function IncidentOperationsNotFound() {
+type IncidentOperationsNotFoundProps = {
+  searchParams?: Promise<{ project_id?: string }>;
+};
+
+export default async function IncidentOperationsNotFound({ searchParams }: IncidentOperationsNotFoundProps) {
+  const { project_id: projectIdParam } = (await searchParams) ?? {};
+  const withScopedProject = (path: string) => {
+    if (!projectIdParam) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(projectIdParam)}`;
+  };
+
   return (
     <div className="mx-auto w-full max-w-[900px] px-6 py-8">
       <div className="rounded-xl border border-border bg-card p-5">
@@ -9,10 +20,10 @@ export default function IncidentOperationsNotFound() {
           No incident snapshot, timeline evidence, or proposal lifecycle records were found for this incident ID.
         </p>
         <div className="mt-4 flex gap-2">
-          <Link href="/incidents" className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-muted">
+          <Link href={withScopedProject("/incidents")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-muted">
             Back to incidents
           </Link>
-          <Link href="/operations" className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-muted">
+          <Link href={withScopedProject("/operations")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-muted">
             Open operations center
           </Link>
         </div>

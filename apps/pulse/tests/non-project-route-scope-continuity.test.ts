@@ -78,3 +78,15 @@ test("shared shell navigation preserves project_id across sidebar section change
   assert.match(appShellFrame, /function withScopedProject\(path: string\): string/);
   assert.match(appShellFrame, /router\.push\(withScopedProject\(route\)\)/);
 });
+
+test("operations not-found surfaces preserve project_id on recovery links", () => {
+  const incidentNotFound = read("app/(app)/operations/incidents/[incidentId]/not-found.tsx");
+  const regressionNotFound = read("app/(app)/operations/regressions/[regressionId]/not-found.tsx");
+
+  for (const file of [incidentNotFound, regressionNotFound]) {
+    assert.match(file, /searchParams\?: Promise<\{ project_id\?: string \}>/);
+    assert.match(file, /const \{ project_id: projectIdParam \} = \(await searchParams\) \?\? \{\}/);
+    assert.match(file, /const withScopedProject = \(path: string\) =>/);
+    assert.match(file, /href=\{withScopedProject\("/);
+  }
+});
