@@ -12,9 +12,9 @@ type IncidentOperationsDetailPageProps = {
 export default async function IncidentOperationsDetailPage({ params, searchParams }: IncidentOperationsDetailPageProps) {
   const { incidentId } = await params;
   const { project_id: projectIdParam } = await searchParams;
-  const data = await getIncidentOperationsSurfaceData(incidentId, { projectId: projectIdParam });
   const projects = await listProjectScopeOptions();
-  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam ?? data.projectId ?? null);
+  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam);
+  const data = await getIncidentOperationsSurfaceData(incidentId, { projectId: selectedProjectId });
   if (!data.incident && data.timelineEntries.length === 0 && data.proposals.length === 0) {
     notFound();
   }

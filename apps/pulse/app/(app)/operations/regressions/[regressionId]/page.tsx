@@ -13,9 +13,9 @@ type RegressionOperationsDetailPageProps = {
 export default async function RegressionOperationsDetailPage({ params, searchParams }: RegressionOperationsDetailPageProps) {
   const { regressionId } = await params;
   const { project_id: projectIdParam } = await searchParams;
-  const data = await getRegressionOperationsSurfaceData(regressionId, projectIdParam);
   const projects = await listProjectScopeOptions();
   const selectedProjectId = resolveScopedProjectId(projects, projectIdParam);
+  const data = await getRegressionOperationsSurfaceData(regressionId, selectedProjectId);
   if (!data.regression && data.timelineEntries.length === 0 && data.proposals.length === 0 && data.relatedIncidents.length === 0) {
     notFound();
   }

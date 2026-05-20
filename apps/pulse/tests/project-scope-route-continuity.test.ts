@@ -118,7 +118,8 @@ test("regression operations detail route preserves explicit project scope", () =
   const file = read("app/(app)/operations/regressions/[regressionId]/page.tsx");
   assert.match(file, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(file, /const \{ project_id: projectIdParam \} = await searchParams/);
-  assert.match(file, /getRegressionOperationsSurfaceData\(regressionId, projectIdParam\)/);
+  assert.match(file, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(file, /getRegressionOperationsSurfaceData\(regressionId, selectedProjectId\)/);
 });
 
 test("regression navigation links and compare shim preserve project scope query", () => {
@@ -141,7 +142,8 @@ test("operations incident and graph routes preserve explicit project scope", () 
   const graphData = read("lib/operations-graph-data.ts");
 
   assert.match(operationsIncident, /searchParams: Promise<\{ project_id\?: string \}>/);
-  assert.match(operationsIncident, /getIncidentOperationsSurfaceData\(incidentId, \{ projectId: projectIdParam \}\)/);
+  assert.match(operationsIncident, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(operationsIncident, /getIncidentOperationsSurfaceData\(incidentId, \{ projectId: selectedProjectId \}\)/);
   assert.match(operationsIncident, /projectScope=\{\{ projects, selectedProjectId \}\}/);
   assert.match(operationsGraph, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(operationsGraph, /getOperationsGraphSurfaceData\(entityId, selectedProjectId\)/);
