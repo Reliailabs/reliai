@@ -43,6 +43,7 @@ type ListResponse<T> = { items: T[] };
 type Input = {
   demoMode: boolean;
   organizationId: string | null;
+  projectId?: string | null;
 };
 
 function toDate(value?: string | null): Date | null {
@@ -115,22 +116,26 @@ function demoData(): CausalityEvidenceData {
   };
 }
 
-export async function getCausalityEvidenceData({ demoMode, organizationId }: Input): Promise<CausalityEvidenceData> {
+export async function getCausalityEvidenceData({ demoMode, organizationId, projectId }: Input): Promise<CausalityEvidenceData> {
   if (demoMode) return demoData();
 
   const sourceErrors: string[] = [];
   const projectsResult = await safeFetch(apiRequest<ListResponse<ProjectRead>>("/api/v1/projects"));
   if (projectsResult.error) sourceErrors.push("projects");
 
-  const project = projectsResult.data?.items?.[0];
+  const project = projectId
+    ? projectsResult.data?.items?.find((item) => item.id === projectId) ?? null
+    : projectsResult.data?.items?.[0] ?? null;
   if (!organizationId || !project) {
     return { items: [], sourceErrors, dataMode: "live" };
   }
 
+  const projectScopeFilter = `&project_id=${encodeURIComponent(project.id)}`;
+
   const [deploymentsResult, incidentsResult, tracesResult, regressionsResult] = await Promise.all([
     safeFetch(apiRequest<ListResponse<DeploymentRead>>(`/api/v1/projects/${project.id}/deployments`)),
-    safeFetch(apiRequest<ListResponse<IncidentRead>>("/api/v1/incidents?limit=25")),
-    safeFetch(apiRequest<ListResponse<TraceRead>>("/api/v1/traces?limit=80")),
+    safeFetch(apiRequest<ListResponse<IncidentRead>>(`/api/v1/incidents?limit=25${projectScopeFilter}`)),
+    safeFetch(apiRequest<ListResponse<TraceRead>>(`/api/v1/traces?limit=80${projectScopeFilter}`)),
     safeFetch(apiRequest<ListResponse<RegressionRead>>(`/api/v1/projects/${project.id}/regressions?limit=50`)),
   ]);
 

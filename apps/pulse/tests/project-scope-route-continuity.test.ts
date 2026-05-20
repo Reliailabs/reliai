@@ -82,3 +82,10 @@ test("project-scoped routes pass projectId into data loaders", () => {
   assert.match(traces, /const tracesData = await getTracesSurfaceData\(projectId\)/);
   assert.match(audits, /const auditsData = await getAuditsSurfaceData\(projectId\)/);
 });
+
+test("project overview route passes projectId through all overview presenters", () => {
+  const file = read("app/(app)/projects/[projectId]/page.tsx");
+  assert.match(file, /getPulseOverviewData\(\{ demoMode: false, organizationId, projectId \}\)/);
+  assert.match(file, /getCausalityEvidenceData\(\{ demoMode: false, organizationId, projectId \}\)/);
+  assert.match(file, /getAttributionSuggestionsData\(\{ demoMode: false, organizationId, projectId \}\)/);
+});

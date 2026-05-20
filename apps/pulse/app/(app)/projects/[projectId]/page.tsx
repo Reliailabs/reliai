@@ -15,9 +15,9 @@ export default async function ProjectOverviewPage({ params }: ProjectOverviewPag
   const organizationId = session.active_organization_id ?? session.memberships[0]?.organization_id ?? null;
 
   const [pulseOverviewData, causalityEvidenceData, attributionSuggestionsData, projectControlData] = await Promise.all([
-    getPulseOverviewData({ demoMode: false, organizationId }),
-    getCausalityEvidenceData({ demoMode: false, organizationId }),
-    getAttributionSuggestionsData({ demoMode: false, organizationId }),
+    getPulseOverviewData({ demoMode: false, organizationId, projectId }),
+    getCausalityEvidenceData({ demoMode: false, organizationId, projectId }),
+    getAttributionSuggestionsData({ demoMode: false, organizationId, projectId }),
     getProjectControlParityData(projectId),
   ]);
 
