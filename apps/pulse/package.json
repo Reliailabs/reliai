@@ -41,7 +41,7 @@
     "test:e2e:app-route-gate:ci": "PW_REQUIRE_AUTH_E2E=1 playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts",
     "test:e2e:operations-project-scope-probe:ci": "PW_REQUIRE_AUTH_E2E=1 playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts --grep \"operations project scope runtime probe\"",
     "test:entrypoint-evidence-export": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/entrypoint-evidence-export.test.ts tests/entrypoint-evidence-store.test.ts",
-    "test:migration-scope-parity-gate": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/project-scope-data.test.ts tests/project-scope-route-continuity.test.ts tests/migration-route-ownership-shims.test.ts tests/operations-adapter.test.ts tests/migration-parity-closure-gate.test.ts"
+    "test:migration-scope-parity-gate": "TSCONFIG_PATH=tsconfig.test.json node --import tsx --test tests/project-scope-data.test.ts tests/project-scope-route-continuity.test.ts tests/non-project-route-scope-continuity.test.ts tests/migration-route-ownership-shims.test.ts tests/operations-adapter.test.ts tests/migration-parity-closure-gate.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
