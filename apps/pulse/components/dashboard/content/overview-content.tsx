@@ -25,6 +25,7 @@ import type { CausalityEvidenceData, PulseOverviewData } from "@/components/dash
 import type { AttributionSuggestionData } from "@/components/dashboard/pulse-types";
 import type { ProjectControlParityData } from "@/components/dashboard/pulse-types";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 
 const defaultRequestsData = [
@@ -121,6 +122,14 @@ export function OverviewContent({
   attributionSuggestionsData?: AttributionSuggestionData;
   projectControlData?: ProjectControlParityData;
 }) {
+  const searchParams = useSearchParams();
+  const scopedProjectId = searchParams.get("project_id");
+  function withScopedProject(path: string): string {
+    if (!scopedProjectId) return path;
+    if (!path.startsWith("/")) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  }
   const formatConfidence = (value: string) => (value === "insufficient" ? "insufficient data" : value);
   const metricDecor: Record<string, { icon: typeof AlertTriangle; color: string; bgColor: string }> = {
     "Active Incidents": { icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10" },
@@ -438,7 +447,7 @@ export function OverviewContent({
                   {item.links.map((link) => (
                     <Link
                       key={`${item.id}-${link.href}`}
-                      href={link.href}
+                      href={withScopedProject(link.href)}
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground hover:bg-muted"
                     >
                       <Link2 className="h-3.5 w-3.5" />
@@ -496,7 +505,7 @@ export function OverviewContent({
                   {item.links.map((link) => (
                     <Link
                       key={`${item.id}-${link.href}`}
-                      href={link.href}
+                      href={withScopedProject(link.href)}
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground hover:bg-muted"
                     >
                       <Link2 className="h-3.5 w-3.5" />
