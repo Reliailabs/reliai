@@ -45,9 +45,10 @@ function relDuration(value: string): string {
   }
 }
 
-export async function getPostmortemsSurfaceData(): Promise<PostmortemsSurfaceData> {
+export async function getPostmortemsSurfaceData(projectId?: string): Promise<PostmortemsSurfaceData> {
   const sourceErrors: string[] = [];
-  const incidentsResult = await safeFetch(apiRequest<{ items: IncidentRead[] }>("/api/v1/incidents?limit=40"));
+  const projectFilterQuery = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
+  const incidentsResult = await safeFetch(apiRequest<{ items: IncidentRead[] }>(`/api/v1/incidents?limit=40${projectFilterQuery}`));
   if (incidentsResult.error) sourceErrors.push("incidents");
 
   const incidents = incidentsResult.data?.items ?? [];

@@ -59,6 +59,23 @@ test("errors and metrics routes preserve project scope via resolved loader input
   assert.match(metrics, /getMetricsSurfaceData\(selectedProjectId\)/);
 });
 
+test("pulse, guardrails, services, and postmortems routes expose project scope and resolved loaders", () => {
+  const pulse = read("app/(app)/pulse/page.tsx");
+  const guardrails = read("app/(app)/guardrails/page.tsx");
+  const services = read("app/(app)/services/page.tsx");
+  const postmortems = read("app/(app)/postmortems/page.tsx");
+
+  for (const file of [pulse, guardrails, services, postmortems]) {
+    assert.match(file, /resolveScopedProjectId\(projects, projectIdParam/);
+    assert.match(file, /projectScope=\{\{ projects, selectedProjectId \}\}/);
+  }
+
+  assert.match(pulse, /getPulseOverviewData\(\{ demoMode, organizationId, projectId: selectedProjectId \}\)/);
+  assert.match(guardrails, /getGuardrailsSurfaceData\(organizationId, selectedProjectId \?\? undefined\)/);
+  assert.match(services, /getServicesSurfaceData\(selectedProjectId \?\? undefined\)/);
+  assert.match(postmortems, /getPostmortemsSurfaceData\(selectedProjectId \?\? undefined\)/);
+});
+
 test("audit and deployment content links preserve project scope query", () => {
   const auditsContent = read("components/dashboard/content/audits-content.tsx");
   const deploymentsContent = read("components/dashboard/content/deployments-content.tsx");

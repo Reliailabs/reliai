@@ -8,22 +8,33 @@ function read(relPath: string): string {
 }
 
 const NON_PROJECT_SCOPE_PAGES = [
+  "app/(app)/pulse/page.tsx",
   "app/(app)/incidents/page.tsx",
   "app/(app)/traces/page.tsx",
+  "app/(app)/guardrails/page.tsx",
   "app/(app)/audits/page.tsx",
   "app/(app)/audits/new/page.tsx",
   "app/(app)/deployments/page.tsx",
   "app/(app)/metrics/page.tsx",
   "app/(app)/errors/page.tsx",
+  "app/(app)/services/page.tsx",
+  "app/(app)/postmortems/page.tsx",
   "app/(app)/operations/page.tsx",
 ];
 
 test("non-project routes resolve scope and pass selectedProjectId into shell", () => {
   for (const filePath of NON_PROJECT_SCOPE_PAGES) {
     const file = read(filePath);
-    assert.match(file, /searchParams: Promise<\{ project_id\?: string \}>/);
-    assert.match(file, /const \{ project_id: projectIdParam \} = await searchParams/);
-    assert.match(file, /resolveScopedProjectId\(projects, projectIdParam\)/);
+    assert.match(file, /searchParams\??:/);
+    const supportsScopedParamExtraction =
+      /const \{ project_id: projectIdParam \} = await searchParams/.test(file) ||
+      /const projectIdParam = Array\.isArray\(params\.project_id\) \? params\.project_id\[0\] : params\.project_id/.test(file);
+    assert.equal(
+      supportsScopedParamExtraction,
+      true,
+      `${filePath} must extract projectIdParam from searchParams`,
+    );
+    assert.match(file, /resolveScopedProjectId\(projects, projectIdParam(?: \?\? null)?\)/);
     assert.match(file, /projectScope=\{\{/);
     assert.match(file, /selectedProjectId/);
   }
