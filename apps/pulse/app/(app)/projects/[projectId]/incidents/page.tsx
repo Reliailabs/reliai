@@ -7,7 +7,7 @@ type ProjectIncidentsPageProps = {
 
 export default async function ProjectIncidentsPage({ params }: ProjectIncidentsPageProps) {
   const { projectId } = await params;
-  const incidentsData = await getIncidentsSurfaceData();
+  const incidentsData = await getIncidentsSurfaceData(projectId);
 
   return (
     <DashboardShell

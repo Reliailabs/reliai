@@ -72,3 +72,13 @@ test("onboarding route preserves explicit project scope for path transitions and
   assert.match(file, /<input type="hidden" name="project_id" value=\{primaryProjectId\} \/>/);
   assert.match(file, /<select[\s\S]*name="project_id"/);
 });
+
+test("project-scoped routes pass projectId into data loaders", () => {
+  const incidents = read("app/(app)/projects/[projectId]/incidents/page.tsx");
+  const traces = read("app/(app)/projects/[projectId]/traces/page.tsx");
+  const audits = read("app/(app)/projects/[projectId]/audits/page.tsx");
+
+  assert.match(incidents, /const incidentsData = await getIncidentsSurfaceData\(projectId\)/);
+  assert.match(traces, /const tracesData = await getTracesSurfaceData\(projectId\)/);
+  assert.match(audits, /const auditsData = await getAuditsSurfaceData\(projectId\)/);
+});
