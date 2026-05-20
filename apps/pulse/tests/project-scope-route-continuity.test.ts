@@ -128,6 +128,9 @@ test("onboarding route preserves explicit project scope for path transitions and
   assert.match(file, /searchParams: Promise<\{ path\?: string; autostart\?: string; api_key\?: string; project_id\?: string; error\?: string \}>/);
   assert.match(file, /const projectScopeQuery = primaryProjectId \? `&project_id=\$\{encodeURIComponent\(primaryProjectId\)\}` : \"\"/);
   assert.match(file, /const preferredProjectId = String\(formData\.get\("project_id"\) \?\? ""\)\.trim\(\) \|\| projectIdParam \|\| null/);
+  assert.match(file, /const explicitProject =/);
+  assert.match(file, /await getProject\(projectIdParam\)/);
+  assert.match(file, /await getProject\(preferredProjectId\)/);
   assert.match(file, /const returnTo = `\/onboarding\?path=simulation&autostart=1\$\{projectIdParam \? `&project_id=\$\{encodeURIComponent\(projectIdParam\)\}` : ""\}`/);
   assert.match(file, /<input type="hidden" name="project_id" value=\{primaryProjectId\} \/>/);
   assert.match(file, /<select[\s\S]*name="project_id"/);
@@ -228,6 +231,16 @@ test("simulation handoff and reliability/trace evidence links preserve project s
   assert.match(incidentsData, /const scopeQuery = projectId \? `\?project_id=\$\{encodeURIComponent\(projectId\)\}` : ""/);
   assert.match(incidentsData, /href: `\/traces\$\{scopeQuery\}`/);
   assert.match(incidentsData, /href: `\/deployments\$\{scopeQuery\}#\$\{deploymentId\}`/);
+});
+
+test("performance trace links and evidence references preserve project scope", () => {
+  const performanceContent = read("components/dashboard/content/performance-content.tsx");
+  assert.match(performanceContent, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(performanceContent, /function withScopedProject\(path: string\): string/);
+  assert.match(performanceContent, /href=\{withScopedProject\(`\/traces\/\$\{trace\.id\}`\)\}/);
+  assert.match(performanceContent, /href=\{withScopedProject\(`\/traces\/\$\{selectedTraceRef\.id\}\/compare`\)\}/);
+  assert.match(performanceContent, /href=\{withScopedProject\(`\/traces\/\$\{selectedTraceRef\.id\}\/graph`\)\}/);
+  assert.match(performanceContent, /href=\{withScopedProject\(ref\.href\)\}/);
 });
 
 test("overview advisory links preserve project scope query", () => {

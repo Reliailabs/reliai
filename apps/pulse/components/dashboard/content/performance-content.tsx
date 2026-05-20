@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LineChart,
@@ -132,6 +133,14 @@ export function PerformanceContent({
   tracesData?: TracesSurfaceData;
   traceContext?: TraceRouteContext;
 }) {
+  const searchParams = useSearchParams();
+  const scopedProjectId = searchParams.get("project_id");
+  function withScopedProject(path: string): string {
+    if (!scopedProjectId) return path;
+    if (!path.startsWith("/")) return path;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}project_id=${encodeURIComponent(scopedProjectId)}`;
+  }
   const latencyData = tracesData?.latencyData?.length ? tracesData.latencyData : defaultLatencyData;
   const throughputData = tracesData?.throughputData?.length ? tracesData.throughputData : defaultThroughputData;
   const metrics = tracesData?.metrics?.length ? tracesData.metrics : defaultMetrics;
@@ -362,7 +371,7 @@ export function PerformanceContent({
               traceRefs.map((trace) => (
                 <Link
                   key={trace.id}
-                  href={`/traces/${trace.id}`}
+                  href={withScopedProject(`/traces/${trace.id}`)}
                   className={`rounded-full border px-2.5 py-1 text-xs ${
                     traceContext?.selectedTraceId === trace.id
                       ? "border-primary/40 bg-primary/10 text-foreground"
@@ -376,10 +385,10 @@ export function PerformanceContent({
           </div>
           {selectedTraceRef ? (
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
-              <Link href={`/traces/${selectedTraceRef.id}/compare`} className="text-primary hover:underline">
+              <Link href={withScopedProject(`/traces/${selectedTraceRef.id}/compare`)} className="text-primary hover:underline">
                 Open compare
               </Link>
-              <Link href={`/traces/${selectedTraceRef.id}/graph`} className="text-primary hover:underline">
+              <Link href={withScopedProject(`/traces/${selectedTraceRef.id}/graph`)} className="text-primary hover:underline">
                 Open graph
               </Link>
             </div>
@@ -432,7 +441,7 @@ export function PerformanceContent({
                   {snippet.evidenceReferences.map((ref) => (
                     <a
                       key={`${snippet.id}-${ref.label}-${ref.href}`}
-                      href={ref.href}
+                      href={withScopedProject(ref.href)}
                       className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground hover:bg-muted"
                     >
                       {ref.label}
