@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getRegressionsSurfaceData } from "@/lib/regressions-data";
+import { listProjectScopeOptions } from "@/lib/project-scope-data";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 
 function time(v: string | null): string {
   if (!v) return "unknown";
@@ -12,12 +14,17 @@ function time(v: string | null): string {
 
 type RegressionDetailPageProps = {
   params: Promise<{ regressionId: string }>;
+  searchParams: Promise<{ project_id?: string }>;
 };
 
-export default async function RegressionDetailPage({ params }: RegressionDetailPageProps) {
+export default async function RegressionDetailPage({ params, searchParams }: RegressionDetailPageProps) {
   const { regressionId } = await params;
-  const data = await getRegressionsSurfaceData();
+  const { project_id: projectIdParam } = await searchParams;
+  const projects = await listProjectScopeOptions();
+  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam);
+  const data = await getRegressionsSurfaceData(selectedProjectId ?? undefined);
   const item = data.items.find((row) => row.id === regressionId) ?? null;
+  const scopeQuery = selectedProjectId ? `?project_id=${encodeURIComponent(selectedProjectId)}` : "";
   if (!item) notFound();
 
   return (
@@ -27,7 +34,7 @@ export default async function RegressionDetailPage({ params }: RegressionDetailP
           <h1 className="text-2xl font-semibold text-foreground">Regression — {item.id}</h1>
           <p className="mt-1 text-sm text-muted-foreground">Legacy regression detail. Operations provides timeline/proposal/verification context.</p>
         </div>
-        <Link href={`/operations/regressions/${item.id}`} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
+        <Link href={`/operations/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
           Open in Operations
         </Link>
       </div>
@@ -36,7 +43,7 @@ export default async function RegressionDetailPage({ params }: RegressionDetailP
         <p className="mt-1 text-xs text-muted-foreground">{item.status} • detected {time(item.detectedAt)}</p>
       </div>
       <div className="mt-4">
-        <Link href="/regressions" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href={`/regressions${scopeQuery}`} className="text-sm text-muted-foreground hover:text-foreground">
           Back to regressions
         </Link>
       </div>

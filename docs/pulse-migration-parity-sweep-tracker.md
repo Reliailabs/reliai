@@ -54,11 +54,22 @@ Each item also needs:
    - `/traces`
    - `/audits/new`
    - `/onboarding`
+   - `/audits`
+   - `/audits/[id]`
+   - `/audits/[id]/results`
+   - `/metrics`
+   - `/deployments`
+   - `/deployments/[deploymentId]`
+   - `/regressions`
+   - `/regressions/[regressionId]`
 3. Remove implicit “pick first project” fallbacks:
    - prefer explicit selected `project_id`
    - fallback to deterministic newest project only when no explicit scope exists
    - surface selected scope in UI
 4. Add regression tests that fail on first-project implicit regression.
+
+Pending:
+- `/operations` project filter parity is blocked on backend adapter contract; `getOperationsSurfaceData` does not yet accept/propagate `project_id` filter.
 
 ## Sweep Execution Plan
 
