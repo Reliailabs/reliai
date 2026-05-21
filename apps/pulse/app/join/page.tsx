@@ -77,6 +77,8 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
                 ? "This invitation has expired."
                 : error === "already_accepted"
                   ? "This invitation was already accepted."
+                  : error === "not_found"
+                    ? "This invitation link was not found."
                   : "Unable to accept this invitation right now."}
             </div>
           ) : null}
