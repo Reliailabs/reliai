@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ProjectScopeSelector } from "@/components/dashboard/project-scope-selector";
 import { getRegressionsSurfaceData } from "@/lib/regressions-data";
 import { listProjectScopeOptions } from "@/lib/project-scope-data";
 import { resolveScopedProjectId } from "@/lib/project-scope-utils";
@@ -29,14 +30,17 @@ export default async function RegressionDetailPage({ params, searchParams }: Reg
 
   return (
     <div className="mx-auto w-full max-w-[1000px] px-6 py-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Regression — {item.id}</h1>
           <p className="mt-1 text-sm text-muted-foreground">Legacy regression detail. Operations provides timeline/proposal/verification context.</p>
         </div>
-        <Link href={`/operations/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
-          Open in Operations
-        </Link>
+        <div className="flex items-center gap-2">
+          <ProjectScopeSelector projects={projects} selectedProjectId={selectedProjectId ?? null} />
+          <Link href={`/operations/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
+            Open in Operations
+          </Link>
+        </div>
       </div>
       <div className="mt-4 rounded-xl border border-border bg-card p-4">
         <p className="text-sm font-medium text-foreground">{item.summary}</p>

@@ -207,3 +207,39 @@ test("project scope selector continuity across incidents → operations → trac
     await expect(page).toHaveURL(new RegExp(`/traces/.+project_id=${projectId}`));
   }
 });
+
+test("regression detail route keeps scope selector continuity into operations", async ({ page }) => {
+  await ensureSignedIn(page, "/regressions");
+  await expect(page).toHaveURL(/\/(regressions|pulse)/);
+  if (!page.url().includes("/regressions")) {
+    test.skip(true, "SKIPPED_REGRESSION_SCOPE: regressions route unavailable in current auth context.");
+  }
+
+  const selector = page.getByRole("combobox", { name: "Select project scope" });
+  if ((await selector.count()) === 0) {
+    test.skip(true, "SKIPPED_REGRESSION_SCOPE: project scope selector unavailable.");
+  }
+
+  await selector.click();
+  const options = page.getByRole("option");
+  if ((await options.count()) < 1) {
+    test.skip(true, "SKIPPED_REGRESSION_SCOPE: no project options available.");
+  }
+  await options.first().click();
+  await expect(page).toHaveURL(/\/regressions(\?project_id=)?/);
+  const projectId = new URL(page.url()).searchParams.get("project_id");
+  if (!projectId) {
+    test.skip(true, "SKIPPED_REGRESSION_SCOPE: no resolved scoped project id for runtime continuity probe.");
+  }
+
+  const detailLink = page.locator('a[href*="/operations/regressions/"]').first();
+  if ((await detailLink.count()) === 0) {
+    test.skip(true, "SKIPPED_REGRESSION_SCOPE: no regression detail links available.");
+  }
+  await detailLink.click();
+  await expect(page).toHaveURL(new RegExp(`/operations/regressions/.+\\?project_id=${projectId}`));
+
+  const operationsLink = page.getByRole("link", { name: "Operations center" });
+  await operationsLink.click();
+  await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
+});
