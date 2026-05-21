@@ -53,23 +53,25 @@ Action:
 - keep the classification matrix updated for every system-surface change.
 - keep legacy aliases redirect-only (no duplicate owned UI surfaces).
 
-### F3. Read-only vs write-path parity matrix is incomplete
+### F3. Read/write parity matrix is explicit and gate-backed
 
 Classification: `read/write delta`  
-Impact: `high`
+Impact: `medium`
 
 Current state:
-- multiple migrated routes are present and navigable, but not all apps/web write capabilities are confirmed in Pulse.
+- route-level write matrix is now explicit in `docs/pulse-read-write-parity-matrix.json`.
+- high-impact write routes in migration scope are implemented and contract-gated.
+- only medium-impact deferred item remains: external invite lifecycle in Team Members.
 
 Action:
-- produce explicit write-capability matrix per route (create/edit/approve/execute/rollback where applicable).
-- tag each gap with migration decision and target phase.
+- keep the write matrix updated for every migrated write surface change.
+- treat any new high-impact unresolved write row as gate failure.
 
 ## 4) Immediate Execution Queue
 
 1. Response Team functional verification slice (F1) with explicit test/probe outputs.
-2. Read/write capability matrix slice (F3) and prioritized implementation queue.
-3. Read/write gap implementation queue execution (`F3`) with explicit owner-phase assignments.
+2. Response Team runtime verification probe extension (cross-project assignment isolation).
+3. Medium-impact deferred invite lifecycle ownership decision (`/settings#team` external invites).
 
 ## 5) Completion Criteria for Functional Parity
 

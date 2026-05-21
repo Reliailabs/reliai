@@ -36,10 +36,11 @@
       "id": "F3",
       "title": "Read/write parity matrix completion",
       "impact": "high",
-      "state": "open",
+      "state": "closed",
       "type": "read_write_delta",
       "owner": "Migration",
-      "target_phase": "next functional parity batch",
+      "target_phase": "current functional parity",
+      "artifact": "docs/pulse-read-write-parity-matrix.json",
       "acceptance": [
         "route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged",
         "each unresolved write gap has explicit defer/implement decision with target phase"

@@ -41,6 +41,7 @@ Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
 - functional audit queue: `docs/pulse-final-functional-migration-gap-report.md`
 - system-surface classification matrix: `docs/pulse-system-surface-classification.md`
+- read/write parity matrix: `docs/pulse-read-write-parity-matrix.json`
 
 ## 3) Response Team Validation Status
 
