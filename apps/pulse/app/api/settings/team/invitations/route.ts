@@ -29,6 +29,10 @@ function mapInvitation(invitation: BackendInvitation) {
     role: invitation.role,
     invitedByEmail: invitation.invited_by_email,
     status: invitation.status,
+    delivery: {
+      mode: "manual_join_link" as const,
+      emailSent: false as const,
+    },
     signupPath: invitation.signup_path,
     joinPath: invitation.join_path,
     expiresAt: invitation.expires_at,

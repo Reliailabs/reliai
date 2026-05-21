@@ -69,6 +69,7 @@ Current state:
 - admins can queue and revoke pending invitations from the Settings surface
 - queued invites now expose a tokenized `/join?token=...` redemption path
 - the invite redeem flow creates the membership/session in the current local auth stack
+- invite delivery contract is explicit in Pulse (`manual_join_link`, `emailSent=false`)
 - `/join` is a documented public ownership shim for invite acceptance and is intentionally outside `(app)`
 - `/signup` remains the explicit continuation path for users who do not yet have a Reliai account
 - the no-account error state now queues a pending invitation and offers a contextual "Send invitation instead" handoff into `/signup`

@@ -37,7 +37,7 @@ Current functional status:
 - high-impact behavior parity gaps are closed and test-gated
 - system-surface deferments are explicitly classified
 - read/write parity matrix is explicit and owner-tagged
-- external invite lifecycle now has queue/revoke plus local redeem coverage, while email delivery remains deferred
+- external invite lifecycle now has queue/revoke plus local redeem coverage and explicit manual-delivery contract (`manual_join_link`), while email delivery remains deferred
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`

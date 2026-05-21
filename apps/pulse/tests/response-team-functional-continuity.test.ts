@@ -67,7 +67,9 @@ test("settings team UI makes external invite lifecycle ownership explicit", () =
   assert.match(settingsFile, /If they already have a Reliai account, use Add\./);
   assert.match(settingsFile, /Pending Invitations/);
   assert.match(settingsFile, /Open join link/);
+  assert.match(settingsFile, /Delivery: manual join link \(email delivery deferred\)\./);
   assert.match(settingsFile, /Queued invites are visible here until accepted or revoked\./);
+  assert.match(settingsFile, /Invitation emails are not auto-delivered from Pulse yet\./);
   assert.match(settingsFile, /Revoke/);
   assert.match(settingsFile, /queue a pending invitation/);
   assert.match(settingsFile, /Continue with account creation at \/signup/);
@@ -79,4 +81,11 @@ test("settings quick settings copy no longer claims upcoming parity slices", () 
   const settingsFile = read("components/dashboard/content/settings-content.tsx");
   assert.match(settingsFile, /Some controls remain intentionally stubbed/);
   assert.doesNotMatch(settingsFile, /upcoming parity slices/i);
+});
+
+test("settings team invitations route returns explicit manual delivery contract", () => {
+  const routeFile = read("app/api/settings/team/invitations/route.ts");
+  assert.match(routeFile, /delivery:\s*\{/);
+  assert.match(routeFile, /mode:\s*"manual_join_link"/);
+  assert.match(routeFile, /emailSent:\s*false/);
 });

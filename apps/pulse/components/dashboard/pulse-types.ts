@@ -522,6 +522,10 @@ export type SettingsInvitationItem = {
   role: string;
   invitedByEmail: string;
   status: "pending";
+  delivery: {
+    mode: "manual_join_link";
+    emailSent: false;
+  };
   signupPath: string;
   joinPath: string;
   createdAt: string;
