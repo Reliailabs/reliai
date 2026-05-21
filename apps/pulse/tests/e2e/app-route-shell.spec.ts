@@ -242,4 +242,8 @@ test("regression detail route keeps scope selector continuity into operations", 
   const operationsLink = page.getByRole("link", { name: "Operations center" });
   await operationsLink.click();
   await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
+
+  const tracesLink = page.getByRole("link", { name: "Traces" });
+  await tracesLink.click();
+  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${projectId}`));
 });
