@@ -479,7 +479,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             </Link>
           ) : null}
           <p className="text-[11px] text-muted-foreground">
-            The person must already have a Reliai account. External invite lifecycle is deferred and tracked in migration parity docs.{" "}
+            If they already have a Reliai account, use Add. If not, use Send invitation instead and continue with account creation in /signup. External invite lifecycle is deferred and tracked in migration parity docs.{" "}
             <Link href="/signup" className="underline underline-offset-2">
               Continue with account creation at /signup
             </Link>

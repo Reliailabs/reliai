@@ -45,10 +45,12 @@ test("settings team UI makes external invite lifecycle ownership explicit", () =
   const settingsFile = read("components/dashboard/content/settings-content.tsx");
   assert.match(settingsFile, /\/signup\?\$\{new URLSearchParams/);
   assert.match(settingsFile, /Send invitation instead/);
+  assert.match(settingsFile, /If they already have a Reliai account, use Add\./);
   assert.match(settingsFile, /entry: "team-invite"/);
   assert.match(settingsFile, /email: inviteEmail\.trim\(\)/);
   assert.match(settingsFile, /External invite lifecycle is deferred and tracked in migration parity docs/);
   assert.match(settingsFile, /Continue with account creation at \/signup/);
+  assert.doesNotMatch(settingsFile, /must already have a Reliai account/i);
   assert.doesNotMatch(settingsFile, /coming soon/i);
 });
 
