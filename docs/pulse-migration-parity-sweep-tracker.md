@@ -35,11 +35,12 @@ The next migration stage is functional parity vs apps/web behavior, not more sco
 Active audit focus:
 - route behavior parity where Pulse still presents legacy/read-only adapters
 - write-path parity gaps that block operator workflows
-- placeholder/deferred system surfaces that still indicate incomplete functionality
+- deferred system subroutes that are explicitly classified and owner-tracked
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
 - functional audit queue: `docs/pulse-final-functional-migration-gap-report.md`
+- system-surface classification matrix: `docs/pulse-system-surface-classification.md`
 
 ## 3) Response Team Validation Status
 

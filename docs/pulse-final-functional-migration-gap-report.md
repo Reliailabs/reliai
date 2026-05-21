@@ -39,17 +39,19 @@ Required parity checks:
 3. verify project scope changes do not leak assignment context.
 4. verify labels are unambiguous between access role and on-call duty role.
 
-### F2. Deferred/legacy system surfaces still signaling incomplete parity
+### F2. System surface deferment classification
 
 Classification: `deferred behavior delta`  
 Impact: `medium`
 
 Current state:
-- legacy system route group and helper copy still contains deferred language in system nav and legacy wrappers.
-- these surfaces need explicit classification: true deferment vs implement-now parity requirement.
+- classification is now explicit in `docs/pulse-system-surface-classification.md`.
+- legacy aliases are documented as `intentional exception`.
+- only one known deferment remains: `/system/customers/[projectId]`.
 
 Action:
-- classify each system subroute as `implement`, `defer`, or `intentional exception` with owner and target phase.
+- keep the classification matrix updated for every system-surface change.
+- implement the deferred project-detail customer route in the next functional parity batch.
 
 ### F3. Read-only vs write-path parity matrix is incomplete
 
@@ -66,8 +68,8 @@ Action:
 ## 4) Immediate Execution Queue
 
 1. Response Team functional verification slice (F1) with explicit test/probe outputs.
-2. System surface deferment classification slice (F2) with concrete owner/phase mapping.
-3. Read/write capability matrix slice (F3) and prioritized implementation queue.
+2. Read/write capability matrix slice (F3) and prioritized implementation queue.
+3. Deferred system customer-project detail route implementation (`/system/customers/[projectId]` parity).
 
 ## 5) Completion Criteria for Functional Parity
 
