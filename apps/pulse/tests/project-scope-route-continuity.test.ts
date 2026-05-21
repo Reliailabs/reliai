@@ -64,9 +64,12 @@ test("pulse, guardrails, services, and postmortems routes expose project scope a
   const guardrails = read("app/(app)/guardrails/page.tsx");
   const services = read("app/(app)/services/page.tsx");
   const postmortems = read("app/(app)/postmortems/page.tsx");
+  const playground = read("app/(app)/playground/page.tsx");
 
-  for (const file of [pulse, guardrails, services, postmortems]) {
+  for (const file of [pulse, guardrails, services, postmortems, playground]) {
     assert.match(file, /resolveScopedProjectId\(projects, projectIdParam/);
+  }
+  for (const file of [pulse, guardrails, services, postmortems]) {
     assert.match(file, /projectScope=\{\{ projects, selectedProjectId \}\}/);
   }
 
@@ -74,6 +77,11 @@ test("pulse, guardrails, services, and postmortems routes expose project scope a
   assert.match(guardrails, /getGuardrailsSurfaceData\(organizationId, selectedProjectId \?\? undefined\)/);
   assert.match(services, /getServicesSurfaceData\(selectedProjectId \?\? undefined\)/);
   assert.match(postmortems, /getPostmortemsSurfaceData\(selectedProjectId \?\? undefined\)/);
+  assert.match(playground, /searchParams: Promise<\{ project_id\?: string \}>/);
+  assert.match(playground, /<ProjectScopeSelector projects=\{projects\} selectedProjectId=\{selectedProjectId\} \/>/);
+  assert.match(playground, /href=\{`\/pulse\$\{scopeQuery\}`\}/);
+  assert.match(playground, /href=\{`\/operations\$\{scopeQuery\}`\}/);
+  assert.match(playground, /href=\{`\/traces\$\{scopeQuery\}`\}/);
 });
 
 test("audit and deployment content links preserve project scope query", () => {
