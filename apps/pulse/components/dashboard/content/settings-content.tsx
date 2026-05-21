@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { buildTeamInviteSignupHref } from "@/lib/team-invite-link";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings, Trash2, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
@@ -217,10 +218,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
 
   const signupInviteHref =
     inviteEmail.trim().length > 0
-      ? `/signup?${new URLSearchParams({
-          entry: "team-invite",
-          email: inviteEmail.trim(),
-        }).toString()}`
+      ? buildTeamInviteSignupHref(inviteEmail)
       : null;
 
   async function handleSaveProfile() {
