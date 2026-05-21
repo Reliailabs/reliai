@@ -53,6 +53,9 @@ Required functional parity check (closed for high-impact items):
 3. Verify project scope switching in `/on-call` does not cross-assign between projects.
 4. Verify role naming/labels are consistent and non-conflicting between Team role and On-call role.
 
+Deferred invite lifecycle status:
+- `/signup` is the explicit continuation path for new accounts until email-based invites are implemented.
+
 ## 4) Rules for Remaining Slices
 
 - No migration slice closes without updating this tracker and the functional gap report.
