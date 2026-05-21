@@ -1,6 +1,6 @@
 # Pulse Migration Parity Sweep Tracker
 
-Status: Active (Scope/ownership parity stabilized; functional parity audit in progress)
+Status: Closed (scope/ownership parity stabilized; tracked functional parity audit gaps closed)
 Scope: apps/web -> apps/pulse functional parity
 
 ## 1) Current Migration State
@@ -28,9 +28,9 @@ Runtime continuity coverage remains:
 
 `docs/pulse-migration-parity-gaps.json` currently tracks only scope/ownership blockers and is fully resolved.
 
-## 2) Functional Parity Audit Pass (Active)
+## 2) Functional Parity Audit Pass (Closed)
 
-The next migration stage is functional parity vs apps/web behavior, not more scope-routing work.
+Tracked functional parity gaps are closed. New migration slices require newly discovered parity gaps.
 
 Active audit focus:
 - route behavior parity where Pulse still presents legacy/read-only adapters
@@ -40,6 +40,8 @@ Active audit focus:
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
 - functional audit queue: `docs/pulse-final-functional-migration-gap-report.md`
+- system surface classification contract: `docs/pulse-system-surface-classification.json`
+- read/write parity matrix contract: `docs/pulse-read-write-parity-matrix.json`
 
 ## 3) Response Team Validation Status
 
@@ -48,14 +50,24 @@ Implemented in Pulse:
 - on-call assignment/escalation management: `/on-call` and `/projects/[projectId]/on-call`
 - explicit separation of org access roles vs on-call duty roles
 
-Required functional parity check (still open):
+Required functional parity check (closed):
 1. Add member in `/settings#team`.
 2. Verify member appears in `/on-call` assignment selectors for the same organization/project.
 3. Verify project scope switching in `/on-call` does not cross-assign between projects.
 4. Verify role naming/labels are consistent and non-conflicting between Team role and On-call role.
+
+Validation evidence:
+- `apps/pulse/tests/response-team-functional-continuity.test.ts`
+- included in `pnpm --filter pulse test:migration-scope-parity-gate`
 
 ## 4) Rules for Remaining Slices
 
 - No migration slice closes without updating this tracker and the functional gap report.
 - Prefer user-visible functional parity fixes over gate/process expansion.
 - Keep scopes isolated per branch/PR.
+- F2 is closed with contract artifacts and gate coverage:
+  - `docs/pulse-system-surface-classification.json`
+  - `apps/pulse/tests/system-surface-parity-classification.test.ts`
+- F3 is closed with matrix artifacts and gate coverage:
+  - `docs/pulse-read-write-parity-matrix.json`
+  - `apps/pulse/tests/read-write-parity-matrix-contract.test.ts`

@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "scope": "apps/web -> apps/pulse write capability parity",
+  "rows": [
+    {
+      "route": "/incidents/[incidentId]",
+      "impact": "high",
+      "owner": "pulse-app",
+      "target_phase": "functional-parity",
+      "capabilities": {
+        "create": "n/a",
+        "edit": "n/a",
+        "approve": "n/a",
+        "execute": "implemented",
+        "rollback": "n/a"
+      },
+      "notes": "Incident acknowledge/resolve/reopen/assign actions are implemented through contract routes."
+    },
+    {
+      "route": "/audits/[id]",
+      "impact": "high",
+      "owner": "pulse-app",
+      "target_phase": "functional-parity",
+      "capabilities": {
+        "create": "n/a",
+        "edit": "n/a",
+        "approve": "n/a",
+        "execute": "implemented",
+        "rollback": "n/a"
+      },
+      "notes": "Audit action parity route is implemented and test-gated."
+    },
+    {
+      "route": "/operations",
+      "impact": "high",
+      "owner": "pulse-app",
+      "target_phase": "phase13-closure",
+      "capabilities": {
+        "create": "implemented",
+        "edit": "implemented",
+        "approve": "implemented",
+        "execute": "implemented",
+        "rollback": "implemented"
+      },
+      "notes": "Operations lifecycle, verification, and rollback-precondition validation routes are present and gated."
+    },
+    {
+      "route": "/settings#team",
+      "impact": "high",
+      "owner": "pulse-app",
+      "target_phase": "functional-parity",
+      "capabilities": {
+        "create": "implemented",
+        "edit": "implemented",
+        "approve": "n/a",
+        "execute": "implemented",
+        "rollback": "implemented"
+      },
+      "notes": "Team member add/remove remains writable; on-call assignment continuity is contract-tested."
+    },
+    {
+      "route": "/pulse/system",
+      "impact": "medium",
+      "owner": "pulse-app",
+      "target_phase": "functional-parity-followup",
+      "capabilities": {
+        "create": "n/a",
+        "edit": "n/a",
+        "approve": "n/a",
+        "execute": "n/a",
+        "rollback": "n/a"
+      },
+      "notes": "System command center is currently read-only by design."
+    }
+  ]
+}

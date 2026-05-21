@@ -1,14 +1,14 @@
 # Pulse Functional Parity Audit Report
 
 Date: 2026-05-21
-Status: Active
+Status: Closed (tracked F1/F2/F3 gaps)
 Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership closure)
 
 ## 1) Summary
 
 Scope and ownership migration is materially stabilized and test-gated.
 
-Functional parity is not complete yet. Remaining risk is no longer route existence; it is behavior parity (especially write-path and deferred system surfaces).
+Tracked functional parity gaps are closed. Remaining risk is routine regression risk, controlled by migration parity gates.
 
 ## 2) What Is Already Closed
 
@@ -21,58 +21,62 @@ Validation backing:
 - `pnpm --filter pulse test:migration-scope-parity-gate`
 - `pnpm --filter pulse test:e2e:app-route-gate`
 
-## 3) High-Impact Open Functional Gaps
+## 3) Functional Gap Status
 
 ### F1. Response Team end-to-end functional continuity
 
 Classification: `functional continuity gap`  
-Impact: `high`
+Impact: `high`  
+Status: `closed`
 
 Current state:
 - Team members are managed in `/settings#team`.
 - On-call assignments are managed in `/on-call`.
-- Separation is implemented, but end-to-end continuity needs explicit parity verification.
+- End-to-end continuity is now enforced by contract tests in the migration parity gate.
 
-Required parity checks:
-1. invite/add member in settings.
-2. verify immediate assignment availability in on-call role selectors.
-3. verify project scope changes do not leak assignment context.
-4. verify labels are unambiguous between access role and on-call duty role.
+Validation evidence:
+- `apps/pulse/tests/response-team-functional-continuity.test.ts`
+- `pnpm --filter pulse test:migration-scope-parity-gate`
 
 ### F2. Deferred/legacy system surfaces still signaling incomplete parity
 
 Classification: `deferred behavior delta`  
-Impact: `medium`
+Impact: `medium`  
+Status: `closed (classification contract enforced)`
 
 Current state:
-- legacy system route group and helper copy still contains deferred language in system nav and legacy wrappers.
-- these surfaces need explicit classification: true deferment vs implement-now parity requirement.
+- system surfaces are now fully classified as `implement`, `defer`, or `intentional_exception` with owner/phase metadata.
+- the classification is test-enforced in the migration parity gate.
 
-Action:
-- classify each system subroute as `implement`, `defer`, or `intentional exception` with owner and target phase.
+Validation evidence:
+- `docs/pulse-system-surface-classification.json`
+- `docs/pulse-system-surface-classification.md`
+- `apps/pulse/tests/system-surface-parity-classification.test.ts`
+- `pnpm --filter pulse test:migration-scope-parity-gate`
 
 ### F3. Read-only vs write-path parity matrix is incomplete
 
 Classification: `read/write delta`  
-Impact: `high`
+Impact: `high`  
+Status: `closed (matrix contract enforced)`
 
 Current state:
-- multiple migrated routes are present and navigable, but not all apps/web write capabilities are confirmed in Pulse.
+- write capability parity is now explicitly classified by route with owner and target phase metadata.
+- matrix contract is test-enforced in the migration parity gate.
 
-Action:
-- produce explicit write-capability matrix per route (create/edit/approve/execute/rollback where applicable).
-- tag each gap with migration decision and target phase.
+Validation evidence:
+- `docs/pulse-read-write-parity-matrix.json`
+- `apps/pulse/tests/read-write-parity-matrix-contract.test.ts`
+- `pnpm --filter pulse test:migration-scope-parity-gate`
 
 ## 4) Immediate Execution Queue
 
-1. Response Team functional verification slice (F1) with explicit test/probe outputs.
-2. System surface deferment classification slice (F2) with concrete owner/phase mapping.
-3. Read/write capability matrix slice (F3) and prioritized implementation queue.
+No open tracked slices in this report. New work requires a newly discovered parity gap or product requirement.
 
 ## 5) Completion Criteria for Functional Parity
 
-Functional parity can be called complete only when:
+Functional parity closure criteria:
 - all high-impact functional gaps are either implemented or explicitly accepted as exceptions,
-- Response Team settings <-> on-call continuity is verified,
+- Response Team settings <-> on-call continuity remains verified,
 - read/write deltas are closed or intentionally deferred with documented decision and phase owner,
 - migration tracker and gap report are in sync.
