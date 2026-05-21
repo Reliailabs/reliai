@@ -57,3 +57,21 @@ test("join surface maps not_found error to explicit invitation-not-found copy", 
     global.fetch = originalFetch;
   }
 });
+
+test("join surface maps unavailable error to explicit retry copy", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = (async () => ({
+    ok: false,
+  })) as typeof fetch;
+
+  try {
+    const html = renderToStaticMarkup(
+      await JoinPage({ searchParams: Promise.resolve({ token: "abc123", error: "unavailable" }) }),
+    );
+
+    assert.match(html, /Invitation acceptance is temporarily unavailable\. Try again shortly\./);
+    assert.doesNotMatch(html, /Invitation link not found or no longer valid\./);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

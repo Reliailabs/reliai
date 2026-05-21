@@ -79,7 +79,9 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
                   ? "This invitation was already accepted."
                   : error === "not_found"
                     ? "This invitation link was not found."
-                  : "Unable to accept this invitation right now."}
+                    : error === "unavailable"
+                      ? "Invitation acceptance is temporarily unavailable. Try again shortly."
+                    : "Unable to accept this invitation right now."}
             </div>
           ) : null}
 

@@ -79,6 +79,10 @@ const oncallTeam = [
 export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOverviewData }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const projectScope = searchParams.get("project_id") ?? searchParams.get("projectId");
+  const settingsTeamHref = projectScope
+    ? `/settings?project_id=${encodeURIComponent(projectScope)}#team`
+    : "/settings#team";
   const recentActivityItems = pulseOverviewData?.recentActivity ?? recentActivity;
   const [responseTeam, setResponseTeam] = useState(oncallTeam);
   const [teamLoading, setTeamLoading] = useState(true);
@@ -206,7 +210,7 @@ export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOve
         ) : responseTeam.length === 0 ? (
           <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
             <p>No response team configured.</p>
-            <Link href="/settings#team" className="mt-2 inline-flex text-xs text-foreground underline underline-offset-2">
+            <Link href={settingsTeamHref} className="mt-2 inline-flex text-xs text-foreground underline underline-offset-2">
               Configure team members
             </Link>
           </div>
