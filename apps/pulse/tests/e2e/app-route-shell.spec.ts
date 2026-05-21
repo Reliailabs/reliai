@@ -247,3 +247,27 @@ test("regression detail route keeps scope selector continuity into operations", 
   await tracesLink.click();
   await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${projectId}`));
 });
+
+test("version ownership shims preserve canonical project scope into traces", async ({ page }) => {
+  await ensureSignedIn(page, "/traces");
+  await expect(page).toHaveURL(/\/(traces|pulse)/);
+  if (!page.url().includes("/traces")) {
+    test.skip(true, "SKIPPED_VERSION_SHIM_SCOPE: traces route unavailable in current auth context.");
+  }
+
+  const selector = page.getByRole("combobox", { name: "Select project scope" });
+  if ((await selector.count()) === 0) {
+    test.skip(true, "SKIPPED_VERSION_SHIM_SCOPE: project scope selector unavailable.");
+  }
+
+  const scopedProjectId = new URL(page.url()).searchParams.get("project_id");
+  if (!scopedProjectId) {
+    test.skip(true, "SKIPPED_VERSION_SHIM_SCOPE: no resolved project scope available in traces.");
+  }
+
+  await page.goto(`/model-versions/mv_test?projectId=${encodeURIComponent(scopedProjectId)}`);
+  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${scopedProjectId}&model_version_id=mv_test`));
+
+  await page.goto(`/prompt-versions/pv_test?projectId=${encodeURIComponent(scopedProjectId)}`);
+  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${scopedProjectId}&prompt_version=pv_test`));
+});

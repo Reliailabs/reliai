@@ -21,9 +21,13 @@ test("model and prompt version routes are owned by Pulse and bridge to scoped tr
   const modelFile = read("app/(app)/model-versions/[id]/page.tsx");
   const promptFile = read("app/(app)/prompt-versions/[id]/page.tsx");
 
+  assert.match(modelFile, /const projectId = firstParam\(raw\.projectId\) \?\? firstParam\(raw\.project_id\)/);
+  assert.match(modelFile, /if \(projectId\) query\.set\("project_id", projectId\)/);
   assert.match(modelFile, /query\.set\("model_version_id", id\)/);
   assert.match(modelFile, /redirect\(`\/traces\?\$\{query\.toString\(\)\}`\)/);
 
+  assert.match(promptFile, /const projectId = firstParam\(raw\.projectId\) \?\? firstParam\(raw\.project_id\)/);
+  assert.match(promptFile, /if \(projectId\) query\.set\("project_id", projectId\)/);
   assert.match(promptFile, /query\.set\("prompt_version", id\)/);
   assert.match(promptFile, /redirect\(`\/traces\?\$\{query\.toString\(\)\}`\)/);
 });
