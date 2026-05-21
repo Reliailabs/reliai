@@ -52,6 +52,7 @@ test("join surface maps not_found error to explicit invitation-not-found copy", 
     );
 
     assert.match(html, /This invitation link was not found\./);
+    assert.doesNotMatch(html, /Invitation link not found or no longer valid\./);
   } finally {
     global.fetch = originalFetch;
   }
