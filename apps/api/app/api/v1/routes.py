@@ -194,8 +194,10 @@ from app.schemas.membership import (
     ProjectMemberRead,
 )
 from app.schemas.invitation import (
+    OrganizationInvitationAcceptResponse,
     OrganizationInvitationCreate,
     OrganizationInvitationListResponse,
+    OrganizationInvitationPublicRead,
     OrganizationInvitationRead,
 )
 from app.schemas.organization import OrganizationCreate, OrganizationRead, OrganizationUpdate
@@ -536,6 +538,8 @@ from app.services.memberships import (
     remove_project_member,
 )
 from app.services.invitations import (
+    accept_organization_invitation,
+    get_organization_invitation_by_token,
     create_organization_invitation,
     list_organization_invitations,
     revoke_organization_invitation,
@@ -2716,15 +2720,38 @@ def remove_organization_member_endpoint(
 def _invitation_read_model(invitation) -> OrganizationInvitationRead:
     invited_by_user = getattr(invitation, "invited_by_user", None)
     invited_by_email = getattr(invited_by_user, "email", None) or "unknown@reliai.dev"
+    organization = getattr(invitation, "organization", None)
+    organization_name = getattr(organization, "name", None) or "unknown organization"
     return OrganizationInvitationRead(
         id=invitation.id,
         organization_id=invitation.organization_id,
+        organization_name=organization_name,
         invited_email=invitation.invited_email,
         role=invitation.role,
         invited_by_user_id=invitation.invited_by_user_id,
         invited_by_email=invited_by_email,
         status="pending",
         signup_path=f"/signup?{urlencode({'entry': 'team-invite', 'email': invitation.invited_email})}",
+        join_path=f"/join?{urlencode({'token': invitation.token})}",
+        expires_at=invitation.expires_at,
+        created_at=invitation.created_at,
+    )
+
+
+def _invitation_public_read_model(invitation) -> OrganizationInvitationPublicRead:
+    invited_by_user = getattr(invitation, "invited_by_user", None)
+    invited_by_email = getattr(invited_by_user, "email", None) or "unknown@reliai.dev"
+    organization = getattr(invitation, "organization", None)
+    organization_name = getattr(organization, "name", None) or "unknown organization"
+    return OrganizationInvitationPublicRead(
+        id=invitation.id,
+        organization_id=invitation.organization_id,
+        organization_name=organization_name,
+        invited_email=invitation.invited_email,
+        role=invitation.role,
+        invited_by_email=invited_by_email,
+        status="pending",
+        join_path=f"/join?{urlencode({'token': invitation.token})}",
         expires_at=invitation.expires_at,
         created_at=invitation.created_at,
     )
@@ -2746,6 +2773,39 @@ def list_organization_invitations_endpoint(
         )
     items = list_organization_invitations(db, organization_id=organization_id)
     return OrganizationInvitationListResponse(items=[_invitation_read_model(item) for item in items])
+
+
+@router.get("/invitations/{token}", response_model=OrganizationInvitationPublicRead)
+def get_public_organization_invitation_endpoint(
+    token: str,
+    db: Session = Depends(get_db),
+) -> OrganizationInvitationPublicRead:
+    invitation = get_organization_invitation_by_token(db, token=token)
+    return _invitation_public_read_model(invitation)
+
+
+@router.post("/invitations/{token}/accept", response_model=OrganizationInvitationAcceptResponse)
+def accept_public_organization_invitation_endpoint(
+    token: str,
+    db: Session = Depends(get_db),
+) -> OrganizationInvitationAcceptResponse:
+    invitation, app_user, session, session_token = accept_organization_invitation(db, token=token)
+    memberships = get_operator_memberships(db, app_user.id)
+    first_name, last_name = _resolve_operator_name_fields(db, app_user)
+    return OrganizationInvitationAcceptResponse(
+        session_token=session_token,
+        operator=OperatorRead(
+            id=app_user.id,
+            email=app_user.email,
+            first_name=first_name,
+            last_name=last_name,
+            is_system_admin=app_user.is_system_admin,
+        ),
+        memberships=_membership_items(db, memberships),
+        active_organization_id=app_user.active_organization_id,
+        expires_at=session.expires_at,
+        join_path=f"/join?{urlencode({'token': invitation.token})}",
+    )
 
 
 @router.post(

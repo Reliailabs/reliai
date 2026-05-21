@@ -59,6 +59,8 @@ Deferred invite lifecycle status:
 - `/signup` remains the explicit continuation path for new accounts until email-based invite delivery and acceptance are implemented.
 - the team invite `no_account` state now queues a pending invitation and exposes a contextual "Send invitation instead" handoff into `/signup`.
 - `/signup` renders team-invite context when launched with `entry=team-invite`.
+- pending invites now expose a tokenized `/join?token=...` redemption surface and local accept flow.
+- email delivery is still deferred.
 
 ## 4) Rules for Remaining Slices
 

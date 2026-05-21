@@ -47,8 +47,10 @@ test("settings team UI makes external invite lifecycle ownership explicit", () =
   assert.match(settingsFile, /href=\{signupInviteHref\}/);
   assert.match(settingsFile, /api\/settings\/team\/invitations/);
   assert.match(settingsFile, /Send invitation instead/);
+  assert.match(settingsFile, /join link is now available below/);
   assert.match(settingsFile, /If they already have a Reliai account, use Add\./);
   assert.match(settingsFile, /Pending Invitations/);
+  assert.match(settingsFile, /Open join link/);
   assert.match(settingsFile, /Queued invites are visible here until accepted or revoked\./);
   assert.match(settingsFile, /Revoke/);
   assert.match(settingsFile, /queue a pending invitation/);

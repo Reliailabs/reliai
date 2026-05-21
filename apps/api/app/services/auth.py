@@ -116,7 +116,7 @@ def _workos_enabled() -> bool:
     return bool(settings.workos_api_key and settings.workos_client_id)
 
 
-def _get_or_create_app_user(
+def get_or_create_app_user(
     db: Session,
     *,
     email: str,
@@ -153,6 +153,57 @@ def _get_or_create_app_user(
     return user
 
 
+def get_or_create_operator_account(
+    db: Session,
+    *,
+    email: str,
+    is_system_admin: bool = False,
+) -> tuple[OperatorUser, User]:
+    normalized_email = email.strip().lower()
+    operator = db.scalar(select(OperatorUser).where(OperatorUser.email == normalized_email))
+    if operator is None:
+        operator = create_operator_user(
+            db,
+            email=normalized_email,
+            password=secrets.token_urlsafe(32),
+            is_system_admin=is_system_admin,
+        )
+        app_user = db.scalar(select(User).where(User.email == normalized_email))
+        if app_user is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="User provisioning failed")
+        return operator, app_user
+
+    if operator.is_system_admin != is_system_admin:
+        operator.is_system_admin = operator.is_system_admin or is_system_admin
+        db.add(operator)
+        db.flush()
+
+    app_user = get_or_create_app_user(
+        db,
+        email=normalized_email,
+        legacy_operator_user_id=operator.id,
+        is_active=operator.is_active,
+    )
+    if is_system_admin and not app_user.is_system_admin:
+        app_user.is_system_admin = True
+        db.add(app_user)
+        db.flush()
+    return operator, app_user
+
+
+def issue_operator_session(db: Session, *, operator_user_id: UUID) -> tuple[OperatorSession, str]:
+    plaintext_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=get_settings().auth_session_days)
+    session = OperatorSession(
+        operator_user_id=operator_user_id,
+        session_token_hash=hash_session_token(plaintext_token),
+        expires_at=expires_at,
+    )
+    db.add(session)
+    db.flush()
+    return session, plaintext_token
+
+
 def create_operator_user(
     db: Session,
     *,
@@ -164,7 +215,7 @@ def create_operator_user(
     operator.is_system_admin = is_system_admin
     db.add(operator)
     db.flush()
-    user = _get_or_create_app_user(
+    user = get_or_create_app_user(
         db,
         email=operator.email,
         legacy_operator_user_id=operator.id,
@@ -193,21 +244,14 @@ def sign_in_operator(db: Session, payload: AuthSignInRequest) -> tuple[User, Ope
     if operator is None or not operator.is_active or not verify_password(payload.password, operator.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    app_user = _get_or_create_app_user(
+    app_user = get_or_create_app_user(
         db,
         email=operator.email,
         legacy_operator_user_id=operator.id,
         is_active=operator.is_active,
     )
 
-    plaintext_token = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(days=get_settings().auth_session_days)
-    session = OperatorSession(
-        operator_user_id=operator.id,
-        session_token_hash=hash_session_token(plaintext_token),
-        expires_at=expires_at,
-    )
-    db.add(session)
+    session, plaintext_token = issue_operator_session(db, operator_user_id=operator.id)
     memberships = get_operator_memberships(db, app_user.id)
     _resolve_active_organization_id(db, user=app_user, memberships=memberships)
     db.commit()
@@ -247,7 +291,7 @@ def get_legacy_operator_context(db: Session, token: str) -> OperatorContext:
     if operator is None or not operator.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
 
-    app_user = _get_or_create_app_user(
+    app_user = get_or_create_app_user(
         db,
         email=operator.email,
         legacy_operator_user_id=operator.id,

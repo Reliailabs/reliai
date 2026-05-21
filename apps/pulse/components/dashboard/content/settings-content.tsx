@@ -215,7 +215,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
           const invitation = (await pendingResponse.json()) as SettingsInvitationItem;
           setPendingInvitations((prev) => [invitation, ...prev.filter((item) => item.id !== invitation.id)]);
           setInviteMessage({
-            text: `No Reliai account found for ${invitation.invitedEmail}. Invitation queued and /signup remains the continuation path.`,
+            text: `No Reliai account found for ${invitation.invitedEmail}. Invitation queued and the join link is now available below.`,
             ok: false,
           });
           return;
@@ -521,6 +521,9 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">{invitation.invitedEmail}</p>
+                    <Link href={invitation.joinPath} className="text-xs font-medium text-primary underline underline-offset-2">
+                      Open join link
+                    </Link>
                     <p className="text-xs text-muted-foreground">Expires {formatInviteDate(invitation.expiresAt)}</p>
                   </div>
                   <p className="text-sm capitalize text-muted-foreground">{invitation.role}</p>
@@ -594,7 +597,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             </Link>
           ) : null}
           <p className="text-[11px] text-muted-foreground">
-            If they already have a Reliai account, use Add. If not, use Send invitation instead to queue a pending invitation and continue with account creation in /signup.{" "}
+            If they already have a Reliai account, use Add. If not, use Send invitation instead to queue a pending invitation and open the join link for acceptance.{" "}
             <Link href="/signup" className="underline underline-offset-2">
               Continue with account creation at /signup
             </Link>

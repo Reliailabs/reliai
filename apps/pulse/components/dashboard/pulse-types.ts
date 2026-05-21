@@ -523,6 +523,7 @@ export type SettingsInvitationItem = {
   invitedByEmail: string;
   status: "pending";
   signupPath: string;
+  joinPath: string;
   createdAt: string;
   expiresAt: string;
 };

@@ -44,6 +44,7 @@ def test_create_list_and_revoke_pending_invitation(client, db_session):
     assert invitation["role"] == "member"
     assert invitation["status"] == "pending"
     assert invitation["signup_path"].startswith("/signup?entry=team-invite&email=")
+    assert invitation["join_path"].startswith("/join?token=")
 
     list_response = client.get(
         f"/api/v1/organizations/{org['id']}/invitations",
@@ -66,6 +67,48 @@ def test_create_list_and_revoke_pending_invitation(client, db_session):
     )
     assert list_after_revoke.status_code == 200
     assert list_after_revoke.json()["items"] == []
+
+
+def test_validate_and_accept_pending_invitation(client, db_session):
+    owner = create_operator(db_session, email="owner@gamma.test")
+    session_payload = sign_in(client, email=owner.email)
+    org = _create_org(client, session_payload, name="Gamma AI", slug="gamma-ai")
+    _enable_collaboration(db_session, org["id"])
+
+    create_response = client.post(
+        f"/api/v1/organizations/{org['id']}/invitations",
+        headers=auth_headers(session_payload),
+        json={"email": "joiner@gamma.test", "role": "engineer"},
+    )
+    assert create_response.status_code == 201
+    invitation = create_response.json()
+    token = invitation["join_path"].split("token=")[1]
+
+    public_by_token = client.get(f"/api/v1/invitations/{token}")
+    assert public_by_token.status_code == 200
+    public_payload = public_by_token.json()
+    assert public_payload["organization_name"] == "Gamma AI"
+    assert public_payload["invited_email"] == "joiner@gamma.test"
+    assert public_payload["join_path"] == invitation["join_path"]
+
+    accept_response = client.post(
+        f"/api/v1/invitations/{token}/accept",
+    )
+    assert accept_response.status_code == 200
+    accepted = accept_response.json()
+    assert accepted["session_token"]
+    assert accepted["operator"]["email"] == "joiner@gamma.test"
+    assert accepted["memberships"][0]["organization_id"] == org["id"]
+    assert accepted["join_path"] == invitation["join_path"]
+
+    after_accept = client.get(f"/api/v1/invitations/{token}")
+    assert after_accept.status_code == 404
+
+    second_accept = client.post(
+        f"/api/v1/invitations/{token}/accept",
+    )
+    assert second_accept.status_code == 409
+    assert second_accept.json()["detail"] == "Invitation already accepted"
 
 
 def test_duplicate_pending_invitation_is_rejected(client, db_session):

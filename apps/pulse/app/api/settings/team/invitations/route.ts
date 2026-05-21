@@ -10,12 +10,14 @@ type InvitationBody = {
 type BackendInvitation = {
   id: string;
   organization_id: string;
+  organization_name: string;
   invited_email: string;
   role: string;
   invited_by_user_id: string;
   invited_by_email: string;
   status: string;
   signup_path: string;
+  join_path: string;
   expires_at: string;
   created_at: string;
 };
@@ -28,6 +30,7 @@ function mapInvitation(invitation: BackendInvitation) {
     invitedByEmail: invitation.invited_by_email,
     status: invitation.status,
     signupPath: invitation.signup_path,
+    joinPath: invitation.join_path,
     expiresAt: invitation.expires_at,
     createdAt: invitation.created_at,
   };
