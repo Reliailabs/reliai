@@ -323,7 +323,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       <div id="appearance" className="bg-card rounded-2xl border border-border overflow-hidden">
         <h3 className="font-semibold text-foreground p-6 pb-4">Quick Settings</h3>
         <p className="px-6 pb-4 text-xs text-muted-foreground">
-          Some controls are staged for upcoming parity slices and are marked as Planned or Partial.
+          Some controls remain intentionally stubbed and are marked as Planned or Partial until their owner contracts are implemented.
         </p>
         <div className="divide-y divide-border">
           {settingsSections.map((section) => {

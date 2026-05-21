@@ -47,3 +47,9 @@ test("settings team UI makes external invite lifecycle ownership explicit", () =
   assert.match(settingsFile, /Continue with account creation at \/signup/);
   assert.doesNotMatch(settingsFile, /coming soon/i);
 });
+
+test("settings quick settings copy no longer claims upcoming parity slices", () => {
+  const settingsFile = read("components/dashboard/content/settings-content.tsx");
+  assert.match(settingsFile, /Some controls remain intentionally stubbed/);
+  assert.doesNotMatch(settingsFile, /upcoming parity slices/i);
+});
