@@ -57,7 +57,7 @@ Evidence:
 - route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged
 - unresolved write gaps have explicit defer/implement decisions with target phase
 
-## 4) Invite Lifecycle Delivery Closure
+### F4. Invite lifecycle delivery closure
 
 Classification: `functional continuity gap`
 Impact: `medium`
@@ -74,7 +74,8 @@ Current state:
 - `/join` remains a documented public ownership shim for invite acceptance and is intentionally outside `(app)`
 - `/signup` remains the continuation path for users starting account setup from invitation context
 
-## 5) Completion Criteria for Functional Parity
+## 4) Completion Criteria for Functional Parity
+
 Functional parity can be called complete only when:
 - all high-impact functional gaps are closed,
 - migration tracker and gap report are in sync.
