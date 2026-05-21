@@ -34,6 +34,7 @@ test("join surface renders invitation details and accept action", async () => {
     assert.match(html, /Create account and join/);
     assert.match(html, /action="\/api\/invitations\/abc123\/accept"/);
     assert.match(html, /Returns to \/settings#team/);
+    assert.match(html, /href="\/signup\?entry=team-invite&amp;email=joiner%40gamma\.test"/);
   } finally {
     global.fetch = originalFetch;
   }
