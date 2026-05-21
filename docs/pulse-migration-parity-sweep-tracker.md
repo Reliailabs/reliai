@@ -54,8 +54,10 @@ Required functional parity check (closed for high-impact items):
 4. Verify role naming/labels are consistent and non-conflicting between Team role and On-call role.
 
 Deferred invite lifecycle status:
-- `/signup` is the explicit continuation path for new accounts until email-based invites are implemented.
-- the team invite `no_account` state now exposes a contextual "Send invitation instead" handoff into `/signup`.
+- pending invitation persistence is implemented and surfaced in Team settings.
+- admins can queue and revoke pending invitations from the settings surface.
+- `/signup` remains the explicit continuation path for new accounts until email-based invite delivery and acceptance are implemented.
+- the team invite `no_account` state now queues a pending invitation and exposes a contextual "Send invitation instead" handoff into `/signup`.
 - `/signup` renders team-invite context when launched with `entry=team-invite`.
 
 ## 4) Rules for Remaining Slices

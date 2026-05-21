@@ -516,6 +516,17 @@ export type SettingsProfile = {
   role: string;
 };
 
+export type SettingsInvitationItem = {
+  id: string;
+  invitedEmail: string;
+  role: string;
+  invitedByEmail: string;
+  status: "pending";
+  signupPath: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
 export type SettingsSurfaceData = {
   profile: SettingsProfile;
   quickItems: SettingsQuickItem[];

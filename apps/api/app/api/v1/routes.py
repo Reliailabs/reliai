@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from uuid import UUID
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
@@ -191,6 +192,11 @@ from app.schemas.membership import (
     ProjectMemberCreate,
     ProjectMemberListResponse,
     ProjectMemberRead,
+)
+from app.schemas.invitation import (
+    OrganizationInvitationCreate,
+    OrganizationInvitationListResponse,
+    OrganizationInvitationRead,
 )
 from app.schemas.organization import OrganizationCreate, OrganizationRead, OrganizationUpdate
 from app.schemas.organization_alert_target import (
@@ -528,6 +534,11 @@ from app.services.memberships import (
     list_project_members,
     remove_organization_member,
     remove_project_member,
+)
+from app.services.invitations import (
+    create_organization_invitation,
+    list_organization_invitations,
+    revoke_organization_invitation,
 )
 from app.services.onboarding_simulations import (
     create_onboarding_simulation,
@@ -2697,6 +2708,94 @@ def remove_organization_member_endpoint(
         db,
         organization_id=organization_id,
         user_id=user_id,
+        actor_user_id=operator.operator.id,
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+def _invitation_read_model(invitation) -> OrganizationInvitationRead:
+    invited_by_user = getattr(invitation, "invited_by_user", None)
+    invited_by_email = getattr(invited_by_user, "email", None) or "unknown@reliai.dev"
+    return OrganizationInvitationRead(
+        id=invitation.id,
+        organization_id=invitation.organization_id,
+        invited_email=invitation.invited_email,
+        role=invitation.role,
+        invited_by_user_id=invitation.invited_by_user_id,
+        invited_by_email=invited_by_email,
+        status="pending",
+        signup_path=f"/signup?{urlencode({'entry': 'team-invite', 'email': invitation.invited_email})}",
+        expires_at=invitation.expires_at,
+        created_at=invitation.created_at,
+    )
+
+
+@router.get("/organizations/{organization_id}/invitations", response_model=OrganizationInvitationListResponse)
+def list_organization_invitations_endpoint(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationInvitationListResponse:
+    require_org_role(operator, organization_id, "admin")
+    organization = get_organization(db, organization_id)
+    if not has_feature(organization.plan, "collaboration"):
+        prompt = get_upgrade_prompt("team_invite")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=UpgradeRequiredResponse(upgrade_prompt=prompt).model_dump(),
+        )
+    items = list_organization_invitations(db, organization_id=organization_id)
+    return OrganizationInvitationListResponse(items=[_invitation_read_model(item) for item in items])
+
+
+@router.post(
+    "/organizations/{organization_id}/invitations",
+    response_model=OrganizationInvitationRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_organization_invitation_endpoint(
+    organization_id: UUID,
+    payload: OrganizationInvitationCreate,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> OrganizationInvitationRead:
+    require_org_role(operator, organization_id, "admin")
+    organization = get_organization(db, organization_id)
+    if not has_feature(organization.plan, "collaboration"):
+        prompt = get_upgrade_prompt("team_invite")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=UpgradeRequiredResponse(upgrade_prompt=prompt).model_dump(),
+        )
+    invitation = create_organization_invitation(
+        db,
+        organization_id=organization_id,
+        invited_email=payload.email,
+        role=payload.role,
+        invited_by_user_id=operator.operator.id,
+    )
+    return _invitation_read_model(invitation)
+
+
+@router.delete("/organizations/{organization_id}/invitations/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_organization_invitation_endpoint(
+    organization_id: UUID,
+    invitation_id: UUID,
+    db: Session = Depends(get_db),
+    operator: OperatorContext = Depends(require_operator),
+) -> Response:
+    require_org_role(operator, organization_id, "admin")
+    organization = get_organization(db, organization_id)
+    if not has_feature(organization.plan, "collaboration"):
+        prompt = get_upgrade_prompt("team_invite")
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content=UpgradeRequiredResponse(upgrade_prompt=prompt).model_dump(),
+        )
+    revoke_organization_invitation(
+        db,
+        organization_id=organization_id,
+        invitation_id=invitation_id,
         actor_user_id=operator.operator.id,
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

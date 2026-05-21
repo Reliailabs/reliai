@@ -63,14 +63,16 @@ Classification: `deferred behavior delta`
 Impact: `medium`
 
 Current state:
-- external invite lifecycle is intentionally deferred
+- pending invitation persistence is now implemented in Pulse and exposed in Team settings
+- admins can queue and revoke pending invites from the Settings surface
 - ownership is documented in the Response Team continuity contract and settings UI copy
-- `/signup` is the explicit continuation path for users who do not yet have a Reliai account
-- the no-account error state now offers a contextual "Send invitation instead" handoff into `/signup`
+- `/signup` remains the explicit continuation path for users who do not yet have a Reliai account
+- the no-account error state now queues a pending invitation and offers a contextual "Send invitation instead" handoff into `/signup`
 - the `/signup` surface now renders team-invite context when the handoff includes `entry=team-invite`
+- email delivery and invite acceptance remain deferred
 
 ## 5) Completion Criteria for Functional Parity
 Functional parity can be called complete only when:
 - all high-impact functional gaps are closed,
-- remaining deferred items are explicitly documented,
+- remaining deferred items are explicitly documented with their implemented subset,
 - migration tracker and gap report are in sync.

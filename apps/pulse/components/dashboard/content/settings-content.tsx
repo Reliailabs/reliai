@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { buildTeamInviteSignupHref } from "@/lib/team-invite-link";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings, Trash2, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { SettingsInvitationItem, SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { TeamMember } from "@/app/api/settings/team/route";
 
 const defaultSettingsSections = [
@@ -111,6 +111,10 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
   const [isInviting, setIsInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [pendingInvitations, setPendingInvitations] = useState<SettingsInvitationItem[]>([]);
+  const [pendingInvitationsLoading, setPendingInvitationsLoading] = useState(true);
+  const [pendingInvitationsError, setPendingInvitationsError] = useState<string | null>(null);
+  const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -159,8 +163,36 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
         const data = (await r.json()) as { items: TeamMember[] };
         setMembers(data.items ?? []);
       })
-      .catch(() => setTeamError("Could not load team members."))
-      .finally(() => setTeamLoading(false));
+        .catch(() => setTeamError("Could not load team members."))
+        .finally(() => setTeamLoading(false));
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setPendingInvitationsLoading(true);
+    void fetch("/api/settings/team/invitations", { cache: "no-store" })
+      .then(async (response) => {
+        if (response.status === 403) {
+          setPendingInvitationsError("Pending invitations require a plan upgrade.");
+          return null;
+        }
+        if (!response.ok) return null;
+        return (await response.json()) as { items?: SettingsInvitationItem[] };
+      })
+      .then((payload) => {
+        if (!isMounted || !payload) return;
+        setPendingInvitations(payload.items ?? []);
+      })
+      .catch(() => {
+        if (isMounted) setPendingInvitationsError("Could not load pending invitations.");
+      })
+      .finally(() => {
+        if (isMounted) setPendingInvitationsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   async function handleInvite() {
@@ -174,6 +206,27 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
         body: JSON.stringify({ name: inviteName.trim(), email: inviteEmail.trim(), role: inviteRole }),
       });
       if (r.status === 404) {
+        const pendingResponse = await fetch("/api/settings/team/invitations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+        });
+        if (pendingResponse.ok) {
+          const invitation = (await pendingResponse.json()) as SettingsInvitationItem;
+          setPendingInvitations((prev) => [invitation, ...prev.filter((item) => item.id !== invitation.id)]);
+          setInviteMessage({
+            text: `No Reliai account found for ${invitation.invitedEmail}. Invitation queued and /signup remains the continuation path.`,
+            ok: false,
+          });
+          return;
+        }
+        if (pendingResponse.status === 409) {
+          setInviteMessage({
+            text: `An invitation is already pending for ${inviteEmail.trim()}. Continue with /signup.`,
+            ok: false,
+          });
+          return;
+        }
         setInviteMessage({ text: "No Reliai account found for that email. They need to sign up first.", ok: false });
         return;
       }
@@ -210,7 +263,26 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     }
   }
 
+  async function handleRevokeInvitation(invitationId: string) {
+    if (revokingInvitationId) return;
+    setRevokingInvitationId(invitationId);
+    try {
+      const response = await fetch(`/api/settings/team/invitations/${invitationId}`, { method: "DELETE" });
+      if (response.ok || response.status === 204) {
+        setPendingInvitations((prev) => prev.filter((item) => item.id !== invitationId));
+      }
+    } finally {
+      setRevokingInvitationId(null);
+    }
+  }
+
   function formatJoinedAt(iso: string): string {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function formatInviteDate(iso: string): string {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -424,6 +496,51 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
           </div>
         )}
 
+        {/* Pending invitations */}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-foreground">Pending Invitations</p>
+            <p className="text-[11px] text-muted-foreground">Queued invites are visible here until accepted or revoked.</p>
+          </div>
+          {pendingInvitationsLoading ? (
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-12 rounded-xl bg-muted/40 animate-pulse" />
+              ))}
+            </div>
+          ) : pendingInvitationsError ? (
+            <p className="text-xs text-destructive">{pendingInvitationsError}</p>
+          ) : pendingInvitations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pending invitations.</p>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-border">
+              {pendingInvitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="grid grid-cols-[minmax(0,1.6fr)_0.8fr_1fr_0.8fr_0.8fr_auto] gap-3 border-b border-border px-4 py-3 last:border-b-0"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{invitation.invitedEmail}</p>
+                    <p className="text-xs text-muted-foreground">Expires {formatInviteDate(invitation.expiresAt)}</p>
+                  </div>
+                  <p className="text-sm capitalize text-muted-foreground">{invitation.role}</p>
+                  <p className="truncate text-sm text-muted-foreground">{invitation.invitedByEmail}</p>
+                  <p className="text-sm text-muted-foreground">{formatInviteDate(invitation.createdAt)}</p>
+                  <p className="text-sm capitalize text-muted-foreground">{invitation.status}</p>
+                  <button
+                    type="button"
+                    onClick={() => void handleRevokeInvitation(invitation.id)}
+                    disabled={revokingInvitationId === invitation.id}
+                    className="text-xs font-medium text-destructive underline underline-offset-2 disabled:opacity-40"
+                  >
+                    {revokingInvitationId === invitation.id ? "Revoking…" : "Revoke"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Add member form */}
         <div className="space-y-3">
           <p className="text-xs font-medium text-foreground">Add member</p>
@@ -477,7 +594,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             </Link>
           ) : null}
           <p className="text-[11px] text-muted-foreground">
-            If they already have a Reliai account, use Add. If not, use Send invitation instead and continue with account creation in /signup. External invite lifecycle is deferred and tracked in migration parity docs.{" "}
+            If they already have a Reliai account, use Add. If not, use Send invitation instead to queue a pending invitation and continue with account creation in /signup.{" "}
             <Link href="/signup" className="underline underline-offset-2">
               Continue with account creation at /signup
             </Link>
