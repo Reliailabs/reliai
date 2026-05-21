@@ -67,6 +67,9 @@ test("settings team UI makes external invite lifecycle ownership explicit", () =
   assert.match(settingsFile, /If they already have a Reliai account, use Add\./);
   assert.match(settingsFile, /Pending Invitations/);
   assert.match(settingsFile, /Open join link/);
+  assert.match(settingsFile, /const joinReturnTo = projectScope/);
+  assert.match(settingsFile, /params\.set\("return_to", joinReturnTo\)/);
+  assert.match(settingsFile, /href=\{buildInvitationJoinHref\(invitation\.joinPath\)\}/);
   assert.match(settingsFile, /Delivery: manual join link \(email delivery deferred\)\./);
   assert.match(settingsFile, /Queued invites are visible here until accepted or revoked\./);
   assert.match(settingsFile, /Invitation emails are not auto-delivered from Pulse yet\./);

@@ -95,6 +95,9 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
   const searchParams = useSearchParams();
   const projectScope = searchParams.get("project_id") ?? searchParams.get("projectId");
   const onCallHref = projectScope ? `/on-call?project_id=${encodeURIComponent(projectScope)}` : "/on-call";
+  const joinReturnTo = projectScope
+    ? `/settings?project_id=${encodeURIComponent(projectScope)}#team`
+    : "/settings#team";
   const settingsSections = settingsData?.quickItems?.length
     ? settingsData.quickItems
     : defaultSettingsSections.map((section) => ({ ...section, status: "mapped" as const }));
@@ -290,6 +293,16 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function buildInvitationJoinHref(joinPath: string): string {
+    if (!joinPath.startsWith("/")) return joinPath;
+    const [path, hash = ""] = joinPath.split("#", 2);
+    const params = new URLSearchParams(path.split("?")[1] ?? "");
+    params.set("return_to", joinReturnTo);
+    const basePath = path.split("?")[0] ?? joinPath;
+    const suffix = hash ? `#${hash}` : "";
+    return `${basePath}?${params.toString()}${suffix}`;
   }
 
   const signupInviteHref =
@@ -525,7 +538,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">{invitation.invitedEmail}</p>
-                    <Link href={invitation.joinPath} className="text-xs font-medium text-primary underline underline-offset-2">
+                    <Link href={buildInvitationJoinHref(invitation.joinPath)} className="text-xs font-medium text-primary underline underline-offset-2">
                       Open join link
                     </Link>
                     <p className="text-xs text-muted-foreground">Expires {formatInviteDate(invitation.expiresAt)}</p>
