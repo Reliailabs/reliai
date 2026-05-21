@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AppShellFrame } from "@/components/dashboard/app-shell-frame";
 import { ProjectScopeSelector } from "@/components/dashboard/project-scope-selector";
 import { getRegressionsSurfaceData } from "@/lib/regressions-data";
 import { listProjectScopeOptions } from "@/lib/project-scope-data";
@@ -29,28 +30,30 @@ export default async function RegressionDetailPage({ params, searchParams }: Reg
   if (!item) notFound();
 
   return (
-    <div className="mx-auto w-full max-w-[1000px] px-6 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Regression — {item.id}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Legacy regression detail. Operations provides timeline/proposal/verification context.</p>
+    <AppShellFrame activeSection="regressions" projectScope={{ projects, selectedProjectId }}>
+      <div className="mx-auto w-full max-w-[1000px] px-6 py-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Regression — {item.id}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Legacy regression detail. Operations provides timeline/proposal/verification context.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ProjectScopeSelector projects={projects} selectedProjectId={selectedProjectId ?? null} />
+            <Link href={`/operations/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
+              Open in Operations
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ProjectScopeSelector projects={projects} selectedProjectId={selectedProjectId ?? null} />
-          <Link href={`/operations/regressions/${item.id}${scopeQuery}`} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted">
-            Open in Operations
+        <div className="mt-4 rounded-xl border border-border bg-card p-4">
+          <p className="text-sm font-medium text-foreground">{item.summary}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{item.status} • detected {time(item.detectedAt)}</p>
+        </div>
+        <div className="mt-4">
+          <Link href={`/regressions${scopeQuery}`} className="text-sm text-muted-foreground hover:text-foreground">
+            Back to regressions
           </Link>
         </div>
       </div>
-      <div className="mt-4 rounded-xl border border-border bg-card p-4">
-        <p className="text-sm font-medium text-foreground">{item.summary}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{item.status} • detected {time(item.detectedAt)}</p>
-      </div>
-      <div className="mt-4">
-        <Link href={`/regressions${scopeQuery}`} className="text-sm text-muted-foreground hover:text-foreground">
-          Back to regressions
-        </Link>
-      </div>
-    </div>
+    </AppShellFrame>
   );
 }

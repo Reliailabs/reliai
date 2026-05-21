@@ -205,9 +205,11 @@ test("regression navigation links and compare shim preserve project scope query"
   const projectRegressions = read("app/(app)/projects/[projectId]/regressions/page.tsx");
   const compareShim = read("app/(app)/regressions/[regressionId]/compare/page.tsx");
 
+  assert.match(regressionsList, /<AppShellFrame activeSection="regressions" projectScope=\{\{ projects, selectedProjectId \}\}>/);
   assert.match(regressionsList, /href=\{`\/operations\/regressions\/\$\{item\.id\}\$\{scopeQuery\}`\}/);
   assert.match(regressionDetail, /searchParams: Promise<\{ project_id\?: string \}>/);
   assert.match(regressionDetail, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(regressionDetail, /<AppShellFrame activeSection="regressions" projectScope=\{\{ projects, selectedProjectId \}\}>/);
   assert.match(regressionDetail, /<ProjectScopeSelector projects=\{projects\} selectedProjectId=\{selectedProjectId \?\? null\} \/>/);
   assert.match(regressionDetail, /href=\{`\/operations\/regressions\/\$\{item\.id\}\$\{scopeQuery\}`\}/);
   assert.match(projectRegressions, /href=\{`\/operations\/regressions\/\$\{item\.id\}\?project_id=\$\{encodeURIComponent\(projectId\)\}`\}/);
