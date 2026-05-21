@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "response-team-settings-oncall-continuity",
+      "classification": "functional continuity gap",
+      "impact": "high",
+      "status": "resolved",
+      "decision": "implement",
+      "source": "apps/web org-members + incident members flows",
+      "pulse": "apps/pulse /settings#team + /on-call continuity contracts and scope wiring"
+    },
+    {
+      "id": "system-surfaces-deferred-parity-classification",
+      "classification": "deferred behavior delta",
+      "impact": "medium",
+      "status": "deferred",
+      "decision": "defer",
+      "owner": "migration",
+      "target_phase": "functional-parity-pass",
+      "source": "apps/web system admin behaviors",
+      "pulse": "apps/pulse legacy system route group still carrying deferred copy/wrappers"
+    },
+    {
+      "id": "readwrite-capability-matrix-closure",
+      "classification": "read/write delta",
+      "impact": "high",
+      "status": "pending",
+      "decision": "implement",
+      "owner": "migration",
+      "target_phase": "functional-parity-pass",
+      "source": "apps/web route-level write capabilities",
+      "pulse": "apps/pulse route-level write parity classification and implementation queue"
+    }
+  ]
+}

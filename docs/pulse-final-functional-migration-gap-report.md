@@ -63,6 +63,9 @@ Action:
 - produce explicit write-capability matrix per route (create/edit/approve/execute/rollback where applicable).
 - tag each gap with migration decision and target phase.
 
+Contract source of truth:
+- `docs/pulse-functional-parity-gaps.json`
+
 ## 4) Immediate Execution Queue
 
 1. Response Team functional verification slice (F1) with explicit test/probe outputs.
