@@ -73,6 +73,8 @@ test("settings team UI makes external invite lifecycle ownership explicit", () =
   assert.match(settingsFile, /Revoke/);
   assert.match(settingsFile, /queue a pending invitation/);
   assert.match(settingsFile, /Continue with account creation at \/signup/);
+  assert.match(settingsFile, /searchParams\.get\("project_id"\) \?\? searchParams\.get\("projectId"\)/);
+  assert.match(settingsFile, /const onCallHref = projectScope \? `\/on-call\?project_id=\$\{encodeURIComponent\(projectScope\)\}` : "\/on-call"/);
   assert.doesNotMatch(settingsFile, /must already have a Reliai account/i);
   assert.doesNotMatch(settingsFile, /coming soon/i);
 });

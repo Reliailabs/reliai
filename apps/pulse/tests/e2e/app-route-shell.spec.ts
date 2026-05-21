@@ -281,6 +281,22 @@ test("on-call project scope selector updates canonical query and assignment form
   expect(firstHiddenProjectId).toBe(targetValue);
 });
 
+test("settings team on-call continuity link preserves resolved project scope", async ({ page }) => {
+  await ensureSignedIn(page, "/settings?project_id=proj_scope#team");
+  await expect(page).toHaveURL(/\/settings\?project_id=/);
+  const scopedProjectId = new URL(page.url()).searchParams.get("project_id");
+  if (!scopedProjectId) {
+    test.skip(true, "SKIPPED_SETTINGS_ONCALL_SCOPE: no resolved project scope available.");
+  }
+
+  const onCallLink = page.getByRole("link", { name: "On-Call" }).first();
+  const onCallHref = await onCallLink.getAttribute("href");
+  expect(onCallHref).toContain(`project_id=${scopedProjectId}`);
+
+  await onCallLink.click();
+  await expect(page).toHaveURL(new RegExp(`/on-call\\?project_id=${scopedProjectId}`));
+});
+
 test("version ownership shims preserve canonical project scope into traces", async ({ page }) => {
   await ensureSignedIn(page, "/traces");
   await expect(page).toHaveURL(/\/(traces|pulse)/);
