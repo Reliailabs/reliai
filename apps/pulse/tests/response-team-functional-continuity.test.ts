@@ -43,3 +43,14 @@ test("response-team right panel keeps Team Members remediation path visible", ()
   assert.match(file, /searchParams\.get\("project_id"\) \?\? searchParams\.get\("projectId"\)/);
   assert.match(file, /\/api\/oncall\/response-team\?project_id=\$\{encodeURIComponent\(projectId\)\}/);
 });
+
+test("team member add/remove and on-call assignment source stay on same org membership contract", () => {
+  const teamRoute = read("app/api/settings/team/route.ts");
+  const teamDeleteRoute = read("app/api/settings/team/[userId]/route.ts");
+  const onCallPage = read("app/(app)/on-call/page.tsx");
+
+  assert.match(teamRoute, /\/api\/v1\/organizations\/\$\{auth\.orgId\}\/members/);
+  assert.match(teamDeleteRoute, /\/api\/v1\/organizations\/\$\{orgId\}\/members\/\$\{userId\}/);
+  assert.match(onCallPage, /\/api\/v1\/organizations\/\$\{selectedProjectDetail\.organization_id\}\/members/);
+  assert.match(onCallPage, /type TeamMember = \{\s*user_id: string;\s*display_name: string \| null;\s*email: string \| null;/s);
+});
