@@ -1,6 +1,6 @@
 # Pulse Migration Parity Sweep Tracker
 
-Status: Active (Scope/ownership parity stabilized; functional parity audit in progress)
+Status: Active (Scope/ownership parity stabilized; high-impact functional parity closed)
 Scope: apps/web -> apps/pulse functional parity
 
 ## 1) Current Migration State
@@ -28,14 +28,15 @@ Runtime continuity coverage remains:
 
 `docs/pulse-migration-parity-gaps.json` currently tracks only scope/ownership blockers and is fully resolved.
 
-## 2) Functional Parity Audit Pass (Active)
+## 2) Functional Parity Audit Pass
 
 The next migration stage is functional parity vs apps/web behavior, not more scope-routing work.
 
-Active audit focus:
-- route behavior parity where Pulse still presents legacy/read-only adapters
-- write-path parity gaps that block operator workflows
-- deferred system subroutes that are explicitly classified and owner-tracked
+Current functional status:
+- high-impact behavior parity gaps are closed and test-gated
+- system-surface deferments are explicitly classified
+- read/write parity matrix is explicit and owner-tagged
+- remaining open item is medium-impact external invite lifecycle ownership (`/settings#team`)
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
@@ -50,11 +51,15 @@ Implemented in Pulse:
 - on-call assignment/escalation management: `/on-call` and `/projects/[projectId]/on-call`
 - explicit separation of org access roles vs on-call duty roles
 
-Required functional parity check (still open):
+Required functional parity checks (closed):
 1. Add member in `/settings#team`.
 2. Verify member appears in `/on-call` assignment selectors for the same organization/project.
 3. Verify project scope switching in `/on-call` does not cross-assign between projects.
 4. Verify role naming/labels are consistent and non-conflicting between Team role and On-call role.
+
+Validation artifacts:
+- `apps/pulse/tests/response-team-functional-continuity.test.ts`
+- `apps/pulse/tests/e2e/app-route-shell.spec.ts` (`on-call` scope continuity probe)
 
 ## 4) Rules for Remaining Slices
 

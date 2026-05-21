@@ -7,10 +7,11 @@
       "id": "F1",
       "title": "Response Team end-to-end continuity",
       "impact": "high",
-      "state": "open",
+      "state": "closed",
       "type": "functional_continuity",
       "owner": "Migration",
       "target_phase": "current functional parity",
+      "artifact": "apps/pulse/tests/response-team-functional-continuity.test.ts",
       "acceptance": [
         "team member add/invite from /settings#team is assignable in /on-call",
         "project scope switching in /on-call does not leak assignment context",

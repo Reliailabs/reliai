@@ -8,7 +8,7 @@ Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership c
 
 Scope and ownership migration is materially stabilized and test-gated.
 
-Functional parity is not complete yet. Remaining risk is no longer route existence; it is behavior parity (especially write-path and deferred system surfaces).
+High-impact functional parity gaps are closed and contract-gated. Remaining risk is medium-impact ownership deferment for external invite lifecycle.
 
 ## 2) What Is Already Closed
 
@@ -21,28 +21,28 @@ Validation backing:
 - `pnpm --filter pulse test:migration-scope-parity-gate`
 - `pnpm --filter pulse test:e2e:app-route-gate`
 
-## 3) High-Impact Open Functional Gaps
+## 3) Functional Gap Status
 
 ### F1. Response Team end-to-end functional continuity
 
 Classification: `functional continuity gap`  
 Impact: `high`
+Status: `closed`
 
 Current state:
 - Team members are managed in `/settings#team`.
 - On-call assignments are managed in `/on-call`.
-- Separation is implemented, but end-to-end continuity needs explicit parity verification.
+- End-to-end continuity is explicitly verified by migration parity contract + e2e runtime probes.
 
-Required parity checks:
-1. invite/add member in settings.
-2. verify immediate assignment availability in on-call role selectors.
-3. verify project scope changes do not leak assignment context.
-4. verify labels are unambiguous between access role and on-call duty role.
+Evidence:
+1. `apps/pulse/tests/response-team-functional-continuity.test.ts`
+2. `apps/pulse/tests/e2e/app-route-shell.spec.ts` (`on-call` scope continuity probe)
 
 ### F2. System surface deferment classification
 
 Classification: `deferred behavior delta`  
 Impact: `medium`
+Status: `closed`
 
 Current state:
 - classification is now explicit in `docs/pulse-system-surface-classification.md`.
@@ -57,6 +57,7 @@ Action:
 
 Classification: `read/write delta`  
 Impact: `medium`
+Status: `closed`
 
 Current state:
 - route-level write matrix is now explicit in `docs/pulse-read-write-parity-matrix.json`.
@@ -69,9 +70,8 @@ Action:
 
 ## 4) Immediate Execution Queue
 
-1. Response Team functional verification slice (F1) with explicit test/probe outputs.
-2. Response Team runtime verification probe extension (cross-project assignment isolation).
-3. Medium-impact deferred invite lifecycle ownership decision (`/settings#team` external invites).
+1. Optional product/auth decision: external invite lifecycle ownership (`/settings#team`) beyond migration scope.
+2. Keep matrix/tracker sync in every follow-up parity PR.
 
 ## 5) Completion Criteria for Functional Parity
 
