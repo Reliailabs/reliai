@@ -16,7 +16,8 @@ Resolved and gated by executable tests:
   - `/model-versions/[id]` -> `/traces?project_id=...&model_version_id=...`
   - `/prompt-versions/[id]` -> `/traces?project_id=...&prompt_version=...`
   - `/regressions/[regressionId]/compare` -> `/operations/regressions/[regressionId]`
-- shared shell consistency across key non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
+  - shared shell consistency across key non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
+  - public invite redemption surface (`/join`) is intentionally outside `(app)` and treated as a documented ownership shim for invite acceptance
 
 ### Migration gate
 
@@ -30,13 +31,13 @@ Runtime continuity coverage remains:
 
 ## 2) Functional Parity Audit Pass
 
-The next migration stage is functional parity vs apps/web behavior, not more scope-routing work.
+High-impact functional parity is closed. Remaining work is limited to explicitly deferred behavior, not more scope-routing work.
 
 Current functional status:
 - high-impact behavior parity gaps are closed and test-gated
 - system-surface deferments are explicitly classified
 - read/write parity matrix is explicit and owner-tagged
-- remaining open item is medium-impact external invite lifecycle ownership (`/settings#team`)
+- external invite lifecycle now has queue/revoke plus local redeem coverage, while email delivery remains deferred
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
@@ -66,3 +67,4 @@ Validation artifacts:
 - No migration slice closes without updating this tracker and the functional gap report.
 - Prefer user-visible functional parity fixes over gate/process expansion.
 - Keep scopes isolated per branch/PR.
+- New work now requires either a newly discovered parity gap or a product-level requirement; do not reopen resolved high-impact parity slices.

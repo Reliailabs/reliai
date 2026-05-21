@@ -41,7 +41,7 @@ export default async function SystemPage() {
   return (
     <SystemLayoutShell
       title="System"
-      description="System command center for platform health, pipeline telemetry, extension runtime, and upcoming intelligence surfaces."
+      description="System command center for platform health, pipeline telemetry, extension runtime, and reliability intelligence surfaces."
     >
       <section className="grid gap-4 md:grid-cols-3">
         <Link href="/pulse/system/platform" className="rounded-2xl border border-border bg-card p-5 hover:bg-muted/30">

@@ -20,7 +20,7 @@ test("settings team route enforces invite identity fields and role", () => {
 test("on-call page uses organization members as assignment source and separates access-role vs duty-role semantics", () => {
   const onCallFile = read("app/(app)/on-call/page.tsx");
   const settingsFile = read("components/dashboard/content/settings-content.tsx");
-  assert.match(onCallFile, /apiRequest<\{ items: TeamMember\[] \}>\(`/);
+  assert.match(onCallFile, /apiRequest<\{ items: TeamMember\[\] \}>/);
   assert.match(onCallFile, /\/api\/v1\/organizations\/\$\{selectedProjectDetail\.organization_id\}\/members/);
   assert.match(onCallFile, /These are response duty roles, not organization access roles\./);
   assert.match(onCallFile, /name=\{role\}/);
@@ -57,9 +57,26 @@ test("team member add/remove and on-call assignment source stay on same org memb
   assert.match(onCallPage, /type TeamMember = \{\s*user_id: string;\s*display_name: string \| null;\s*email: string \| null;/s);
 });
 
-test("settings team UI declares deferred external invite lifecycle ownership explicitly", () => {
+test("settings team UI makes external invite lifecycle ownership explicit", () => {
   const settingsFile = read("components/dashboard/content/settings-content.tsx");
-  assert.match(settingsFile, /existing-account membership attach/);
-  assert.match(settingsFile, /External invite lifecycle is deferred and tracked in migration parity docs/);
-  assert.match(settingsFile, /Continue with account creation at/);
+  assert.match(settingsFile, /buildTeamInviteSignupHref\(inviteEmail\)/);
+  assert.match(settingsFile, /href=\{signupInviteHref\}/);
+  assert.match(settingsFile, /api\/settings\/team\/invitations/);
+  assert.match(settingsFile, /Send invitation instead/);
+  assert.match(settingsFile, /join link is now available below/);
+  assert.match(settingsFile, /If they already have a Reliai account, use Add\./);
+  assert.match(settingsFile, /Pending Invitations/);
+  assert.match(settingsFile, /Open join link/);
+  assert.match(settingsFile, /Queued invites are visible here until accepted or revoked\./);
+  assert.match(settingsFile, /Revoke/);
+  assert.match(settingsFile, /queue a pending invitation/);
+  assert.match(settingsFile, /Continue with account creation at \/signup/);
+  assert.doesNotMatch(settingsFile, /must already have a Reliai account/i);
+  assert.doesNotMatch(settingsFile, /coming soon/i);
+});
+
+test("settings quick settings copy no longer claims upcoming parity slices", () => {
+  const settingsFile = read("components/dashboard/content/settings-content.tsx");
+  assert.match(settingsFile, /Some controls remain intentionally stubbed/);
+  assert.doesNotMatch(settingsFile, /upcoming parity slices/i);
 });

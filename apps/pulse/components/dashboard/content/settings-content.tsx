@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { buildTeamInviteSignupHref } from "@/lib/team-invite-link";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings, Trash2, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
+import type { SettingsInvitationItem, SettingsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { TeamMember } from "@/app/api/settings/team/route";
 
 const defaultSettingsSections = [
@@ -109,8 +110,11 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
   const [inviteRole, setInviteRole] = useState("engineer");
   const [isInviting, setIsInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<{ text: string; ok: boolean } | null>(null);
-  const [inviteOwnershipPath, setInviteOwnershipPath] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [pendingInvitations, setPendingInvitations] = useState<SettingsInvitationItem[]>([]);
+  const [pendingInvitationsLoading, setPendingInvitationsLoading] = useState(true);
+  const [pendingInvitationsError, setPendingInvitationsError] = useState<string | null>(null);
+  const [revokingInvitationId, setRevokingInvitationId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -159,15 +163,42 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
         const data = (await r.json()) as { items: TeamMember[] };
         setMembers(data.items ?? []);
       })
-      .catch(() => setTeamError("Could not load team members."))
-      .finally(() => setTeamLoading(false));
+        .catch(() => setTeamError("Could not load team members."))
+        .finally(() => setTeamLoading(false));
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setPendingInvitationsLoading(true);
+    void fetch("/api/settings/team/invitations", { cache: "no-store" })
+      .then(async (response) => {
+        if (response.status === 403) {
+          setPendingInvitationsError("Pending invitations require a plan upgrade.");
+          return null;
+        }
+        if (!response.ok) return null;
+        return (await response.json()) as { items?: SettingsInvitationItem[] };
+      })
+      .then((payload) => {
+        if (!isMounted || !payload) return;
+        setPendingInvitations(payload.items ?? []);
+      })
+      .catch(() => {
+        if (isMounted) setPendingInvitationsError("Could not load pending invitations.");
+      })
+      .finally(() => {
+        if (isMounted) setPendingInvitationsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   async function handleInvite() {
     if (!inviteName.trim() || !inviteEmail.trim() || isInviting) return;
     setIsInviting(true);
     setInviteMessage(null);
-    setInviteOwnershipPath(null);
     try {
       const r = await fetch("/api/settings/team", {
         method: "POST",
@@ -175,9 +206,28 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
         body: JSON.stringify({ name: inviteName.trim(), email: inviteEmail.trim(), role: inviteRole }),
       });
       if (r.status === 404) {
-        const payload = (await r.json()) as { signup_path?: string };
-        setInviteOwnershipPath(payload.signup_path ?? "/signup");
-        setInviteMessage({ text: "No Reliai account found for that email. Account creation is owned by /signup before member add.", ok: false });
+        const pendingResponse = await fetch("/api/settings/team/invitations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+        });
+        if (pendingResponse.ok) {
+          const invitation = (await pendingResponse.json()) as SettingsInvitationItem;
+          setPendingInvitations((prev) => [invitation, ...prev.filter((item) => item.id !== invitation.id)]);
+          setInviteMessage({
+            text: `No Reliai account found for ${invitation.invitedEmail}. Invitation queued and the join link is now available below.`,
+            ok: false,
+          });
+          return;
+        }
+        if (pendingResponse.status === 409) {
+          setInviteMessage({
+            text: `An invitation is already pending for ${inviteEmail.trim()}. Continue with /signup.`,
+            ok: false,
+          });
+          return;
+        }
+        setInviteMessage({ text: "No Reliai account found for that email. They need to sign up first.", ok: false });
         return;
       }
       if (r.status === 403) {
@@ -213,11 +263,35 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     }
   }
 
+  async function handleRevokeInvitation(invitationId: string) {
+    if (revokingInvitationId) return;
+    setRevokingInvitationId(invitationId);
+    try {
+      const response = await fetch(`/api/settings/team/invitations/${invitationId}`, { method: "DELETE" });
+      if (response.ok || response.status === 204) {
+        setPendingInvitations((prev) => prev.filter((item) => item.id !== invitationId));
+      }
+    } finally {
+      setRevokingInvitationId(null);
+    }
+  }
+
   function formatJoinedAt(iso: string): string {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   }
+
+  function formatInviteDate(iso: string): string {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  const signupInviteHref =
+    inviteEmail.trim().length > 0
+      ? buildTeamInviteSignupHref(inviteEmail)
+      : null;
 
   async function handleSaveProfile() {
     setIsSaving(true);
@@ -327,7 +401,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
       <div id="appearance" className="bg-card rounded-2xl border border-border overflow-hidden">
         <h3 className="font-semibold text-foreground p-6 pb-4">Quick Settings</h3>
         <p className="px-6 pb-4 text-xs text-muted-foreground">
-          Some controls are staged for upcoming parity slices and are marked as Planned or Partial.
+          Some controls remain intentionally stubbed and are marked as Planned or Partial until their owner contracts are implemented.
         </p>
         <div className="divide-y divide-border">
           {settingsSections.map((section) => {
@@ -422,6 +496,54 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
           </div>
         )}
 
+        {/* Pending invitations */}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-foreground">Pending Invitations</p>
+            <p className="text-[11px] text-muted-foreground">Queued invites are visible here until accepted or revoked.</p>
+          </div>
+          {pendingInvitationsLoading ? (
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-12 rounded-xl bg-muted/40 animate-pulse" />
+              ))}
+            </div>
+          ) : pendingInvitationsError ? (
+            <p className="text-xs text-destructive">{pendingInvitationsError}</p>
+          ) : pendingInvitations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pending invitations.</p>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-border">
+              {pendingInvitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="grid grid-cols-[minmax(0,1.6fr)_0.8fr_1fr_0.8fr_0.8fr_auto] gap-3 border-b border-border px-4 py-3 last:border-b-0"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{invitation.invitedEmail}</p>
+                    <Link href={invitation.joinPath} className="text-xs font-medium text-primary underline underline-offset-2">
+                      Open join link
+                    </Link>
+                    <p className="text-xs text-muted-foreground">Expires {formatInviteDate(invitation.expiresAt)}</p>
+                  </div>
+                  <p className="text-sm capitalize text-muted-foreground">{invitation.role}</p>
+                  <p className="truncate text-sm text-muted-foreground">{invitation.invitedByEmail}</p>
+                  <p className="text-sm text-muted-foreground">{formatInviteDate(invitation.createdAt)}</p>
+                  <p className="text-sm capitalize text-muted-foreground">{invitation.status}</p>
+                  <button
+                    type="button"
+                    onClick={() => void handleRevokeInvitation(invitation.id)}
+                    disabled={revokingInvitationId === invitation.id}
+                    className="text-xs font-medium text-destructive underline underline-offset-2 disabled:opacity-40"
+                  >
+                    {revokingInvitationId === invitation.id ? "Revoking…" : "Revoke"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Add member form */}
         <div className="space-y-3">
           <p className="text-xs font-medium text-foreground">Add member</p>
@@ -465,21 +587,20 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             </Button>
           </div>
           {inviteMessage ? (
-            <p className={cn("text-xs", inviteMessage.ok ? "text-success" : "text-destructive")}>
-              {inviteMessage.text}
-            </p>
-          ) : null}
-          {inviteOwnershipPath ? (
-            <p className="text-xs text-muted-foreground">
-              Continue with account creation at{" "}
-              <Link href={inviteOwnershipPath} className="underline underline-offset-2">
-                {inviteOwnershipPath}
-              </Link>
-              , then retry member add.
-            </p>
-          ) : null}
-          <p className="text-[11px] text-muted-foreground">
-            Team Members add is intentionally existing-account membership attach. External invite lifecycle is deferred and tracked in migration parity docs.
+          <p className={cn("text-xs", inviteMessage.ok ? "text-success" : "text-destructive")}>
+            {inviteMessage.text}
+          </p>
+        ) : null}
+        {!inviteMessage?.ok && signupInviteHref ? (
+          <Link href={signupInviteHref} className="text-xs font-medium text-primary underline underline-offset-2">
+            Send invitation instead
+          </Link>
+        ) : null}
+        <p className="text-[11px] text-muted-foreground">
+            If they already have a Reliai account, use Add. If not, use Send invitation instead to queue a pending invitation and open the join link for acceptance.{" "}
+            <Link href="/signup" className="underline underline-offset-2">
+              Continue with account creation at /signup
+            </Link>
           </p>
           <p className="text-[11px] text-muted-foreground">
             On-call duty roles are configured separately in <Link href="/on-call" className="underline underline-offset-2">On-Call</Link>.

@@ -8,7 +8,7 @@ Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership c
 
 Scope and ownership migration is materially stabilized and test-gated.
 
-High-impact functional parity gaps are closed and contract-gated. Remaining risk is medium-impact ownership deferment for external invite lifecycle.
+High-impact functional parity gaps are closed. Remaining work is limited to explicitly deferred behavior, not route/ownership parity.
 
 ## 2) What Is Already Closed
 
@@ -16,70 +16,67 @@ High-impact functional parity gaps are closed and contract-gated. Remaining risk
 - deterministic project resolution (no implicit first-project behavior)
 - ownership-shift route shims with canonical query output
 - shared-shell alignment on recently migrated non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
+- Response Team functional continuity across settings and on-call surfaces
+- system-surface classification and read/write parity matrices
 
 Validation backing:
 - `pnpm --filter pulse test:migration-scope-parity-gate`
 - `pnpm --filter pulse test:e2e:app-route-gate`
 
-## 3) Functional Gap Status
+## 3) Closed Functional Gaps
 
 ### F1. Response Team end-to-end functional continuity
 
-Classification: `functional continuity gap`  
+Classification: `functional continuity gap`
 Impact: `high`
-Status: `closed`
-
-Current state:
-- Team members are managed in `/settings#team`.
-- On-call assignments are managed in `/on-call`.
-- End-to-end continuity is explicitly verified by migration parity contract + e2e runtime probes.
+State: `closed`
 
 Evidence:
-1. `apps/pulse/tests/response-team-functional-continuity.test.ts`
-2. `apps/pulse/tests/e2e/app-route-shell.spec.ts` (`on-call` scope continuity probe)
+- Team member add/invite from `/settings#team` is assignable in `/on-call`
+- project scope switching in `/on-call` does not leak assignment context
+- access role labels are not conflated with on-call duty roles
 
-### F2. System surface deferment classification
+### F2. Deferred/legacy system surface classification
 
-Classification: `deferred behavior delta`  
+Classification: `deferred behavior delta`
 Impact: `medium`
-Status: `closed`
+State: `closed`
+
+Evidence:
+- legacy system surfaces are classified as implement/defer/intentional exception
+- deferred placeholder language was removed from canonical system landing surfaces
+- legacy aliases remain redirect-only wrappers
+
+### F3. Read/write parity matrix completion
+
+Classification: `read/write delta`
+Impact: `high`
+State: `closed`
+
+Evidence:
+- route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged
+- unresolved write gaps have explicit defer/implement decisions with target phase
+
+## 4) Remaining Deferred Item
+
+### External invite lifecycle delivery
+
+Classification: `deferred behavior delta`
+Impact: `medium`
 
 Current state:
-- classification is now explicit in `docs/pulse-system-surface-classification.md`.
-- legacy aliases are documented as `intentional exception`.
-- `/system/customers/[projectId]` parity is now implemented in Pulse with legacy alias preservation.
-
-Action:
-- keep the classification matrix updated for every system-surface change.
-- keep legacy aliases redirect-only (no duplicate owned UI surfaces).
-
-### F3. Read/write parity matrix is explicit and gate-backed
-
-Classification: `read/write delta`  
-Impact: `medium`
-Status: `closed`
-
-Current state:
-- route-level write matrix is now explicit in `docs/pulse-read-write-parity-matrix.json`.
-- high-impact write routes in migration scope are implemented and contract-gated.
-- only medium-impact deferred item remains: external invite lifecycle in Team Members.
-
-Action:
-- keep the write matrix updated for every migrated write surface change.
-- treat any new high-impact unresolved write row as gate failure.
-
-Contract source of truth:
-- `docs/pulse-functional-parity-gaps.json`
-
-## 4) Immediate Execution Queue
-
-1. Optional product/auth decision: external invite lifecycle ownership (`/settings#team`) beyond migration scope.
-2. Keep matrix/tracker sync in every follow-up parity PR.
+- pending invitation persistence is implemented and surfaced in Team settings
+- admins can queue and revoke pending invitations from the Settings surface
+- queued invites now expose a tokenized `/join?token=...` redemption path
+- the invite redeem flow creates the membership/session in the current local auth stack
+- `/join` is a documented public ownership shim for invite acceptance and is intentionally outside `(app)`
+- `/signup` remains the explicit continuation path for users who do not yet have a Reliai account
+- the no-account error state now queues a pending invitation and offers a contextual "Send invitation instead" handoff into `/signup`
+- the `/signup` surface still renders team-invite context when the handoff includes `entry=team-invite`
+- email delivery remains deferred
 
 ## 5) Completion Criteria for Functional Parity
-
 Functional parity can be called complete only when:
-- all high-impact functional gaps are either implemented or explicitly accepted as exceptions,
-- Response Team settings <-> on-call continuity is verified,
-- read/write deltas are closed or intentionally deferred with documented decision and phase owner,
+- all high-impact functional gaps are closed,
+- remaining deferred items are explicitly documented with their implemented subset,
 - migration tracker and gap report are in sync.
