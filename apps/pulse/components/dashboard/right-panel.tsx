@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Activity, Clock, Users, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PulseOverviewData } from "@/components/dashboard/pulse-types";
@@ -78,6 +78,7 @@ const oncallTeam = [
 
 export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOverviewData }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const recentActivityItems = pulseOverviewData?.recentActivity ?? recentActivity;
   const [responseTeam, setResponseTeam] = useState(oncallTeam);
   const [teamLoading, setTeamLoading] = useState(true);
@@ -89,7 +90,7 @@ export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOve
   useEffect(() => {
     let mounted = true;
     const projectMatch = pathname.match(/^\/projects\/([^/]+)/);
-    const projectId = projectMatch?.[1];
+    const projectId = projectMatch?.[1] ?? searchParams.get("project_id") ?? searchParams.get("projectId") ?? undefined;
     const endpoint = projectId
       ? `/api/oncall/response-team?project_id=${encodeURIComponent(projectId)}`
       : "/api/oncall/response-team";
@@ -118,7 +119,7 @@ export function RightPanel({ pulseOverviewData }: { pulseOverviewData?: PulseOve
     return () => {
       mounted = false;
     };
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   return (
     <aside className="w-[280px] h-screen bg-card border-l border-border flex flex-col shrink-0 overflow-hidden">

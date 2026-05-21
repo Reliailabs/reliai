@@ -158,7 +158,8 @@ test("on-call route uses canonical project_id scope query and shared selector be
   assert.match(file, /const selectedProjectId = resolveScopedProjectId\(projects, projectIdParam\) \?\? ""/);
   assert.match(file, /redirect\(`\/on-call\?project_id=\$\{encodeURIComponent\(selectedProjectId\)\}`\)/);
   assert.match(file, /<ProjectScopeSelector projects=\{projects\} selectedProjectId=\{selectedProjectId\} \/>/);
-  assert.match(responseTeamRoute, /const projectId = searchParams\.get\("project_id"\) \?\? searchParams\.get\("projectId"\)/);
+  assert.match(responseTeamRoute, /const projectIdParam = searchParams\.get\("project_id"\) \?\? searchParams\.get\("projectId"\)/);
+  assert.match(responseTeamRoute, /const projectId = resolveScopedProjectId\(projects, projectIdParam\)/);
   assert.match(rightPanel, /\/api\/oncall\/response-team\?project_id=\$\{encodeURIComponent\(projectId\)\}/);
 });
 
