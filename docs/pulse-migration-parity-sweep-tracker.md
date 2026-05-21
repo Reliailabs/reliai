@@ -1,6 +1,6 @@
 # Pulse Migration Parity Sweep Tracker
 
-Status: Active (Scope/ownership parity stabilized; functional parity audit in progress)
+Status: Active (Scope/ownership parity stabilized; high-impact functional parity closed)
 Scope: apps/web -> apps/pulse functional parity
 
 ## 1) Current Migration State
@@ -30,12 +30,11 @@ Runtime continuity coverage remains:
 
 ## 2) Functional Parity Audit Pass (Active)
 
-The next migration stage is functional parity vs apps/web behavior, not more scope-routing work.
+High-impact functional parity is closed. Remaining work is limited to explicitly deferred behavior, not more scope-routing work.
 
 Active audit focus:
 - route behavior parity where Pulse still presents legacy/read-only adapters
-- write-path parity gaps that block operator workflows
-- placeholder/deferred system surfaces that still indicate incomplete functionality
+- explicitly deferred behavior that remains outside the current parity scope
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
@@ -48,7 +47,7 @@ Implemented in Pulse:
 - on-call assignment/escalation management: `/on-call` and `/projects/[projectId]/on-call`
 - explicit separation of org access roles vs on-call duty roles
 
-Required functional parity check (still open):
+Required functional parity check (closed for high-impact items):
 1. Add member in `/settings#team`.
 2. Verify member appears in `/on-call` assignment selectors for the same organization/project.
 3. Verify project scope switching in `/on-call` does not cross-assign between projects.
@@ -59,3 +58,4 @@ Required functional parity check (still open):
 - No migration slice closes without updating this tracker and the functional gap report.
 - Prefer user-visible functional parity fixes over gate/process expansion.
 - Keep scopes isolated per branch/PR.
+- New work now requires either a newly discovered parity gap or a product-level requirement; do not reopen resolved high-impact parity slices.

@@ -41,7 +41,7 @@ export function SystemGroupNav() {
     <section className="rounded-2xl border border-border bg-card p-6">
       <h2 className="text-sm font-semibold text-foreground">System Surfaces</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Route spine is live. Data parity wiring is deferred by plan.
+        Route spine is live. Surface parity is implemented and tracked by contract.
       </p>
       <div className="mt-4 space-y-4">
         {groups.map((group) => (
