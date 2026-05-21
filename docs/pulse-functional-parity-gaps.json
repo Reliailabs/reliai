@@ -1,36 +1,51 @@
 {
-  "version": 1,
-  "items": [
+  "updated_at_utc": "2026-05-21T00:00:00Z",
+  "status": "active",
+  "scope": "apps/web -> apps/pulse functional behavior parity",
+  "gaps": [
     {
-      "id": "response-team-settings-oncall-continuity",
-      "classification": "functional continuity gap",
+      "id": "F1",
+      "title": "Response Team end-to-end continuity",
       "impact": "high",
-      "status": "resolved",
-      "decision": "implement",
-      "source": "apps/web org-members + incident members flows",
-      "pulse": "apps/pulse /settings#team + /on-call continuity contracts and scope wiring"
+      "state": "closed",
+      "type": "functional_continuity",
+      "owner": "Migration",
+      "target_phase": "current functional parity",
+      "artifact": "apps/pulse/tests/response-team-functional-continuity.test.ts",
+      "acceptance": [
+        "team member add/invite from /settings#team is assignable in /on-call",
+        "project scope switching in /on-call does not leak assignment context",
+        "access role labels are not conflated with on-call duty roles"
+      ]
     },
     {
-      "id": "system-surfaces-deferred-parity-classification",
-      "classification": "deferred behavior delta",
+      "id": "F2",
+      "title": "System surface deferment classification",
       "impact": "medium",
-      "status": "deferred",
-      "decision": "defer",
-      "owner": "migration",
-      "target_phase": "functional-parity-pass",
-      "source": "apps/web system admin behaviors",
-      "pulse": "apps/pulse legacy system route group still carrying deferred copy/wrappers"
+      "state": "closed",
+      "type": "deferred_behavior_delta",
+      "owner": "Migration",
+      "target_phase": "current functional parity",
+      "artifact": "docs/pulse-system-surface-classification.md",
+      "acceptance": [
+        "every /system and /pulse/system surface is classified as implement/defer/intentional exception",
+        "legacy aliases are redirect-only wrappers",
+        "deferred placeholder language removed from canonical /pulse/system landing"
+      ]
     },
     {
-      "id": "readwrite-capability-matrix-closure",
-      "classification": "read/write delta",
+      "id": "F3",
+      "title": "Read/write parity matrix completion",
       "impact": "high",
-      "status": "pending",
-      "decision": "implement",
-      "owner": "migration",
-      "target_phase": "functional-parity-pass",
-      "source": "apps/web route-level write capabilities",
-      "pulse": "apps/pulse route-level write parity classification and implementation queue"
+      "state": "closed",
+      "type": "read_write_delta",
+      "owner": "Migration",
+      "target_phase": "current functional parity",
+      "artifact": "docs/pulse-read-write-parity-matrix.json",
+      "acceptance": [
+        "route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged",
+        "each unresolved write gap has explicit defer/implement decision with target phase"
+      ]
     }
   ]
 }
