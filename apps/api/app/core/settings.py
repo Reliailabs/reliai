@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     event_stream_consumer_timeout_ms: int = 1000
     enabled_processors: str = "evaluation,warehouse,reliability_metrics,regression,automation,reliability_graph"
     slack_webhook_default: str | None = None
+    invite_delivery_webhook_url: str | None = None
+    invite_delivery_webhook_timeout_seconds: int = 5
     alert_delivery_cooldown_minutes: int = 60
     slack_alert_max_attempts: int = 3
     slack_alert_retry_backoff_seconds: str = "60,300"

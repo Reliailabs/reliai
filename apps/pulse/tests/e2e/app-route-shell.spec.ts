@@ -248,6 +248,55 @@ test("regression detail route keeps scope selector continuity into operations", 
   await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${projectId}`));
 });
 
+test("on-call project scope selector updates canonical query and assignment form scope", async ({ page }) => {
+  await ensureSignedIn(page, "/on-call");
+  await expect(page).toHaveURL(/\/on-call(\?project_id=)?/);
+
+  const selector = page.getByRole("combobox", { name: "Select project scope" });
+  if ((await selector.count()) === 0) {
+    test.skip(true, "SKIPPED_ONCALL_SCOPE: project scope selector unavailable.");
+  }
+
+  const initialProjectId = new URL(page.url()).searchParams.get("project_id");
+  if (!initialProjectId) {
+    test.skip(true, "SKIPPED_ONCALL_SCOPE: no initial scoped project id.");
+  }
+
+  await selector.click();
+  const options = page.getByRole("option");
+  if ((await options.count()) < 2) {
+    test.skip(true, "SKIPPED_ONCALL_SCOPE: fewer than two project options.");
+  }
+
+  const targetValue = await options.nth(1).getAttribute("value");
+  if (!targetValue || targetValue === initialProjectId) {
+    test.skip(true, "SKIPPED_ONCALL_SCOPE: alternate scoped project not available.");
+  }
+  await options.nth(1).click();
+
+  await expect(page).toHaveURL(new RegExp(`/on-call\\?project_id=${targetValue}`));
+
+  const hiddenProjectInputs = page.locator('input[name="project_id"]');
+  const firstHiddenProjectId = await hiddenProjectInputs.first().getAttribute("value");
+  expect(firstHiddenProjectId).toBe(targetValue);
+});
+
+test("settings team on-call continuity link preserves resolved project scope", async ({ page }) => {
+  await ensureSignedIn(page, "/settings?project_id=proj_scope#team");
+  await expect(page).toHaveURL(/\/settings\?project_id=/);
+  const scopedProjectId = new URL(page.url()).searchParams.get("project_id");
+  if (!scopedProjectId) {
+    test.skip(true, "SKIPPED_SETTINGS_ONCALL_SCOPE: no resolved project scope available.");
+  }
+
+  const onCallLink = page.getByRole("link", { name: "On-Call" }).first();
+  const onCallHref = await onCallLink.getAttribute("href");
+  expect(onCallHref).toContain(`project_id=${scopedProjectId}`);
+
+  await onCallLink.click();
+  await expect(page).toHaveURL(new RegExp(`/on-call\\?project_id=${scopedProjectId}`));
+});
+
 test("version ownership shims preserve canonical project scope into traces", async ({ page }) => {
   await ensureSignedIn(page, "/traces");
   await expect(page).toHaveURL(/\/(traces|pulse)/);

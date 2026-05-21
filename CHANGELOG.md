@@ -42,7 +42,10 @@ All notable changes to Reliai will be documented in this file.
 
 ### Changed
 
+- Team invite lifecycle now persists pending invitations, exposes a tokenized `/join?token=...` redemption path, and can accept/redeem the invite into a local session in the current auth stack; email delivery remains deferred.
 - Hardened project audit freshness logic so project summaries only present fresh certification when the latest relevant run is completed, non-pending, and non-invalidated.
+- Settings team invite flow now queues pending invitations for no-account addresses, shows them in a Pending Invitations section with revoke support, and still hands off to `/signup` with preserved invite context.
+- Settings team copy now distinguishes existing-account member adds from the invite handoff path and describes the queued pending-invite state explicitly.
 - Standardized production snapshot metadata contract (`evidenceWindow`, `incidentSummary`, `traceSampleSummary`, `guardrailViolationSummary`, `regressionSummary`, `modelChangeSummary`, `topRiskySurfaces`) across API and web UI.
 - Improved deterministic audit executor output realism by varying findings/remediation by audit profile and anchoring evidence refs to production snapshot surfaces.
 - Migrated key marketing, onboarding, and core product surfaces to semantic design tokens for higher readability.

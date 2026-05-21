@@ -516,6 +516,22 @@ export type SettingsProfile = {
   role: string;
 };
 
+export type SettingsInvitationItem = {
+  id: string;
+  invitedEmail: string;
+  role: string;
+  invitedByEmail: string;
+  status: "pending";
+  delivery: {
+    mode: "manual_join_link" | "email_webhook_dispatched";
+    emailSent: boolean;
+  };
+  signupPath: string;
+  joinPath: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
 export type SettingsSurfaceData = {
   profile: SettingsProfile;
   quickItems: SettingsQuickItem[];

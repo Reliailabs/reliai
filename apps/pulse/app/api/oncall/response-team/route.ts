@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getApiAccessToken, getOperatorSession } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
+import { listProjectScopeOptions } from "@/lib/project-scope-data";
+import { resolveScopedProjectId } from "@/lib/project-scope-utils";
 
 type ResponseTeamMember = {
   id: string;
@@ -42,7 +44,9 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get("project_id") ?? searchParams.get("projectId");
+    const projectIdParam = searchParams.get("project_id") ?? searchParams.get("projectId");
+    const projects = await listProjectScopeOptions();
+    const projectId = resolveScopedProjectId(projects, projectIdParam);
     if (!projectId) {
       return NextResponse.json({ items: [] } satisfies ResponseTeamPayload, { status: 200 });
     }
