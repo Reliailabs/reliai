@@ -525,6 +525,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                       Open join link
                     </Link>
                     <p className="text-xs text-muted-foreground">Expires {formatInviteDate(invitation.expiresAt)}</p>
+                    <p className="text-xs text-muted-foreground">Delivery: manual join link (email delivery deferred).</p>
                   </div>
                   <p className="text-sm capitalize text-muted-foreground">{invitation.role}</p>
                   <p className="truncate text-sm text-muted-foreground">{invitation.invitedByEmail}</p>
@@ -596,11 +597,14 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             Send invitation instead
           </Link>
         ) : null}
-        <p className="text-[11px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             If they already have a Reliai account, use Add. If not, use Send invitation instead to queue a pending invitation and open the join link for acceptance.{" "}
             <Link href="/signup" className="underline underline-offset-2">
               Continue with account creation at /signup
             </Link>
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Invitation emails are not auto-delivered from Pulse yet. Share the queued join link directly from Pending Invitations.
           </p>
           <p className="text-[11px] text-muted-foreground">
             On-call duty roles are configured separately in <Link href="/on-call" className="underline underline-offset-2">On-Call</Link>.
