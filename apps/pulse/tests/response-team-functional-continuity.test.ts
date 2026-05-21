@@ -41,7 +41,9 @@ test("response-team sidebar endpoint resolves by canonical project scope and map
 test("response-team right panel keeps Team Members remediation path visible", () => {
   const file = read("components/dashboard/right-panel.tsx");
   assert.match(file, /Configure team members/);
-  assert.match(file, /href="\/settings#team"/);
+  assert.match(file, /const settingsTeamHref = projectScope/);
+  assert.match(file, /`\/settings\?project_id=\$\{encodeURIComponent\(projectScope\)\}#team`/);
+  assert.match(file, /href=\{settingsTeamHref\}/);
   assert.match(file, /searchParams\.get\("project_id"\) \?\? searchParams\.get\("projectId"\)/);
   assert.match(file, /\/api\/oncall\/response-team\?project_id=\$\{encodeURIComponent\(projectId\)\}/);
 });
