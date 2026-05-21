@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { API_URL } from "@/lib/constants";
+import { buildTeamInviteSignupHref } from "@/lib/team-invite-link";
 
 type JoinPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -58,6 +59,7 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
   const returnTo = sanitizeReturnTo(typeof rawReturnTo === "string" ? rawReturnTo : undefined);
   const error = Array.isArray(params.error) ? params.error[0] : params.error;
   const invitation = token ? await loadInvitation(token) : null;
+  const signupHref = invitation ? buildTeamInviteSignupHref(invitation.invited_email) : "/signup";
 
   return (
     <main className="min-h-screen bg-[#09090B] text-zinc-100">
@@ -122,7 +124,7 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
           </form>
 
           <div className="mt-5 flex items-center justify-between gap-4 text-xs text-zinc-500">
-            <Link href="/signup" className="underline underline-offset-2">
+            <Link href={signupHref} className="underline underline-offset-2">
               Back to account setup
             </Link>
             <span>Returns to {returnTo}</span>
