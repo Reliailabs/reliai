@@ -88,7 +88,7 @@ export default async function SystemPage() {
       <section className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-5">
           <p className="text-sm font-semibold text-foreground">Customers & Growth</p>
-          <p className="mt-1 text-xs text-muted-foreground">Customer expansion and tenant growth surfaces are available under the system route spine.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Read-only customer and growth telemetry surface.</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/pulse/system/customers" className="rounded-full border border-border px-3 py-1 hover:bg-muted/30">Customers</Link>
             <Link href="/pulse/system/growth" className="rounded-full border border-border px-3 py-1 hover:bg-muted/30">Growth</Link>
@@ -97,7 +97,7 @@ export default async function SystemPage() {
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <p className="text-sm font-semibold text-foreground">Reliability Intelligence</p>
-          <p className="mt-1 text-xs text-muted-foreground">Operational intelligence surfaces are part of the current system parity contract.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Read-only reliability pattern and intelligence telemetry surface.</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/pulse/system/reliability-patterns" className="rounded-full border border-border px-3 py-1 hover:bg-muted/30">Reliability</Link>
             <Link href="/pulse/system/intelligence" className="rounded-full border border-border px-3 py-1 hover:bg-muted/30">Intelligence</Link>

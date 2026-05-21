@@ -28,17 +28,21 @@ Runtime continuity coverage remains:
 
 `docs/pulse-migration-parity-gaps.json` currently tracks only scope/ownership blockers and is fully resolved.
 
-## 2) Functional Parity Audit Pass (Active)
+## 2) Functional Parity Audit Pass
 
 High-impact functional parity is closed. Remaining work is limited to explicitly deferred behavior, not more scope-routing work.
 
-Active audit focus:
-- route behavior parity where Pulse still presents legacy/read-only adapters
-- explicitly deferred behavior that remains outside the current parity scope
+Current functional status:
+- high-impact behavior parity gaps are closed and test-gated
+- system-surface deferments are explicitly classified
+- read/write parity matrix is explicit and owner-tagged
+- external invite lifecycle now has queue/revoke plus local redeem coverage, while email delivery remains deferred
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
 - functional audit queue: `docs/pulse-final-functional-migration-gap-report.md`
+- system-surface classification matrix: `docs/pulse-system-surface-classification.md`
+- read/write parity matrix: `docs/pulse-read-write-parity-matrix.json`
 
 ## 3) Response Team Validation Status
 
@@ -47,20 +51,15 @@ Implemented in Pulse:
 - on-call assignment/escalation management: `/on-call` and `/projects/[projectId]/on-call`
 - explicit separation of org access roles vs on-call duty roles
 
-Required functional parity check (closed for high-impact items):
+Required functional parity checks (closed):
 1. Add member in `/settings#team`.
 2. Verify member appears in `/on-call` assignment selectors for the same organization/project.
 3. Verify project scope switching in `/on-call` does not cross-assign between projects.
 4. Verify role naming/labels are consistent and non-conflicting between Team role and On-call role.
 
-Deferred invite lifecycle status:
-- pending invitation persistence is implemented and surfaced in Team settings.
-- admins can queue and revoke pending invitations from the settings surface.
-- `/signup` remains the explicit continuation path for new accounts until email-based invite delivery and acceptance are implemented.
-- the team invite `no_account` state now queues a pending invitation and exposes a contextual "Send invitation instead" handoff into `/signup`.
-- `/signup` renders team-invite context when launched with `entry=team-invite`.
-- pending invites now expose a tokenized `/join?token=...` redemption surface and local accept flow.
-- email delivery is still deferred.
+Validation artifacts:
+- `apps/pulse/tests/response-team-functional-continuity.test.ts`
+- `apps/pulse/tests/e2e/app-route-shell.spec.ts` (`on-call` scope continuity probe)
 
 ## 4) Rules for Remaining Slices
 

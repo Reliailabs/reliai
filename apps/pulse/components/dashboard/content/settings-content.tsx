@@ -587,16 +587,16 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             </Button>
           </div>
           {inviteMessage ? (
-            <p className={cn("text-xs", inviteMessage.ok ? "text-success" : "text-destructive")}>
-              {inviteMessage.text}
-            </p>
-          ) : null}
-          {!inviteMessage?.ok && signupInviteHref ? (
-            <Link href={signupInviteHref} className="text-xs font-medium text-primary underline underline-offset-2">
-              Send invitation instead
-            </Link>
-          ) : null}
-          <p className="text-[11px] text-muted-foreground">
+          <p className={cn("text-xs", inviteMessage.ok ? "text-success" : "text-destructive")}>
+            {inviteMessage.text}
+          </p>
+        ) : null}
+        {!inviteMessage?.ok && signupInviteHref ? (
+          <Link href={signupInviteHref} className="text-xs font-medium text-primary underline underline-offset-2">
+            Send invitation instead
+          </Link>
+        ) : null}
+        <p className="text-[11px] text-muted-foreground">
             If they already have a Reliai account, use Add. If not, use Send invitation instead to queue a pending invitation and open the join link for acceptance.{" "}
             <Link href="/signup" className="underline underline-offset-2">
               Continue with account creation at /signup

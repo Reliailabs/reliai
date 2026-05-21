@@ -16,6 +16,8 @@ High-impact functional parity gaps are closed. Remaining work is limited to expl
 - deterministic project resolution (no implicit first-project behavior)
 - ownership-shift route shims with canonical query output
 - shared-shell alignment on recently migrated non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
+- Response Team functional continuity across settings and on-call surfaces
+- system-surface classification and read/write parity matrices
 
 Validation backing:
 - `pnpm --filter pulse test:migration-scope-parity-gate`
@@ -25,8 +27,8 @@ Validation backing:
 
 ### F1. Response Team end-to-end functional continuity
 
-Classification: `functional continuity gap`  
-Impact: `high`  
+Classification: `functional continuity gap`
+Impact: `high`
 State: `closed`
 
 Evidence:
@@ -36,8 +38,8 @@ Evidence:
 
 ### F2. Deferred/legacy system surface classification
 
-Classification: `deferred behavior delta`  
-Impact: `medium`  
+Classification: `deferred behavior delta`
+Impact: `medium`
 State: `closed`
 
 Evidence:
@@ -47,8 +49,8 @@ Evidence:
 
 ### F3. Read/write parity matrix completion
 
-Classification: `read/write delta`  
-Impact: `high`  
+Classification: `read/write delta`
+Impact: `high`
 State: `closed`
 
 Evidence:
@@ -57,18 +59,18 @@ Evidence:
 
 ## 4) Remaining Deferred Item
 
-### External invite lifecycle ownership
+### External invite lifecycle delivery
 
-Classification: `deferred behavior delta`  
+Classification: `deferred behavior delta`
 Impact: `medium`
 
 Current state:
-- pending invitation persistence is now implemented in Pulse and exposed in Team settings
-- admins can queue and revoke pending invites from the Settings surface
-- ownership is documented in the Response Team continuity contract and settings UI copy
+- pending invitation persistence is implemented and surfaced in Team settings
+- admins can queue and revoke pending invitations from the Settings surface
+- queued invites now expose a tokenized `/join?token=...` redemption path
+- the invite redeem flow creates the membership/session in the current local auth stack
 - `/signup` remains the explicit continuation path for users who do not yet have a Reliai account
 - the no-account error state now queues a pending invitation and offers a contextual "Send invitation instead" handoff into `/signup`
-- pending invitations now expose a tokenized `/join?token=...` redemption path and a local accept flow that creates the membership/session in the current auth stack
 - the `/signup` surface still renders team-invite context when the handoff includes `entry=team-invite`
 - email delivery remains deferred
 
