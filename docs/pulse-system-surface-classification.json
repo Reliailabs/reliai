@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "scope": "apps/web -> apps/pulse system surfaces",
+  "rows": [
+    {
+      "route": "/pulse/system",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "System landing is an active, read-only command center and no longer carries deferred parity placeholder language."
+    },
+    {
+      "route": "/pulse/system/platform",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Read-only telemetry presenter is an intentional system-ops surface in parity scope."
+    },
+    {
+      "route": "/pulse/system/pipeline",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Read-only telemetry presenter is an intentional system-ops surface in parity scope."
+    },
+    {
+      "route": "/pulse/system/extensions",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Read-only telemetry presenter is an intentional system-ops surface in parity scope."
+    },
+    {
+      "route": "/pulse/system/customers",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Customer reliability board is parity-owned as read-only intelligence for operators."
+    },
+    {
+      "route": "/pulse/system/growth",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Growth telemetry is parity-owned as read-only system intelligence."
+    },
+    {
+      "route": "/pulse/system/expansion",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Expansion telemetry is parity-owned as read-only system intelligence."
+    },
+    {
+      "route": "/pulse/system/reliability-patterns",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Reliability pattern board is advisory and intentionally read-only."
+    },
+    {
+      "route": "/pulse/system/intelligence",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Intelligence feed is advisory and intentionally read-only."
+    },
+    {
+      "route": "/system",
+      "decision": "intentional_exception",
+      "owner": "pulse-app",
+      "target_phase": "n/a",
+      "reason": "Legacy alias is a documented redirect shim to /pulse/system."
+    }
+  ]
+}
