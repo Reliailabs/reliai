@@ -39,3 +39,20 @@ test("join surface renders invitation details and accept action", async () => {
     global.fetch = originalFetch;
   }
 });
+
+test("join surface maps not_found error to explicit invitation-not-found copy", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = (async () => ({
+    ok: false,
+  })) as typeof fetch;
+
+  try {
+    const html = renderToStaticMarkup(
+      await JoinPage({ searchParams: Promise.resolve({ token: "missing", error: "not_found" }) }),
+    );
+
+    assert.match(html, /This invitation link was not found\./);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
