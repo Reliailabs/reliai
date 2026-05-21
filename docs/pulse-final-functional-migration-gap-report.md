@@ -68,6 +68,9 @@ Action:
 - keep the write matrix updated for every migrated write surface change.
 - treat any new high-impact unresolved write row as gate failure.
 
+Contract source of truth:
+- `docs/pulse-functional-parity-gaps.json`
+
 ## 4) Immediate Execution Queue
 
 1. Optional product/auth decision: external invite lifecycle ownership (`/settings#team`) beyond migration scope.
