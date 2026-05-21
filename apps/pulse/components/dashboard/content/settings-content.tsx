@@ -109,6 +109,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
   const [inviteRole, setInviteRole] = useState("engineer");
   const [isInviting, setIsInviting] = useState(false);
   const [inviteMessage, setInviteMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [inviteOwnershipPath, setInviteOwnershipPath] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -166,6 +167,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     if (!inviteName.trim() || !inviteEmail.trim() || isInviting) return;
     setIsInviting(true);
     setInviteMessage(null);
+    setInviteOwnershipPath(null);
     try {
       const r = await fetch("/api/settings/team", {
         method: "POST",
@@ -173,7 +175,9 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
         body: JSON.stringify({ name: inviteName.trim(), email: inviteEmail.trim(), role: inviteRole }),
       });
       if (r.status === 404) {
-        setInviteMessage({ text: "No Reliai account found for that email. They need to sign up first.", ok: false });
+        const payload = (await r.json()) as { signup_path?: string };
+        setInviteOwnershipPath(payload.signup_path ?? "/signup");
+        setInviteMessage({ text: "No Reliai account found for that email. Account creation is owned by /signup before member add.", ok: false });
         return;
       }
       if (r.status === 403) {
@@ -465,9 +469,17 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
               {inviteMessage.text}
             </p>
           ) : null}
+          {inviteOwnershipPath ? (
+            <p className="text-xs text-muted-foreground">
+              Continue with account creation at{" "}
+              <Link href={inviteOwnershipPath} className="underline underline-offset-2">
+                {inviteOwnershipPath}
+              </Link>
+              , then retry member add.
+            </p>
+          ) : null}
           <p className="text-[11px] text-muted-foreground">
-            The person must already have a Reliai account.{" "}
-            <span className="text-muted-foreground/60">Email-based invites are coming soon.</span>
+            Team Members add is intentionally existing-account membership attach. External invite lifecycle is deferred and tracked in migration parity docs.
           </p>
           <p className="text-[11px] text-muted-foreground">
             On-call duty roles are configured separately in <Link href="/on-call" className="underline underline-offset-2">On-Call</Link>.

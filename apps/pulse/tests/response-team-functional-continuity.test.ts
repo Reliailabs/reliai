@@ -13,6 +13,8 @@ test("settings team route enforces invite identity fields and role", () => {
   assert.match(file, /return NextResponse\.json\(\{ error: "name, email and role are required" \}, \{ status: 400 \}\)/);
   assert.match(file, /lookup\?email=\$\{encodeURIComponent\(body\.email\.trim\(\)\.toLowerCase\(\)\)\}/);
   assert.match(file, /JSON\.stringify\(\{ user_id, role: body\.role, display_name: body\.name\.trim\(\) \}\)/);
+  assert.match(file, /signup_path: "\/signup"/);
+  assert.match(file, /ownership: "existing_account_required"/);
 });
 
 test("on-call page uses organization members as assignment source and separates access-role vs duty-role semantics", () => {
@@ -53,4 +55,11 @@ test("team member add/remove and on-call assignment source stay on same org memb
   assert.match(teamDeleteRoute, /\/api\/v1\/organizations\/\$\{orgId\}\/members\/\$\{userId\}/);
   assert.match(onCallPage, /\/api\/v1\/organizations\/\$\{selectedProjectDetail\.organization_id\}\/members/);
   assert.match(onCallPage, /type TeamMember = \{\s*user_id: string;\s*display_name: string \| null;\s*email: string \| null;/s);
+});
+
+test("settings team UI declares deferred external invite lifecycle ownership explicitly", () => {
+  const settingsFile = read("components/dashboard/content/settings-content.tsx");
+  assert.match(settingsFile, /existing-account membership attach/);
+  assert.match(settingsFile, /External invite lifecycle is deferred and tracked in migration parity docs/);
+  assert.match(settingsFile, /Continue with account creation at/);
 });
