@@ -66,6 +66,7 @@ Current state:
 - external invite lifecycle is intentionally deferred
 - ownership is documented in the Response Team continuity contract and settings UI copy
 - `/signup` is the explicit continuation path for users who do not yet have a Reliai account
+- the no-account error state now offers a contextual "Send invitation instead" handoff into `/signup`
 
 ## 5) Completion Criteria for Functional Parity
 Functional parity can be called complete only when:

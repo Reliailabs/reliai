@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { resolveSignupHref } from "@/lib/signup-link";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings, Trash2, UserPlus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SettingsSurfaceData } from "@/components/dashboard/pulse-types";
@@ -214,6 +215,16 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
     if (isNaN(d.getTime())) return "—";
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   }
+
+  const signupInviteHref =
+    inviteEmail.trim().length > 0
+      ? resolveSignupHref(
+          new URLSearchParams({
+            entry: "team-invite",
+            email: inviteEmail.trim(),
+          }),
+        )
+      : null;
 
   async function handleSaveProfile() {
     setIsSaving(true);
@@ -464,6 +475,11 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             <p className={cn("text-xs", inviteMessage.ok ? "text-success" : "text-destructive")}>
               {inviteMessage.text}
             </p>
+          ) : null}
+          {!inviteMessage?.ok && signupInviteHref ? (
+            <Link href={signupInviteHref} className="text-xs font-medium text-primary underline underline-offset-2">
+              Send invitation instead
+            </Link>
           ) : null}
           <p className="text-[11px] text-muted-foreground">
             The person must already have a Reliai account. External invite lifecycle is deferred and tracked in migration parity docs.{" "}

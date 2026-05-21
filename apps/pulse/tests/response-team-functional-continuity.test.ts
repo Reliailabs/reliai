@@ -43,6 +43,9 @@ test("response-team right panel keeps Team Members remediation path visible", ()
 
 test("settings team UI makes external invite lifecycle ownership explicit", () => {
   const settingsFile = read("components/dashboard/content/settings-content.tsx");
+  assert.match(settingsFile, /Send invitation instead/);
+  assert.match(settingsFile, /entry: "team-invite"/);
+  assert.match(settingsFile, /email: inviteEmail\.trim\(\)/);
   assert.match(settingsFile, /External invite lifecycle is deferred and tracked in migration parity docs/);
   assert.match(settingsFile, /Continue with account creation at \/signup/);
   assert.doesNotMatch(settingsFile, /coming soon/i);
