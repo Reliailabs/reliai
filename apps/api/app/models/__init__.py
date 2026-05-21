@@ -43,6 +43,7 @@ from app.models.organization_config_snapshot import OrganizationConfigSnapshot
 from app.models.organization_usage_expansion import OrganizationUsageExpansion
 from app.models.organization_guardrail_policy import OrganizationGuardrailPolicy
 from app.models.organization_alert_target import OrganizationAlertTarget
+from app.models.organization_invitation import OrganizationInvitation
 from app.models.organization_member import OrganizationMember
 from app.models.oncall_assignment import OncallAssignment
 from app.models.oncall_escalation_policy import OncallEscalationPolicy
@@ -120,6 +121,7 @@ __all__ = [
     "OrganizationUsageExpansion",
     "OrganizationGuardrailPolicy",
     "OrganizationAlertTarget",
+    "OrganizationInvitation",
     "OrganizationMember",
     "OncallAssignment",
     "OncallEscalationPolicy",

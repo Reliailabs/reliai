@@ -36,6 +36,7 @@ const REQUIRED_PULSE_ROUTE_FILES = [
   "app/(app)/billing/success/page.tsx",
   "app/(app)/playground/page.tsx",
   "app/(marketing)/docs/page.tsx",
+  "app/join/page.tsx",
 ] as const;
 
 function pulsePath(relPath: string): string {

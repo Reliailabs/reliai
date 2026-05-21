@@ -73,7 +73,15 @@ export async function POST(request: Request) {
   );
 
   if (lookupResponse.status === 404) {
-    return NextResponse.json({ error: "no_account", message: "No Reliai account found for that email address." }, { status: 404 });
+    return NextResponse.json(
+      {
+        error: "no_account",
+        message: "No Reliai account found for that email address.",
+        signup_path: "/signup",
+        ownership: "existing_account_required",
+      },
+      { status: 404 },
+    );
   }
   if (!lookupResponse.ok) {
     return NextResponse.json({ error: "lookup_failed" }, { status: 502 });

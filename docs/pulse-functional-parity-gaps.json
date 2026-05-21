@@ -1,0 +1,51 @@
+{
+  "updated_at_utc": "2026-05-21T00:00:00Z",
+  "status": "active",
+  "scope": "apps/web -> apps/pulse functional behavior parity",
+  "gaps": [
+    {
+      "id": "F1",
+      "title": "Response Team end-to-end continuity",
+      "impact": "high",
+      "state": "closed",
+      "type": "functional_continuity",
+      "owner": "Migration",
+      "target_phase": "current functional parity",
+      "artifact": "apps/pulse/tests/response-team-functional-continuity.test.ts",
+      "acceptance": [
+        "team member add/invite from /settings#team is assignable in /on-call",
+        "project scope switching in /on-call does not leak assignment context",
+        "access role labels are not conflated with on-call duty roles"
+      ]
+    },
+    {
+      "id": "F2",
+      "title": "System surface deferment classification",
+      "impact": "medium",
+      "state": "closed",
+      "type": "deferred_behavior_delta",
+      "owner": "Migration",
+      "target_phase": "current functional parity",
+      "artifact": "docs/pulse-system-surface-classification.md",
+      "acceptance": [
+        "every /system and /pulse/system surface is classified as implement/defer/intentional exception",
+        "legacy aliases are redirect-only wrappers",
+        "deferred placeholder language removed from canonical /pulse/system landing"
+      ]
+    },
+    {
+      "id": "F3",
+      "title": "Read/write parity matrix completion",
+      "impact": "high",
+      "state": "closed",
+      "type": "read_write_delta",
+      "owner": "Migration",
+      "target_phase": "current functional parity",
+      "artifact": "docs/pulse-read-write-parity-matrix.json",
+      "acceptance": [
+        "route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged",
+        "each unresolved write gap has explicit defer/implement decision with target phase"
+      ]
+    }
+  ]
+}

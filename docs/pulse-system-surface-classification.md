@@ -1,27 +1,36 @@
 # Pulse System Surface Classification
 
 Date: 2026-05-21  
-Status: Active contract
+Status: Active classification baseline (F2)
 
-Source of truth for migration enforcement: `docs/pulse-system-surface-classification.json`.
+## Scope
 
-## Decision Types
+This document closes the F2 ambiguity by classifying each `/system` surface as one of:
+- `implement` (owned functional surface in Pulse)
+- `defer` (known parity gap with explicit owner + target phase)
+- `intentional exception` (legacy alias/redirect kept for deep-link continuity)
 
-- `implement`: requires implementation follow-up in target phase.
-- `defer`: intentionally postponed with owner + phase.
-- `intentional_exception`: accepted parity shape (for example read-only presenter or redirect shim).
+## Classification Matrix
 
-## Current Classification
+| Surface | Source (`apps/web`) | Pulse status | Class | Owner | Target phase | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| `/pulse/system` | `/system` | implemented | implement | Migration | current functional parity | Canonical Pulse system landing surface. |
+| `/pulse/system/platform` | `/system/platform` | implemented | implement | Migration | current functional parity | Read-only telemetry parity surface. |
+| `/pulse/system/pipeline` | `/system/pipeline` | implemented | implement | Migration | current functional parity | Read-only telemetry parity surface. |
+| `/pulse/system/extensions` | `/system/extensions` | implemented | implement | Migration | current functional parity | Read-only telemetry parity surface. |
+| `/pulse/system/customers` | `/system/customers` | implemented | implement | Migration | current functional parity | Cross-project customer board parity surface. |
+| `/pulse/system/customers/[projectId]` | `/system/customers/[projectId]` | implemented | implement | Migration | current functional parity | Project-level customer detail parity surface. |
+| `/pulse/system/reliability-patterns` | `/system/reliability-patterns` | implemented | implement | Migration | current functional parity | Pattern board parity surface. |
+| `/pulse/system/growth` | `/system/growth` | implemented | implement | Migration | current functional parity | Growth telemetry parity surface. |
+| `/pulse/system/expansion` | `/system/expansion` | implemented | implement | Migration | current functional parity | Expansion telemetry parity surface. |
+| `/pulse/system/intelligence` | `/system/intelligence` | implemented | implement | Migration | current functional parity | Read-only intelligence telemetry surface. |
+| `/system` | `/system` | redirects to `/pulse/system` | intentional exception | Migration | permanent alias policy | Legacy deep-link alias only. |
+| `/system/*` (all listed subroutes) | `/system/*` | redirects to `/pulse/system/*` | intentional exception | Migration | permanent alias policy | Legacy subroute aliases preserved for inbound links. |
+| `/pulse/systems` | n/a (legacy Pulse spelling) | redirects to `/pulse/system` | intentional exception | Migration | permanent alias policy | Backward compatibility alias for old Pulse links. |
+| `/system/customers/[projectId]` | `/system/customers/[projectId]` | redirects to `/pulse/system/customers/[projectId]` | intentional exception | Migration | permanent alias policy | Legacy deep-link alias for project-level customer detail. |
 
-| Route | Decision | Owner | Target phase | Why |
-| --- | --- | --- | --- | --- |
-| `/pulse/system` | intentional_exception | pulse-app | n/a | Active command center surface with no deferred parity placeholder copy. |
-| `/pulse/system/platform` | intentional_exception | pulse-app | n/a | Read-only telemetry presenter is intentional. |
-| `/pulse/system/pipeline` | intentional_exception | pulse-app | n/a | Read-only telemetry presenter is intentional. |
-| `/pulse/system/extensions` | intentional_exception | pulse-app | n/a | Read-only telemetry presenter is intentional. |
-| `/pulse/system/customers` | intentional_exception | pulse-app | n/a | Customer reliability board is intentional read-only intelligence. |
-| `/pulse/system/growth` | intentional_exception | pulse-app | n/a | Growth telemetry is intentional read-only intelligence. |
-| `/pulse/system/expansion` | intentional_exception | pulse-app | n/a | Expansion telemetry is intentional read-only intelligence. |
-| `/pulse/system/reliability-patterns` | intentional_exception | pulse-app | n/a | Pattern board is advisory and intentionally read-only. |
-| `/pulse/system/intelligence` | intentional_exception | pulse-app | n/a | Intelligence feed is advisory and intentionally read-only. |
-| `/system` | intentional_exception | pulse-app | n/a | Legacy alias route is an intentional redirect shim to `/pulse/system`. |
+## Decision Rules
+
+1. `intentional exception` surfaces must be redirect-only, no duplicate owned UI.
+2. `defer` rows require a target phase and cannot remain unowned.
+3. Any new system surface must be added to this matrix in the same PR.
