@@ -1,94 +1,61 @@
 # Pulse Migration Parity Sweep Tracker
 
-Status: Active
-Scope: apps/web -> apps/pulse functionality parity (not route existence only)
+Status: Active (Scope/ownership parity stabilized; functional parity audit in progress)
+Scope: apps/web -> apps/pulse functional parity
 
-## Confirmed Parity Risks
+## 1) Current Migration State
 
-### Project scope consistency
+### Scope and ownership parity
 
-- Pulse onboarding previously relied on ambiguous `listProjects(...?limit=1)` and first-project assumptions.
-- Pulse still contains multiple implicit project-resolution paths outside `/projects/[projectId]` routes.
-- apps/web patterns consistently preserve explicit `project_id` and/or `[projectId]` scope through route/forms/actions.
+Resolved and gated by executable tests:
+- explicit `project_id` continuity across non-project routes
+- deterministic fallback (no implicit first-project assumptions)
+- ownership-shift shims:
+  - `/projects/[projectId]/control` -> `/projects/[projectId]/reliability`
+  - `/organization/settings` -> `/settings`
+  - `/model-versions/[id]` -> `/traces?project_id=...&model_version_id=...`
+  - `/prompt-versions/[id]` -> `/traces?project_id=...&prompt_version=...`
+  - `/regressions/[regressionId]/compare` -> `/operations/regressions/[regressionId]`
+- shared shell consistency across key non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
 
-Impact:
-- wrong-project mutations
-- missing/incorrect API key/project continuity
-- unstable user context after redirects/actions
+### Migration gate
 
-### Route ownership gaps (web -> pulse)
+Primary parity gate remains:
+- `pnpm --filter pulse test:migration-scope-parity-gate`
 
-Current ownership status:
-- `implemented`: `/projects` index -> Pulse project listing at `/projects`
-- `ownership shift`: `/projects/[projectId]/control` -> `/projects/[projectId]/reliability`
-- `ownership shift`: `/organization/settings` -> `/settings`
-- `ownership shift`: `/model-versions/[id]` -> `/traces?project_id=...&model_version_id=...`
-- `ownership shift`: `/prompt-versions/[id]` -> `/traces?project_id=...&prompt_version=...`
-- `ownership shift`: `/regressions/[regressionId]/compare` -> `/operations/regressions/[regressionId]`
+Runtime continuity coverage remains:
+- `pnpm --filter pulse test:e2e:app-route-gate`
 
-### Functional delta gaps
+`docs/pulse-migration-parity-gaps.json` currently tracks only scope/ownership blockers and is fully resolved.
 
-- Known placeholders/deferred behavior remain on Pulse surfaces.
-- Some routes are present but read-only where web behavior is read-write.
-- Non-project routes may not preserve project scope contracts consistently.
+## 2) Functional Parity Audit Pass (Active)
 
-## Gap Classification Model
+The next migration stage is functional parity vs apps/web behavior, not more scope-routing work.
 
-Each tracked item must be marked as one of:
-- `missing`
-- `read-only delta`
-- `ownership shift`
-- `intentional exception`
+Active audit focus:
+- route behavior parity where Pulse still presents legacy/read-only adapters
+- write-path parity gaps that block operator workflows
+- placeholder/deferred system surfaces that still indicate incomplete functionality
 
-Each item also needs:
-- source behavior reference (apps/web path)
-- pulse behavior reference (apps/pulse path)
-- user impact level (`high|medium|low`)
-- migration decision (`implement|defer|accept-exception`)
+Artifacts:
+- canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
+- functional audit queue: `docs/pulse-final-functional-migration-gap-report.md`
 
-## Active Fix Slice (In Progress)
+## 3) Response Team Validation Status
 
-1. Add shared `ProjectScopeSelector` component in Pulse.
-2. Persist scope via `project_id` query on non-project routes:
-   - `/incidents`
-   - `/incidents/[incidentId]`
-   - `/traces`
-   - `/traces/[traceId]`
-   - `/traces/[traceId]/compare`
-   - `/traces/[traceId]/graph`
-   - `/audits/new`
-   - `/onboarding`
-   - `/audits`
-   - `/audits/[id]`
-   - `/audits/[id]/results`
-   - `/metrics`
-   - `/deployments`
-   - `/deployments/[deploymentId]`
-   - `/regressions`
-   - `/regressions/[regressionId]`
-3. Remove implicit “pick first project” fallbacks:
-   - prefer explicit selected `project_id`
-   - fallback to deterministic newest project only when no explicit scope exists
-   - surface selected scope in UI
-4. Add regression tests that fail on first-project implicit regression.
+Implemented in Pulse:
+- Team Members management: `/settings#team`
+- on-call assignment/escalation management: `/on-call` and `/projects/[projectId]/on-call`
+- explicit separation of org access roles vs on-call duty roles
 
-Pending:
-- `resolved in code`: FastAPI `/api/v1/operations/timeline` now accepts `project_id` and is covered by explicit API contract tests in `apps/api/tests/test_operations.py`.
-- `resolved in route contract`: `/operations` now forwards `project_id` into `getOperationsSurfaceData` filter and is covered by route continuity tests in `apps/pulse/tests/project-scope-route-continuity.test.ts`.
-- `resolved as executable Pulse gate`: `pnpm --filter pulse test:migration-scope-parity-gate` covers route ownership shims + scope continuity + adapter query propagation.
-- `resolved as authenticated runtime probe`: Playwright test `operations project scope runtime probe` in `apps/pulse/tests/e2e/app-route-shell.spec.ts` validates `/api/v1/projects`, `/api/v1/operations/timeline?project_id=...`, and `/operations?project_id=...` continuity.
+Required functional parity check (still open):
+1. Add member in `/settings#team`.
+2. Verify member appears in `/on-call` assignment selectors for the same organization/project.
+3. Verify project scope switching in `/on-call` does not cross-assign between projects.
+4. Verify role naming/labels are consistent and non-conflicting between Team role and On-call role.
 
-## Sweep Execution Plan
+## 4) Rules for Remaining Slices
 
-1. Build executable web->pulse route + behavior inventory.
-2. Classify every gap with the model above.
-3. Add migration gate check so unresolved high-impact gaps block closure.
-   - implemented as `docs/pulse-migration-parity-gaps.json` + `apps/pulse/tests/migration-parity-closure-gate.test.ts` and wired into `pnpm --filter pulse test:migration-scope-parity-gate`.
-4. Execute blockers by user impact priority:
-   - onboarding/project scope/incidents first
-   - then route ownership and read/write parity gaps
-
-## Notes
-
-- This tracker is operational, not archival.
-- No new migration slice closes until it updates this tracker.
+- No migration slice closes without updating this tracker and the functional gap report.
+- Prefer user-visible functional parity fixes over gate/process expansion.
+- Keep scopes isolated per branch/PR.

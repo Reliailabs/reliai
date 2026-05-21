@@ -15,6 +15,12 @@ Phase 9 implementation may proceed only when an item is either:
 - Onboarding ownership is Pulse-owned: `/onboarding` is implemented in `apps/pulse/app/(app)/onboarding/page.tsx` and governed by Pulse app-shell/auth contracts.
 - Migration gate closure achieved in `M9.3`; Phase 9 is unblocked for explicitly approved `Net-new` slices.
 
+## Current Migration State (2026-05-21)
+- Scope/ownership parity gates are green and continuously enforced.
+- Functional parity is still active work; do not treat migration as fully complete.
+- Current functional gap source of truth: `docs/pulse-final-functional-migration-gap-report.md`.
+- Response Team functional continuity is open for explicit validation (`/settings#team` -> `/on-call` end-to-end flow).
+
 ## Status Vocabulary
 - `Not started`
 - `Deferred`
