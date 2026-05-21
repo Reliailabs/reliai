@@ -67,6 +67,7 @@ Current state:
 - ownership is documented in the Response Team continuity contract and settings UI copy
 - `/signup` is the explicit continuation path for users who do not yet have a Reliai account
 - the no-account error state now offers a contextual "Send invitation instead" handoff into `/signup`
+- the `/signup` surface now renders team-invite context when the handoff includes `entry=team-invite`
 
 ## 5) Completion Criteria for Functional Parity
 Functional parity can be called complete only when:

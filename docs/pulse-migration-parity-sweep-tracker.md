@@ -56,6 +56,7 @@ Required functional parity check (closed for high-impact items):
 Deferred invite lifecycle status:
 - `/signup` is the explicit continuation path for new accounts until email-based invites are implemented.
 - the team invite `no_account` state now exposes a contextual "Send invitation instead" handoff into `/signup`.
+- `/signup` renders team-invite context when launched with `entry=team-invite`.
 
 ## 4) Rules for Remaining Slices
 
