@@ -19,6 +19,7 @@ This document closes the F2 ambiguity by classifying each `/system` surface as o
 | `/pulse/system/pipeline` | `/system/pipeline` | implemented | implement | Migration | current functional parity | Read-only telemetry parity surface. |
 | `/pulse/system/extensions` | `/system/extensions` | implemented | implement | Migration | current functional parity | Read-only telemetry parity surface. |
 | `/pulse/system/customers` | `/system/customers` | implemented | implement | Migration | current functional parity | Cross-project customer board parity surface. |
+| `/pulse/system/customers/[projectId]` | `/system/customers/[projectId]` | implemented | implement | Migration | current functional parity | Project-level customer detail parity surface. |
 | `/pulse/system/reliability-patterns` | `/system/reliability-patterns` | implemented | implement | Migration | current functional parity | Pattern board parity surface. |
 | `/pulse/system/growth` | `/system/growth` | implemented | implement | Migration | current functional parity | Growth telemetry parity surface. |
 | `/pulse/system/expansion` | `/system/expansion` | implemented | implement | Migration | current functional parity | Expansion telemetry parity surface. |
@@ -26,7 +27,7 @@ This document closes the F2 ambiguity by classifying each `/system` surface as o
 | `/system` | `/system` | redirects to `/pulse/system` | intentional exception | Migration | permanent alias policy | Legacy deep-link alias only. |
 | `/system/*` (all listed subroutes) | `/system/*` | redirects to `/pulse/system/*` | intentional exception | Migration | permanent alias policy | Legacy subroute aliases preserved for inbound links. |
 | `/pulse/systems` | n/a (legacy Pulse spelling) | redirects to `/pulse/system` | intentional exception | Migration | permanent alias policy | Backward compatibility alias for old Pulse links. |
-| `/system/customers/[projectId]` | `/system/customers/[projectId]` | missing in Pulse | defer | Migration | next functional parity batch | Source has project detail route; Pulse currently exposes aggregate customers board only. |
+| `/system/customers/[projectId]` | `/system/customers/[projectId]` | redirects to `/pulse/system/customers/[projectId]` | intentional exception | Migration | permanent alias policy | Legacy deep-link alias for project-level customer detail. |
 
 ## Decision Rules
 

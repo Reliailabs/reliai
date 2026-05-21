@@ -47,11 +47,11 @@ Impact: `medium`
 Current state:
 - classification is now explicit in `docs/pulse-system-surface-classification.md`.
 - legacy aliases are documented as `intentional exception`.
-- only one known deferment remains: `/system/customers/[projectId]`.
+- `/system/customers/[projectId]` parity is now implemented in Pulse with legacy alias preservation.
 
 Action:
 - keep the classification matrix updated for every system-surface change.
-- implement the deferred project-detail customer route in the next functional parity batch.
+- keep legacy aliases redirect-only (no duplicate owned UI surfaces).
 
 ### F3. Read-only vs write-path parity matrix is incomplete
 
@@ -69,7 +69,7 @@ Action:
 
 1. Response Team functional verification slice (F1) with explicit test/probe outputs.
 2. Read/write capability matrix slice (F3) and prioritized implementation queue.
-3. Deferred system customer-project detail route implementation (`/system/customers/[projectId]` parity).
+3. Read/write gap implementation queue execution (`F3`) with explicit owner-phase assignments.
 
 ## 5) Completion Criteria for Functional Parity
 

@@ -25,4 +25,16 @@ test("legacy /system aliases remain redirect-only wrappers", () => {
   const legacySubroute = read("app/(app)/system/customers/page.tsx");
   assert.match(legacySubroute, /redirect\("\/pulse\/system\/customers"\)/);
   assert.doesNotMatch(legacySubroute, /SystemLayoutShell/);
+
+  const legacyProjectSubroute = read("app/(app)/system/customers/[projectId]/page.tsx");
+  assert.match(legacyProjectSubroute, /redirect\(`\/pulse\/system\/customers\/\$\{encodeURIComponent\(projectId\)\}`\)/);
+});
+
+test("customers board links into project-level detail surface", () => {
+  const customers = read("app/(app)/pulse/system/customers/page.tsx");
+  assert.match(customers, /href=\{`\/pulse\/system\/customers\/\$\{encodeURIComponent\(project\.project_id\)\}`\}/);
+
+  const detail = read("app/(app)/pulse/system/customers/[projectId]/page.tsx");
+  assert.match(detail, /title=\{project\.project_name\}/);
+  assert.match(detail, /Back to customers/);
 });
