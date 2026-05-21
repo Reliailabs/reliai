@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { buildTeamInviteSignupHref } from "@/lib/team-invite-link";
 import { User, Bell, Lock, Palette, Users, Zap, ChevronRight, Server, Building2, BarChart3, Boxes, Settings, Trash2, UserPlus, AlertTriangle } from "lucide-react";
@@ -91,6 +92,9 @@ const statusCopy = {
 } as const;
 
 export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfaceData }) {
+  const searchParams = useSearchParams();
+  const projectScope = searchParams.get("project_id") ?? searchParams.get("projectId");
+  const onCallHref = projectScope ? `/on-call?project_id=${encodeURIComponent(projectScope)}` : "/on-call";
   const settingsSections = settingsData?.quickItems?.length
     ? settingsData.quickItems
     : defaultSettingsSections.map((section) => ({ ...section, status: "mapped" as const }));
@@ -607,7 +611,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             Invitation emails are not auto-delivered from Pulse yet. Share the queued join link directly from Pending Invitations.
           </p>
           <p className="text-[11px] text-muted-foreground">
-            On-call duty roles are configured separately in <Link href="/on-call" className="underline underline-offset-2">On-Call</Link>.
+            On-call duty roles are configured separately in <Link href={onCallHref} className="underline underline-offset-2">On-Call</Link>.
           </p>
         </div>
       </div>
