@@ -40,3 +40,10 @@ test("response-team right panel keeps Team Members remediation path visible", ()
   assert.match(file, /Configure team members/);
   assert.match(file, /href="\/settings#team"/);
 });
+
+test("settings team UI makes external invite lifecycle ownership explicit", () => {
+  const settingsFile = read("components/dashboard/content/settings-content.tsx");
+  assert.match(settingsFile, /External invite lifecycle is deferred and tracked in migration parity docs/);
+  assert.match(settingsFile, /Continue with account creation at \/signup/);
+  assert.doesNotMatch(settingsFile, /coming soon/i);
+});

@@ -466,8 +466,10 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             </p>
           ) : null}
           <p className="text-[11px] text-muted-foreground">
-            The person must already have a Reliai account.{" "}
-            <span className="text-muted-foreground/60">Email-based invites are coming soon.</span>
+            The person must already have a Reliai account. External invite lifecycle is deferred and tracked in migration parity docs.{" "}
+            <Link href="/signup" className="underline underline-offset-2">
+              Continue with account creation at /signup
+            </Link>
           </p>
           <p className="text-[11px] text-muted-foreground">
             On-call duty roles are configured separately in <Link href="/on-call" className="underline underline-offset-2">On-Call</Link>.
