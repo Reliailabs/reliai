@@ -43,6 +43,7 @@ All notable changes to Reliai will be documented in this file.
 ### Changed
 
 - Hardened project audit freshness logic so project summaries only present fresh certification when the latest relevant run is completed, non-pending, and non-invalidated.
+- Settings team invite errors now hand off to `/signup` with preserved invite context instead of leaving a generic dead-end message, and the `/signup` surface now renders team-invite context when launched with `entry=team-invite`.
 - Standardized production snapshot metadata contract (`evidenceWindow`, `incidentSummary`, `traceSampleSummary`, `guardrailViolationSummary`, `regressionSummary`, `modelChangeSummary`, `topRiskySurfaces`) across API and web UI.
 - Improved deterministic audit executor output realism by varying findings/remediation by audit profile and anchoring evidence refs to production snapshot surfaces.
 - Migrated key marketing, onboarding, and core product surfaces to semantic design tokens for higher readability.
