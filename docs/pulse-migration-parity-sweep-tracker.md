@@ -16,7 +16,8 @@ Resolved and gated by executable tests:
   - `/model-versions/[id]` -> `/traces?project_id=...&model_version_id=...`
   - `/prompt-versions/[id]` -> `/traces?project_id=...&prompt_version=...`
   - `/regressions/[regressionId]/compare` -> `/operations/regressions/[regressionId]`
-- shared shell consistency across key non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
+  - shared shell consistency across key non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
+  - public invite redemption surface (`/join`) is intentionally outside `(app)` and treated as a documented ownership shim for invite acceptance
 
 ### Migration gate
 

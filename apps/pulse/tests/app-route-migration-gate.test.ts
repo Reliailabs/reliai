@@ -64,6 +64,7 @@ test("gate: app-owned pages outside (app) are documented shims only", () => {
     "app/(marketing)/ai-reliability-audit/page.tsx",
     "app/sign-in/page.tsx",
     "app/demo/page.tsx",
+    "app/join/page.tsx",
     "app/signup/page.tsx",
   ]);
 
