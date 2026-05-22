@@ -5,6 +5,7 @@ from app.api.v1.routes import router as api_v1_router
 from app.core.logging import configure_logging
 from app.core.settings import get_settings
 from app.notifications.invite_delivery_notify import dispatch_invitation
+from app.security.webhook_replay_guard import invite_delivery_replay_guard
 from app.security.webhook_signing import verify_webhook_signature
 from app.services.clickhouse_migrations import apply_migrations
 from app.workers.scheduler import start_scheduler
@@ -74,6 +75,13 @@ async def reliai_invite_delivery(
         )
         if not valid:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_signature")
+        replay_key = f"{timestamp}:{x_reliai_signature}"
+        accepted_once = invite_delivery_replay_guard.register(
+            key=replay_key,
+            ttl_seconds=max(1, runtime_settings.invite_delivery_webhook_signature_max_age_seconds),
+        )
+        if not accepted_once:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="replay_detected")
 
     payload = await request.json()
     if not isinstance(payload, dict) or payload.get("event") != "organization_invitation.created":
