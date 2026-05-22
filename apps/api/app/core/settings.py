@@ -27,6 +27,17 @@ class Settings(BaseSettings):
     event_stream_consumer_timeout_ms: int = 1000
     enabled_processors: str = "evaluation,warehouse,reliability_metrics,regression,automation,reliability_graph"
     slack_webhook_default: str | None = None
+    invite_email_provider: str = "resend"
+    invite_delivery_webhook_bearer_token: str | None = None
+    invite_from_email: str | None = None
+    invite_to_email: str | None = None
+    resend_api_key: str | None = None
+    resend_from_email: str | None = None
+    resend_api_base: str = "https://api.resend.com"
+    resend_invite_subject_prefix: str = "Reliai invitation"
+    gmail_client_email: str | None = None
+    gmail_private_key: str | None = None
+    gmail_delegated_user: str | None = None
     alert_delivery_cooldown_minutes: int = 60
     slack_alert_max_attempts: int = 3
     slack_alert_retry_backoff_seconds: str = "60,300"
