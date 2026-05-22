@@ -155,9 +155,16 @@ def test_invitation_delivery_marks_webhook_dispatched_when_configured(client, db
         def __exit__(self, exc_type, exc, tb):
             return False
 
+    seen: dict[str, object] = {}
+
+    def _capture_request(req, **_kwargs):
+        seen["headers"] = dict(req.header_items())
+        return _Response()
+
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_URL", "https://example.test/invite-delivery")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "invite-signing-secret")
     get_settings.cache_clear()
-    monkeypatch.setattr(invitation_service, "urlopen", lambda *_args, **_kwargs: _Response())
+    monkeypatch.setattr(invitation_service, "urlopen", _capture_request)
 
     response = client.post(
         f"/api/v1/organizations/{org['id']}/invitations",
@@ -169,6 +176,9 @@ def test_invitation_delivery_marks_webhook_dispatched_when_configured(client, db
     invitation = response.json()
     assert invitation["delivery_mode"] == "email_webhook_dispatched"
     assert invitation["email_sent_at"] is not None
+    headers = {str(key).lower(): value for key, value in seen["headers"].items()}
+    assert "x-reliai-signature" in headers
+    assert "x-reliai-timestamp" in headers
     get_settings.cache_clear()
 
 

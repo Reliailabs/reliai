@@ -5,6 +5,7 @@ from app.api.v1.routes import router as api_v1_router
 from app.core.logging import configure_logging
 from app.core.settings import get_settings
 from app.notifications.invite_delivery_notify import dispatch_invitation
+from app.security.webhook_signing import verify_webhook_signature
 from app.services.clickhouse_migrations import apply_migrations
 from app.workers.scheduler import start_scheduler
 
@@ -41,6 +42,8 @@ def health() -> dict[str, str]:
 async def reliai_invite_delivery(
     request: Request,
     authorization: str | None = Header(default=None),
+    x_reliai_timestamp: str | None = Header(default=None),
+    x_reliai_signature: str | None = Header(default=None),
 ) -> dict[str, object]:
     runtime_settings = get_settings()
     expected_token = (runtime_settings.invite_delivery_webhook_bearer_token or "").strip()
@@ -52,6 +55,25 @@ async def reliai_invite_delivery(
     expected_header = f"Bearer {expected_token}"
     if authorization != expected_header:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+
+    raw_body = await request.body()
+    signing_secret = (runtime_settings.invite_delivery_webhook_signing_secret or "").strip()
+    if signing_secret:
+        if not x_reliai_timestamp or not x_reliai_signature:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="missing_signature")
+        try:
+            timestamp = int(x_reliai_timestamp)
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_signature") from exc
+        valid = verify_webhook_signature(
+            secret=signing_secret,
+            timestamp=timestamp,
+            signature=x_reliai_signature,
+            body=raw_body,
+            max_age_seconds=max(1, runtime_settings.invite_delivery_webhook_signature_max_age_seconds),
+        )
+        if not valid:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_signature")
 
     payload = await request.json()
     if not isinstance(payload, dict) or payload.get("event") != "organization_invitation.created":

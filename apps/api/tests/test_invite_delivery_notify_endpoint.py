@@ -1,8 +1,10 @@
 import json
+import time
 
 from app.core.settings import get_settings
 from app.notifications import invite_delivery_notify
 from app.notifications.providers import resend as resend_provider
+from app.security.webhook_signing import sign_webhook_payload
 
 
 def _payload() -> dict:
@@ -21,6 +23,18 @@ def _payload() -> dict:
             "created_at": "2026-05-23T00:00:00Z",
         },
     }
+
+
+def _signed_headers(payload: dict, *, secret: str, timestamp: int | None = None) -> tuple[dict[str, str], bytes]:
+    ts = int(time.time()) if timestamp is None else timestamp
+    body = json.dumps(payload).encode("utf-8")
+    sig = sign_webhook_payload(secret=secret, timestamp=ts, body=body)
+    headers = {
+        "X-Reliai-Timestamp": str(ts),
+        "X-Reliai-Signature": sig,
+        "Content-Type": "application/json",
+    }
+    return headers, body
 
 
 def test_invite_delivery_requires_bearer_token_config(client):
@@ -43,8 +57,49 @@ def test_invite_delivery_rejects_invalid_auth(client, monkeypatch):
     get_settings.cache_clear()
 
 
+def test_invite_delivery_rejects_missing_signature_when_configured(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
+    get_settings.cache_clear()
+    response = client.post(
+        "/reliai/invite-delivery",
+        headers={"Authorization": "Bearer secret-token"},
+        json=_payload(),
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "missing_signature"
+    get_settings.cache_clear()
+
+
+def test_invite_delivery_rejects_invalid_signature_when_configured(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
+    get_settings.cache_clear()
+    headers = {"Authorization": "Bearer secret-token", "X-Reliai-Timestamp": str(int(time.time())), "X-Reliai-Signature": "bad"}
+    response = client.post("/reliai/invite-delivery", headers=headers, json=_payload())
+    assert response.status_code == 401
+    assert response.json()["detail"] == "invalid_signature"
+    get_settings.cache_clear()
+
+
+def test_invite_delivery_rejects_stale_signature(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNATURE_MAX_AGE_SECONDS", "10")
+    get_settings.cache_clear()
+    payload = _payload()
+    stale_timestamp = int(time.time()) - 30
+    signed_headers, body = _signed_headers(payload, secret="signing-secret", timestamp=stale_timestamp)
+    headers = {"Authorization": "Bearer secret-token", **signed_headers}
+    response = client.post("/reliai/invite-delivery", headers=headers, content=body)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "invalid_signature"
+    get_settings.cache_clear()
+
+
 def test_invite_delivery_forwards_to_resend(client, monkeypatch):
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
     monkeypatch.setenv("RESEND_API_KEY", "resend_test_key")
     monkeypatch.setenv("RESEND_FROM_EMAIL", "invites@reliai.dev")
     monkeypatch.setenv("CANONICAL_DASHBOARD_URL", "https://app.reliai.dev")
@@ -73,11 +128,9 @@ def test_invite_delivery_forwards_to_resend(client, monkeypatch):
 
     monkeypatch.setattr(resend_provider, "urlopen", _fake_urlopen)
 
-    response = client.post(
-        "/reliai/invite-delivery",
-        headers={"Authorization": "Bearer secret-token"},
-        json=_payload(),
-    )
+    payload = _payload()
+    signed_headers, body = _signed_headers(payload, secret="signing-secret")
+    response = client.post("/reliai/invite-delivery", headers={"Authorization": "Bearer secret-token", **signed_headers}, content=body)
     assert response.status_code == 200
     payload = response.json()
     assert payload["accepted"] is True
@@ -96,12 +149,15 @@ def test_invite_delivery_forwards_to_resend(client, monkeypatch):
 
 def test_invite_delivery_rejects_unknown_provider(client, monkeypatch):
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
     monkeypatch.setenv("INVITE_EMAIL_PROVIDER", "unknown")
     get_settings.cache_clear()
+    payload = _payload()
+    signed_headers, body = _signed_headers(payload, secret="signing-secret")
     response = client.post(
         "/reliai/invite-delivery",
-        headers={"Authorization": "Bearer secret-token"},
-        json=_payload(),
+        headers={"Authorization": "Bearer secret-token", **signed_headers},
+        content=body,
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "unsupported_invite_email_provider"
@@ -110,6 +166,7 @@ def test_invite_delivery_rejects_unknown_provider(client, monkeypatch):
 
 def test_invite_delivery_uses_gmail_provider_when_configured(client, monkeypatch):
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
     monkeypatch.setenv("INVITE_EMAIL_PROVIDER", "gmail")
     get_settings.cache_clear()
 
@@ -119,11 +176,9 @@ def test_invite_delivery_uses_gmail_provider_when_configured(client, monkeypatch
         lambda _message: {"accepted": True, "provider": "gmail", "provider_id": "gmail_msg_123"},
     )
 
-    response = client.post(
-        "/reliai/invite-delivery",
-        headers={"Authorization": "Bearer secret-token"},
-        json=_payload(),
-    )
+    payload = _payload()
+    signed_headers, body = _signed_headers(payload, secret="signing-secret")
+    response = client.post("/reliai/invite-delivery", headers={"Authorization": "Bearer secret-token", **signed_headers}, content=body)
     assert response.status_code == 200
     body = response.json()
     assert body["accepted"] is True
