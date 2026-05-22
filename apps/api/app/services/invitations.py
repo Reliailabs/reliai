@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import time
 from datetime import datetime, timedelta, timezone
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -20,6 +21,7 @@ from app.models.operator_user import OperatorUser
 from app.models.operator_session import OperatorSession
 from app.models.user import User
 from app.core.settings import get_settings
+from app.security.webhook_signing import sign_webhook_payload
 from app.services.audit_log import log_action
 from app.services.auth import get_or_create_app_user, get_or_create_operator_account, issue_operator_session
 from app.services.workos_roles import normalize_org_role
@@ -168,12 +170,15 @@ def dispatch_organization_invitation_delivery(db: Session, *, invitation_id: UUI
             "created_at": invitation.created_at.isoformat(),
         },
     }
-    request = Request(
-        webhook_url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+    body = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    signing_secret = (settings.invite_delivery_webhook_signing_secret or "").strip()
+    if signing_secret:
+        timestamp = int(time.time())
+        signature = sign_webhook_payload(secret=signing_secret, timestamp=timestamp, body=body)
+        headers["X-Reliai-Timestamp"] = str(timestamp)
+        headers["X-Reliai-Signature"] = signature
+    request = Request(webhook_url, data=body, headers=headers, method="POST")
     try:
         with urlopen(request, timeout=max(1, settings.invite_delivery_webhook_timeout_seconds)) as response:
             status_code = getattr(response, "status", 200)

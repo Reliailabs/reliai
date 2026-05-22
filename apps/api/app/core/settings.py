@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     invite_delivery_webhook_timeout_seconds: int = 5
     invite_email_provider: str = "resend"
     invite_delivery_webhook_bearer_token: str | None = None
+    invite_delivery_webhook_signing_secret: str | None = None
+    invite_delivery_webhook_signature_max_age_seconds: int = 300
     invite_from_email: str | None = None
     invite_to_email: str | None = None
     resend_api_key: str | None = None
