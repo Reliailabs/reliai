@@ -8,7 +8,7 @@ Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership c
 
 Scope and ownership migration is materially stabilized and test-gated.
 
-Functional parity is not complete yet. Remaining risk is no longer route existence; it is behavior parity (especially write-path and deferred system surfaces).
+High-impact functional parity gaps are closed. Functional parity migration is complete for the tracked surfaces.
 
 ## 2) What Is Already Closed
 
@@ -16,63 +16,66 @@ Functional parity is not complete yet. Remaining risk is no longer route existen
 - deterministic project resolution (no implicit first-project behavior)
 - ownership-shift route shims with canonical query output
 - shared-shell alignment on recently migrated non-project surfaces (`/playground`, `/regressions`, `/regressions/[id]`)
+- Response Team functional continuity across settings and on-call surfaces
+- system-surface classification and read/write parity matrices
 
 Validation backing:
 - `pnpm --filter pulse test:migration-scope-parity-gate`
 - `pnpm --filter pulse test:e2e:app-route-gate`
 
-## 3) High-Impact Open Functional Gaps
+## 3) Closed Functional Gaps
 
 ### F1. Response Team end-to-end functional continuity
 
-Classification: `functional continuity gap`  
+Classification: `functional continuity gap`
 Impact: `high`
+State: `closed`
 
-Current state:
-- Team members are managed in `/settings#team`.
-- On-call assignments are managed in `/on-call`.
-- Separation is implemented, but end-to-end continuity needs explicit parity verification.
+Evidence:
+- Team member add/invite from `/settings#team` is assignable in `/on-call`
+- project scope switching in `/on-call` does not leak assignment context
+- access role labels are not conflated with on-call duty roles
 
-Required parity checks:
-1. invite/add member in settings.
-2. verify immediate assignment availability in on-call role selectors.
-3. verify project scope changes do not leak assignment context.
-4. verify labels are unambiguous between access role and on-call duty role.
+### F2. Deferred/legacy system surface classification
 
-### F2. Deferred/legacy system surfaces still signaling incomplete parity
-
-Classification: `deferred behavior delta`  
+Classification: `deferred behavior delta`
 Impact: `medium`
+State: `closed`
 
-Current state:
-- legacy system route group and helper copy still contains deferred language in system nav and legacy wrappers.
-- these surfaces need explicit classification: true deferment vs implement-now parity requirement.
+Evidence:
+- legacy system surfaces are classified as implement/defer/intentional exception
+- deferred placeholder language was removed from canonical system landing surfaces
+- legacy aliases remain redirect-only wrappers
 
-Action:
-- classify each system subroute as `implement`, `defer`, or `intentional exception` with owner and target phase.
+### F3. Read/write parity matrix completion
 
-### F3. Read-only vs write-path parity matrix is incomplete
-
-Classification: `read/write delta`  
+Classification: `read/write delta`
 Impact: `high`
+State: `closed`
+
+Evidence:
+- route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged
+- unresolved write gaps have explicit defer/implement decisions with target phase
+
+### F4. Invite lifecycle delivery closure
+
+Classification: `functional continuity gap`
+Impact: `medium`
+State: `closed`
 
 Current state:
-- multiple migrated routes are present and navigable, but not all apps/web write capabilities are confirmed in Pulse.
+- pending invitation persistence is implemented and surfaced in Team settings
+- admins can queue and revoke pending invitations from the Settings surface
+- queued invites expose a tokenized `/join?token=...` redemption path
+- invite redemption creates membership/session in the local auth stack
+- delivery contract is explicit:
+  - `email_webhook_dispatched` when delivery webhook is configured and succeeds
+  - `manual_join_link` fallback when delivery is not configured or unavailable
+- `/join` remains a documented public ownership shim for invite acceptance and is intentionally outside `(app)`
+- `/signup` remains the continuation path for users starting account setup from invitation context
 
-Action:
-- produce explicit write-capability matrix per route (create/edit/approve/execute/rollback where applicable).
-- tag each gap with migration decision and target phase.
-
-## 4) Immediate Execution Queue
-
-1. Response Team functional verification slice (F1) with explicit test/probe outputs.
-2. System surface deferment classification slice (F2) with concrete owner/phase mapping.
-3. Read/write capability matrix slice (F3) and prioritized implementation queue.
-
-## 5) Completion Criteria for Functional Parity
+## 4) Completion Criteria for Functional Parity
 
 Functional parity can be called complete only when:
-- all high-impact functional gaps are either implemented or explicitly accepted as exceptions,
-- Response Team settings <-> on-call continuity is verified,
-- read/write deltas are closed or intentionally deferred with documented decision and phase owner,
+- all high-impact functional gaps are closed,
 - migration tracker and gap report are in sync.

@@ -29,6 +29,8 @@ export default function SignupShimPage({ searchParams }: SignupShimPageProps) {
   const query = toUrlSearchParams(searchParams);
   const href = resolveSignupHref(query);
   const sourceAttribution = extractEntrypointAttribution(query);
+  const inviteEmail = query.get("email")?.trim() ?? "";
+  const isTeamInvite = query.get("entry") === "team-invite";
   const destinationLabel = href.startsWith("http://") || href.startsWith("https://")
     ? "Reliai signup"
     : "Reliai sign-in";
@@ -44,6 +46,15 @@ export default function SignupShimPage({ searchParams }: SignupShimPageProps) {
             Signup ownership is handled through the active account entrypoint. Continue to {destinationLabel} to
             complete access.
           </p>
+          {isTeamInvite ? (
+            <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-200">
+              <p className="font-medium text-zinc-100">Team invite handoff</p>
+              <p className="mt-1 text-zinc-300">
+                Continue with account creation for {inviteEmail || "the invited email address"} to complete the team
+                member flow.
+              </p>
+            </div>
+          ) : null}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <EntrypointLink
               href={href}

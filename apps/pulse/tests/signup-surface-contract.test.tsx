@@ -17,3 +17,13 @@ test("signup surface exposes explicit continuity paths", () => {
   assert.match(html, /href="\/ai-reliability-audit"/);
   assert.match(html, /href="\//);
 });
+
+test("signup surface shows contextual team invite handoff when entry is team-invite", () => {
+  const html = renderToStaticMarkup(
+    <SignupPage searchParams={{ entry: "team-invite", email: "invitee@company.com" }} />,
+  );
+
+  assert.match(html, /Team invite handoff/);
+  assert.match(html, /invitee@company.com/);
+  assert.match(html, /Continue with account creation for invitee@company.com/);
+});

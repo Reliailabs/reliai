@@ -1,0 +1,87 @@
+{
+  "updated_at_utc": "2026-05-21T00:00:00Z",
+  "scope": "apps/web -> apps/pulse route-level read/write parity",
+  "rows": [
+    {
+      "route": "/incidents/[incidentId]",
+      "write_actions": ["acknowledge", "resolve", "reopen", "assign_owner"],
+      "status": "implemented",
+      "impact": "high",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "Backed by incident action proxy routes in Pulse."
+    },
+    {
+      "route": "/audits/[id]",
+      "write_actions": ["new_run", "start", "continue", "rerun_stage"],
+      "status": "implemented",
+      "impact": "high",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "Action parity closed in M8.3 contract slice."
+    },
+    {
+      "route": "/projects/[projectId]/ingestion",
+      "write_actions": ["update_sampling_policy", "update_retention", "update_cardinality_limits"],
+      "status": "implemented",
+      "impact": "high",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "M7.4b write parity implemented."
+    },
+    {
+      "route": "/projects/[projectId]/processors",
+      "write_actions": ["create_processor", "edit_processor", "enable_processor", "disable_processor"],
+      "status": "implemented",
+      "impact": "high",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "M7.5b write parity implemented."
+    },
+    {
+      "route": "/projects/[projectId]/settings",
+      "write_actions": ["update_project_name", "update_project_slug", "update_project_description"],
+      "status": "implemented",
+      "impact": "high",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "M7.6b write parity implemented."
+    },
+    {
+      "route": "/on-call",
+      "write_actions": ["assign_oncall_roles", "update_escalation_policy"],
+      "status": "implemented",
+      "impact": "high",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "Pulse-owned response-team write surface."
+    },
+    {
+      "route": "/settings#team",
+      "write_actions": ["add_member", "remove_member"],
+      "status": "implemented",
+      "impact": "high",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "Organization member add/remove is wired."
+    },
+    {
+      "route": "/settings#team",
+      "write_actions": ["invite_external_user_email_lifecycle"],
+      "status": "implemented",
+      "impact": "medium",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "Invite queue/revoke/redeem plus configurable email webhook delivery adapter are implemented; manual join-link fallback remains explicit when delivery is not configured."
+    },
+    {
+      "route": "/projects/[projectId]/timeline",
+      "write_actions": [],
+      "status": "intentional_read_only",
+      "impact": "low",
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "Source-aligned read timeline surface; no write contract expected."
+    }
+  ]
+}

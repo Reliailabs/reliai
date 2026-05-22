@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { SystemLayoutShell } from "../_components/system-layout-shell";
 import { getSystemCustomersSurfaceData } from "@/lib/system-customers-data";
 
@@ -78,6 +80,7 @@ export default async function SystemCustomersPage() {
                   <th className="px-3 py-2 font-medium">Processor failures</th>
                   <th className="px-3 py-2 font-medium">Pipeline lag</th>
                   <th className="px-3 py-2 font-medium">Risk</th>
+                  <th className="px-3 py-2 font-medium text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -102,6 +105,14 @@ export default async function SystemCustomersPage() {
                       <span className={`inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${riskTone(project.risk_level)}`}>
                         {project.risk_level}
                       </span>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <Link
+                        href={`/pulse/system/customers/${encodeURIComponent(project.project_id)}`}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Open
+                      </Link>
                     </td>
                   </tr>
                 ))}
