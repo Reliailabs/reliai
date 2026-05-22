@@ -1,9 +1,12 @@
 import json
 import time
 
+import pytest
+
 from app.core.settings import get_settings
 from app.notifications import invite_delivery_notify
 from app.notifications.providers import resend as resend_provider
+from app.security.webhook_replay_guard import invite_delivery_replay_guard
 from app.security.webhook_signing import sign_webhook_payload
 
 
@@ -23,6 +26,13 @@ def _payload() -> dict:
             "created_at": "2026-05-23T00:00:00Z",
         },
     }
+
+
+@pytest.fixture(autouse=True)
+def _clear_replay_guard():
+    invite_delivery_replay_guard._entries.clear()
+    yield
+    invite_delivery_replay_guard._entries.clear()
 
 
 def _signed_headers(payload: dict, *, secret: str, timestamp: int | None = None) -> tuple[dict[str, str], bytes]:
@@ -94,6 +104,30 @@ def test_invite_delivery_rejects_stale_signature(client, monkeypatch):
     response = client.post("/reliai/invite-delivery", headers=headers, content=body)
     assert response.status_code == 401
     assert response.json()["detail"] == "invalid_signature"
+    get_settings.cache_clear()
+
+
+def test_invite_delivery_rejects_replayed_signed_request(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
+    monkeypatch.setenv("INVITE_EMAIL_PROVIDER", "gmail")
+    get_settings.cache_clear()
+    invite_delivery_replay_guard._entries.clear()
+
+    monkeypatch.setattr(
+        invite_delivery_notify,
+        "send_invitation_via_gmail",
+        lambda _message: {"accepted": True, "provider": "gmail", "provider_id": "gmail_msg_123"},
+    )
+
+    payload = _payload()
+    signed_headers, body = _signed_headers(payload, secret="signing-secret", timestamp=int(time.time()))
+    headers = {"Authorization": "Bearer secret-token", **signed_headers}
+    first = client.post("/reliai/invite-delivery", headers=headers, content=body)
+    second = client.post("/reliai/invite-delivery", headers=headers, content=body)
+    assert first.status_code == 200
+    assert second.status_code == 409
+    assert second.json()["detail"] == "replay_detected"
     get_settings.cache_clear()
 
 
