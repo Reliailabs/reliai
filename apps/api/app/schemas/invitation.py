@@ -21,6 +21,8 @@ class OrganizationInvitationRead(APIModel):
     invited_by_user_id: UUID
     invited_by_email: str
     status: str
+    delivery_mode: str
+    email_sent_at: datetime | None
     signup_path: str
     join_path: str
     expires_at: datetime

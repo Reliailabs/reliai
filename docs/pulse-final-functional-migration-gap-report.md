@@ -8,7 +8,7 @@ Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership c
 
 Scope and ownership migration is materially stabilized and test-gated.
 
-High-impact functional parity gaps are closed. Remaining work is limited to explicitly deferred behavior, not route/ownership parity.
+High-impact functional parity gaps are closed. Functional parity migration is complete for the tracked surfaces.
 
 ## 2) What Is Already Closed
 
@@ -57,27 +57,25 @@ Evidence:
 - route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged
 - unresolved write gaps have explicit defer/implement decisions with target phase
 
-## 4) Remaining Deferred Item
+### F4. Invite lifecycle delivery closure
 
-### External invite lifecycle delivery
-
-Classification: `deferred behavior delta`
+Classification: `functional continuity gap`
 Impact: `medium`
+State: `closed`
 
 Current state:
 - pending invitation persistence is implemented and surfaced in Team settings
 - admins can queue and revoke pending invitations from the Settings surface
-- queued invites now expose a tokenized `/join?token=...` redemption path
-- the invite redeem flow creates the membership/session in the current local auth stack
-- invite delivery contract is explicit in Pulse (`manual_join_link`, `emailSent=false`)
-- `/join` is a documented public ownership shim for invite acceptance and is intentionally outside `(app)`
-- `/signup` remains the explicit continuation path for users who do not yet have a Reliai account
-- the no-account error state now queues a pending invitation and offers a contextual "Send invitation instead" handoff into `/signup`
-- the `/signup` surface still renders team-invite context when the handoff includes `entry=team-invite`
-- email delivery remains deferred
+- queued invites expose a tokenized `/join?token=...` redemption path
+- invite redemption creates membership/session in the local auth stack
+- delivery contract is explicit:
+  - `email_webhook_dispatched` when delivery webhook is configured and succeeds
+  - `manual_join_link` fallback when delivery is not configured or unavailable
+- `/join` remains a documented public ownership shim for invite acceptance and is intentionally outside `(app)`
+- `/signup` remains the continuation path for users starting account setup from invitation context
 
-## 5) Completion Criteria for Functional Parity
+## 4) Completion Criteria for Functional Parity
+
 Functional parity can be called complete only when:
 - all high-impact functional gaps are closed,
-- remaining deferred items are explicitly documented with their implemented subset,
 - migration tracker and gap report are in sync.

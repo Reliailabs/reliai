@@ -539,6 +539,7 @@ from app.services.memberships import (
 )
 from app.services.invitations import (
     accept_organization_invitation,
+    dispatch_organization_invitation_delivery,
     get_organization_invitation_by_token,
     create_organization_invitation,
     list_organization_invitations,
@@ -2731,6 +2732,8 @@ def _invitation_read_model(invitation) -> OrganizationInvitationRead:
         invited_by_user_id=invitation.invited_by_user_id,
         invited_by_email=invited_by_email,
         status="pending",
+        delivery_mode=invitation.delivery_mode,
+        email_sent_at=invitation.email_sent_at,
         signup_path=f"/signup?{urlencode({'entry': 'team-invite', 'email': invitation.invited_email})}",
         join_path=f"/join?{urlencode({'token': invitation.token})}",
         expires_at=invitation.expires_at,
@@ -2834,6 +2837,7 @@ def create_organization_invitation_endpoint(
         role=payload.role,
         invited_by_user_id=operator.operator.id,
     )
+    invitation = dispatch_organization_invitation_delivery(db, invitation_id=invitation.id)
     return _invitation_read_model(invitation)
 
 

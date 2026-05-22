@@ -16,6 +16,8 @@ type BackendInvitation = {
   invited_by_user_id: string;
   invited_by_email: string;
   status: string;
+  delivery_mode?: string;
+  email_sent_at?: string | null;
   signup_path: string;
   join_path: string;
   expires_at: string;
@@ -23,6 +25,10 @@ type BackendInvitation = {
 };
 
 function mapInvitation(invitation: BackendInvitation) {
+  const emailSent = Boolean(invitation.email_sent_at);
+  const deliveryMode = emailSent && invitation.delivery_mode === "email_webhook_dispatched"
+    ? "email_webhook_dispatched"
+    : "manual_join_link";
   return {
     id: invitation.id,
     invitedEmail: invitation.invited_email,
@@ -30,8 +36,8 @@ function mapInvitation(invitation: BackendInvitation) {
     invitedByEmail: invitation.invited_by_email,
     status: invitation.status,
     delivery: {
-      mode: "manual_join_link" as const,
-      emailSent: false as const,
+      mode: deliveryMode,
+      emailSent,
     },
     signupPath: invitation.signup_path,
     joinPath: invitation.join_path,

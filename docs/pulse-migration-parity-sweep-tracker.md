@@ -31,13 +31,13 @@ Runtime continuity coverage remains:
 
 ## 2) Functional Parity Audit Pass
 
-High-impact functional parity is closed. Remaining work is limited to explicitly deferred behavior, not more scope-routing work.
+High-impact functional parity is closed, including invite lifecycle delivery contract closure.
 
 Current functional status:
 - high-impact behavior parity gaps are closed and test-gated
 - system-surface deferments are explicitly classified
 - read/write parity matrix is explicit and owner-tagged
-- external invite lifecycle now has queue/revoke plus local redeem coverage and explicit manual-delivery contract (`manual_join_link`), while email delivery remains deferred
+- external invite lifecycle now has queue/revoke/redeem coverage plus explicit delivery contract (`email_webhook_dispatched` or `manual_join_link` fallback)
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`

@@ -68,11 +68,11 @@
     {
       "route": "/settings#team",
       "write_actions": ["invite_external_user_email_lifecycle"],
-      "status": "deferred",
+      "status": "implemented",
       "impact": "medium",
-      "owner": "Product/Auth",
-      "target_phase": "post-migration invite lifecycle decision",
-      "notes": "Current flow requires existing Reliai account lookup; true invite lifecycle remains out of migration scope."
+      "owner": "Migration",
+      "target_phase": "completed",
+      "notes": "Invite queue/revoke/redeem plus configurable email webhook delivery adapter are implemented; manual join-link fallback remains explicit when delivery is not configured."
     },
     {
       "route": "/projects/[projectId]/timeline",

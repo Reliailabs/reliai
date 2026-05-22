@@ -24,6 +24,8 @@ def upgrade() -> None:
         sa.Column("role", sa.String(length=32), nullable=False),
         sa.Column("invited_by_user_id", sa.Uuid(), nullable=False),
         sa.Column("token", sa.String(length=128), nullable=False),
+        sa.Column("delivery_mode", sa.String(length=32), nullable=False, server_default="manual_join_link"),
+        sa.Column("email_sent_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("accepted_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),

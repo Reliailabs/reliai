@@ -19,6 +19,8 @@ class OrganizationInvitation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     role: Mapped[str] = mapped_column(String(32), nullable=False)
     invited_by_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     token: Mapped[str] = mapped_column(String(128), nullable=False)
+    delivery_mode: Mapped[str] = mapped_column(String(32), nullable=False, default="manual_join_link")
+    email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

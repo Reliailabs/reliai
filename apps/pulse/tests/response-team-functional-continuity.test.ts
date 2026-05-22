@@ -72,9 +72,10 @@ test("settings team UI makes external invite lifecycle ownership explicit", () =
   assert.match(settingsFile, /const joinReturnTo = projectScope/);
   assert.match(settingsFile, /params\.set\("return_to", joinReturnTo\)/);
   assert.match(settingsFile, /href=\{buildInvitationJoinHref\(invitation\.joinPath\)\}/);
-  assert.match(settingsFile, /Delivery: manual join link \(email delivery deferred\)\./);
+  assert.match(settingsFile, /email dispatched via configured delivery adapter\./);
+  assert.match(settingsFile, /manual join link \(email delivery not configured\)\./);
   assert.match(settingsFile, /Queued invites are visible here until accepted or revoked\./);
-  assert.match(settingsFile, /Invitation emails are not auto-delivered from Pulse yet\./);
+  assert.match(settingsFile, /If delivery is configured, invitation emails dispatch automatically\./);
   assert.match(settingsFile, /Revoke/);
   assert.match(settingsFile, /queue a pending invitation/);
   assert.match(settingsFile, /Continue with account creation at \/signup/);
@@ -90,9 +91,10 @@ test("settings quick settings copy no longer claims upcoming parity slices", () 
   assert.doesNotMatch(settingsFile, /upcoming parity slices/i);
 });
 
-test("settings team invitations route returns explicit manual delivery contract", () => {
+test("settings team invitations route maps backend delivery contract", () => {
   const routeFile = read("app/api/settings/team/invitations/route.ts");
-  assert.match(routeFile, /delivery:\s*\{/);
-  assert.match(routeFile, /mode:\s*"manual_join_link"/);
-  assert.match(routeFile, /emailSent:\s*false/);
+  assert.match(routeFile, /const emailSent = Boolean\(invitation\.email_sent_at\)/);
+  assert.match(routeFile, /const deliveryMode = emailSent && invitation\.delivery_mode === "email_webhook_dispatched"/);
+  assert.match(routeFile, /mode: deliveryMode/);
+  assert.match(routeFile, /emailSent,/);
 });

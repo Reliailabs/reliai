@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
 import secrets
 from datetime import datetime, timedelta, timezone
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -16,6 +19,7 @@ from app.models.organization_invitation import OrganizationInvitation
 from app.models.operator_user import OperatorUser
 from app.models.operator_session import OperatorSession
 from app.models.user import User
+from app.core.settings import get_settings
 from app.services.audit_log import log_action
 from app.services.auth import get_or_create_app_user, get_or_create_operator_account, issue_operator_session
 from app.services.workos_roles import normalize_org_role
@@ -123,6 +127,67 @@ def create_organization_invitation(
         resource_id=invitation.id,
         metadata={"invited_email": invitation.invited_email, "role": invitation.role},
     )
+    db.commit()
+    db.refresh(invitation)
+    return invitation
+
+
+def dispatch_organization_invitation_delivery(db: Session, *, invitation_id: UUID) -> OrganizationInvitation:
+    invitation = db.scalar(
+        select(OrganizationInvitation)
+        .options(joinedload(OrganizationInvitation.organization), joinedload(OrganizationInvitation.invited_by_user))
+        .where(OrganizationInvitation.id == invitation_id)
+    )
+    if invitation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+
+    settings = get_settings()
+    webhook_url = (settings.invite_delivery_webhook_url or "").strip()
+    if not webhook_url:
+        invitation.delivery_mode = "manual_join_link"
+        invitation.email_sent_at = None
+        db.add(invitation)
+        db.commit()
+        db.refresh(invitation)
+        return invitation
+
+    invited_by_user = getattr(invitation, "invited_by_user", None)
+    organization = getattr(invitation, "organization", None)
+    payload = {
+        "event": "organization_invitation.created",
+        "invitation": {
+            "id": str(invitation.id),
+            "organization_id": str(invitation.organization_id),
+            "organization_name": getattr(organization, "name", None),
+            "invited_email": invitation.invited_email,
+            "role": invitation.role,
+            "invited_by_email": getattr(invited_by_user, "email", None),
+            "signup_path": f"/signup?entry=team-invite&email={invitation.invited_email}",
+            "join_path": f"/join?token={invitation.token}",
+            "expires_at": invitation.expires_at.isoformat(),
+            "created_at": invitation.created_at.isoformat(),
+        },
+    }
+    request = Request(
+        webhook_url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=max(1, settings.invite_delivery_webhook_timeout_seconds)) as response:
+            status_code = getattr(response, "status", 200)
+            if 200 <= status_code < 300:
+                invitation.delivery_mode = "email_webhook_dispatched"
+                invitation.email_sent_at = _now_like(invitation.expires_at)
+            else:
+                invitation.delivery_mode = "manual_join_link"
+                invitation.email_sent_at = None
+    except URLError:
+        invitation.delivery_mode = "manual_join_link"
+        invitation.email_sent_at = None
+
+    db.add(invitation)
     db.commit()
     db.refresh(invitation)
     return invitation

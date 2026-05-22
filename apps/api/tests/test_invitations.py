@@ -1,6 +1,9 @@
 from uuid import UUID
+from urllib.error import URLError
 
 from app.models.organization import Organization
+from app.core.settings import get_settings
+import app.services.invitations as invitation_service
 from tests.test_api import auth_headers, create_operator, sign_in
 
 
@@ -43,6 +46,8 @@ def test_create_list_and_revoke_pending_invitation(client, db_session):
     assert invitation["invited_email"] == "invitee@acme.test"
     assert invitation["role"] == "member"
     assert invitation["status"] == "pending"
+    assert invitation["delivery_mode"] == "manual_join_link"
+    assert invitation["email_sent_at"] is None
     assert invitation["signup_path"].startswith("/signup?entry=team-invite&email=")
     assert invitation["join_path"].startswith("/join?token=")
 
@@ -54,6 +59,8 @@ def test_create_list_and_revoke_pending_invitation(client, db_session):
     items = list_response.json()["items"]
     assert len(items) == 1
     assert items[0]["invited_email"] == "invitee@acme.test"
+    assert items[0]["delivery_mode"] == "manual_join_link"
+    assert items[0]["email_sent_at"] is None
 
     revoke_response = client.delete(
         f"/api/v1/organizations/{org['id']}/invitations/{invitation['id']}",
@@ -131,3 +138,62 @@ def test_duplicate_pending_invitation_is_rejected(client, db_session):
     )
     assert duplicate.status_code == 409
     assert duplicate.json()["detail"] == "Invitation already pending"
+
+
+def test_invitation_delivery_marks_webhook_dispatched_when_configured(client, db_session, monkeypatch):
+    owner = create_operator(db_session, email="owner@delta.test")
+    session_payload = sign_in(client, email=owner.email)
+    org = _create_org(client, session_payload, name="Delta AI", slug="delta-ai")
+    _enable_collaboration(db_session, org["id"])
+
+    class _Response:
+        status = 202
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_URL", "https://example.test/invite-delivery")
+    get_settings.cache_clear()
+    monkeypatch.setattr(invitation_service, "urlopen", lambda *_args, **_kwargs: _Response())
+
+    response = client.post(
+        f"/api/v1/organizations/{org['id']}/invitations",
+        headers=auth_headers(session_payload),
+        json={"email": "invitee@delta.test", "role": "engineer"},
+    )
+
+    assert response.status_code == 201
+    invitation = response.json()
+    assert invitation["delivery_mode"] == "email_webhook_dispatched"
+    assert invitation["email_sent_at"] is not None
+    get_settings.cache_clear()
+
+
+def test_invitation_delivery_falls_back_to_manual_when_webhook_fails(client, db_session, monkeypatch):
+    owner = create_operator(db_session, email="owner@epsilon.test")
+    session_payload = sign_in(client, email=owner.email)
+    org = _create_org(client, session_payload, name="Epsilon AI", slug="epsilon-ai")
+    _enable_collaboration(db_session, org["id"])
+
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_URL", "https://example.test/invite-delivery")
+    get_settings.cache_clear()
+
+    def _raise(*_args, **_kwargs):
+        raise URLError("network down")
+
+    monkeypatch.setattr(invitation_service, "urlopen", _raise)
+
+    response = client.post(
+        f"/api/v1/organizations/{org['id']}/invitations",
+        headers=auth_headers(session_payload),
+        json={"email": "invitee@epsilon.test", "role": "engineer"},
+    )
+
+    assert response.status_code == 201
+    invitation = response.json()
+    assert invitation["delivery_mode"] == "manual_join_link"
+    assert invitation["email_sent_at"] is None
+    get_settings.cache_clear()

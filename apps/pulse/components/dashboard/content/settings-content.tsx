@@ -542,7 +542,11 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
                       Open join link
                     </Link>
                     <p className="text-xs text-muted-foreground">Expires {formatInviteDate(invitation.expiresAt)}</p>
-                    <p className="text-xs text-muted-foreground">Delivery: manual join link (email delivery deferred).</p>
+                    <p className="text-xs text-muted-foreground">
+                      Delivery: {invitation.delivery.emailSent && invitation.delivery.mode === "email_webhook_dispatched"
+                        ? "email dispatched via configured delivery adapter."
+                        : "manual join link (email delivery not configured)."}
+                    </p>
                   </div>
                   <p className="text-sm capitalize text-muted-foreground">{invitation.role}</p>
                   <p className="truncate text-sm text-muted-foreground">{invitation.invitedByEmail}</p>
@@ -621,7 +625,7 @@ export function SettingsContent({ settingsData }: { settingsData?: SettingsSurfa
             </Link>
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Invitation emails are not auto-delivered from Pulse yet. Share the queued join link directly from Pending Invitations.
+            If delivery is configured, invitation emails dispatch automatically. Otherwise, share the queued join link from Pending Invitations.
           </p>
           <p className="text-[11px] text-muted-foreground">
             On-call duty roles are configured separately in <Link href={onCallHref} className="underline underline-offset-2">On-Call</Link>.

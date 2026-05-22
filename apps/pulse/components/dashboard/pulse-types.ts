@@ -523,8 +523,8 @@ export type SettingsInvitationItem = {
   invitedByEmail: string;
   status: "pending";
   delivery: {
-    mode: "manual_join_link";
-    emailSent: false;
+    mode: "manual_join_link" | "email_webhook_dispatched";
+    emailSent: boolean;
   };
   signupPath: string;
   joinPath: string;
