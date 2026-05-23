@@ -1,0 +1,33 @@
+{
+  "updated_at_utc": "2026-05-23T16:00:00Z",
+  "status": "closed",
+  "scope": "billing ownership parity between apps/web and apps/pulse",
+  "decision": {
+    "ownership": "implemented_in_pulse",
+    "owner": "Pulse migration",
+    "target_phase": "F1 billing parity",
+    "routes": [
+      {
+        "path": "/settings/billing",
+        "pulse_behavior": "full_billing_surface",
+        "web_behavior": "full_billing_surface"
+      },
+      {
+        "path": "/billing/success",
+        "pulse_behavior": "full_billing_surface",
+        "web_behavior": "upgrade_success_surface"
+      },
+      {
+        "path": "/api/billing/checkout",
+        "pulse_behavior": "checkout_route",
+        "web_behavior": "checkout_route"
+      }
+    ],
+    "acceptance": [
+      "Pulse billing surface at /settings/billing is implemented and usable.",
+      "Pulse billing success route is implemented and no longer a redirect shim.",
+      "Pulse owns /api/billing/checkout passthrough and uses canonical backend checkout path.",
+      "Billing ownership parity is enforced by test contract and no longer tracked as an open blocker."
+    ]
+  }
+}

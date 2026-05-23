@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-05-23T00:00:00Z",
+  "updated_at_utc": "2026-05-23T16:00:00Z",
   "status": "active",
   "scope": "apps/web -> apps/pulse full functional parity",
   "gaps": [
@@ -7,11 +7,11 @@
       "id": "F1",
       "title": "Billing parity",
       "impact": "high",
-      "state": "open",
+      "state": "closed",
       "type": "route_ownership_parity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "apps/pulse/app/(app)/settings/billing/page.tsx",
+      "artifact": "docs/pulse-billing-ownership.json",
       "acceptance": [
         "Pulse billing surface is functionally equivalent to web billing behavior",
         "Redirect shims are replaced with explicit ownership decision and tested behavior parity"
@@ -39,7 +39,7 @@
       "type": "route_ownership_parity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "docs/pulse-read-write-parity-matrix.json",
+      "artifact": "docs/pulse-api-route-ownership.json",
       "acceptance": [
         "Billing checkout ownership is explicitly implemented in Pulse or explicitly externalized",
         "Config apply/undo ownership is explicitly implemented in Pulse or explicitly externalized",
@@ -69,7 +69,7 @@
       "type": "functional_continuity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "apps/pulse/app/(marketing)/docs/page.tsx",
+      "artifact": "docs/pulse-docs-ownership.json",
       "acceptance": [
         "Pulse docs ownership decision is explicit (full migrate or externalized)",
         "Simplified wrapper is not treated as equivalent to web docs tree without explicit exception"

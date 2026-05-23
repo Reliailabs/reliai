@@ -35,13 +35,16 @@ Scoped functional parity is closed for previously tracked migration-contract sur
 
 Current functional status:
 - scoped migration contract surfaces are closed and test-gated
-- full apps/web parity remains open and is tracked in `docs/pulse-functional-parity-gaps.json` (F1–F6 open blockers)
+- full apps/web parity remains open and is tracked in `docs/pulse-functional-parity-gaps.json` (F1 closed; F2–F6 open blockers)
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
 - functional audit queue: `docs/pulse-final-functional-migration-gap-report.md`
 - system-surface classification matrix: `docs/pulse-system-surface-classification.md`
 - read/write parity matrix: `docs/pulse-read-write-parity-matrix.json`
+- billing ownership parity register (F1): `docs/pulse-billing-ownership.json`
+- API route ownership parity register (F3): `docs/pulse-api-route-ownership.json`
+- docs ownership parity register (F5): `docs/pulse-docs-ownership.json`
 - unmatched route ownership classification (F6): `docs/pulse-unmatched-route-classification.json`
 
 ## 3) Response Team Validation Status
