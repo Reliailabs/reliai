@@ -68,6 +68,37 @@ def test_invite_delivery_rejects_invalid_auth(client, monkeypatch):
     get_settings.cache_clear()
 
 
+def test_invite_delivery_rejects_non_json_content_type(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    get_settings.cache_clear()
+    response = client.post(
+        "/reliai/invite-delivery",
+        headers={"Authorization": "Bearer secret-token", "Content-Type": "text/plain"},
+        content="not-json",
+    )
+    assert response.status_code == 415
+    assert response.json()["detail"] == "unsupported_media_type"
+    get_settings.cache_clear()
+
+
+def test_invite_delivery_rejects_oversized_payload(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
+    get_settings.cache_clear()
+    big_body = b"{" + b"\"x\":\"" + (b"a" * (64 * 1024)) + b"\"}"
+    headers = {
+        "Authorization": "Bearer secret-token",
+        "Content-Type": "application/json",
+        "X-Reliai-Signature-Version": "v1",
+        "X-Reliai-Timestamp": str(int(time.time())),
+        "X-Reliai-Signature": "bad",
+    }
+    response = client.post("/reliai/invite-delivery", headers=headers, content=big_body)
+    assert response.status_code == 413
+    assert response.json()["detail"] == "payload_too_large"
+    get_settings.cache_clear()
+
+
 def test_invite_delivery_rejects_missing_signature_when_configured(client, monkeypatch):
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
@@ -113,6 +144,26 @@ def test_invite_delivery_rejects_invalid_signature_when_configured(client, monke
     response = client.post("/reliai/invite-delivery", headers=headers, json=_payload())
     assert response.status_code == 401
     assert response.json()["detail"] == "invalid_signature"
+    get_settings.cache_clear()
+
+
+def test_invite_delivery_rejects_invalid_json(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
+    get_settings.cache_clear()
+    raw = b"{not-valid-json"
+    ts = int(time.time())
+    sig = sign_webhook_payload(secret="signing-secret", timestamp=ts, body=raw)
+    headers = {
+        "Authorization": "Bearer secret-token",
+        "Content-Type": "application/json",
+        "X-Reliai-Signature-Version": "v1",
+        "X-Reliai-Timestamp": str(ts),
+        "X-Reliai-Signature": sig,
+    }
+    response = client.post("/reliai/invite-delivery", headers=headers, content=raw)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "invalid_payload"
     get_settings.cache_clear()
 
 
