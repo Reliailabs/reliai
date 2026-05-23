@@ -82,6 +82,19 @@ test("F6 contract: every unmatched web route is explicitly classified", () => {
   );
 });
 
+test("F6 contract: classification does not contain stale routes already matched in pulse", () => {
+  const web = normalizedSet(WEB_APP);
+  const pulse = normalizedSet(PULSE_APP);
+  const unmatched = new Set([...web].filter((key) => !pulse.has(key)));
+
+  const classification = JSON.parse(readFileSync(CLASSIFICATION_FILE, "utf8")) as ClassificationFile;
+  const stale = classification.items
+    .map((item) => `${item.kind}:${item.path}`)
+    .filter((key) => !unmatched.has(key));
+
+  assert.deepEqual(stale, [], `stale classifications should be removed: ${stale.join(", ")}`);
+});
+
 test("F6 contract: classification entries are owner-complete and high-impact routes are not unowned", () => {
   const classification = JSON.parse(readFileSync(CLASSIFICATION_FILE, "utf8")) as ClassificationFile;
 
