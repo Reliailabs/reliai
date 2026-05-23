@@ -271,7 +271,7 @@ export default async function OnboardingPage({
               </p>
               <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-xs text-foreground">{`export RELIAI_API_KEY="${apiKeyValue ?? "reliai_..."}"
 curl -X POST http://localhost:8000/api/v1/ingest/traces \\
-  -H "x-api-key: ${apiKeyValue ?? "reliai_..."}" \\
+  -H "Authorization: Bearer ${apiKeyValue ?? "reliai_..."}" \\
   -H "content-type: application/json" \\
   -d '{
     "timestamp":"2026-03-09T12:00:00Z",
@@ -282,6 +282,10 @@ curl -X POST http://localhost:8000/api/v1/ingest/traces \\
               <p className="text-muted-foreground">
                 Reliai SDK / external app path: use <code>RELIAI_API_KEY</code> and initialize the SDK with
                 <code> apiKey: process.env.RELIAI_API_KEY</code>.
+              </p>
+              <p className="text-muted-foreground">
+                Backward compatibility: <code>x-api-key</code> is still accepted, but primary examples use
+                <code> Authorization: Bearer</code>.
               </p>
               <p className="text-muted-foreground">
                 OTEL-compatible path: export through your OTEL collector into Reliai ingest endpoints using the same
