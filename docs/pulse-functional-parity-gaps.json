@@ -39,7 +39,7 @@
       "type": "route_ownership_parity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "docs/pulse-read-write-parity-matrix.json",
+      "artifact": "docs/pulse-api-route-ownership.json",
       "acceptance": [
         "Billing checkout ownership is explicitly implemented in Pulse or explicitly externalized",
         "Config apply/undo ownership is explicitly implemented in Pulse or explicitly externalized",
