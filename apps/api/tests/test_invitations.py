@@ -209,3 +209,35 @@ def test_invitation_delivery_falls_back_to_manual_when_webhook_fails(client, db_
     assert invitation["delivery_mode"] == "manual_join_link"
     assert invitation["email_sent_at"] is None
     get_settings.cache_clear()
+
+
+def test_invitation_delivery_falls_back_to_manual_when_signing_secret_missing(client, db_session, monkeypatch):
+    owner = create_operator(db_session, email="owner@zeta.test")
+    session_payload = sign_in(client, email=owner.email)
+    org = _create_org(client, session_payload, name="Zeta AI", slug="zeta-ai")
+    _enable_collaboration(db_session, org["id"])
+
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_URL", "https://example.test/invite-delivery")
+    monkeypatch.delenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", raising=False)
+    get_settings.cache_clear()
+
+    called = {"value": False}
+
+    def _fail_if_called(*_args, **_kwargs):
+        called["value"] = True
+        raise AssertionError("unsigned webhook delivery should not be attempted")
+
+    monkeypatch.setattr(invitation_service, "urlopen", _fail_if_called)
+
+    response = client.post(
+        f"/api/v1/organizations/{org['id']}/invitations",
+        headers=auth_headers(session_payload),
+        json={"email": "invitee@zeta.test", "role": "engineer"},
+    )
+
+    assert response.status_code == 201
+    invitation = response.json()
+    assert invitation["delivery_mode"] == "manual_join_link"
+    assert invitation["email_sent_at"] is None
+    assert called["value"] is False
+    get_settings.cache_clear()
