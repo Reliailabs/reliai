@@ -83,7 +83,7 @@
       "type": "migration_inventory",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "apps/pulse/tests/migration-route-inventory.test.ts",
+      "artifact": "docs/pulse-unmatched-route-classification.json",
       "acceptance": [
         "Unmatched web route files are classified as migrate / intentionally externalized / obsolete / deferred blocker",
         "No unmatched high-impact route remains unowned"

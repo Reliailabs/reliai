@@ -42,6 +42,7 @@ Artifacts:
 - functional audit queue: `docs/pulse-final-functional-migration-gap-report.md`
 - system-surface classification matrix: `docs/pulse-system-surface-classification.md`
 - read/write parity matrix: `docs/pulse-read-write-parity-matrix.json`
+- unmatched route ownership classification (F6): `docs/pulse-unmatched-route-classification.json`
 
 ## 3) Response Team Validation Status
 
