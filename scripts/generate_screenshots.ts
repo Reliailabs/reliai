@@ -86,7 +86,10 @@ async function waitFor(url: string, timeoutMs = 60_000) {
 
 function startWebServer() {
   const buildManifest = path.join(root, "apps/web/.next/build-manifest.json");
-  if (!existsSync(buildManifest)) {
+  const buildId = path.join(root, "apps/web/.next/BUILD_ID");
+  const hasProductionBuild = existsSync(buildManifest) && existsSync(buildId);
+  const shouldForceBuild = process.env.CI === "true";
+  if (!hasProductionBuild || shouldForceBuild) {
     const result = spawnSync(
       "pnpm",
       ["--filter", "web", "build"],
