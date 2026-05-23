@@ -58,6 +58,7 @@ def health() -> dict[str, str]:
 async def reliai_invite_delivery(
     request: Request,
     authorization: str | None = Header(default=None),
+    x_reliai_webhook_id: str | None = Header(default=None),
     x_reliai_signature_version: str | None = Header(default=None),
     x_reliai_timestamp: str | None = Header(default=None),
     x_reliai_signature: str | None = Header(default=None),
@@ -80,7 +81,12 @@ async def reliai_invite_delivery(
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="payload_too_large")
     signing_secret = (runtime_settings.invite_delivery_webhook_signing_secret or "").strip()
     if signing_secret:
-        if not x_reliai_signature_version or not x_reliai_timestamp or not x_reliai_signature:
+        if (
+            not x_reliai_webhook_id
+            or not x_reliai_signature_version
+            or not x_reliai_timestamp
+            or not x_reliai_signature
+        ):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="missing_signature")
         expected_signature_version = (runtime_settings.invite_delivery_webhook_signature_version or "v1").strip() or "v1"
         if x_reliai_signature_version != expected_signature_version:
@@ -98,7 +104,7 @@ async def reliai_invite_delivery(
         )
         if not valid:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_signature")
-        replay_key = f"{timestamp}:{x_reliai_signature}"
+        replay_key = x_reliai_webhook_id
         accepted_once = invite_delivery_replay_guard.register(
             key=replay_key,
             ttl_seconds=max(1, runtime_settings.invite_delivery_webhook_signature_max_age_seconds),
