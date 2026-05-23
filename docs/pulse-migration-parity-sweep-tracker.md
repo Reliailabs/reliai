@@ -35,7 +35,7 @@ Scoped functional parity is closed for previously tracked migration-contract sur
 
 Current functional status:
 - scoped migration contract surfaces are closed and test-gated
-- full apps/web parity remains open and is tracked in `docs/pulse-functional-parity-gaps.json` (F1 + F4 closed; F2, F3, F5, F6 open blockers)
+- full apps/web parity remains open and is tracked in `docs/pulse-functional-parity-gaps.json` (F1 + F3 + F4 closed; F2, F5, F6 open blockers)
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`

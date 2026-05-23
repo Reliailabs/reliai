@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-05-23T18:00:00Z",
+  "updated_at_utc": "2026-05-23T20:00:00Z",
   "status": "active",
   "scope": "apps/web -> apps/pulse full functional parity",
   "gaps": [
@@ -35,7 +35,7 @@
       "id": "F3",
       "title": "API route ownership parity",
       "impact": "high",
-      "state": "open",
+      "state": "closed",
       "type": "route_ownership_parity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
