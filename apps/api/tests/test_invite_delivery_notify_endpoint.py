@@ -68,6 +68,32 @@ def test_invite_delivery_rejects_invalid_auth(client, monkeypatch):
     get_settings.cache_clear()
 
 
+def test_invite_delivery_rejects_missing_bearer_scheme(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    get_settings.cache_clear()
+    response = client.post(
+        "/reliai/invite-delivery",
+        headers={"Authorization": "secret-token"},
+        json=_payload(),
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "unauthorized"
+    get_settings.cache_clear()
+
+
+def test_invite_delivery_rejects_empty_bearer_token(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    get_settings.cache_clear()
+    response = client.post(
+        "/reliai/invite-delivery",
+        headers={"Authorization": "Bearer   "},
+        json=_payload(),
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "unauthorized"
+    get_settings.cache_clear()
+
+
 def test_invite_delivery_rejects_non_json_content_type(client, monkeypatch):
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
     get_settings.cache_clear()
