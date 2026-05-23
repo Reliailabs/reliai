@@ -49,7 +49,10 @@ export default function MarketingHomePage() {
   return (
     <main className="bg-page text-primary">
       <section className={`border-b border-zinc-200 ${marketingSectionLargeClass}`}>
-        <div className={`${marketingContainerClass} grid gap-10 pb-16 pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center`}>
+        <div
+          className={`${marketingContainerClass} grid gap-10 pb-16 pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center`}
+          data-marketing-container
+        >
           <div>
             <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-primary lg:text-5xl">
               Know when your AI is failing before your customers do.
