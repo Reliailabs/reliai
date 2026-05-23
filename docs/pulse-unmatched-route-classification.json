@@ -1,0 +1,171 @@
+{
+  "updated_at_utc": "2026-05-23T00:00:00Z",
+  "source": "apps/web/app -> apps/pulse/app normalized route inventory",
+  "items": [
+    {
+      "id": "F6-001",
+      "kind": "page",
+      "path": "/dashboard",
+      "source_file": "apps/web/app/(app)/dashboard/page.tsx",
+      "disposition": "intentionally_externalized",
+      "impact": "medium",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
+      "notes": "Pulse canonical shell landing is /pulse."
+    },
+    {
+      "id": "F6-002",
+      "kind": "page",
+      "path": "/docs-marketing",
+      "source_file": "apps/web/app/(marketing)/docs-marketing/page.tsx",
+      "disposition": "intentionally_externalized",
+      "impact": "medium",
+      "owner": "Pulse migration",
+      "target_phase": "F5 docs parity",
+      "notes": "Docs ownership parity tracked in F5."
+    },
+    {
+      "id": "F6-003",
+      "kind": "page",
+      "path": "/login",
+      "source_file": "apps/web/app/(marketing)/login/page.tsx",
+      "disposition": "obsolete",
+      "impact": "low",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
+      "notes": "Pulse uses /sign-in."
+    },
+    {
+      "id": "F6-004",
+      "kind": "route",
+      "path": "/api/billing/checkout",
+      "source_file": "apps/web/app/api/billing/checkout/route.ts",
+      "disposition": "deferred_blocker",
+      "impact": "high",
+      "owner": "Pulse migration",
+      "target_phase": "F1 billing parity",
+      "notes": "Billing ownership parity remains open."
+    },
+    {
+      "id": "F6-005",
+      "kind": "route",
+      "path": "/api/config/apply",
+      "source_file": "apps/web/app/api/config/apply/route.ts",
+      "disposition": "deferred_blocker",
+      "impact": "high",
+      "owner": "Pulse migration",
+      "target_phase": "F3 API ownership parity",
+      "notes": "Route ownership decision pending in F3."
+    },
+    {
+      "id": "F6-006",
+      "kind": "route",
+      "path": "/api/config/undo",
+      "source_file": "apps/web/app/api/config/undo/route.ts",
+      "disposition": "deferred_blocker",
+      "impact": "high",
+      "owner": "Pulse migration",
+      "target_phase": "F3 API ownership parity",
+      "notes": "Route ownership decision pending in F3."
+    },
+    {
+      "id": "F6-007",
+      "kind": "route",
+      "path": "/api/prompts/diff",
+      "source_file": "apps/web/app/api/prompts/diff/route.ts",
+      "disposition": "deferred_blocker",
+      "impact": "high",
+      "owner": "Pulse migration",
+      "target_phase": "F3 API ownership parity",
+      "notes": "Route ownership decision pending in F3."
+    },
+    {
+      "id": "F6-008",
+      "kind": "route",
+      "path": "/api/system/limits",
+      "source_file": "apps/web/app/api/system/limits/route.ts",
+      "disposition": "deferred_blocker",
+      "impact": "high",
+      "owner": "Pulse migration",
+      "target_phase": "F3 API ownership parity",
+      "notes": "Route ownership decision pending in F3."
+    },
+    {
+      "id": "F6-009",
+      "kind": "route",
+      "path": "/auth/callback",
+      "source_file": "apps/web/app/auth/callback/route.ts",
+      "disposition": "intentionally_externalized",
+      "impact": "high",
+      "owner": "Pulse migration",
+      "target_phase": "F4 auth callback parity",
+      "notes": "Externalized ownership is contract-documented while F4 remains open."
+    },
+    {
+      "id": "F6-010",
+      "kind": "page",
+      "path": "/docs/examples",
+      "source_file": "apps/web/app/docs/examples/page.tsx",
+      "disposition": "deferred_blocker",
+      "impact": "medium",
+      "owner": "Pulse migration",
+      "target_phase": "F5 docs parity",
+      "notes": "Part of docs parity tree tracked under F5."
+    },
+    {
+      "id": "F6-011",
+      "kind": "page",
+      "path": "/marketing/screenshot/control-panel",
+      "source_file": "apps/web/app/marketing/screenshot/control-panel/page.tsx",
+      "disposition": "intentionally_externalized",
+      "impact": "low",
+      "owner": "Marketing QA",
+      "target_phase": "continuous",
+      "notes": "Visual regression utility surface only."
+    },
+    {
+      "id": "F6-012",
+      "kind": "page",
+      "path": "/marketing/screenshot/deployment",
+      "source_file": "apps/web/app/marketing/screenshot/deployment/page.tsx",
+      "disposition": "intentionally_externalized",
+      "impact": "low",
+      "owner": "Marketing QA",
+      "target_phase": "continuous",
+      "notes": "Visual regression utility surface only."
+    },
+    {
+      "id": "F6-013",
+      "kind": "page",
+      "path": "/marketing/screenshot/incident",
+      "source_file": "apps/web/app/marketing/screenshot/incident/page.tsx",
+      "disposition": "intentionally_externalized",
+      "impact": "low",
+      "owner": "Marketing QA",
+      "target_phase": "continuous",
+      "notes": "Visual regression utility surface only."
+    },
+    {
+      "id": "F6-014",
+      "kind": "page",
+      "path": "/marketing/screenshot/playground",
+      "source_file": "apps/web/app/marketing/screenshot/playground/page.tsx",
+      "disposition": "intentionally_externalized",
+      "impact": "low",
+      "owner": "Marketing QA",
+      "target_phase": "continuous",
+      "notes": "Visual regression utility surface only."
+    },
+    {
+      "id": "F6-015",
+      "kind": "page",
+      "path": "/marketing/screenshot/trace-graph",
+      "source_file": "apps/web/app/marketing/screenshot/trace-graph/page.tsx",
+      "disposition": "intentionally_externalized",
+      "impact": "low",
+      "owner": "Marketing QA",
+      "target_phase": "continuous",
+      "notes": "Visual regression utility surface only."
+    }
+  ]
+}
