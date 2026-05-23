@@ -182,6 +182,8 @@ def dispatch_organization_invitation_delivery(db: Session, *, invitation_id: UUI
     headers = {"Content-Type": "application/json"}
     timestamp = int(time.time())
     signature = sign_webhook_payload(secret=signing_secret, timestamp=timestamp, body=body)
+    webhook_id = secrets.token_hex(16)
+    headers["X-Reliai-Webhook-Id"] = webhook_id
     headers["X-Reliai-Signature-Version"] = settings.invite_delivery_webhook_signature_version
     headers["X-Reliai-Timestamp"] = str(timestamp)
     headers["X-Reliai-Signature"] = signature

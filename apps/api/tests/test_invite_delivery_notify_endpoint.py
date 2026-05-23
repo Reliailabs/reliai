@@ -40,6 +40,7 @@ def _signed_headers(payload: dict, *, secret: str, timestamp: int | None = None)
     body = json.dumps(payload).encode("utf-8")
     sig = sign_webhook_payload(secret=secret, timestamp=ts, body=body)
     headers = {
+        "X-Reliai-Webhook-Id": "wh_123",
         "X-Reliai-Signature-Version": "v1",
         "X-Reliai-Timestamp": str(ts),
         "X-Reliai-Signature": sig,
@@ -162,6 +163,7 @@ def test_invite_delivery_rejects_invalid_signature_when_configured(client, monke
     get_settings.cache_clear()
     headers = {
         "Authorization": "Bearer secret-token",
+        "X-Reliai-Webhook-Id": "wh_123",
         "X-Reliai-Signature-Version": "v1",
         "X-Reliai-Timestamp": str(int(time.time())),
         "X-Reliai-Signature": "bad",
@@ -182,6 +184,7 @@ def test_invite_delivery_rejects_invalid_json(client, monkeypatch):
     sig = sign_webhook_payload(secret="signing-secret", timestamp=ts, body=raw)
     headers = {
         "Authorization": "Bearer secret-token",
+        "X-Reliai-Webhook-Id": "wh_123",
         "Content-Type": "application/json",
         "X-Reliai-Signature-Version": "v1",
         "X-Reliai-Timestamp": str(ts),
