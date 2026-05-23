@@ -32,14 +32,16 @@ test("functional parity gap contract is present and owner-complete", () => {
   });
 });
 
-test("full parity blockers F1-F6 are explicitly tracked as open", () => {
+test("full parity blockers remain explicitly tracked with resolved F1 and open F2-F6", () => {
   const contract = loadContract();
   const expectedIds = new Set(["F1", "F2", "F3", "F4", "F5", "F6"]);
   const actualIds = new Set(contract.gaps.map((gap) => gap.id));
   expectedIds.forEach((id) => assert.ok(actualIds.has(id), `${id} missing`));
-  contract.gaps
-    .filter((gap) => expectedIds.has(gap.id))
-    .forEach((gap) => assert.equal(gap.state, "open", `${gap.id} must remain open until resolved`));
+  const byId = new Map(contract.gaps.map((gap) => [gap.id, gap]));
+  assert.equal(byId.get("F1")?.state, "closed", "F1 must be closed once billing parity is implemented");
+  ["F2", "F3", "F4", "F5", "F6"].forEach((id) => {
+    assert.equal(byId.get(id)?.state, "open", `${id} must remain open until resolved`);
+  });
 
   const highImpact = contract.gaps.filter((gap) => gap.impact === "high");
   assert.ok(highImpact.length > 0, "high-impact functional items must remain explicit");

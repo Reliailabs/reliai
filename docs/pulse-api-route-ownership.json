@@ -1,14 +1,14 @@
 {
-  "updated_at_utc": "2026-05-23T00:00:00Z",
+  "updated_at_utc": "2026-05-23T16:00:00Z",
   "scope": "apps/web api route ownership parity vs apps/pulse",
   "routes": [
     {
       "path": "/api/billing/checkout",
-      "disposition": "deferred_blocker",
+      "disposition": "implemented_in_pulse",
       "impact": "high",
       "owner": "Pulse migration",
       "target_phase": "F1 billing parity",
-      "notes": "Linked to billing parity ownership closure."
+      "notes": "Implemented in apps/pulse/app/api/billing/checkout/route.ts with backend passthrough parity."
     },
     {
       "path": "/api/config/apply",
