@@ -64,6 +64,7 @@ jobs:
         run: pnpm screenshots:marketing
 
       - name: Check for screenshot drift
+        if: github.event_name == 'push'
         run: |
           if ! git diff --exit-code -- apps/web/public/screenshots/; then
             echo "Marketing screenshots are outdated."
