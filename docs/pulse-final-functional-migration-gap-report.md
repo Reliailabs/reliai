@@ -8,7 +8,8 @@ Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership c
 
 Scope and ownership migration is materially stabilized and test-gated.
 
-High-impact functional parity gaps are closed. Functional parity migration is complete for the tracked surfaces.
+Scoped migration parity is complete for tracked surfaces, but full `apps/web` parity is not complete.
+Open full-parity blockers are tracked in `docs/pulse-functional-parity-gaps.json` (F1–F6).
 
 ## 2) What Is Already Closed
 
@@ -23,7 +24,7 @@ Validation backing:
 - `pnpm --filter pulse test:migration-scope-parity-gate`
 - `pnpm --filter pulse test:e2e:app-route-gate`
 
-## 3) Closed Functional Gaps
+## 3) Scoped-Closed Functional Gaps
 
 ### F1. Response Team end-to-end functional continuity
 
@@ -74,8 +75,9 @@ Current state:
 - `/join` remains a documented public ownership shim for invite acceptance and is intentionally outside `(app)`
 - `/signup` remains the continuation path for users starting account setup from invitation context
 
-## 4) Completion Criteria for Functional Parity
+## 4) Full-Parity Completion Criteria
 
-Functional parity can be called complete only when:
-- all high-impact functional gaps are closed,
-- migration tracker and gap report are in sync.
+Full `apps/web` parity can be called complete only when:
+- F1–F6 in `docs/pulse-functional-parity-gaps.json` are closed or explicitly externalized with owner + contract gate,
+- migration tracker and gap report are in sync,
+- scoped-complete status is not presented as full parity completion.

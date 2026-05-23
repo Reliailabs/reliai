@@ -263,6 +263,31 @@ export default async function OnboardingPage({
                 <code className="mt-1 block break-all text-foreground">{apiKeyValue}</code>
               </div>
             ) : null}
+
+            <div className="rounded-lg border border-border bg-muted/20 px-3 py-3 text-sm space-y-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Ingest verification</p>
+              <p className="text-muted-foreground">
+                Direct ingest (HTTP): send one trace with your project key to verify first-trace onboarding.
+              </p>
+              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-xs text-foreground">{`export RELIAI_API_KEY="${apiKeyValue ?? "reliai_..."}"
+curl -X POST http://localhost:8000/api/v1/ingest/traces \\
+  -H "x-api-key: ${apiKeyValue ?? "reliai_..."}" \\
+  -H "content-type: application/json" \\
+  -d '{
+    "timestamp":"2026-03-09T12:00:00Z",
+    "request_id":"req_123",
+    "model_name":"gpt-4.1-mini",
+    "success":true
+  }'`}</pre>
+              <p className="text-muted-foreground">
+                Reliai SDK / external app path: use <code>RELIAI_API_KEY</code> and initialize the SDK with
+                <code> apiKey: process.env.RELIAI_API_KEY</code>.
+              </p>
+              <p className="text-muted-foreground">
+                OTEL-compatible path: export through your OTEL collector into Reliai ingest endpoints using the same
+                project-scoped key contract.
+              </p>
+            </div>
           </article>
 
           <article className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground space-y-2">
