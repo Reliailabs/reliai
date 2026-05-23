@@ -69,7 +69,7 @@
       "type": "functional_continuity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "apps/pulse/app/(marketing)/docs/page.tsx",
+      "artifact": "docs/pulse-docs-ownership.json",
       "acceptance": [
         "Pulse docs ownership decision is explicit (full migrate or externalized)",
         "Simplified wrapper is not treated as equivalent to web docs tree without explicit exception"

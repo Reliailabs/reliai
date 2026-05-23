@@ -43,6 +43,7 @@ Artifacts:
 - system-surface classification matrix: `docs/pulse-system-surface-classification.md`
 - read/write parity matrix: `docs/pulse-read-write-parity-matrix.json`
 - API route ownership parity register (F3): `docs/pulse-api-route-ownership.json`
+- docs ownership parity register (F5): `docs/pulse-docs-ownership.json`
 - unmatched route ownership classification (F6): `docs/pulse-unmatched-route-classification.json`
 
 ## 3) Response Team Validation Status

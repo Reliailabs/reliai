@@ -1,0 +1,17 @@
+{
+  "updated_at_utc": "2026-05-23T00:00:00Z",
+  "status": "active",
+  "scope": "docs ownership parity between apps/web and apps/pulse",
+  "decision": {
+    "docs_route": "/docs",
+    "pulse_surface": "apps/pulse/app/(marketing)/docs/page.tsx",
+    "ownership": "intentionally_externalized",
+    "owner": "Pulse migration",
+    "target_phase": "F5 docs parity",
+    "notes": [
+      "Pulse keeps a simplified docs surface for migration compatibility.",
+      "Full docs tree ownership remains in apps/web until F5 closure.",
+      "Pulse must not claim full docs-tree parity while ownership is externalized."
+    ]
+  }
+}
