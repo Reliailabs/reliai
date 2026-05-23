@@ -55,7 +55,7 @@
       "type": "auth_parity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "docs/pulse-auth-callback-ownership.md",
+      "artifact": "apps/web/auth/callback/route.ts",
       "acceptance": [
         "Pulse has auth callback parity for SSO flows or explicit externalized ownership with test gate",
         "Auth callback ownership and failure behavior are documented and contract-tested"

@@ -24,20 +24,10 @@ test("sdk/ingest onboarding uses canonical API key env var naming", () => {
   assert.ok(pulseOnboarding.includes("RELIAI_API_KEY"), "pulse onboarding guidance must use RELIAI_API_KEY");
 });
 
-test("onboarding ingest examples use canonical Authorization Bearer header", () => {
+test("onboarding ingest examples use canonical x-api-key header", () => {
   const webOnboarding = readRepoFile("apps/web/app/(onboarding)/onboarding/page.tsx");
   const pulseOnboarding = readRepoFile("apps/pulse/app/(app)/onboarding/page.tsx");
 
-  assert.ok(webOnboarding.includes('Authorization: Bearer ${apiKeyValue ?? "reliai_..."}'));
-  assert.ok(pulseOnboarding.includes('Authorization: Bearer ${apiKeyValue ?? "reliai_..."}'));
-});
-
-test("x-api-key guidance is backward-compatibility only", () => {
-  const webOnboarding = readRepoFile("apps/web/app/(onboarding)/onboarding/page.tsx");
-  const pulseOnboarding = readRepoFile("apps/pulse/app/(app)/onboarding/page.tsx");
-
-  assert.ok(webOnboarding.includes("Backward compatibility"));
-  assert.ok(pulseOnboarding.includes("Backward compatibility"));
-  assert.ok(webOnboarding.includes("x-api-key"));
-  assert.ok(pulseOnboarding.includes("x-api-key"));
+  assert.ok(webOnboarding.includes('x-api-key: ${apiKeyValue ?? "reliai_..."}'));
+  assert.ok(pulseOnboarding.includes('x-api-key: ${apiKeyValue ?? "reliai_..."}'));
 });

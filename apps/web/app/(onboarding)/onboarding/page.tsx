@@ -439,7 +439,7 @@ export default async function OnboardingPage({
             <p className="text-xs uppercase tracking-[0.24em] text-secondary">Ingest example</p>
             <div className="mt-4 rounded-xl border border-code bg-code p-4 text-sm text-code">
               <pre className="overflow-x-auto whitespace-pre-wrap font-mono">{`curl -X POST http://localhost:8000/api/v1/ingest/traces \\
-  -H "Authorization: Bearer ${apiKeyValue ?? "reliai_..."}" \\
+  -H "x-api-key: ${apiKeyValue ?? "reliai_..."}" \\
   -H "content-type: application/json" \\
   -d '{
     "timestamp":"2026-03-09T12:00:00Z",
@@ -456,10 +456,6 @@ export default async function OnboardingPage({
                   failures with cohort and prompt evidence.
                 </p>
               </div>
-              <p className="mt-3 text-sm leading-6 text-secondary">
-                Backward compatibility: <code>x-api-key</code> is accepted, but canonical examples use
-                <code> Authorization: Bearer</code>.
-              </p>
             </div>
             {hasTrace ? (
               <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
