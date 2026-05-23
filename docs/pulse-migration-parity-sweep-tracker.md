@@ -1,6 +1,6 @@
 # Pulse Migration Parity Sweep Tracker
 
-Status: Active (Scope/ownership parity stabilized; high-impact functional parity closed)
+Status: Active (Scoped migration parity is complete; full apps/web parity remains open)
 Scope: apps/web -> apps/pulse functional parity
 
 ## 1) Current Migration State
@@ -31,13 +31,11 @@ Runtime continuity coverage remains:
 
 ## 2) Functional Parity Audit Pass
 
-High-impact functional parity is closed, including invite lifecycle delivery contract closure.
+Scoped functional parity is closed for previously tracked migration-contract surfaces, including invite lifecycle delivery contract closure.
 
 Current functional status:
-- high-impact behavior parity gaps are closed and test-gated
-- system-surface deferments are explicitly classified
-- read/write parity matrix is explicit and owner-tagged
-- external invite lifecycle now has queue/revoke/redeem coverage plus explicit delivery contract (`email_webhook_dispatched` or `manual_join_link` fallback)
+- scoped migration contract surfaces are closed and test-gated
+- full apps/web parity remains open and is tracked in `docs/pulse-functional-parity-gaps.json` (F1–F6 open blockers)
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`

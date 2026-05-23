@@ -25,20 +25,22 @@ function loadContract(): FunctionalGapContract {
 test("functional parity gap contract is present and owner-complete", () => {
   const contract = loadContract();
   assert.equal(contract.status, "active");
-  assert.ok(contract.gaps.length >= 3, "expected functional parity gaps to be enumerated");
+  assert.ok(contract.gaps.length >= 6, "expected full parity blockers to be enumerated");
   contract.gaps.forEach((gap) => {
     assert.ok(gap.owner.trim().length > 0, `${gap.id} missing owner`);
     assert.ok(gap.target_phase.trim().length > 0, `${gap.id} missing target phase`);
   });
 });
 
-test("F2 is closed and high-impact items remain explicit", () => {
+test("full parity blockers F1-F6 are explicitly tracked as open", () => {
   const contract = loadContract();
-  const f2 = contract.gaps.find((gap) => gap.id === "F2");
-  assert.ok(f2, "F2 missing");
-  assert.equal(f2.state, "closed");
+  const expectedIds = new Set(["F1", "F2", "F3", "F4", "F5", "F6"]);
+  const actualIds = new Set(contract.gaps.map((gap) => gap.id));
+  expectedIds.forEach((id) => assert.ok(actualIds.has(id), `${id} missing`));
+  contract.gaps
+    .filter((gap) => expectedIds.has(gap.id))
+    .forEach((gap) => assert.equal(gap.state, "open", `${gap.id} must remain open until resolved`));
 
   const highImpact = contract.gaps.filter((gap) => gap.impact === "high");
   assert.ok(highImpact.length > 0, "high-impact functional items must remain explicit");
 });
-

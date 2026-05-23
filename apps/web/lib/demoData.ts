@@ -763,7 +763,7 @@ with client.span("ai_request"):
 export const nodeSnippet = `import { ReliaiClient } from "reliai";
 
 const client = new ReliaiClient({
-  apiKey: process.env.RELIAI_KEY,
+  apiKey: process.env.RELIAI_API_KEY,
 });
 
 await client.span("ai_request", async () => {

@@ -1,50 +1,92 @@
 {
-  "updated_at_utc": "2026-05-21T00:00:00Z",
+  "updated_at_utc": "2026-05-23T00:00:00Z",
   "status": "active",
-  "scope": "apps/web -> apps/pulse functional behavior parity",
+  "scope": "apps/web -> apps/pulse full functional parity",
   "gaps": [
     {
       "id": "F1",
-      "title": "Response Team end-to-end continuity",
+      "title": "Billing parity",
       "impact": "high",
-      "state": "closed",
-      "type": "functional_continuity",
-      "owner": "Migration",
-      "target_phase": "current functional parity",
-      "artifact": "apps/pulse/tests/response-team-functional-continuity.test.ts",
+      "state": "open",
+      "type": "route_ownership_parity",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
+      "artifact": "apps/pulse/app/(app)/settings/billing/page.tsx",
       "acceptance": [
-        "team member add/invite from /settings#team is assignable in /on-call",
-        "project scope switching in /on-call does not leak assignment context",
-        "access role labels are not conflated with on-call duty roles"
+        "Pulse billing surface is functionally equivalent to web billing behavior",
+        "Redirect shims are replaced with explicit ownership decision and tested behavior parity"
       ]
     },
     {
       "id": "F2",
-      "title": "System surface deferment classification",
-      "impact": "medium",
-      "state": "closed",
-      "type": "deferred_behavior_delta",
-      "owner": "Migration",
-      "target_phase": "current functional parity",
-      "artifact": "docs/pulse-system-surface-classification.md",
+      "title": "SDK/ingest onboarding parity",
+      "impact": "high",
+      "state": "open",
+      "type": "functional_continuity",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
+      "artifact": "apps/pulse/app/(app)/onboarding/page.tsx",
       "acceptance": [
-        "every /system and /pulse/system surface is classified as implement/defer/intentional exception",
-        "legacy aliases are redirect-only wrappers",
-        "deferred placeholder language removed from canonical /pulse/system landing"
+        "Pulse onboarding includes explicit ingest verification path equivalent to web onboarding SDK flow",
+        "SDK key env naming is canonicalized (RELIAI_API_KEY) with no conflicting key names"
       ]
     },
     {
       "id": "F3",
-      "title": "Read/write parity matrix completion",
+      "title": "API route ownership parity",
       "impact": "high",
-      "state": "closed",
-      "type": "read_write_delta",
-      "owner": "Migration",
-      "target_phase": "current functional parity",
+      "state": "open",
+      "type": "route_ownership_parity",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
       "artifact": "docs/pulse-read-write-parity-matrix.json",
       "acceptance": [
-        "route-level create/edit/approve/execute/rollback matrix exists and is owner-tagged",
-        "each unresolved write gap has explicit defer/implement decision with target phase"
+        "Billing checkout ownership is explicitly implemented in Pulse or explicitly externalized",
+        "Config apply/undo ownership is explicitly implemented in Pulse or explicitly externalized",
+        "Prompts diff ownership is explicitly implemented in Pulse or explicitly externalized",
+        "System limits ownership is explicitly implemented in Pulse or explicitly externalized"
+      ]
+    },
+    {
+      "id": "F4",
+      "title": "Auth callback / SSO parity",
+      "impact": "high",
+      "state": "open",
+      "type": "auth_parity",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
+      "artifact": "apps/web/auth/callback/route.ts",
+      "acceptance": [
+        "Pulse has auth callback parity for SSO flows or explicit externalized ownership with test gate",
+        "Auth callback ownership and failure behavior are documented and contract-tested"
+      ]
+    },
+    {
+      "id": "F5",
+      "title": "Docs parity",
+      "impact": "medium",
+      "state": "open",
+      "type": "functional_continuity",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
+      "artifact": "apps/pulse/app/(marketing)/docs/page.tsx",
+      "acceptance": [
+        "Pulse docs ownership decision is explicit (full migrate or externalized)",
+        "Simplified wrapper is not treated as equivalent to web docs tree without explicit exception"
+      ]
+    },
+    {
+      "id": "F6",
+      "title": "Route inventory completeness",
+      "impact": "high",
+      "state": "open",
+      "type": "migration_inventory",
+      "owner": "Pulse migration",
+      "target_phase": "full parity closure",
+      "artifact": "apps/pulse/tests/migration-route-inventory.test.ts",
+      "acceptance": [
+        "Unmatched web route files are classified as migrate / intentionally externalized / obsolete / deferred blocker",
+        "No unmatched high-impact route remains unowned"
       ]
     }
   ]
