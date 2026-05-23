@@ -1,3 +1,5 @@
+import hmac
+
 from fastapi import FastAPI, Header, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,6 +17,18 @@ settings = get_settings()
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 MAX_INVITE_DELIVERY_PAYLOAD_BYTES = 64 * 1024
+
+
+def _is_valid_bearer_auth(*, authorization: str | None, expected_token: str) -> bool:
+    if not authorization:
+        return False
+    prefix = "Bearer "
+    if not authorization.startswith(prefix):
+        return False
+    token = authorization[len(prefix) :].strip()
+    if not token:
+        return False
+    return hmac.compare_digest(token, expected_token)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -55,8 +69,7 @@ async def reliai_invite_delivery(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="invite_delivery_webhook_not_configured",
         )
-    expected_header = f"Bearer {expected_token}"
-    if authorization != expected_header:
+    if not _is_valid_bearer_auth(authorization=authorization, expected_token=expected_token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
     content_type = (request.headers.get("content-type") or "").strip().lower()
     if not content_type.startswith("application/json"):
