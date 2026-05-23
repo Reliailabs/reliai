@@ -11,7 +11,7 @@
       "type": "route_ownership_parity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
-      "artifact": "apps/pulse/app/(app)/settings/billing/page.tsx",
+      "artifact": "docs/pulse-billing-ownership.json",
       "acceptance": [
         "Pulse billing surface is functionally equivalent to web billing behavior",
         "Redirect shims are replaced with explicit ownership decision and tested behavior parity"

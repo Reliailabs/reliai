@@ -1,0 +1,32 @@
+{
+  "updated_at_utc": "2026-05-23T00:00:00Z",
+  "status": "active",
+  "scope": "billing ownership parity between apps/web and apps/pulse",
+  "decision": {
+    "ownership": "deferred_blocker",
+    "owner": "Pulse migration",
+    "target_phase": "F1 billing parity",
+    "routes": [
+      {
+        "path": "/settings/billing",
+        "pulse_behavior": "redirect:/settings",
+        "web_behavior": "full_billing_surface"
+      },
+      {
+        "path": "/billing/success",
+        "pulse_behavior": "redirect:/settings",
+        "web_behavior": "upgrade_success_surface"
+      },
+      {
+        "path": "/api/billing/checkout",
+        "pulse_behavior": "missing",
+        "web_behavior": "checkout_route"
+      }
+    ],
+    "acceptance": [
+      "Pulse billing ownership decision is explicit and test-gated.",
+      "Pulse does not claim full billing parity while redirect/missing behavior remains.",
+      "F1 stays open until Pulse implements equivalent billing surface and checkout route or receives explicit externalization sign-off."
+    ]
+  }
+}
