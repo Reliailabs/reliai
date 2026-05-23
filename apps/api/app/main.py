@@ -43,6 +43,7 @@ def health() -> dict[str, str]:
 async def reliai_invite_delivery(
     request: Request,
     authorization: str | None = Header(default=None),
+    x_reliai_signature_version: str | None = Header(default=None),
     x_reliai_timestamp: str | None = Header(default=None),
     x_reliai_signature: str | None = Header(default=None),
 ) -> dict[str, object]:
@@ -60,8 +61,11 @@ async def reliai_invite_delivery(
     raw_body = await request.body()
     signing_secret = (runtime_settings.invite_delivery_webhook_signing_secret or "").strip()
     if signing_secret:
-        if not x_reliai_timestamp or not x_reliai_signature:
+        if not x_reliai_signature_version or not x_reliai_timestamp or not x_reliai_signature:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="missing_signature")
+        expected_signature_version = (runtime_settings.invite_delivery_webhook_signature_version or "v1").strip() or "v1"
+        if x_reliai_signature_version != expected_signature_version:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unsupported_signature_version")
         try:
             timestamp = int(x_reliai_timestamp)
         except ValueError as exc:
