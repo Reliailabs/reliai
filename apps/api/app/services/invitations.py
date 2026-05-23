@@ -152,6 +152,14 @@ def dispatch_organization_invitation_delivery(db: Session, *, invitation_id: UUI
         db.commit()
         db.refresh(invitation)
         return invitation
+    signing_secret = (settings.invite_delivery_webhook_signing_secret or "").strip()
+    if not signing_secret:
+        invitation.delivery_mode = "manual_join_link"
+        invitation.email_sent_at = None
+        db.add(invitation)
+        db.commit()
+        db.refresh(invitation)
+        return invitation
 
     invited_by_user = getattr(invitation, "invited_by_user", None)
     organization = getattr(invitation, "organization", None)
@@ -172,13 +180,11 @@ def dispatch_organization_invitation_delivery(db: Session, *, invitation_id: UUI
     }
     body = json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"}
-    signing_secret = (settings.invite_delivery_webhook_signing_secret or "").strip()
-    if signing_secret:
-        timestamp = int(time.time())
-        signature = sign_webhook_payload(secret=signing_secret, timestamp=timestamp, body=body)
-        headers["X-Reliai-Signature-Version"] = settings.invite_delivery_webhook_signature_version
-        headers["X-Reliai-Timestamp"] = str(timestamp)
-        headers["X-Reliai-Signature"] = signature
+    timestamp = int(time.time())
+    signature = sign_webhook_payload(secret=signing_secret, timestamp=timestamp, body=body)
+    headers["X-Reliai-Signature-Version"] = settings.invite_delivery_webhook_signature_version
+    headers["X-Reliai-Timestamp"] = str(timestamp)
+    headers["X-Reliai-Signature"] = signature
     request = Request(webhook_url, data=body, headers=headers, method="POST")
     try:
         with urlopen(request, timeout=max(1, settings.invite_delivery_webhook_timeout_seconds)) as response:
