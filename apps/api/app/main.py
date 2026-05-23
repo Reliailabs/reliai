@@ -14,6 +14,7 @@ configure_logging()
 settings = get_settings()
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+MAX_INVITE_DELIVERY_PAYLOAD_BYTES = 64 * 1024
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -57,8 +58,13 @@ async def reliai_invite_delivery(
     expected_header = f"Bearer {expected_token}"
     if authorization != expected_header:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="unauthorized")
+    content_type = (request.headers.get("content-type") or "").strip().lower()
+    if not content_type.startswith("application/json"):
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="unsupported_media_type")
 
     raw_body = await request.body()
+    if len(raw_body) > MAX_INVITE_DELIVERY_PAYLOAD_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="payload_too_large")
     signing_secret = (runtime_settings.invite_delivery_webhook_signing_secret or "").strip()
     if signing_secret:
         if not x_reliai_signature_version or not x_reliai_timestamp or not x_reliai_signature:
@@ -87,7 +93,10 @@ async def reliai_invite_delivery(
         if not accepted_once:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="replay_detected")
 
-    payload = await request.json()
+    try:
+        payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_payload") from exc
     if not isinstance(payload, dict) or payload.get("event") != "organization_invitation.created":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_payload")
 
