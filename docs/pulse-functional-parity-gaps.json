@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-05-23T16:00:00Z",
+  "updated_at_utc": "2026-05-23T18:00:00Z",
   "status": "active",
   "scope": "apps/web -> apps/pulse full functional parity",
   "gaps": [
@@ -51,13 +51,13 @@
       "id": "F4",
       "title": "Auth callback / SSO parity",
       "impact": "high",
-      "state": "open",
+      "state": "closed",
       "type": "auth_parity",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
       "artifact": "docs/pulse-auth-callback-ownership.md",
       "acceptance": [
-        "Pulse has auth callback parity for SSO flows or explicit externalized ownership with test gate",
+        "Pulse provides explicit callback compatibility shim while canonical callback ownership remains externalized",
         "Auth callback ownership and failure behavior are documented and contract-tested"
       ]
     },

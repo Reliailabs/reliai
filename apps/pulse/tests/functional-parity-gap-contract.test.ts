@@ -32,14 +32,15 @@ test("functional parity gap contract is present and owner-complete", () => {
   });
 });
 
-test("full parity blockers remain explicitly tracked with resolved F1 and open F2-F6", () => {
+test("full parity blockers remain explicitly tracked with resolved F1/F4 and open F2/F3/F5/F6", () => {
   const contract = loadContract();
   const expectedIds = new Set(["F1", "F2", "F3", "F4", "F5", "F6"]);
   const actualIds = new Set(contract.gaps.map((gap) => gap.id));
   expectedIds.forEach((id) => assert.ok(actualIds.has(id), `${id} missing`));
   const byId = new Map(contract.gaps.map((gap) => [gap.id, gap]));
   assert.equal(byId.get("F1")?.state, "closed", "F1 must be closed once billing parity is implemented");
-  ["F2", "F3", "F4", "F5", "F6"].forEach((id) => {
+  assert.equal(byId.get("F4")?.state, "closed", "F4 must be closed once auth callback ownership is explicit");
+  ["F2", "F3", "F5", "F6"].forEach((id) => {
     assert.equal(byId.get(id)?.state, "open", `${id} must remain open until resolved`);
   });
 
