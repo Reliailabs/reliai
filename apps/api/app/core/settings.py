@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     invite_email_provider: str = "resend"
     invite_delivery_webhook_bearer_token: str | None = None
     invite_delivery_webhook_signing_secret: str | None = None
+    invite_delivery_webhook_signature_version: str = "v1"
     invite_delivery_webhook_signature_max_age_seconds: int = 300
     invite_from_email: str | None = None
     invite_to_email: str | None = None

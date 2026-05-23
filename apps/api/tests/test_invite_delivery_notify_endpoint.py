@@ -40,6 +40,7 @@ def _signed_headers(payload: dict, *, secret: str, timestamp: int | None = None)
     body = json.dumps(payload).encode("utf-8")
     sig = sign_webhook_payload(secret=secret, timestamp=ts, body=body)
     headers = {
+        "X-Reliai-Signature-Version": "v1",
         "X-Reliai-Timestamp": str(ts),
         "X-Reliai-Signature": sig,
         "Content-Type": "application/json",
@@ -81,11 +82,34 @@ def test_invite_delivery_rejects_missing_signature_when_configured(client, monke
     get_settings.cache_clear()
 
 
+def test_invite_delivery_rejects_unsupported_signature_version(client, monkeypatch):
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
+    monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
+    get_settings.cache_clear()
+    payload = _payload()
+    signed_headers, body = _signed_headers(payload, secret="signing-secret")
+    signed_headers["X-Reliai-Signature-Version"] = "v2"
+    response = client.post(
+        "/reliai/invite-delivery",
+        headers={"Authorization": "Bearer secret-token", **signed_headers},
+        content=body,
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "unsupported_signature_version"
+    get_settings.cache_clear()
+
+
 def test_invite_delivery_rejects_invalid_signature_when_configured(client, monkeypatch):
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_BEARER_TOKEN", "secret-token")
     monkeypatch.setenv("INVITE_DELIVERY_WEBHOOK_SIGNING_SECRET", "signing-secret")
     get_settings.cache_clear()
-    headers = {"Authorization": "Bearer secret-token", "X-Reliai-Timestamp": str(int(time.time())), "X-Reliai-Signature": "bad"}
+    headers = {
+        "Authorization": "Bearer secret-token",
+        "X-Reliai-Signature-Version": "v1",
+        "X-Reliai-Timestamp": str(int(time.time())),
+        "X-Reliai-Signature": "bad",
+        "Content-Type": "application/json",
+    }
     response = client.post("/reliai/invite-delivery", headers=headers, json=_payload())
     assert response.status_code == 401
     assert response.json()["detail"] == "invalid_signature"

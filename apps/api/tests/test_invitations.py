@@ -177,6 +177,8 @@ def test_invitation_delivery_marks_webhook_dispatched_when_configured(client, db
     assert invitation["delivery_mode"] == "email_webhook_dispatched"
     assert invitation["email_sent_at"] is not None
     headers = {str(key).lower(): value for key, value in seen["headers"].items()}
+    assert "x-reliai-signature-version" in headers
+    assert headers["x-reliai-signature-version"] == "v1"
     assert "x-reliai-signature" in headers
     assert "x-reliai-timestamp" in headers
     get_settings.cache_clear()
