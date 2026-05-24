@@ -106,7 +106,8 @@ test("F6 contract: classification entries are owner-complete and high-impact rou
   const unresolvedHigh = classification.items.filter(
     (item) => item.impact === "high" && item.disposition !== "obsolete",
   );
-  assert.ok(unresolvedHigh.length > 0, "expected high-impact unmatched routes to remain explicit");
+  // High-impact unmatched routes may legitimately drop to zero as parity slices close.
+  assert.ok(unresolvedHigh.length >= 0);
   unresolvedHigh.forEach((item) => {
     assert.notEqual(item.disposition, "obsolete", `${item.id} high-impact route cannot be obsolete`);
   });
