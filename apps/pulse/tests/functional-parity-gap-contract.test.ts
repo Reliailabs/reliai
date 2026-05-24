@@ -32,7 +32,7 @@ test("functional parity gap contract is present and owner-complete", () => {
   });
 });
 
-test("full parity blockers remain explicitly tracked with resolved F1/F2/F3/F4/F6 and open F5", () => {
+test("full parity blockers remain explicitly tracked with F1-F6 contract-closed", () => {
   const contract = loadContract();
   const expectedIds = new Set(["F1", "F2", "F3", "F4", "F5", "F6"]);
   const actualIds = new Set(contract.gaps.map((gap) => gap.id));
@@ -42,10 +42,8 @@ test("full parity blockers remain explicitly tracked with resolved F1/F2/F3/F4/F
   assert.equal(byId.get("F2")?.state, "closed", "F2 must be closed once onboarding ingest parity is implemented");
   assert.equal(byId.get("F3")?.state, "closed", "F3 must be closed once API ownership parity is implemented");
   assert.equal(byId.get("F4")?.state, "closed", "F4 must be closed once auth callback ownership is explicit");
+  assert.equal(byId.get("F5")?.state, "closed", "F5 must be closed once docs ownership contract is resolved");
   assert.equal(byId.get("F6")?.state, "closed", "F6 must be closed once route inventory is fully classified");
-  ["F5"].forEach((id) => {
-    assert.equal(byId.get(id)?.state, "open", `${id} must remain open until resolved`);
-  });
 
   const highImpact = contract.gaps.filter((gap) => gap.impact === "high");
   assert.ok(highImpact.length > 0, "high-impact functional items must remain explicit");

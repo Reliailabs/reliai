@@ -1,15 +1,15 @@
 # Pulse Functional Parity Audit Report
 
 Date: 2026-05-21
-Status: Active
+Status: Closed
 Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership closure)
 
 ## 1) Summary
 
 Scope and ownership migration is materially stabilized and test-gated.
 
-Scoped migration parity is complete for tracked surfaces, but full `apps/web` parity is not complete.
-Open full-parity blockers are tracked in `docs/pulse-functional-parity-gaps.json` (F1 + F2 + F3 + F4 + F6 closed; F5 open).
+Scoped migration parity and full `apps/web` parity are contract-closed.
+Full-parity blockers in `docs/pulse-functional-parity-gaps.json` are resolved as closed or explicitly externalized with ownership/test gates.
 
 ## 2) What Is Already Closed
 
