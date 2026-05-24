@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-05-23T00:00:00Z",
+  "updated_at_utc": "2026-05-23T19:00:00Z",
   "source": "apps/web/app -> apps/pulse/app normalized route inventory",
   "items": [
     {
@@ -34,28 +34,6 @@
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
       "notes": "Pulse uses /sign-in."
-    },
-    {
-      "id": "F6-004",
-      "kind": "route",
-      "path": "/api/billing/checkout",
-      "source_file": "apps/web/app/api/billing/checkout/route.ts",
-      "disposition": "deferred_blocker",
-      "impact": "high",
-      "owner": "Pulse migration",
-      "target_phase": "F1 billing parity",
-      "notes": "Billing ownership parity remains open."
-    },
-    {
-      "id": "F6-009",
-      "kind": "route",
-      "path": "/auth/callback",
-      "source_file": "apps/web/app/auth/callback/route.ts",
-      "disposition": "intentionally_externalized",
-      "impact": "high",
-      "owner": "Pulse migration",
-      "target_phase": "F4 auth callback parity",
-      "notes": "Externalized ownership is contract-documented while F4 remains open."
     },
     {
       "id": "F6-010",
