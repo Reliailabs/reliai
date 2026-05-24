@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { resolveScopedProjectId, type ProjectScopeOption } from "@/lib/project-scope-utils";
+import { resolveScopedProjectId, resolveStrictScopedProjectId, type ProjectScopeOption } from "@/lib/project-scope-utils";
 
 const projects: ProjectScopeOption[] = [
   { id: "proj_old", name: "Old", created_at: "2026-05-01T10:00:00.000Z" },
@@ -26,5 +26,20 @@ test("resolveScopedProjectId falls back to newest project when scope is omitted"
 
 test("resolveScopedProjectId returns null when no projects are available", () => {
   const selected = resolveScopedProjectId([], null);
+  assert.equal(selected, null);
+});
+
+test("resolveStrictScopedProjectId returns explicit scoped project only", () => {
+  const selected = resolveStrictScopedProjectId(projects, "proj_mid");
+  assert.equal(selected, "proj_mid");
+});
+
+test("resolveStrictScopedProjectId fails closed when scope is omitted", () => {
+  const selected = resolveStrictScopedProjectId(projects, null);
+  assert.equal(selected, null);
+});
+
+test("resolveStrictScopedProjectId fails closed when scope is invalid", () => {
+  const selected = resolveStrictScopedProjectId(projects, "missing_project");
   assert.equal(selected, null);
 });

@@ -12,7 +12,7 @@ const sanitizeReturnTo = (value: FormDataEntryValue | null): string => {
 
 export async function POST(request: Request) {
   if (!devAuthEnabled()) {
-    return NextResponse.json({ detail: "dev auth disabled" }, { status: 403 });
+    return NextResponse.json({ detail: "not_found" }, { status: 404 });
   }
 
   const formData = await request.formData();
@@ -43,8 +43,8 @@ export async function POST(request: Request) {
 }
 
 export function GET() {
-  return NextResponse.json(
-    { detail: "Use POST to /api/auth/dev-sign-in with form data." },
-    { status: 405 },
-  );
+  if (!devAuthEnabled()) {
+    return NextResponse.json({ detail: "not_found" }, { status: 404 });
+  }
+  return NextResponse.json({ detail: "Use POST to /api/auth/dev-sign-in with form data." }, { status: 405 });
 }

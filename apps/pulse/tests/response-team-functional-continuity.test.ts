@@ -30,7 +30,8 @@ test("on-call page uses organization members as assignment source and separates 
 test("response-team sidebar endpoint resolves by canonical project scope and maps known role order", () => {
   const file = read("app/api/oncall/response-team/route.ts");
   assert.match(file, /searchParams\.get\("project_id"\) \?\? searchParams\.get\("projectId"\)/);
-  assert.match(file, /resolveScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(file, /resolveStrictScopedProjectId\(projects, projectIdParam\)/);
+  assert.match(file, /project_scope_required/);
   assert.match(file, /const roleOrder: Record<string, \{ label: ResponseTeamMember\["role"\]; status: ResponseTeamMember\["status"\] \}>/);
   assert.match(file, /primary/);
   assert.match(file, /secondary/);

@@ -7,7 +7,7 @@ import { ProjectScopeSelector } from "@/components/dashboard/project-scope-selec
 import { API_URL } from "@/lib/constants";
 import { getApiAccessToken, requireOperatorSession } from "@/lib/auth";
 import { listProjectScopeOptions } from "@/lib/project-scope-data";
-import { resolveScopedProjectId } from "@/lib/project-scope-utils";
+import { resolveStrictScopedProjectId } from "@/lib/project-scope-utils";
 
 type ProjectDetailRead = {
   id: string;
@@ -74,7 +74,10 @@ export default async function OnCallPage({ searchParams }: OnCallPageProps) {
   const projectIdParam = params.project_id ?? params.projectId ?? null;
 
   const projects = await listProjectScopeOptions();
-  const selectedProjectId = resolveScopedProjectId(projects, projectIdParam) ?? "";
+  const selectedProjectId = resolveStrictScopedProjectId(projects, projectIdParam) ?? "";
+  if (!selectedProjectId && projects.length > 0) {
+    redirect("/on-call?error=project_scope_required");
+  }
   if (params.projectId && !params.project_id && selectedProjectId) {
     redirect(`/on-call?project_id=${encodeURIComponent(selectedProjectId)}`);
   }

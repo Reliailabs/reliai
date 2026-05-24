@@ -16,3 +16,14 @@ export function resolveScopedProjectId(projects: ProjectScopeOption[], projectId
 
   return newest?.id ?? null;
 }
+
+export function resolveStrictScopedProjectId(
+  projects: ProjectScopeOption[],
+  projectIdParam?: string | null,
+): string | null {
+  if (!projectIdParam) {
+    return null;
+  }
+  const match = projects.find((project) => project.id === projectIdParam);
+  return match?.id ?? null;
+}
