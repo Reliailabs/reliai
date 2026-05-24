@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { signIn } from "@/lib/auth";
-import { SESSION_COOKIE_NAME, devAuthEnabled } from "@/lib/constants";
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
 const sanitizeReturnTo = (value: FormDataEntryValue | null): string => {
   if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//")) {
@@ -11,10 +11,6 @@ const sanitizeReturnTo = (value: FormDataEntryValue | null): string => {
 };
 
 export async function POST(request: Request) {
-  if (!devAuthEnabled()) {
-    return NextResponse.json({ detail: "not_found" }, { status: 404 });
-  }
-
   const formData = await request.formData();
   const email = formData.get("email");
   const password = formData.get("password");
@@ -43,8 +39,8 @@ export async function POST(request: Request) {
 }
 
 export function GET() {
-  if (!devAuthEnabled()) {
-    return NextResponse.json({ detail: "not_found" }, { status: 404 });
-  }
-  return NextResponse.json({ detail: "Use POST to /api/auth/dev-sign-in with form data." }, { status: 405 });
+  return NextResponse.json(
+    { detail: "Use POST to /api/auth/sign-in with form data." },
+    { status: 405 },
+  );
 }

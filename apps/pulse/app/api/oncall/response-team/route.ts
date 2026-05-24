@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getApiAccessToken, getOperatorSession } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
 import { listProjectScopeOptions } from "@/lib/project-scope-data";
-import { resolveScopedProjectId } from "@/lib/project-scope-utils";
+import { resolveStrictScopedProjectId } from "@/lib/project-scope-utils";
 
 type ResponseTeamMember = {
   id: string;
@@ -46,9 +46,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const projectIdParam = searchParams.get("project_id") ?? searchParams.get("projectId");
     const projects = await listProjectScopeOptions();
-    const projectId = resolveScopedProjectId(projects, projectIdParam);
+    const projectId = resolveStrictScopedProjectId(projects, projectIdParam);
     if (!projectId) {
-      return NextResponse.json({ items: [] } satisfies ResponseTeamPayload, { status: 200 });
+      return NextResponse.json({ detail: "project_scope_required", items: [] } satisfies ResponseTeamPayload, { status: 400 });
     }
     const projectOncallResponse = await fetch(`${API_URL}/api/v1/projects/${projectId}/oncall`, {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

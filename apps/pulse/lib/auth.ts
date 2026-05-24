@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { API_URL, SESSION_COOKIE_NAME } from "@/lib/constants";
+import { API_URL, SESSION_COOKIE_NAME, getAuthRuntimeConfigError } from "@/lib/constants";
 
 export interface OperatorSession {
   operator: {
@@ -58,6 +58,11 @@ async function getRequestReturnTo(): Promise<string> {
 }
 
 async function authRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+  const configError = getAuthRuntimeConfigError();
+  if (configError) {
+    throw new Error(`Auth runtime config invalid: ${configError}`);
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
@@ -91,6 +96,10 @@ export async function getApiAccessToken(): Promise<string | null> {
 }
 
 export async function signIn(email: string, password: string) {
+  if (getAuthRuntimeConfigError()) {
+    return null;
+  }
+
   const response = await fetch(`${API_URL}/api/v1/auth/sign-in`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -106,6 +115,10 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function getOperatorSession(): Promise<OperatorSession | null> {
+  if (getAuthRuntimeConfigError()) {
+    return null;
+  }
+
   const token = await getApiAccessToken();
   if (!token) {
     return null;
