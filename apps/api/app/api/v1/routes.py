@@ -5359,11 +5359,12 @@ def list_operations_timeline_endpoint(
 @router.get("/operations/timeline/{entry_id}", response_model=OperationsTimelineEventRead)
 def get_operations_timeline_by_id_endpoint(
     entry_id: str,
+    project_id: UUID | None = Query(default=None),
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> OperationsTimelineEventRead:
     """GET /api/v1/operations/timeline/{entry_id}."""
-    event = get_timeline_event_by_id(db, operator, entry_id)
+    event = get_timeline_event_by_id(db, operator, entry_id, project_id=project_id)
     if event is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Timeline event not found")
     return event
@@ -5389,11 +5390,12 @@ def list_operations_lifecycles_endpoint(
 @router.get("/operations/lifecycles/{lifecycle_id}", response_model=LifecycleRead)
 def get_operations_lifecycle_by_id_endpoint(
     lifecycle_id: str,
+    project_id: UUID | None = Query(default=None),
     db: Session = Depends(get_db),
     operator: OperatorContext = Depends(require_operator),
 ) -> LifecycleRead:
     """GET /api/v1/operations/lifecycles/{lifecycle_id}."""
-    lifecycle = get_lifecycle_by_id(db, operator, lifecycle_id)
+    lifecycle = get_lifecycle_by_id(db, operator, lifecycle_id, project_id=project_id)
     if lifecycle is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lifecycle not found")
     return lifecycle

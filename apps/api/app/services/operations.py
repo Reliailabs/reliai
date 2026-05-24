@@ -90,18 +90,21 @@ def get_timeline_event_by_id(
     db: Session,
     operator: OperatorContext,
     entry_id: str,
+    project_id: UUID | None = None,
 ) -> TimelineEventRead | None:
     """Return one timeline event scoped to the operator's active organization."""
     org_id: UUID | None = operator.active_organization_id
     if org_id is None:
         return None
 
-    event = db.scalar(
-        select(OperationsTimelineEvent).where(
-            OperationsTimelineEvent.entry_id == entry_id,
-            OperationsTimelineEvent.organization_id == org_id,
-        )
-    )
+    predicates = [
+        OperationsTimelineEvent.entry_id == entry_id,
+        OperationsTimelineEvent.organization_id == org_id,
+    ]
+    if project_id is not None:
+        predicates.append(OperationsTimelineEvent.project_id == project_id)
+
+    event = db.scalar(select(OperationsTimelineEvent).where(*predicates))
     if event is None:
         return None
     return TimelineEventRead.model_validate(event)
@@ -163,18 +166,21 @@ def get_lifecycle_by_id(
     db: Session,
     operator: OperatorContext,
     lifecycle_id: str,
+    project_id: UUID | None = None,
 ) -> LifecycleRead | None:
     """Return one lifecycle scoped to the operator's active organization."""
     org_id: UUID | None = operator.active_organization_id
     if org_id is None:
         return None
 
-    record = db.scalar(
-        select(ProposalLifecycleRecord).where(
-            ProposalLifecycleRecord.lifecycle_id == lifecycle_id,
-            ProposalLifecycleRecord.organization_id == org_id,
-        )
-    )
+    predicates = [
+        ProposalLifecycleRecord.lifecycle_id == lifecycle_id,
+        ProposalLifecycleRecord.organization_id == org_id,
+    ]
+    if project_id is not None:
+        predicates.append(ProposalLifecycleRecord.project_id == project_id)
+
+    record = db.scalar(select(ProposalLifecycleRecord).where(*predicates))
     if record is None:
         return None
 
