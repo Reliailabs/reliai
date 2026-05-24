@@ -36,50 +36,6 @@
       "notes": "Pulse uses /sign-in."
     },
     {
-      "id": "F6-005",
-      "kind": "route",
-      "path": "/api/config/apply",
-      "source_file": "apps/web/app/api/config/apply/route.ts",
-      "disposition": "deferred_blocker",
-      "impact": "high",
-      "owner": "Pulse migration",
-      "target_phase": "F3 API ownership parity",
-      "notes": "Route ownership decision pending in F3."
-    },
-    {
-      "id": "F6-006",
-      "kind": "route",
-      "path": "/api/config/undo",
-      "source_file": "apps/web/app/api/config/undo/route.ts",
-      "disposition": "deferred_blocker",
-      "impact": "high",
-      "owner": "Pulse migration",
-      "target_phase": "F3 API ownership parity",
-      "notes": "Route ownership decision pending in F3."
-    },
-    {
-      "id": "F6-007",
-      "kind": "route",
-      "path": "/api/prompts/diff",
-      "source_file": "apps/web/app/api/prompts/diff/route.ts",
-      "disposition": "deferred_blocker",
-      "impact": "high",
-      "owner": "Pulse migration",
-      "target_phase": "F3 API ownership parity",
-      "notes": "Route ownership decision pending in F3."
-    },
-    {
-      "id": "F6-008",
-      "kind": "route",
-      "path": "/api/system/limits",
-      "source_file": "apps/web/app/api/system/limits/route.ts",
-      "disposition": "deferred_blocker",
-      "impact": "high",
-      "owner": "Pulse migration",
-      "target_phase": "F3 API ownership parity",
-      "notes": "Route ownership decision pending in F3."
-    },
-    {
       "id": "F6-010",
       "kind": "page",
       "path": "/docs/examples",
