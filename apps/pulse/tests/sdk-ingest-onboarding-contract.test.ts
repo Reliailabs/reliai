@@ -41,3 +41,24 @@ test("x-api-key guidance is backward-compatibility only", () => {
   assert.ok(webOnboarding.includes("x-api-key"));
   assert.ok(pulseOnboarding.includes("x-api-key"));
 });
+
+test("pulse onboarding includes explicit ingest verification path and first-trace status", () => {
+  const pulseOnboarding = readRepoFile("apps/pulse/app/(app)/onboarding/page.tsx");
+
+  assert.ok(
+    pulseOnboarding.includes("Ingest verification"),
+    "pulse onboarding must expose explicit ingest verification guidance",
+  );
+  assert.ok(
+    pulseOnboarding.includes("Direct ingest (HTTP)"),
+    "pulse onboarding must include direct ingest verification path",
+  );
+  assert.ok(
+    pulseOnboarding.includes("OTEL-compatible path"),
+    "pulse onboarding must include OTEL-compatible verification guidance",
+  );
+  assert.ok(
+    pulseOnboarding.includes("First trace:"),
+    "pulse onboarding must expose first-trace verification status",
+  );
+});
