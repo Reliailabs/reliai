@@ -31,13 +31,18 @@ function toInitials(firstName: string, lastName: string): string {
   return `${firstName[0] ?? "R"}${lastName[0] ?? "L"}`.toUpperCase();
 }
 
-function fallbackProfile(): ProfileRead {
+function profileFromSession(session: Awaited<ReturnType<typeof requireOperatorSession>>): ProfileRead {
+  const firstName = session.operator.first_name ?? "Operator";
+  const lastName = session.operator.last_name ?? "User";
+  const email = session.operator.email ?? "unknown@local";
+  const role = session.memberships[0]?.role ?? "operator";
+
   return {
-    initials: "RO",
-    firstName: "Reliai",
-    lastName: "Operator",
-    email: "operator@reliai.dev",
-    role: "operator",
+    initials: toInitials(firstName, lastName),
+    firstName,
+    lastName,
+    email,
+    role,
   };
 }
 
@@ -48,9 +53,9 @@ async function readLiveProfile(): Promise<ProfileSurfaceRead> {
 
   if (!token) {
     return {
-      profile: fallbackProfile(),
+      profile: profileFromSession(session),
       organization: { id: orgId },
-      dataMode: "demo",
+      dataMode: "live",
       sourceErrors: ["missing-session-token"],
     };
   }
@@ -66,10 +71,10 @@ async function readLiveProfile(): Promise<ProfileSurfaceRead> {
     }
 
     const data = (await response.json()) as SessionRead;
-    const firstName = data.operator.first_name ?? "Reliai";
-    const lastName = data.operator.last_name ?? "Operator";
-    const email = data.operator.email ?? "operator@reliai.dev";
-    const role = data.operator.role ?? "operator";
+    const firstName = data.operator.first_name ?? session.operator.first_name ?? "Operator";
+    const lastName = data.operator.last_name ?? session.operator.last_name ?? "User";
+    const email = data.operator.email ?? session.operator.email ?? "unknown@local";
+    const role = data.operator.role ?? session.memberships[0]?.role ?? "operator";
 
     return {
       profile: {
@@ -85,9 +90,9 @@ async function readLiveProfile(): Promise<ProfileSurfaceRead> {
     };
   } catch {
     return {
-      profile: fallbackProfile(),
+      profile: profileFromSession(session),
       organization: { id: orgId },
-      dataMode: "demo",
+      dataMode: "live",
       sourceErrors: ["session"],
     };
   }
@@ -143,9 +148,9 @@ export async function updateSettingsProfile(input: ProfileUpdateInput): Promise<
     email?: string | null;
   };
 
-  const firstName = payload.first_name ?? input.firstName;
-  const lastName = payload.last_name ?? input.lastName;
-  const email = payload.email ?? "operator@reliai.dev";
+  const firstName = payload.first_name ?? input.firstName ?? session.operator.first_name ?? "Operator";
+  const lastName = payload.last_name ?? input.lastName ?? session.operator.last_name ?? "User";
+  const email = payload.email ?? session.operator.email ?? "unknown@local";
 
   return {
     profile: {
