@@ -90,6 +90,7 @@ def _make_lifecycle(
     state: str = "detected",
     lifecycle_id: str = "",
     proposal_id: str = "",
+    project_id: UUID | None = None,
 ) -> ProposalLifecycleRecord:
     lid = lifecycle_id or f"lifecycle-{uuid4().hex[:16]}"
     pid = proposal_id or f"phase9-inc-{uuid4().hex[:16]}"
@@ -100,7 +101,7 @@ def _make_lifecycle(
         target_type="incident",
         target_id="inc-001",
         organization_id=_org_uuid(organization_id),
-        project_id=None,
+        project_id=project_id,
         state=state,
         execution_granted=False,
         requires_operator_review=True,
@@ -464,6 +465,35 @@ def test_timeline_by_id_tenant_isolated_returns_404_for_other_org(client, db_ses
     assert response.status_code == 404
 
 
+def test_timeline_by_id_project_scope_mismatch_returns_404(client, db_session):
+    session, org_id = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+    project_a = create_project(client, session, org_id, name="Project A")
+    project_b = create_project(client, session, org_id, name="Project B")
+    event = _make_event(
+        db_session,
+        organization_id=org_id,
+        entry_id="otl-project-scope-0001",
+        project_id=UUID(project_a["id"]),
+        kind="incident_detected",
+    )
+    db_session.commit()
+
+    ok = client.get(
+        f"/api/v1/operations/timeline/{event.entry_id}",
+        headers=auth_headers(session),
+        params={"project_id": project_a["id"]},
+    )
+    mismatch = client.get(
+        f"/api/v1/operations/timeline/{event.entry_id}",
+        headers=auth_headers(session),
+        params={"project_id": project_b["id"]},
+    )
+    assert ok.status_code == 200
+    assert mismatch.status_code == 404
+
+
 # ── Lifecycles: auth + empty ──────────────────────────────────────────────────
 
 
@@ -778,3 +808,31 @@ def test_lifecycle_by_id_tenant_isolated_returns_404_for_other_org(client, db_se
         headers=auth_headers(session_b),
     )
     assert response.status_code == 404
+
+
+def test_lifecycle_by_id_project_scope_mismatch_returns_404(client, db_session):
+    session, org_id = _setup_org(
+        client, db_session, email="ops@acme.test", org_name="Acme", org_slug="acme"
+    )
+    project_a = create_project(client, session, org_id, name="Project A")
+    project_b = create_project(client, session, org_id, name="Project B")
+    lc = _make_lifecycle(
+        db_session,
+        organization_id=org_id,
+        lifecycle_id="lifecycle-project-scope-0001",
+        project_id=UUID(project_a["id"]),
+    )
+    db_session.commit()
+
+    ok = client.get(
+        f"/api/v1/operations/lifecycles/{lc.lifecycle_id}",
+        headers=auth_headers(session),
+        params={"project_id": project_a["id"]},
+    )
+    mismatch = client.get(
+        f"/api/v1/operations/lifecycles/{lc.lifecycle_id}",
+        headers=auth_headers(session),
+        params={"project_id": project_b["id"]},
+    )
+    assert ok.status_code == 200
+    assert mismatch.status_code == 404
