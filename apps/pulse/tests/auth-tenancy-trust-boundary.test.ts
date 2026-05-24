@@ -94,3 +94,13 @@ test("billing checkout route is org-scoped and fail-closed", () => {
   assert.match(billingCheckout, /if \(parsed\.data\.organization_id !== activeOrgId\)/);
   assert.match(billingCheckout, /return NextResponse\.json\(\{ error: "forbidden" \}, \{ status: 403 \}\)/);
 });
+
+test("settings profile repository does not synthesize demo seed identity on fallback", () => {
+  const profileRepo = read("lib/settings-profile-repository.ts");
+
+  assert.doesNotMatch(profileRepo, /operator@reliai\.dev/);
+  assert.doesNotMatch(profileRepo, /firstName: "Reliai"/);
+  assert.doesNotMatch(profileRepo, /lastName: "Operator"/);
+  assert.match(profileRepo, /profileFromSession\(session\)/);
+  assert.match(profileRepo, /dataMode: "live"/);
+});
