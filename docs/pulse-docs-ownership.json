@@ -1,6 +1,6 @@
 {
-  "updated_at_utc": "2026-05-23T00:00:00Z",
-  "status": "active",
+  "updated_at_utc": "2026-05-23T23:00:00Z",
+  "status": "closed",
   "scope": "docs ownership parity between apps/web and apps/pulse",
   "decision": {
     "docs_route": "/docs",
@@ -10,8 +10,9 @@
     "target_phase": "F5 docs parity",
     "notes": [
       "Pulse keeps a simplified docs surface for migration compatibility.",
-      "Full docs tree ownership remains in apps/web until F5 closure.",
-      "Pulse must not claim full docs-tree parity while ownership is externalized."
+      "Full docs tree ownership remains in apps/web by explicit ownership decision.",
+      "Pulse must not claim full docs-tree parity while ownership is externalized.",
+      "F5 closure is contractual: externalized ownership is explicit and test-gated."
     ]
   }
 }

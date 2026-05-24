@@ -1,6 +1,6 @@
 # Pulse Migration Parity Sweep Tracker
 
-Status: Active (Scoped migration parity is complete; full apps/web parity remains open)
+Status: Closed (Scoped migration parity and full apps/web parity are contract-closed)
 Scope: apps/web -> apps/pulse functional parity
 
 ## 1) Current Migration State
@@ -35,7 +35,7 @@ Scoped functional parity is closed for previously tracked migration-contract sur
 
 Current functional status:
 - scoped migration contract surfaces are closed and test-gated
-- full apps/web parity remains open and is tracked in `docs/pulse-functional-parity-gaps.json` (F1 + F2 + F3 + F4 + F6 closed; F5 open blocker)
+- full apps/web parity is contract-closed and tracked in `docs/pulse-functional-parity-gaps.json` (F1-F6 closed or explicitly externalized with test gates)
 
 Artifacts:
 - canonical scope/ownership closure state: `docs/pulse-migration-parity-gaps.json`
@@ -64,9 +64,8 @@ Validation artifacts:
 - `apps/pulse/tests/response-team-functional-continuity.test.ts`
 - `apps/pulse/tests/e2e/app-route-shell.spec.ts` (`on-call` scope continuity probe)
 
-## 4) Rules for Remaining Slices
+## 4) Rules After Closure
 
-- No migration slice closes without updating this tracker and the functional gap report.
-- Prefer user-visible functional parity fixes over gate/process expansion.
+- Any reopened migration work must identify a newly discovered parity gap or a product-level requirement.
 - Keep scopes isolated per branch/PR.
-- New work now requires either a newly discovered parity gap or a product-level requirement; do not reopen resolved high-impact parity slices.
+- Do not reopen resolved high-impact parity slices without explicit contract updates.

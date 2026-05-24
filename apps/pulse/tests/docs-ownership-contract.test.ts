@@ -23,7 +23,7 @@ function readRepoFile(relPath: string): string {
 
 test("F5 contract: docs ownership decision is explicit and owner-complete", () => {
   const contract = JSON.parse(readRepoFile("docs/pulse-docs-ownership.json")) as DocsOwnershipContract;
-  assert.equal(contract.status, "active");
+  assert.equal(contract.status, "closed");
   assert.equal(contract.decision.docs_route, "/docs");
   assert.ok(contract.decision.owner.trim().length > 0);
   assert.ok(contract.decision.target_phase.trim().length > 0);
@@ -47,5 +47,5 @@ test("F5 contract: parity gap register points to docs ownership artifact", () =>
   const f5 = gaps.gaps.find((gap) => gap.id === "F5");
   assert.ok(f5, "F5 must exist");
   assert.equal(f5?.artifact, "docs/pulse-docs-ownership.json");
-  assert.equal(f5?.state, "open");
+  assert.equal(f5?.state, "closed");
 });
