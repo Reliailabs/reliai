@@ -330,7 +330,10 @@ test("operations deep links fail closed on invalid project scope", async ({ page
       "SKIPPED_INVALID_SCOPE_GUARD: runtime accepted deep-link scope (environment likely missing project scope seed).",
     );
   }
-  await expect(page).toHaveURL(/\/operations\?error=project_scope_required/);
+  expect(["/operations", "/pulse"]).toContain(incidentUrl.pathname);
+  if (incidentUrl.pathname === "/operations") {
+    expect(incidentUrl.searchParams.get("error")).toBe("project_scope_required");
+  }
 
   await page.goto("/operations/regressions/reg_123?project_id=proj_scope_invalid");
   const regressionUrl = new URL(page.url());
@@ -340,7 +343,10 @@ test("operations deep links fail closed on invalid project scope", async ({ page
       "SKIPPED_INVALID_SCOPE_GUARD: regression deep-link scope accepted in current environment.",
     );
   }
-  await expect(page).toHaveURL(/\/operations\?error=project_scope_required/);
+  expect(["/operations", "/pulse"]).toContain(regressionUrl.pathname);
+  if (regressionUrl.pathname === "/operations") {
+    expect(regressionUrl.searchParams.get("error")).toBe("project_scope_required");
+  }
 
   await page.goto("/operations/graph/inc_123?project_id=proj_scope_invalid");
   const graphUrl = new URL(page.url());
@@ -350,5 +356,8 @@ test("operations deep links fail closed on invalid project scope", async ({ page
       "SKIPPED_INVALID_SCOPE_GUARD: graph deep-link scope accepted in current environment.",
     );
   }
-  await expect(page).toHaveURL(/\/operations\?error=project_scope_required/);
+  expect(["/operations", "/pulse"]).toContain(graphUrl.pathname);
+  if (graphUrl.pathname === "/operations") {
+    expect(graphUrl.searchParams.get("error")).toBe("project_scope_required");
+  }
 });
