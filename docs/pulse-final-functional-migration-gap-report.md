@@ -9,7 +9,7 @@ Scope: apps/web -> apps/pulse functional behavior parity (post scope/ownership c
 Scope and ownership migration is materially stabilized and test-gated.
 
 Scoped migration parity is complete for tracked surfaces, but full `apps/web` parity is not complete.
-Open full-parity blockers are tracked in `docs/pulse-functional-parity-gaps.json` (F1 + F3 + F4 closed; F2, F5, F6 open).
+Open full-parity blockers are tracked in `docs/pulse-functional-parity-gaps.json` (F1 + F3 + F4 + F6 closed; F2, F5 open).
 
 ## 2) What Is Already Closed
 
