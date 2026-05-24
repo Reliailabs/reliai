@@ -267,11 +267,11 @@ export default async function OnboardingPage({
             <div className="rounded-lg border border-border bg-muted/20 px-3 py-3 text-sm space-y-3">
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Ingest verification</p>
               <p className="text-muted-foreground">
-                Direct ingest (HTTP): send one trace with your project key to verify first-trace onboarding.
+                Direct ingest (HTTP): send one trace with your project-scoped API key to verify first-trace onboarding.
               </p>
               <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-xs text-foreground">{`export RELIAI_API_KEY="${apiKeyValue ?? "reliai_..."}"
 curl -X POST http://localhost:8000/api/v1/ingest/traces \\
-  -H "Authorization: Bearer ${apiKeyValue ?? "reliai_..."}" \\
+  -H "Authorization: Bearer \${RELIAI_API_KEY}" \\
   -H "content-type: application/json" \\
   -d '{
     "timestamp":"2026-03-09T12:00:00Z",
@@ -288,8 +288,9 @@ curl -X POST http://localhost:8000/api/v1/ingest/traces \\
                 <code> Authorization: Bearer</code>.
               </p>
               <p className="text-muted-foreground">
-                OTEL-compatible path: export through your OTEL collector into Reliai ingest endpoints using the same
-                project-scoped key contract.
+                OpenTelemetry collectors can forward telemetry into Reliai ingest endpoints using
+                <code> Authorization: Bearer ${"{RELIAI_API_KEY}"}</code>. Validate collector/export mappings against your
+                deployed Reliai ingest contract before production rollout.
               </p>
             </div>
           </article>

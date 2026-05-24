@@ -29,7 +29,7 @@ test("onboarding ingest examples use canonical Authorization Bearer header", () 
   const pulseOnboarding = readRepoFile("apps/pulse/app/(app)/onboarding/page.tsx");
 
   assert.ok(webOnboarding.includes('Authorization: Bearer ${apiKeyValue ?? "reliai_..."}'));
-  assert.ok(pulseOnboarding.includes('Authorization: Bearer ${apiKeyValue ?? "reliai_..."}'));
+  assert.ok(pulseOnboarding.includes('Authorization: Bearer \\${RELIAI_API_KEY}'));
 });
 
 test("x-api-key guidance is backward-compatibility only", () => {
@@ -54,7 +54,7 @@ test("pulse onboarding includes explicit ingest verification path and first-trac
     "pulse onboarding must include direct ingest verification path",
   );
   assert.ok(
-    pulseOnboarding.includes("OTEL-compatible path"),
+    pulseOnboarding.includes("OpenTelemetry collectors can forward telemetry"),
     "pulse onboarding must include OTEL-compatible verification guidance",
   );
   assert.ok(
