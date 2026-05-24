@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-05-23T20:00:00Z",
+  "updated_at_utc": "2026-05-23T21:00:00Z",
   "status": "active",
   "scope": "apps/web -> apps/pulse full functional parity",
   "gaps": [
@@ -79,7 +79,7 @@
       "id": "F6",
       "title": "Route inventory completeness",
       "impact": "high",
-      "state": "open",
+      "state": "closed",
       "type": "migration_inventory",
       "owner": "Pulse migration",
       "target_phase": "full parity closure",
