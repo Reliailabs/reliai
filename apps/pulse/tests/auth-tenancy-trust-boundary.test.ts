@@ -69,8 +69,9 @@ test("dev sign-in endpoint is unreachable when dev auth is disabled", () => {
 test("sign-in page does not unconditionally render seed credentials", () => {
   const signIn = read("app/sign-in/page.tsx");
   assert.match(signIn, /const devAuth = devAuthEnabled\(\)/);
-  assert.match(signIn, /\{devAuth \? \(/);
-  assert.match(signIn, /Local dev sign-in is disabled in this environment\./);
+  assert.match(signIn, /const formAction = devAuth \? "\/api\/auth\/dev-sign-in" : "\/api\/auth\/sign-in"/);
+  assert.match(signIn, /\{!configError \? \(/);
+  assert.match(signIn, /Sign-in is disabled because auth runtime configuration is invalid for this environment\./);
 });
 
 test("on-call tenancy scope requires explicit valid project scope", () => {

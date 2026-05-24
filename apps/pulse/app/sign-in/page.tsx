@@ -18,6 +18,7 @@ export default async function SignInPage({
   }
   const devAuth = devAuthEnabled();
   const configError = getAuthRuntimeConfigError();
+  const formAction = devAuth ? "/api/auth/dev-sign-in" : "/api/auth/sign-in";
 
   return (
     <main className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
@@ -45,8 +46,8 @@ export default async function SignInPage({
           </div>
         ) : null}
 
-        {devAuth && !configError ? (
-          <form method="post" action="/api/auth/dev-sign-in" className="mt-6 space-y-4">
+        {!configError ? (
+          <form method="post" action={formAction} className="mt-6 space-y-4">
             <input type="hidden" name="return_to" value={safeReturnTo} />
             <div className="space-y-2">
               <label className="text-xs text-zinc-500">Email</label>
@@ -74,7 +75,7 @@ export default async function SignInPage({
           </form>
         ) : (
           <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-xs text-zinc-500">
-            Local dev sign-in is disabled in this environment.
+            Sign-in is disabled because auth runtime configuration is invalid for this environment.
           </div>
         )}
       </div>
