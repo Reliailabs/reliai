@@ -83,3 +83,14 @@ test("on-call tenancy scope requires explicit valid project scope", () => {
   assert.match(responseTeam, /resolveStrictScopedProjectId\(projects, projectIdParam\)/);
   assert.match(responseTeam, /project_scope_required/);
 });
+
+test("billing checkout route is org-scoped and fail-closed", () => {
+  const billingCheckout = read("app/api/billing/checkout/route.ts");
+
+  assert.match(billingCheckout, /getOperatorSession/);
+  assert.match(billingCheckout, /active_organization_id/);
+  assert.match(billingCheckout, /if \(!token \|\| !activeOrgId\)/);
+  assert.match(billingCheckout, /z\.enum\(\["team", "production"\]\)/);
+  assert.match(billingCheckout, /if \(parsed\.data\.organization_id !== activeOrgId\)/);
+  assert.match(billingCheckout, /return NextResponse\.json\(\{ error: "forbidden" \}, \{ status: 403 \}\)/);
+});
