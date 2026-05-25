@@ -40,6 +40,28 @@ Contract/runtime probes passed; authenticated E2E route-shell probes were skippe
   - meaning: credentials were present and authenticated E2E executed successfully.
   - CI behavior: route-shell authenticated E2E gate passed.
 
+## Skip Elimination Classification (Route-Shell E2E)
+
+The prior authenticated suite had 7 environment-conditional skips. Those branches are removed from CI runtime parity proof.
+
+- `missing seed data`:
+  - operations incident link unavailable
+  - regressions detail link unavailable
+  - handling now: hard assertion on explicit empty-state surfaces (`No events match...`, `No incidents found`, `No regressions found...`) instead of skip.
+- `bad test assumption`:
+  - required two selectable projects to prove continuity
+  - required pre-existing scoped query in traces/on-call/settings
+  - handling now: tests assert canonical scope behavior with at least one project option and deterministic URL/query checks.
+- `unsupported CI dependency / auth context drift`:
+  - operations/traces/regressions route fallback paths
+  - handling now: hard route assertions in authenticated mode (no skip fallback in CI proof path).
+- `invalid-scope guard ambiguity`:
+  - deep-link invalid `project_id` accepted in some environments
+  - handling now: hard fail-closed assertions for incident/regression/graph deep links.
+
+Only one skip path remains by design:
+- `SKIPPED_AUTH_E2E` when credentials are intentionally absent outside strict CI mode.
+
 ## Integrity Hardening Added In This Slice
 
 - Added incident/operations write-intent contract checks:

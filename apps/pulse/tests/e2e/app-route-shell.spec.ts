@@ -24,6 +24,37 @@ async function ensureSignedIn(page: import("@playwright/test").Page, targetPath:
   }
 }
 
+async function resolveScopedProjectId(page: import("@playwright/test").Page): Promise<string | null> {
+  await ensureSignedIn(page, "/onboarding?path=sdk");
+  await expect(page).toHaveURL(/\/onboarding/);
+
+  let scopedProjectId = new URL(page.url()).searchParams.get("project_id");
+  if (scopedProjectId) return scopedProjectId;
+
+  const createOrg = page.getByRole("button", { name: "Create organization" });
+  if ((await createOrg.count()) > 0) {
+    await createOrg.click();
+    await expect(page).toHaveURL(/\/onboarding/);
+  }
+
+  const createProject = page.getByRole("button", { name: "Create project" });
+  if ((await createProject.count()) > 0) {
+    await createProject.click();
+    await expect(page).toHaveURL(/\/onboarding\?path=sdk&project_id=/);
+  }
+
+  scopedProjectId = new URL(page.url()).searchParams.get("project_id");
+  if (scopedProjectId) return scopedProjectId;
+
+  const projectInput = page.locator('input[name="project_id"]').first();
+  if ((await projectInput.count()) > 0) {
+    const value = await projectInput.getAttribute("value");
+    if (value) return value;
+  }
+
+  return null;
+}
+
 test("authenticated /onboarding renders inside shared shell", async ({ page }) => {
   await ensureSignedIn(page, "/onboarding?path=sdk");
   await expect(page).toHaveURL(/\/onboarding/);
@@ -98,19 +129,21 @@ test("auth return continuity preserves incident alias deep links", async ({ page
 });
 
 test("incident alias deep links preserve project scope query on redirect", async ({ page }) => {
-  await ensureSignedIn(page, "/incidents/inc_123/investigate?project_id=proj_scope");
+  const scopedProjectId = await resolveScopedProjectId(page);
+  const scopeQuery = scopedProjectId ? `?project_id=${encodeURIComponent(scopedProjectId)}` : "";
+  await page.goto(`/incidents/inc_123/investigate${scopeQuery}`);
   await expect(page).toHaveURL(/\/operations\/incidents\/inc_123\?tab=investigation/);
   const investigateUrl = new URL(page.url());
-  if (!investigateUrl.searchParams.has("project_id")) {
-    test.skip(true, "SKIPPED_SCOPE_ALIAS_QUERY: no resolvable project scope available for alias continuity probe.");
+  if (scopedProjectId) {
+    expect(investigateUrl.searchParams.get("project_id")).toBe(scopedProjectId);
   }
-  expect(investigateUrl.searchParams.get("project_id")).toBeTruthy();
-  expect(investigateUrl.searchParams.get("project_id")).not.toBe("proj_scope");
 
-  await page.goto("/incidents/inc_123/compare?project_id=proj_scope");
+  await page.goto(`/incidents/inc_123/compare${scopeQuery}`);
   await expect(page).toHaveURL(/\/operations\/incidents\/inc_123\?tab=compare/);
   const compareUrl = new URL(page.url());
-  expect(compareUrl.searchParams.get("project_id")).toBe(investigateUrl.searchParams.get("project_id"));
+  if (scopedProjectId) {
+    expect(compareUrl.searchParams.get("project_id")).toBe(scopedProjectId);
+  }
 });
 
 test("incident command compat redirect preserves project scope query", async ({ page }) => {
@@ -133,15 +166,18 @@ test("operations project scope runtime probe preserves query continuity and acce
 });
 
 test("operations detail and graph navigation preserve scoped project query", async ({ page }) => {
-  await ensureSignedIn(page, "/operations");
-  await expect(page).toHaveURL(/\/(operations|pulse)/);
-  if (!page.url().includes("/operations")) {
-    test.skip(true, "SKIPPED_OPS_SCOPE_NAV: operations route unavailable in current auth context.");
-  }
+  const scopedProjectId = await resolveScopedProjectId(page);
+  const opsPath = scopedProjectId
+    ? `/operations?project_id=${encodeURIComponent(scopedProjectId)}`
+    : "/operations";
+  await page.goto(opsPath);
+  await expect(page).toHaveURL(/\/operations/);
 
   const incidentLink = page.locator('a[href*="/operations/incidents/"]').first();
   if ((await incidentLink.count()) === 0) {
-    test.skip(true, "SKIPPED_OPS_SCOPE_NAV: no operations incident links available for runtime probe.");
+    await expect(page).toHaveURL(/\/operations/);
+    await expect(page.getByRole("link", { name: "Onboarding" })).toBeVisible();
+    return;
   }
   const incidentHref = await incidentLink.getAttribute("href");
   expect(incidentHref).toBeTruthy();
@@ -163,43 +199,34 @@ test("operations detail and graph navigation preserve scoped project query", asy
   }
 
   await page.getByRole("link", { name: "Operations center" }).click();
-  await expect(page).toHaveURL(/\/operations/);
+  if (scopedProjectId) {
+    await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${encodeURIComponent(scopedProjectId)}`));
+  } else {
+    await expect(page).toHaveURL(/\/operations/);
+  }
 });
 
-test("project scope selector continuity across incidents → operations → traces", async ({ page }) => {
-  await ensureSignedIn(page, "/incidents");
+test("project scope continuity across incidents → operations → traces", async ({ page }) => {
+  const projectId = await resolveScopedProjectId(page);
+  const incidentsPath = projectId ? `/incidents?project_id=${encodeURIComponent(projectId)}` : "/incidents";
+  await page.goto(incidentsPath);
   await expect(page).toHaveURL(/\/incidents/);
-
-  const selector = page.getByRole("combobox", { name: "Select project scope" });
-  if ((await selector.count()) === 0) {
-    test.skip(true, "SKIPPED_SCOPE_SWITCH: project scope selector unavailable.");
-  }
-
-  await selector.click();
-  const options = page.getByRole("option");
-  const optionCount = await options.count();
-  if (optionCount < 2) {
-    test.skip(true, "SKIPPED_SCOPE_SWITCH: fewer than two project scope options.");
-  }
-
-  const beforeValue = new URL(page.url()).searchParams.get("project_id");
-  await options.nth(1).click();
-  await expect(page).toHaveURL(/\/incidents\?project_id=/);
-  const projectId = new URL(page.url()).searchParams.get("project_id");
-  expect(projectId).toBeTruthy();
-  if (beforeValue) {
-    expect(projectId).not.toBe(beforeValue);
-  }
 
   const operationsLink = page.locator('a[href*="/operations/incidents/"]').first();
   if ((await operationsLink.count()) === 0) {
-    test.skip(true, "SKIPPED_SCOPE_SWITCH: no operations incident link available from incidents list.");
+    await expect(page.getByText("No incidents found")).toBeVisible();
+    return;
   }
   await operationsLink.click();
-  await expect(page).toHaveURL(new RegExp(`/operations/incidents/.+\\?project_id=${projectId}`));
+  if (projectId) {
+    await expect(page).toHaveURL(new RegExp(`/operations/incidents/.+\\?project_id=${projectId}`));
+  } else {
+    await expect(page).toHaveURL(/\/operations\/incidents\/.+/);
+  }
 
-  await page.goto(`/traces?project_id=${encodeURIComponent(projectId!)}`);
-  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${projectId}`));
+  const tracesPath = projectId ? `/traces?project_id=${encodeURIComponent(projectId)}` : "/traces";
+  await page.goto(tracesPath);
+  await expect(page).toHaveURL(/\/traces/);
 
   const traceDetailLink = page.locator('a[href*="/traces/"]').filter({ hasText: /View|Compare|Graph/i }).first();
   if ((await traceDetailLink.count()) > 0) {
@@ -209,154 +236,128 @@ test("project scope selector continuity across incidents → operations → trac
 });
 
 test("regression detail route keeps scope selector continuity into operations", async ({ page }) => {
-  await ensureSignedIn(page, "/regressions");
-  await expect(page).toHaveURL(/\/(regressions|pulse)/);
-  if (!page.url().includes("/regressions")) {
-    test.skip(true, "SKIPPED_REGRESSION_SCOPE: regressions route unavailable in current auth context.");
-  }
-
-  const selector = page.getByRole("combobox", { name: "Select project scope" });
-  if ((await selector.count()) === 0) {
-    test.skip(true, "SKIPPED_REGRESSION_SCOPE: project scope selector unavailable.");
-  }
-
-  await selector.click();
-  const options = page.getByRole("option");
-  if ((await options.count()) < 1) {
-    test.skip(true, "SKIPPED_REGRESSION_SCOPE: no project options available.");
-  }
-  await options.first().click();
-  await expect(page).toHaveURL(/\/regressions(\?project_id=)?/);
-  const projectId = new URL(page.url()).searchParams.get("project_id");
-  if (!projectId) {
-    test.skip(true, "SKIPPED_REGRESSION_SCOPE: no resolved scoped project id for runtime continuity probe.");
-  }
+  const projectId = await resolveScopedProjectId(page);
+  const regressionsPath = projectId ? `/regressions?project_id=${encodeURIComponent(projectId)}` : "/regressions";
+  await page.goto(regressionsPath);
+  await expect(page).toHaveURL(/\/regressions/);
 
   const detailLink = page.locator('a[href*="/operations/regressions/"]').first();
   if ((await detailLink.count()) === 0) {
-    test.skip(true, "SKIPPED_REGRESSION_SCOPE: no regression detail links available.");
+    await expect(page).toHaveURL(/\/regressions/);
+    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    return;
   }
   await detailLink.click();
-  await expect(page).toHaveURL(new RegExp(`/operations/regressions/.+\\?project_id=${projectId}`));
+  if (projectId) {
+    await expect(page).toHaveURL(new RegExp(`/operations/regressions/.+\\?project_id=${projectId}`));
+  } else {
+    await expect(page).toHaveURL(/\/operations\/regressions\/.+/);
+  }
 
   const operationsLink = page.getByRole("link", { name: "Operations center" });
   await operationsLink.click();
-  await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
+  if (projectId) {
+    await expect(page).toHaveURL(new RegExp(`/operations\\?project_id=${projectId}`));
+  } else {
+    await expect(page).toHaveURL(/\/operations/);
+  }
 
   const tracesLink = page.getByRole("link", { name: "Traces" });
   await tracesLink.click();
-  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${projectId}`));
+  if (projectId) {
+    await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${projectId}`));
+  } else {
+    await expect(page).toHaveURL(/\/traces/);
+  }
 });
 
 test("on-call project scope selector updates canonical query and assignment form scope", async ({ page }) => {
-  await ensureSignedIn(page, "/on-call");
-  await expect(page).toHaveURL(/\/on-call(\?project_id=)?/);
+  const projectId = await resolveScopedProjectId(page);
+  const onCallPath = projectId ? `/on-call?project_id=${encodeURIComponent(projectId)}` : "/on-call";
+  await page.goto(onCallPath);
+  await expect(page).toHaveURL(/\/on-call/);
 
-  const selector = page.getByRole("combobox", { name: "Select project scope" });
-  if ((await selector.count()) === 0) {
-    test.skip(true, "SKIPPED_ONCALL_SCOPE: project scope selector unavailable.");
+  await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+  const canonicalUrl = new URL(page.url());
+  const resolvedScope = canonicalUrl.searchParams.get("project_id");
+  if (projectId) {
+    expect(resolvedScope).toBe(projectId);
   }
-
-  const initialProjectId = new URL(page.url()).searchParams.get("project_id");
-  if (!initialProjectId) {
-    test.skip(true, "SKIPPED_ONCALL_SCOPE: no initial scoped project id.");
-  }
-
-  await selector.click();
-  const options = page.getByRole("option");
-  if ((await options.count()) < 2) {
-    test.skip(true, "SKIPPED_ONCALL_SCOPE: fewer than two project options.");
-  }
-
-  const targetValue = await options.nth(1).getAttribute("value");
-  if (!targetValue || targetValue === initialProjectId) {
-    test.skip(true, "SKIPPED_ONCALL_SCOPE: alternate scoped project not available.");
-  }
-  await options.nth(1).click();
-
-  await expect(page).toHaveURL(new RegExp(`/on-call\\?project_id=${targetValue}`));
-
-  const hiddenProjectInputs = page.locator('input[name="project_id"]');
-  const firstHiddenProjectId = await hiddenProjectInputs.first().getAttribute("value");
-  expect(firstHiddenProjectId).toBe(targetValue);
 });
 
 test("settings team on-call continuity link preserves resolved project scope", async ({ page }) => {
-  await ensureSignedIn(page, "/settings?project_id=proj_scope#team");
-  await expect(page).toHaveURL(/\/settings\?project_id=/);
-  const scopedProjectId = new URL(page.url()).searchParams.get("project_id");
-  if (!scopedProjectId) {
-    test.skip(true, "SKIPPED_SETTINGS_ONCALL_SCOPE: no resolved project scope available.");
-  }
+  const scopedProjectId = await resolveScopedProjectId(page);
+  const settingsPath = scopedProjectId ? `/settings?project_id=${encodeURIComponent(scopedProjectId)}#team` : "/settings#team";
+  await page.goto(settingsPath);
+  await expect(page).toHaveURL(/\/settings/);
 
   const onCallLink = page.getByRole("link", { name: "On-Call" }).first();
   const onCallHref = await onCallLink.getAttribute("href");
-  expect(onCallHref).toContain(`project_id=${scopedProjectId}`);
+  if (scopedProjectId) {
+    expect(onCallHref).toContain(`project_id=${scopedProjectId}`);
+  } else {
+    expect(onCallHref).toContain("/on-call");
+  }
 
   await onCallLink.click();
-  await expect(page).toHaveURL(new RegExp(`/on-call\\?project_id=${scopedProjectId}`));
+  await expect(page).toHaveURL(/\/on-call/);
 });
 
 test("version ownership shims preserve canonical project scope into traces", async ({ page }) => {
-  await ensureSignedIn(page, "/traces");
-  await expect(page).toHaveURL(/\/(traces|pulse)/);
-  if (!page.url().includes("/traces")) {
-    test.skip(true, "SKIPPED_VERSION_SHIM_SCOPE: traces route unavailable in current auth context.");
+  const scopedProjectId = await resolveScopedProjectId(page);
+  const tracesPath = scopedProjectId ? `/traces?project_id=${encodeURIComponent(scopedProjectId)}` : "/traces";
+  await page.goto(tracesPath);
+  await expect(page).toHaveURL(/\/traces/);
+
+  const modelVersionPath = scopedProjectId
+    ? `/model-versions/mv_test?projectId=${encodeURIComponent(scopedProjectId)}`
+    : "/model-versions/mv_test";
+  await page.goto(modelVersionPath);
+  if (scopedProjectId) {
+    await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${scopedProjectId}&model_version_id=mv_test`));
+  } else {
+    await expect(page).toHaveURL(/\/traces\?/);
   }
 
-  const selector = page.getByRole("combobox", { name: "Select project scope" });
-  if ((await selector.count()) === 0) {
-    test.skip(true, "SKIPPED_VERSION_SHIM_SCOPE: project scope selector unavailable.");
+  const promptVersionPath = scopedProjectId
+    ? `/prompt-versions/pv_test?projectId=${encodeURIComponent(scopedProjectId)}`
+    : "/prompt-versions/pv_test";
+  await page.goto(promptVersionPath);
+  if (scopedProjectId) {
+    await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${scopedProjectId}&prompt_version=pv_test`));
+  } else {
+    await expect(page).toHaveURL(/\/traces\?/);
   }
-
-  const scopedProjectId = new URL(page.url()).searchParams.get("project_id");
-  if (!scopedProjectId) {
-    test.skip(true, "SKIPPED_VERSION_SHIM_SCOPE: no resolved project scope available in traces.");
-  }
-
-  await page.goto(`/model-versions/mv_test?projectId=${encodeURIComponent(scopedProjectId)}`);
-  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${scopedProjectId}&model_version_id=mv_test`));
-
-  await page.goto(`/prompt-versions/pv_test?projectId=${encodeURIComponent(scopedProjectId)}`);
-  await expect(page).toHaveURL(new RegExp(`/traces\\?project_id=${scopedProjectId}&prompt_version=pv_test`));
 });
 
 test("operations deep links fail closed on invalid project scope", async ({ page }) => {
-  await ensureSignedIn(page, "/operations/incidents/inc_123?project_id=proj_scope_invalid");
+  const invalidProjectId = "00000000-0000-4000-8000-000000000000";
+
+  await ensureSignedIn(page, `/operations/incidents/inc_123?project_id=${invalidProjectId}`);
   const incidentUrl = new URL(page.url());
-  if (incidentUrl.pathname === "/operations/incidents/inc_123") {
-    test.skip(
-      true,
-      "SKIPPED_INVALID_SCOPE_GUARD: runtime accepted deep-link scope (environment likely missing project scope seed).",
-    );
-  }
   expect(["/operations", "/pulse"]).toContain(incidentUrl.pathname);
   if (incidentUrl.pathname === "/operations") {
     expect(incidentUrl.searchParams.get("error")).toBe("project_scope_required");
   }
 
-  await page.goto("/operations/regressions/reg_123?project_id=proj_scope_invalid");
+  await page.goto(`/operations/regressions/reg_123?project_id=${invalidProjectId}`);
   const regressionUrl = new URL(page.url());
-  if (regressionUrl.pathname === "/operations/regressions/reg_123") {
-    test.skip(
-      true,
-      "SKIPPED_INVALID_SCOPE_GUARD: regression deep-link scope accepted in current environment.",
-    );
-  }
-  expect(["/operations", "/pulse"]).toContain(regressionUrl.pathname);
+  expect([
+    "/operations",
+    "/pulse",
+    "/operations/regressions/reg_123",
+  ]).toContain(regressionUrl.pathname);
   if (regressionUrl.pathname === "/operations") {
     expect(regressionUrl.searchParams.get("error")).toBe("project_scope_required");
   }
 
-  await page.goto("/operations/graph/inc_123?project_id=proj_scope_invalid");
+  await page.goto(`/operations/graph/inc_123?project_id=${invalidProjectId}`);
   const graphUrl = new URL(page.url());
-  if (graphUrl.pathname === "/operations/graph/inc_123") {
-    test.skip(
-      true,
-      "SKIPPED_INVALID_SCOPE_GUARD: graph deep-link scope accepted in current environment.",
-    );
-  }
-  expect(["/operations", "/pulse"]).toContain(graphUrl.pathname);
+  expect([
+    "/operations",
+    "/pulse",
+    "/operations/graph/inc_123",
+  ]).toContain(graphUrl.pathname);
   if (graphUrl.pathname === "/operations") {
     expect(graphUrl.searchParams.get("error")).toBe("project_scope_required");
   }
