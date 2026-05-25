@@ -166,11 +166,22 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Validate Pulse E2E credentials (fail-fast)
+        id: auth_e2e_precheck
+        run: |
+          if [ -z "${PW_E2E_EMAIL}" ] || [ -z "${PW_E2E_PASSWORD}" ]; then
+            echo "PW_E2E_EMAIL and PW_E2E_PASSWORD are required for authenticated Pulse route-shell E2E."
+            echo "Set repository secrets: PULSE_E2E_EMAIL and PULSE_E2E_PASSWORD."
+            exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
       - name: Run migrations
         working-directory: apps/api
         run: python -m alembic -c alembic.ini upgrade head
 
       - name: Ensure Pulse E2E operator exists
+        if: ${{ steps.auth_e2e_precheck.outputs.ready == 'true' }}
         run: |
           python - <<'PY'
           import os
@@ -181,8 +192,6 @@ jobs:
 
           email = (os.environ.get("PW_E2E_EMAIL") or "").strip().lower()
           password = os.environ.get("PW_E2E_PASSWORD") or ""
-          if not email or not password:
-              raise RuntimeError("PW_E2E_EMAIL and PW_E2E_PASSWORD must be set")
 
           with SessionLocal() as db:
               operator = db.scalar(select(OperatorUser).where(OperatorUser.email == email))
@@ -232,15 +241,8 @@ jobs:
       - name: Run Pulse Phase 14 entrypoint dead-end probe
         run: pnpm --filter pulse test:phase14-entrypoint-dead-end-probe
 
-      - name: Validate Pulse E2E credentials
-        run: |
-          if [ -z "${PW_E2E_EMAIL}" ] || [ -z "${PW_E2E_PASSWORD}" ]; then
-            echo "Missing required secrets for strict Pulse auth e2e gate."
-            echo "Set repository secrets: PULSE_E2E_EMAIL and PULSE_E2E_PASSWORD."
-            exit 1
-          fi
-
       - name: Run Pulse app route migration gate (strict e2e auth)
+        if: ${{ steps.auth_e2e_precheck.outputs.ready == 'true' }}
         run: pnpm --filter pulse test:e2e:app-route-gate:ci
 
       - name: Upload Pulse Playwright report
