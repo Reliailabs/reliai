@@ -26,15 +26,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const response = await fetch(`${API_URL}/api/v1/billing/checkout`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(parsed.data)
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/v1/billing/checkout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
 
-  const json = await response.json().catch(() => ({}));
-  return NextResponse.json(json, { status: response.status });
+    const json = await response.json().catch(() => ({}));
+    return NextResponse.json(json, {
+      status: response.status,
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "checkout_unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 }
