@@ -10,6 +10,21 @@ const sanitizeReturnTo = (value: FormDataEntryValue | null): string => {
   return "/pulse";
 };
 
+const resolveRedirectBase = (request: Request): URL => {
+  const origin = request.headers.get("origin");
+  if (origin) {
+    try {
+      const parsed = new URL(origin);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed;
+      }
+    } catch {
+      // Fall through to request URL below.
+    }
+  }
+  return new URL(request.url);
+};
+
 export async function POST(request: Request) {
   if (!devAuthEnabled()) {
     return NextResponse.json({ detail: "not_found" }, { status: 404 });
@@ -19,8 +34,8 @@ export async function POST(request: Request) {
   const email = formData.get("email");
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
-  const requestOrigin = request.headers.get("origin") ?? new URL(request.url).origin;
-  const redirectUrl = (path: string) => new URL(path, requestOrigin);
+  const redirectBase = resolveRedirectBase(request);
+  const redirectUrl = (path: string) => new URL(path, redirectBase);
   const errorRedirect = () =>
     redirectUrl(`/sign-in?error=1&return_to=${encodeURIComponent(returnTo)}`);
 
