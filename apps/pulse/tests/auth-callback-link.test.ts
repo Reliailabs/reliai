@@ -66,3 +66,19 @@ test("resolveExternalAuthCallbackHref forwards query params to external callback
     assert.equal(url.searchParams.get("state"), "xyz");
   });
 });
+
+test("resolveExternalAuthCallbackHref drops unknown callback params", () => {
+  withEnv("NEXT_PUBLIC_RELIAI_AUTH_CALLBACK_URL", "https://app.reliai.dev/auth/callback", () => {
+    const resolved = resolveExternalAuthCallbackHref(
+      new URL("http://localhost:3005/auth/callback?code=abc&state=xyz&project_id=proj_123&return_to=%2Fpulse"),
+      new URLSearchParams("code=abc&state=xyz&project_id=proj_123&return_to=%2Fpulse"),
+    );
+    assert.equal(resolved.ok, true);
+    if (!resolved.ok) return;
+    const url = new URL(resolved.href);
+    assert.equal(url.searchParams.get("code"), "abc");
+    assert.equal(url.searchParams.get("state"), "xyz");
+    assert.equal(url.searchParams.has("project_id"), false);
+    assert.equal(url.searchParams.has("return_to"), false);
+  });
+});
