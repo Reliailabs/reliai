@@ -4,6 +4,8 @@ Status: In Progress
 Date: 2026-05-25
 Decision: `pending`
 
+Reference: `docs/pulse-production-validation-stack.md`
+
 ## Canary Window
 
 - Start (UTC):

@@ -4,6 +4,8 @@ Status: Active
 Date: 2026-05-24
 Scope: Operational review for Pulse production validation
 
+Reference: `docs/pulse-production-validation-stack.md`
+
 ## Inputs
 
 - Pulse app logs and API logs
