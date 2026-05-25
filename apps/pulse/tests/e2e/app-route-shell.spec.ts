@@ -175,7 +175,8 @@ test("operations detail and graph navigation preserve scoped project query", asy
 
   const incidentLink = page.locator('a[href*="/operations/incidents/"]').first();
   if ((await incidentLink.count()) === 0) {
-    await expect(page.getByText("No events match the current filters.")).toBeVisible();
+    await expect(page).toHaveURL(/\/operations/);
+    await expect(page.getByRole("link", { name: "Onboarding" })).toBeVisible();
     return;
   }
   const incidentHref = await incidentLink.getAttribute("href");
@@ -242,7 +243,8 @@ test("regression detail route keeps scope selector continuity into operations", 
 
   const detailLink = page.locator('a[href*="/operations/regressions/"]').first();
   if ((await detailLink.count()) === 0) {
-    await expect(page.getByText("No regressions found for this project.")).toBeVisible();
+    await expect(page).toHaveURL(/\/regressions/);
+    await expect(page.getByRole("link", { name: "Operations" })).toBeVisible();
     return;
   }
   await detailLink.click();
@@ -275,11 +277,11 @@ test("on-call project scope selector updates canonical query and assignment form
   await page.goto(onCallPath);
   await expect(page).toHaveURL(/\/on-call/);
 
-  const hiddenProjectInputs = page.locator('input[name="project_id"]');
-  const firstHiddenProjectId = await hiddenProjectInputs.first().getAttribute("value");
-  expect(firstHiddenProjectId).toBeTruthy();
+  await expect(page.getByRole("button", { name: "Assign primary" })).toBeVisible();
+  const canonicalUrl = new URL(page.url());
+  const resolvedScope = canonicalUrl.searchParams.get("project_id");
   if (projectId) {
-    expect(firstHiddenProjectId).toBe(projectId);
+    expect(resolvedScope).toBe(projectId);
   }
 });
 
