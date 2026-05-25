@@ -28,6 +28,18 @@ Scope: Post-migration runtime proof for `apps/pulse`
 
 Contract/runtime probes passed; authenticated E2E route-shell probes were skipped due to missing credentials.
 
+## Authenticated E2E CI Status Semantics
+
+- `SKIPPED_CREDENTIALS_ABSENT`
+  - meaning: authenticated E2E was not executed because `PW_E2E_EMAIL` and/or `PW_E2E_PASSWORD` were not configured.
+  - CI behavior: explicit fail-fast precheck with clear missing-secret message.
+- `FAILED_E2E_BROKEN`
+  - meaning: credentials were present and authenticated E2E executed but one or more probes failed.
+  - CI behavior: `pnpm --filter pulse test:e2e:app-route-gate:ci` failed.
+- `PASSED_AUTHENTICATED_E2E`
+  - meaning: credentials were present and authenticated E2E executed successfully.
+  - CI behavior: route-shell authenticated E2E gate passed.
+
 ## Integrity Hardening Added In This Slice
 
 - Added incident/operations write-intent contract checks:
