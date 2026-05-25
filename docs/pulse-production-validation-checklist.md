@@ -5,6 +5,7 @@ Date: 2026-05-24
 Scope: Post-migration production validation for `apps/pulse` only
 
 Reference: `docs/pulse-production-validation-stack.md`
+Preflight gate artifact: `docs/pulse-core-loop-preflight-validation-report.md`
 
 ## Rollout Phases
 
