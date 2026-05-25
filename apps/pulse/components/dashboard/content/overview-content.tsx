@@ -173,7 +173,7 @@ export function OverviewContent({
             {projectControlData.latestAuditId ? (
               <p>
                 Latest audit:{" "}
-                <Link href={`/audits/${projectControlData.latestAuditId}`} className="text-primary hover:underline">
+                <Link href={withScopedProject(`/audits/${projectControlData.latestAuditId}`)} className="text-primary hover:underline">
                   {projectControlData.latestAuditId}
                 </Link>
               </p>
