@@ -22,7 +22,15 @@ const resolveRedirectBase = (request: Request): URL => {
       // Fall through to request URL below.
     }
   }
-  return new URL(request.url);
+  const fallback = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) {
+    const proto =
+      request.headers.get("x-forwarded-proto") ??
+      fallback.protocol.replace(":", "");
+    return new URL(`${proto}://${host}`);
+  }
+  return fallback;
 };
 
 export async function POST(request: Request) {
