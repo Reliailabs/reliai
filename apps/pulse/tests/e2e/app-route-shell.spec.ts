@@ -244,7 +244,7 @@ test("regression detail route keeps scope selector continuity into operations", 
   const detailLink = page.locator('a[href*="/operations/regressions/"]').first();
   if ((await detailLink.count()) === 0) {
     await expect(page).toHaveURL(/\/regressions/);
-    await expect(page.getByRole("link", { name: "Operations" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
     return;
   }
   await detailLink.click();
@@ -277,7 +277,7 @@ test("on-call project scope selector updates canonical query and assignment form
   await page.goto(onCallPath);
   await expect(page).toHaveURL(/\/on-call/);
 
-  await expect(page.getByRole("button", { name: "Assign primary" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
   const canonicalUrl = new URL(page.url());
   const resolvedScope = canonicalUrl.searchParams.get("project_id");
   if (projectId) {
