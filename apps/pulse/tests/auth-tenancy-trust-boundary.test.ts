@@ -104,3 +104,13 @@ test("settings profile repository does not synthesize demo seed identity on fall
   assert.match(profileRepo, /profileFromSession\(session\)/);
   assert.match(profileRepo, /dataMode: "live"/);
 });
+
+test("sign-in routes preserve return_to on credential errors", () => {
+  const signInRoute = read("app/api/auth/sign-in/route.ts");
+  const devSignInRoute = read("app/api/auth/dev-sign-in/route.ts");
+
+  assert.match(signInRoute, /return_to=\$\{encodeURIComponent\(returnTo\)\}/);
+  assert.match(devSignInRoute, /return_to=\$\{encodeURIComponent\(returnTo\)\}/);
+  assert.match(signInRoute, /error=1&return_to=/);
+  assert.match(devSignInRoute, /error=1&return_to=/);
+});

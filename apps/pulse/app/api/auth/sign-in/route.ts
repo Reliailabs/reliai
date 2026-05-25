@@ -17,14 +17,16 @@ export async function POST(request: Request) {
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
   const requestOrigin = request.headers.get("origin") ?? new URL(request.url).origin;
   const redirectUrl = (path: string) => new URL(path, requestOrigin);
+  const errorRedirect = () =>
+    redirectUrl(`/sign-in?error=1&return_to=${encodeURIComponent(returnTo)}`);
 
   if (typeof email !== "string" || typeof password !== "string") {
-    return NextResponse.redirect(redirectUrl("/sign-in?error=1"), { status: 303 });
+    return NextResponse.redirect(errorRedirect(), { status: 303 });
   }
 
   const result = await signIn(email, password);
   if (!result) {
-    return NextResponse.redirect(redirectUrl("/sign-in?error=1"), { status: 303 });
+    return NextResponse.redirect(errorRedirect(), { status: 303 });
   }
 
   const response = NextResponse.redirect(redirectUrl(returnTo), { status: 303 });
