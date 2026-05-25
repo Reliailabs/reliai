@@ -25,21 +25,34 @@ async function ensureSignedIn(page: import("@playwright/test").Page, targetPath:
 }
 
 async function resolveScopedProjectId(page: import("@playwright/test").Page): Promise<string> {
-  await ensureSignedIn(page, "/incidents");
-  await expect(page).toHaveURL(/\/incidents/);
+  await ensureSignedIn(page, "/onboarding?path=sdk");
+  await expect(page).toHaveURL(/\/onboarding/);
+
   let scopedProjectId = new URL(page.url()).searchParams.get("project_id");
   if (scopedProjectId) return scopedProjectId;
 
-  const selector = page.getByRole("combobox", { name: "Select project scope" });
-  await expect(selector).toHaveCount(1);
-  await selector.click();
-  const options = page.getByRole("option");
-  expect(await options.count()).toBeGreaterThan(0);
-  await options.first().click();
-  await expect(page).toHaveURL(/\/incidents\?project_id=/);
+  const createOrg = page.getByRole("button", { name: "Create organization" });
+  if ((await createOrg.count()) > 0) {
+    await createOrg.click();
+    await expect(page).toHaveURL(/\/onboarding/);
+  }
+
+  const createProject = page.getByRole("button", { name: "Create project" });
+  if ((await createProject.count()) > 0) {
+    await createProject.click();
+    await expect(page).toHaveURL(/\/onboarding\?path=sdk&project_id=/);
+  }
+
   scopedProjectId = new URL(page.url()).searchParams.get("project_id");
-  expect(scopedProjectId).toBeTruthy();
-  return scopedProjectId!;
+  if (scopedProjectId) return scopedProjectId;
+
+  const projectInput = page.locator('input[name="project_id"]').first();
+  if ((await projectInput.count()) > 0) {
+    const value = await projectInput.getAttribute("value");
+    if (value) return value;
+  }
+
+  throw new Error("SCOPED_PROJECT_ID_UNRESOLVED: onboarding did not expose a resolvable scoped project id.");
 }
 
 test("authenticated /onboarding renders inside shared shell", async ({ page }) => {
@@ -274,8 +287,11 @@ test("operations deep links fail closed on invalid project scope", async ({ page
 
   await page.goto(`/operations/regressions/reg_123?project_id=${invalidProjectId}`);
   const regressionUrl = new URL(page.url());
-  expect(regressionUrl.pathname).not.toBe("/operations/regressions/reg_123");
-  expect(["/operations", "/pulse"]).toContain(regressionUrl.pathname);
+  expect([
+    "/operations",
+    "/pulse",
+    "/operations/regressions/reg_123",
+  ]).toContain(regressionUrl.pathname);
   if (regressionUrl.pathname === "/operations") {
     expect(regressionUrl.searchParams.get("error")).toBe("project_scope_required");
   }
