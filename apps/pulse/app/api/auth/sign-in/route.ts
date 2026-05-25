@@ -15,18 +15,20 @@ export async function POST(request: Request) {
   const email = formData.get("email");
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
-  const errorRedirectPath = `/sign-in?error=1&return_to=${encodeURIComponent(returnTo)}`;
+  const redirectUrl = (path: string) => new URL(path, request.url);
+  const errorRedirect = () =>
+    redirectUrl(`/sign-in?error=1&return_to=${encodeURIComponent(returnTo)}`);
 
   if (typeof email !== "string" || typeof password !== "string") {
-    return NextResponse.redirect(errorRedirectPath, { status: 303 });
+    return NextResponse.redirect(errorRedirect(), { status: 303 });
   }
 
   const result = await signIn(email, password);
   if (!result) {
-    return NextResponse.redirect(errorRedirectPath, { status: 303 });
+    return NextResponse.redirect(errorRedirect(), { status: 303 });
   }
 
-  const response = NextResponse.redirect(returnTo, { status: 303 });
+  const response = NextResponse.redirect(redirectUrl(returnTo), { status: 303 });
   const secureCookie = new URL(request.url).protocol === "https:";
   response.cookies.set(SESSION_COOKIE_NAME, result.session_token, {
     httpOnly: true,
