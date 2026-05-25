@@ -17,6 +17,7 @@ import {
 import type { DeploymentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { DeploymentRouteContext } from "@/components/dashboard/pulse-types";
 import type { DeploymentDetailPresenter } from "@/lib/deployment-detail-mapper";
+import { EmptyStateNotice } from "@/components/dashboard/content/empty-state-notice";
 
 const defaultDeploymentFrequency = [
   { day: "Mon", deploys: 12 },
@@ -229,9 +230,7 @@ export function DeploymentsContent({
             {sourceErrorText}
           </div>
         ) : null}
-        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
-          No deployments found. Add deployment metadata to correlate regressions with releases.
-        </div>
+        <EmptyStateNotice message="No deployments found. Add deployment metadata to correlate regressions with releases." />
       </div>
     );
   }

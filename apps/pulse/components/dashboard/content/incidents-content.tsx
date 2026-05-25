@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { IncidentsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { IncidentRouteContext } from "@/components/dashboard/pulse-types";
+import { EmptyStateNotice } from "@/components/dashboard/content/empty-state-notice";
 import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
 import type { IncidentMember } from "@/app/api/incidents/members/route";
 import { optimisticAssigneeFromEmail, patchIncidentList, toSurfaceStatus } from "@/lib/incidents-surface-actions";
@@ -249,9 +250,7 @@ export function IncidentsContent({
             {sourceErrorText}
           </div>
         ) : null}
-        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
-          No incidents detected yet. Reliai will surface grouped reliability failures here when action is needed.
-        </div>
+        <EmptyStateNotice message="No incidents detected yet. Reliai will surface grouped reliability failures here when action is needed." />
       </div>
     );
   }
