@@ -12,10 +12,19 @@ docker compose up
 
 Open `http://localhost:3000`
 
+Pulse one-stack variant (UI on `:3005`):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.pulse.yml up --build
+```
+
+Open `http://localhost:3005`
+
 Makefile shortcuts:
 
 ```bash
 make dev   # docker compose up --build
+make dev-pulse  # Pulse UI on :3005 with same API + telemetry services
 make stop  # docker compose down
 ```
 
@@ -59,3 +68,15 @@ Open a trace to see the full span tree, latency, and guardrail metadata in one p
 - reliai-python SDK: https://github.com/reliai/reliai-python
 - Examples repo: https://github.com/reliai/reliai-examples
 - Starter kits: https://github.com/reliai/reliai-rag-starter and https://github.com/reliai/reliai-agent-starter
+
+## Pulse Variant Smoke Check
+
+After `dev-pulse` starts:
+
+1. Sign in at `http://localhost:3005/sign-in` with:
+   - email: `owner@acme.test`
+   - password: `reliai-dev-password`
+2. Open onboarding at `http://localhost:3005/onboarding?path=sdk`.
+3. Confirm traces appear at `http://localhost:3005/traces`.
+
+This validates Pulse UI/auth flow against the same demo telemetry generators.
