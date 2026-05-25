@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
@@ -36,6 +36,10 @@ export function AppShellFrame({
   const searchParams = useSearchParams();
   const [section, setSection] = useState<Section>(activeSection);
   const scopedProjectId = searchParams.get("project_id");
+
+  useEffect(() => {
+    setSection(activeSection);
+  }, [activeSection]);
 
   function withScopedProject(path: string): string {
     if (!scopedProjectId) return path;

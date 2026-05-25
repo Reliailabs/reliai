@@ -77,6 +77,7 @@ test("shared shell navigation preserves project_id across sidebar section change
   assert.match(appShellFrame, /const scopedProjectId = searchParams\.get\("project_id"\)/);
   assert.match(appShellFrame, /function withScopedProject\(path: string\): string/);
   assert.match(appShellFrame, /router\.push\(withScopedProject\(route\)\)/);
+  assert.match(appShellFrame, /useEffect\(\(\) => \{\s*setSection\(activeSection\);\s*\}, \[activeSection\]\);/);
 });
 
 test("operations not-found surfaces preserve project_id on recovery links", () => {
@@ -89,4 +90,12 @@ test("operations not-found surfaces preserve project_id on recovery links", () =
     assert.match(file, /const withScopedProject = \(path: string\) =>/);
     assert.match(file, /href=\{withScopedProject\("/);
   }
+});
+
+test("overview project control links preserve scoped project_id query", () => {
+  const overviewContent = read("components/dashboard/content/overview-content.tsx");
+
+  assert.match(overviewContent, /const scopedProjectId = searchParams\.get\("project_id"\)/);
+  assert.match(overviewContent, /function withScopedProject\(path: string\): string/);
+  assert.match(overviewContent, /href=\{withScopedProject\(`\/audits\/\$\{projectControlData\.latestAuditId\}`\)\}/);
 });
