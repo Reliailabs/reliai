@@ -1,6 +1,6 @@
 # Pulse Runtime Parity Audit Report
 
-Status: Partial (contract/runtime probes passed; authenticated E2E proof blocked by missing credentials)
+Status: Complete (contract/runtime probes passed; authenticated E2E strict route-shell proof passed)
 Date: 2026-05-24
 Scope: Post-migration runtime proof for `apps/pulse`
 
@@ -14,19 +14,15 @@ Scope: Post-migration runtime proof for `apps/pulse`
   - `56 passed, 0 failed`
 
 ### 2) Authenticated E2E route-shell runtime probes
-- Result: **INCOMPLETE**
+- Result: **PASS**
 - Command:
   - `pnpm --filter pulse exec playwright test -c playwright.config.ts tests/e2e/app-route-shell.spec.ts`
 - Outcome:
-  - `1 passed, 15 skipped, 0 failed`
-- Blocker:
-  - Missing required credentials:
-    - `PW_E2E_EMAIL`
-    - `PW_E2E_PASSWORD`
+  - strict authenticated gate in CI passed after skip-elimination slice (`0 failed`, CI strict mode)
 
 ## Release Note Caveat
 
-Contract/runtime probes passed; authenticated E2E route-shell probes were skipped due to missing credentials.
+Runtime parity proof is complete for the current route-shell/authenticated scope. Broader user-journey E2E coverage is out of scope for this report and should be tracked separately.
 
 ## Authenticated E2E CI Status Semantics
 

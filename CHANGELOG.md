@@ -42,7 +42,8 @@ All notable changes to Reliai will be documented in this file.
 
 ### Changed
 
-- Runtime parity audit status is now explicit: contract/runtime probes passed, while authenticated E2E route-shell probes remain blocked until `PW_E2E_EMAIL` and `PW_E2E_PASSWORD` are configured.
+- Added Pulse production-validation operational docs with explicit rollout stop conditions, SLO/error thresholds, responder ownership, rollback triggers, and required evidence artifacts for traffic expansion decisions.
+- Runtime parity audit status is now explicit: contract/runtime probes passed and authenticated E2E route-shell proof is complete under the strict CI gate.
 - Team invite lifecycle now persists pending invitations, exposes a tokenized `/join?token=...` redemption path, and can accept/redeem the invite into a local session in the current auth stack; email delivery remains deferred.
 - Hardened project audit freshness logic so project summaries only present fresh certification when the latest relevant run is completed, non-pending, and non-invalidated.
 - Settings team invite flow now queues pending invitations for no-account addresses, shows them in a Pending Invitations section with revoke support, and still hands off to `/signup` with preserved invite context.
