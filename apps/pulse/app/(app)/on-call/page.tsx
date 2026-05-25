@@ -46,7 +46,7 @@ type TeamMember = {
 };
 
 type OnCallPageProps = {
-  searchParams: Promise<{ project_id?: string; projectId?: string }>;
+  searchParams: Promise<{ project_id?: string; projectId?: string; error?: string }>;
 };
 
 async function apiRequest<T>(path: string): Promise<T | null> {
@@ -72,10 +72,11 @@ export default async function OnCallPage({ searchParams }: OnCallPageProps) {
   await requireOperatorSession();
   const params = await searchParams;
   const projectIdParam = params.project_id ?? params.projectId ?? null;
+  const scopeError = params.error === "project_scope_required";
 
   const projects = await listProjectScopeOptions();
   const selectedProjectId = resolveStrictScopedProjectId(projects, projectIdParam) ?? "";
-  if (!selectedProjectId && projects.length > 0) {
+  if (!selectedProjectId && projects.length > 0 && !scopeError) {
     redirect("/on-call?error=project_scope_required");
   }
   if (params.projectId && !params.project_id && selectedProjectId) {
@@ -178,7 +179,9 @@ export default async function OnCallPage({ searchParams }: OnCallPageProps) {
 
       {!selectedProjectId ? (
         <section className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
-          No projects found.
+          {projects.length > 0
+            ? "Select a project to continue. On-call settings require explicit project scope."
+            : "No projects found."}
         </section>
       ) : (
         <section className="grid gap-6 xl:grid-cols-2">

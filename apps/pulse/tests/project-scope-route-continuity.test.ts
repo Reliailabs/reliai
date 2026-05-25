@@ -153,7 +153,7 @@ test("on-call route uses canonical project_id scope query and shared selector be
   const file = read("app/(app)/on-call/page.tsx");
   const responseTeamRoute = read("app/api/oncall/response-team/route.ts");
   const rightPanel = read("components/dashboard/right-panel.tsx");
-  assert.match(file, /searchParams: Promise<\{ project_id\?: string; projectId\?: string \}>/);
+  assert.match(file, /searchParams: Promise<\{ project_id\?: string; projectId\?: string; error\?: string \}>/);
   assert.match(file, /const projectIdParam = params\.project_id \?\? params\.projectId \?\? null/);
   assert.match(file, /const selectedProjectId = resolveStrictScopedProjectId\(projects, projectIdParam\) \?\? ""/);
   assert.match(file, /redirect\("\/on-call\?error=project_scope_required"\)/);
