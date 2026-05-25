@@ -18,6 +18,7 @@ import {
 import type { TracesSurfaceData } from "@/components/dashboard/pulse-types";
 import type { TraceRouteContext } from "@/components/dashboard/pulse-types";
 import { formatConfidenceLabel, OPERATOR_INTELLIGENCE_COPY } from "@/lib/operator-intelligence";
+import { EmptyStateNotice } from "@/components/dashboard/content/empty-state-notice";
 
 const defaultLatencyData = [
   { time: "00:00", p50: 45, p95: 120, p99: 250 },
@@ -195,9 +196,7 @@ export function PerformanceContent({
             {sourceErrorText}
           </div>
         ) : null}
-        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
-          No traces yet. Connect your AI system or run your first audit to start monitoring reliability.
-        </div>
+        <EmptyStateNotice message="No traces yet. Connect your AI system or run your first audit to start monitoring reliability." />
       </div>
     );
   }

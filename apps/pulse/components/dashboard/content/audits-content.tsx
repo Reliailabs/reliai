@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import type { AuditsSurfaceData } from "@/components/dashboard/pulse-types";
 import type { AuditRouteContext } from "@/components/dashboard/pulse-types";
+import { EmptyStateNotice } from "@/components/dashboard/content/empty-state-notice";
 import {
   canContinueReview,
   canRerunStage,
@@ -206,9 +207,7 @@ export function AuditsContent({
             {sourceErrorText}
           </div>
         ) : null}
-        <div className="rounded-xl border border-border bg-card px-6 py-8 text-sm text-muted-foreground">
-          No audits found yet. Start an audit run to populate certification posture and review metrics.
-        </div>
+        <EmptyStateNotice message="No audits found yet. Start an audit run to populate certification posture and review metrics." />
       </div>
     );
   }
