@@ -10,6 +10,40 @@ const sanitizeReturnTo = (value: FormDataEntryValue | null): string => {
   return "/pulse";
 };
 
+const resolveRedirectBase = (request: Request): URL => {
+  const appBaseUrl = process.env.APP_BASE_URL;
+  if (appBaseUrl) {
+    try {
+      const parsed = new URL(appBaseUrl);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed;
+      }
+    } catch {
+      // Fall through to request-derived URL below.
+    }
+  }
+  const origin = request.headers.get("origin");
+  if (origin) {
+    try {
+      const parsed = new URL(origin);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed;
+      }
+    } catch {
+      // Fall through to request URL below.
+    }
+  }
+  const fallback = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) {
+    const proto =
+      request.headers.get("x-forwarded-proto") ??
+      fallback.protocol.replace(":", "");
+    return new URL(`${proto}://${host}`);
+  }
+  return fallback;
+};
+
 export async function POST(request: Request) {
   if (!devAuthEnabled()) {
     return NextResponse.json({ detail: "not_found" }, { status: 404 });
@@ -19,9 +53,8 @@ export async function POST(request: Request) {
   const email = formData.get("email");
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
-  const requestOrigin = request.headers.get("origin") ?? new URL(request.url).origin;
-  const appBaseUrl = process.env.APP_BASE_URL ?? requestOrigin;
-  const redirectUrl = (path: string) => new URL(path, appBaseUrl);
+  const redirectBase = resolveRedirectBase(request);
+  const redirectUrl = (path: string) => new URL(path, redirectBase);
   const errorRedirect = () =>
     redirectUrl(`/sign-in?error=1&return_to=${encodeURIComponent(returnTo)}`);
 

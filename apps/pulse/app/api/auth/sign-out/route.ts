@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }).catch(() => undefined);
   }
 
-  const response = NextResponse.redirect(new URL("/sign-in", request.url), { status: 303 });
+  const response = NextResponse.redirect("/sign-in", { status: 303 });
   response.cookies.delete(SESSION_COOKIE_NAME);
   return response;
 }
@@ -23,4 +23,3 @@ export async function POST(request: Request) {
 export function GET() {
   return NextResponse.json({ detail: "Use POST to /api/auth/sign-out." }, { status: 405 });
 }
-
