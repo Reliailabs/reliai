@@ -63,7 +63,7 @@ export async function getTracesSurfaceData(projectId?: string | null): Promise<T
   const scopeQuery = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
   const projectFilter = projectId ? `&project_id=${encodeURIComponent(projectId)}` : "";
   const [tracesResult, projectsResult, incidentsResult] = await Promise.all([
-    safeFetch(apiRequest<{ items: TraceRead[] }>(`/api/v1/traces?limit=250${projectFilter}`)),
+    safeFetch(apiRequest<{ items: TraceRead[] }>(`/api/v1/traces?limit=100${projectFilter}`)),
     safeFetch(apiRequest<{ items: ProjectRead[] }>("/api/v1/projects")),
     safeFetch(apiRequest<{ items: IncidentRead[] }>(`/api/v1/incidents?limit=25${projectFilter}`)),
   ]);
