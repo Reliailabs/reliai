@@ -20,7 +20,8 @@ export async function POST(request: Request) {
   const password = formData.get("password");
   const returnTo = sanitizeReturnTo(formData.get("return_to"));
   const requestOrigin = request.headers.get("origin") ?? new URL(request.url).origin;
-  const redirectUrl = (path: string) => new URL(path, requestOrigin);
+  const appBaseUrl = process.env.APP_BASE_URL ?? requestOrigin;
+  const redirectUrl = (path: string) => new URL(path, appBaseUrl);
   const errorRedirect = () =>
     redirectUrl(`/sign-in?error=1&return_to=${encodeURIComponent(returnTo)}`);
 
